@@ -106,11 +106,58 @@ public partial class MainWindow : Window
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
+            if (_cues.Count == 0 && !string.IsNullOrWhiteSpace(_currentVideo.Title) && _currentVideo.Title != "Vídeo do YouTube")
+                await TryLoadAutomaticLyricsAsync(_currentVideo.Title);
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
         }
         catch (Exception ex) { StatusText.Text = "Erro ao carregar o player: " + ex.Message; }
+    }
+
+    private async Task TryLoadAutomaticLyricsAsync(string videoTitle)
+    {
+        try
+        {
+            StatusText.Text = "Procurando letra sincronizada para: " + videoTitle;
+            var endpoint = "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(videoTitle);
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+            request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
+            using var response = await MetadataHttp.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                StatusText.Text = "Não foi possível consultar o catálogo de letras (HTTP " + (int)response.StatusCode + ").";
+                return;
+            }
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (json.RootElement.ValueKind != JsonValueKind.Array) return;
+            foreach (var item in json.RootElement.EnumerateArray())
+            {
+                if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String) continue;
+                var lrc = synced.GetString();
+                if (string.IsNullOrWhiteSpace(lrc)) continue;
+                var imported = ParseTimedLyrics(lrc, ".lrc");
+                if (imported.Count < 2) continue;
+                _cues.Clear();
+                _cues.AddRange(imported.OrderBy(cue => cue.Seconds));
+                CueList.ItemsSource = null;
+                CueList.ItemsSource = _cues;
+                _lastAutomaticCue = -1;
+                if (_currentVideo is not null)
+                {
+                    _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                    foreach (var saved in _library.SelectMany(folder => folder.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
+                        saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                    SaveLibrary();
+                }
+                StatusText.Text = "Letra sincronizada encontrada: " + _cues.Count + " frases. Confira se corresponde à gravação.";
+                return;
+            }
+            StatusText.Text = "Não encontrei letra sincronizada correspondente. Importe um arquivo LRC/SRT ou cadastre os tempos.";
+        }
+        catch (TaskCanceledException) { StatusText.Text = "A busca de letras demorou demais. Tente novamente mais tarde."; }
+        catch (HttpRequestException ex) { StatusText.Text = "Falha na busca de letras: " + ex.Message; }
+        catch (JsonException) { StatusText.Text = "O catálogo de letras retornou uma resposta inválida."; }
     }
 
     private async Task AddVideoToHistoryAsync(string videoId, string url)
