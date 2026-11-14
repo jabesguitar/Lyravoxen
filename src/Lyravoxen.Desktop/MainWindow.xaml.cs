@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows.Threading;
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
@@ -17,6 +18,8 @@ public partial class MainWindow : Window
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
+    private readonly DispatcherTimer _audioTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
     private bool _webMessageHandlerAttached;
@@ -33,6 +36,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         LoadHistory();
         LoadLibrary();
+        _audioTimer.Tick += (_, _) => ProcessAudioCue();
         Loaded += async (_, _) =>
         {
             try
@@ -67,6 +71,7 @@ public partial class MainWindow : Window
         try
         {
             StatusText.Text = "Preparando player seguro do YouTube...";
+            _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
             await YoutubePlayer.EnsureCoreWebView2Async();
             Directory.CreateDirectory(_playerFolder);
             if (!_virtualHostMapped)
@@ -80,6 +85,7 @@ public partial class MainWindow : Window
             _lastAutomaticCue = -1;
             YoutubeUrlBox.Text = url;
             _currentVideo = new LibraryVideo { VideoId = videoId, Url = url, Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube" };
+            _cues.Clear(); CueList.ItemsSource = null;
             StatusText.Text = "Vídeo carregado. Consultando título...";
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
             StatusText.Text = "Vídeo carregado. Dê play e cadastre os tempos das frases.";
@@ -218,11 +224,13 @@ public partial class MainWindow : Window
             return;
         }
         _cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
+        if (_currentVideo is { IsOffline: true }) _currentVideo.Cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
         _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
         CueList.ItemsSource = null;
         CueList.ItemsSource = _cues;
         LyricTextBox.Clear();
         _lastAutomaticCue = -1;
+        if (_currentVideo is { IsOffline: true }) SaveLibrary();
         StatusText.Text = $"Frase adicionada em {seconds:0.0}s. Total: {_cues.Count}.";
     }
 
@@ -355,7 +363,80 @@ public partial class MainWindow : Window
     {
         if (_librarySelectionChanging || LibrarySongList.SelectedItem is not LibraryVideo video) return;
         LibrarySongList.SelectedItem = null;
+        if (video.IsOffline && !string.IsNullOrWhiteSpace(video.LocalPath)) { PlayLocalAudio(video); return; }
         await LoadVideoAsync(video.Url, true);
+    }
+
+
+    private void ImportAudio_Click(object sender, RoutedEventArgs e)
+    {
+        if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
+        {
+            System.Windows.MessageBox.Show("Crie ou selecione uma pasta primeiro.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        using var dialog = new System.Windows.Forms.OpenFileDialog
+        {
+            Title = "Selecione um áudio que você tem direito de usar",
+            Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
+            Multiselect = true
+        };
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+        var mediaFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
+        Directory.CreateDirectory(mediaFolder);
+        foreach (var source in dialog.FileNames)
+        {
+            var ext = Path.GetExtension(source).ToLowerInvariant();
+            if (ext is not ".mp3" and not ".wav") continue;
+            var target = Path.Combine(mediaFolder, Guid.NewGuid().ToString("N") + ext);
+            File.Copy(source, target, false);
+            var title = Path.GetFileNameWithoutExtension(source);
+            folder.Videos.RemoveAll(v => v.IsOffline && string.Equals(v.Title, title, StringComparison.OrdinalIgnoreCase));
+            folder.Videos.Add(new LibraryVideo { Title = title, IsOffline = true, LocalPath = target, Format = ext.TrimStart('.') });
+        }
+        SaveLibrary();
+        RefreshLibrarySongs();
+        StatusText.Text = "Áudio importado. Disponível sem internet.";
+    }
+
+    private void PlayLocalAudio(LibraryVideo video)
+    {
+        try
+        {
+            if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
+            _audioTimer.Stop();
+            YoutubePlayer.Visibility = Visibility.Collapsed;
+            LocalAudioPlayer.Visibility = Visibility.Visible;
+            LocalAudioPlayer.Source = new Uri(video.LocalPath);
+            LocalAudioPlayer.Position = TimeSpan.Zero;
+            LocalAudioPlayer.Play();
+            _isLocalAudioPlaying = true;
+            _lastAutomaticCue = -1;
+            _audioTimer.Start();
+            _currentVideo = video;
+            _cues.Clear(); _cues.AddRange(video.Cues); CueList.ItemsSource = null; CueList.ItemsSource = _cues;
+            StatusText.Text = $"Reproduzindo offline: {video.Title} ({video.Format?.ToUpperInvariant()})";
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível reproduzir o áudio: " + ex.Message; }
+    }
+
+    private void ProcessAudioCue()
+    {
+        if (!_isLocalAudioPlaying || _cues.Count == 0) return;
+        var seconds = LocalAudioPlayer.Position.TotalSeconds;
+        var cueIndex = _cues.FindLastIndex(cue => cue.Seconds <= seconds);
+        if (cueIndex == _lastAutomaticCue) return;
+        _lastAutomaticCue = cueIndex;
+        var lyric = cueIndex >= 0 ? _cues[cueIndex].Text : "";
+        if (_projection is { IsVisible: true }) _projection.ShowLyric(lyric);
+        if (!string.IsNullOrWhiteSpace(lyric)) _ = SendLyricToHolyricsAsync(lyric);
+    }
+
+    private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
+    {
+        _audioTimer.Stop();
+        _isLocalAudioPlaying = false;
+        StatusText.Text = "Áudio offline finalizado.";
     }
 
     private static string? PromptForText(string title, string label, string initialValue = "")

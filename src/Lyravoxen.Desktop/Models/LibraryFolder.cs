@@ -1,3 +1,5 @@
+using Lyravoxen.Models;
+
 namespace Lyravoxen.Models;
 
 public sealed class LibraryFolder
@@ -12,4 +14,8 @@ public sealed class LibraryVideo
     public string VideoId { get; set; } = "";
     public string Title { get; set; } = "";
     public string Url { get; set; } = "";
+    public bool IsOffline { get; set; }
+    public string? LocalPath { get; set; }
+    public string? Format { get; set; }
+    public List<LyricCue> Cues { get; set; } = new();
 }

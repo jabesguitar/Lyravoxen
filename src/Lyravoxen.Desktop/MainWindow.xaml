@@ -23,6 +23,7 @@
     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <TextBlock Text="REPRODUÇÃO — PLAYER OFICIAL DO YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8"/>
      <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1"/>
+     <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded"/>
     </Grid>
    </Border>
    <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="8,0,0,0">
@@ -68,7 +69,7 @@
           <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
          </Grid>
          <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
-         <Button Grid.Row="2" Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/>
+         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/></StackPanel>
         </Grid>
        </Grid>
       </Grid>
