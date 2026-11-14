@@ -44,6 +44,7 @@ public partial class MainWindow : Window
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
     private readonly string _preferencesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "preferences.json");
     private bool _loadingPreferences;
+    private string? _selectedOutputDeviceName;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     public MainWindow()
@@ -599,6 +600,9 @@ public partial class MainWindow : Window
             _loadingPreferences = true;
             SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
             SelectComboItem(LineCountBox, (preferences.MaxLines ?? 4).ToString(CultureInfo.InvariantCulture));
+            _selectedOutputDeviceName = preferences.OutputDeviceName;
+            PopulateOutputDisplays();
+            SelectOutputDisplay(preferences.OutputDeviceName);
             _loadingPreferences = false;
             _projection?.SetTheme(preferences.Theme ?? "Noturno");
             _projection?.SetMaxLines(preferences.MaxLines ?? 4);
@@ -617,7 +621,7 @@ public partial class MainWindow : Window
             { combo.SelectedItem = candidate; return; }
     }
 
-    private void SavePreferences(string? theme, int? maxLines)
+    private void SavePreferences(string? theme, int? maxLines, string? outputDeviceName = null)
     {
         try
         {
@@ -626,6 +630,7 @@ public partial class MainWindow : Window
                 : new ProjectionPreferences();
             if (theme is not null) current.Theme = theme;
             if (maxLines is not null) current.MaxLines = maxLines;
+            if (outputDeviceName is not null) current.OutputDeviceName = outputDeviceName;
             var directory = Path.GetDirectoryName(_preferencesFile)!;
             Directory.CreateDirectory(directory);
             var temp = _preferencesFile + ".tmp";
@@ -639,6 +644,56 @@ public partial class MainWindow : Window
     {
         public string? Theme { get; set; } = "Noturno";
         public int? MaxLines { get; set; } = 4;
+        public string? OutputDeviceName { get; set; }
+    }
+
+    private sealed class OutputDisplayItem
+    {
+        public string DeviceName { get; init; } = "";
+        public string Label { get; init; } = "";
+        public override string ToString() => Label;
+    }
+
+    private void PopulateOutputDisplays()
+    {
+        if (OutputDisplayBox is null) return;
+        OutputDisplayBox.Items.Clear();
+        foreach (var screen in System.Windows.Forms.Screen.AllScreens)
+        {
+            var label = screen.Primary ? "Principal" : "Secundário";
+            OutputDisplayBox.Items.Add(new OutputDisplayItem
+            {
+                DeviceName = screen.DeviceName,
+                Label = $"{label} — {screen.Bounds.Width}×{screen.Bounds.Height}"
+            });
+        }
+        if (OutputDisplayBox.Items.Count == 0)
+            OutputDisplayBox.Items.Add(new OutputDisplayItem { DeviceName = "", Label = "Nenhuma tela detectada" });
+        if (OutputDisplayBox.SelectedIndex < 0) OutputDisplayBox.SelectedIndex = 0;
+    }
+
+    private void SelectOutputDisplay(string? deviceName)
+    {
+        if (OutputDisplayBox is null) return;
+        var match = OutputDisplayBox.Items.OfType<OutputDisplayItem>()
+            .FirstOrDefault(item => !string.IsNullOrWhiteSpace(deviceName) &&
+                string.Equals(item.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase));
+        if (match is not null) OutputDisplayBox.SelectedItem = match;
+        else if (OutputDisplayBox.Items.Count > 0) OutputDisplayBox.SelectedIndex = Math.Min(1, OutputDisplayBox.Items.Count - 1);
+    }
+
+    private void OutputDisplay_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (OutputDisplayBox?.SelectedItem is not OutputDisplayItem item || string.IsNullOrWhiteSpace(item.DeviceName)) return;
+        _selectedOutputDeviceName = item.DeviceName;
+        if (!_loadingPreferences) SavePreferences(null, null, item.DeviceName);
+        if (_projection is { IsVisible: true })
+        {
+            var actual = _projection.ShowOnOutputDisplay(item.DeviceName);
+            StatusText.Text = string.Equals(actual, item.DeviceName, StringComparison.OrdinalIgnoreCase)
+                ? "Projeção movida para a tela selecionada."
+                : "Não foi possível usar a tela escolhida; a projeção foi aberta na tela disponível.";
+        }
     }
 
     private async void RunDiagnostics_Click(object sender, RoutedEventArgs e)
@@ -660,8 +715,9 @@ public partial class MainWindow : Window
 
         var screens = System.Windows.Forms.Screen.AllScreens;
         var hasExternalScreen = screens.Any(screen => !screen.Primary);
-        lines.Add((hasExternalScreen ? "✓" : "○") + (hasExternalScreen ? " Monitor secundário detectado" : " Nenhum monitor secundário detectado"));
-        if (!hasExternalScreen) warnings.Add("A projeção usará o monitor principal. Conecte o projetor/segundo monitor antes da apresentação.");
+        var selectedOutput = _selectedOutputDeviceName ?? "seleção automática";
+        lines.Add((hasExternalScreen ? "✓" : "○") + $" Monitores detectados: {screens.Length}; saída preferida: {selectedOutput}");
+        if (!hasExternalScreen) warnings.Add("Nenhum monitor secundário foi detectado. A projeção ficará na tela principal.");
 
         var projectionOpen = _projection is { IsVisible: true };
         lines.Add((projectionOpen ? "✓" : "○") + (projectionOpen ? " Janela de projeção aberta" : " Janela de projeção ainda não aberta"));
@@ -700,10 +756,14 @@ public partial class MainWindow : Window
         if (_projection is null || !_projection.IsVisible)
         {
             _projection = new ProjectionWindow();
-            var hasExternalDisplay = _projection.ShowOnOutputDisplay();
-            StatusText.Text = hasExternalDisplay
-                ? "Projeção aberta no monitor secundário."
-                : "Nenhum monitor secundário detectado. A projeção foi aberta no monitor principal.";
+            var actualDevice = _projection.ShowOnOutputDisplay(_selectedOutputDeviceName);
+            var actualScreen = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(screen =>
+                string.Equals(screen.DeviceName, actualDevice, StringComparison.OrdinalIgnoreCase));
+            StatusText.Text = actualScreen is null
+                ? "Não foi possível identificar a tela de saída."
+                : actualScreen.Primary
+                    ? "Projeção aberta na tela principal."
+                    : "Projeção aberta na tela secundária selecionada.";
         }
         if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines))
             _projection.SetMaxLines(lines);

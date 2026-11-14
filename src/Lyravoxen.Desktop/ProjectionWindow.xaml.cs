@@ -8,10 +8,13 @@ public partial class ProjectionWindow : Window
 {
     public ProjectionWindow() => InitializeComponent();
 
-    public bool ShowOnOutputDisplay()
+    public string? ShowOnOutputDisplay(string? preferredDeviceName = null)
     {
-        var externalOutput = Forms.Screen.AllScreens.FirstOrDefault(screen => !screen.Primary);
-        var output = externalOutput ?? Forms.Screen.PrimaryScreen;
+        var screens = Forms.Screen.AllScreens;
+        var output = !string.IsNullOrWhiteSpace(preferredDeviceName)
+            ? screens.FirstOrDefault(screen => string.Equals(screen.DeviceName, preferredDeviceName, StringComparison.OrdinalIgnoreCase))
+            : null;
+        output ??= screens.FirstOrDefault(screen => !screen.Primary) ?? Forms.Screen.PrimaryScreen;
 
         if (output is not null)
         {
@@ -23,7 +26,7 @@ public partial class ProjectionWindow : Window
 
         Show();
         WindowState = WindowState.Maximized;
-        return externalOutput is not null;
+        return output?.DeviceName;
     }
 
     private const double BaseFontSize = 48;
