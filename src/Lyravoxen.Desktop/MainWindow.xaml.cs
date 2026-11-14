@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private int _lastAutomaticCue = -1;
     private bool _webMessageHandlerAttached;
     private bool _searchWebViewReady;
+    private string? _nextVideoUrl;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
@@ -94,16 +95,30 @@ public partial class MainWindow : Window
         if (_searchWebViewReady) YoutubeSearchView.CoreWebView2.Reload();
     }
 
-    private async void UseSearchedVideo_Click(object sender, RoutedEventArgs e)
+    private void PrepareNext_Click(object sender, RoutedEventArgs e)
     {
-        var url = YoutubeSearchView.Source?.ToString() ?? "";
-        if (YouTubeLink.TryGetVideoId(url) is null)
+        var currentUrl = YoutubeSearchView.Source?.ToString() ?? "";
+        var videoId = YouTubeLink.TryGetVideoId(currentUrl);
+        if (videoId is null)
         {
-            System.Windows.MessageBox.Show("Na aba Pesquisa YouTube, abra primeiro a página do vídeo desejado. Depois clique em 'Usar vídeo aberto'.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Abra a página do vídeo desejado na aba Próxima música antes de preparar a faixa.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
+        NextTrackText.Text = "Faixa preparada (" + videoId + "). A reprodução atual permanece intacta até você tocar em Tocar próxima.";
+        PlayNextButton.IsEnabled = true;
+        StatusText.Text = "Próxima música preparada sem interromper a reprodução atual.";
+    }
+
+    private async void PlayNextPrepared_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return;
+        var url = _nextVideoUrl;
+        _nextVideoUrl = null;
+        PlayNextButton.IsEnabled = false;
+        NextTrackText.Text = "Pesquise e prepare a próxima música.";
+        WorkspaceTabs.SelectedIndex = 0;
         await LoadVideoAsync(url, true);
-        YoutubeUrlBox.Text = url;
     }
 
     private async void LoadYoutube_Click(object sender, RoutedEventArgs e)
