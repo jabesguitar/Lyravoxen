@@ -1,3 +1,4 @@
+using System.Text;
 using System.IO;
 using System.Windows.Threading;
 using System.Globalization;
