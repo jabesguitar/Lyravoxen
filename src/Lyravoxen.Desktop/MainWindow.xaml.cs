@@ -186,13 +186,14 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return;
         var url = _nextVideoUrl;
+        var queuedVideoId = YouTubeLink.TryGetVideoId(url);
+        if (queuedVideoId is null) return;
+        _pendingQueueVideoId = queuedVideoId;
         WorkspaceTabs.SelectedIndex = 0;
-        if (await LoadVideoAsync(url, true))
+        if (!await LoadVideoAsync(url, true))
         {
-            _nextVideoUrl = null;
-            SaveNextVideoPreference();
-            PlayNextButton.IsEnabled = false;
-            NextTrackText.Text = "Pesquise e prepare a próxima música.";
+            _pendingQueueVideoId = null;
+            PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
         }
     }
 
@@ -554,12 +555,35 @@ public partial class MainWindow : Window
                 Dispatcher.Invoke(() =>
                 {
                     _playerReady = false;
-                    StatusText.Text = "Falha no player: " + explanation;
+                    _pendingQueueVideoId = null;
+                    PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
+                    StatusText.Text = "Falha no player: " + explanation + " A próxima música continua guardada na fila.";
                 });
                 return;
             }
             if (!root.TryGetProperty("type", out type)) return;
-            if (type.GetString() == "ready") { _playerReady = true; Dispatcher.Invoke(() => StatusText.Text = "Player do YouTube pronto. Aguardando reprodução."); return; }
+            if (type.GetString() == "ready")
+            {
+                _playerReady = true;
+                Dispatcher.Invoke(() =>
+                {
+                    if (_pendingQueueVideoId is not null &&
+                        string.Equals(_currentVideo?.VideoId, _pendingQueueVideoId, StringComparison.Ordinal))
+                    {
+                        _nextVideoUrl = null;
+                        _pendingQueueVideoId = null;
+                        SaveNextVideoPreference();
+                        PlayNextButton.IsEnabled = false;
+                        NextTrackText.Text = "Pesquise e prepare a próxima música.";
+                        StatusText.Text = "Próxima música carregada e player confirmado.";
+                    }
+                    else
+                    {
+                        StatusText.Text = "Player do YouTube pronto. Aguardando reprodução.";
+                    }
+                });
+                return;
+            }
             if (type.GetString() == "state")
             {
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
