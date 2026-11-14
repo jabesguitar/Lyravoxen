@@ -18,6 +18,8 @@ jobs:
         run: dotnet restore src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj
       - name: Build
         run: dotnet publish src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/windows-x64
+      - name: Test cue timeline
+        run: dotnet run --project tests/Lyravoxen.TimelineTests/Lyravoxen.TimelineTests.csproj -c Release
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:

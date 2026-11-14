@@ -213,8 +213,7 @@ public partial class MainWindow : Window
             };
             _currentVideo.Url = url;
             _cues.Clear();
-            _cues.AddRange(_currentVideo.Cues.OrderBy(cue => cue.Seconds)
-                .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }));
+            _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
@@ -352,8 +351,7 @@ public partial class MainWindow : Window
             }
 
             _cues.Clear();
-            _cues.AddRange(selected.Cues.OrderBy(cue => cue.Seconds)
-                .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }));
+            _cues.AddRange(CueTimeline.Normalize(selected.Cues));
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
@@ -653,10 +651,9 @@ public partial class MainWindow : Window
 
     private int FindActiveCue(double playbackSeconds)
     {
-        // Cue.Seconds sempre representa o instante real da frase.
-        // A antecipação é aplicada na comparação, sem alterar o tempo original salvo.
-        var projectedTime = Math.Max(0, playbackSeconds) + ProjectionLeadSeconds;
-        return _cues.FindLastIndex(cue => cue.Seconds <= projectedTime);
+        // A busca binária não guarda estado: funciona também após seek para trás.
+        // A antecipação é aplicada na comparação, sem alterar os tempos salvos.
+        return CueTimeline.FindActiveIndex(_cues, playbackSeconds, ProjectionLeadSeconds);
     }
 
     private void PublishProjectionOnly(string text)
@@ -1211,8 +1208,7 @@ public partial class MainWindow : Window
             _audioTimer.Start();
             _currentVideo = video;
             _cues.Clear();
-            _cues.AddRange(video.Cues.OrderBy(cue => cue.Seconds)
-                .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }));
+            _cues.AddRange(CueTimeline.Normalize(video.Cues));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             StatusText.Text = $"Reproduzindo offline: {video.Title} ({video.Format?.ToUpperInvariant()})";
         }
