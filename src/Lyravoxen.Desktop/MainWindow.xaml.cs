@@ -641,6 +641,52 @@ public partial class MainWindow : Window
         public int? MaxLines { get; set; } = 4;
     }
 
+    private async void RunDiagnostics_Click(object sender, RoutedEventArgs e)
+    {
+        var lines = new List<string>();
+        var warnings = new List<string>();
+
+        bool webViewReady = false;
+        try { webViewReady = YoutubePlayer.CoreWebView2 is not null; } catch { }
+        lines.Add((webViewReady ? "✓" : "✗") + " Player/WebView2 inicializado");
+        if (!webViewReady) warnings.Add("O WebView2 ainda não inicializou. Verifique a instalação do runtime e a conexão.");
+
+        lines.Add((_playerReady ? "✓" : "○") + (_playerReady ? " Player do YouTube respondeu" : " Player do YouTube ainda não confirmou prontidão"));
+        if (!_playerReady && _currentVideo is not null) warnings.Add("O vídeo foi carregado, mas o player ainda não confirmou prontidão. Aguarde ou tente recarregar.");
+
+        lines.Add((_currentVideo is not null ? "✓" : "○") + (_currentVideo is not null ? " Música selecionada: " + _currentVideo.Title : " Nenhuma música selecionada"));
+        lines.Add((_cues.Count > 0 ? "✓" : "○") + $" Letras sincronizadas: {_cues.Count} frases");
+        if (_currentVideo is not null && _cues.Count == 0) warnings.Add("Esta música ainda não tem frases sincronizadas. Importe uma letra ou cadastre os tempos.");
+
+        var screens = System.Windows.Forms.Screen.AllScreens;
+        var hasExternalScreen = screens.Any(screen => !screen.Primary);
+        lines.Add((hasExternalScreen ? "✓" : "○") + (hasExternalScreen ? " Monitor secundário detectado" : " Nenhum monitor secundário detectado"));
+        if (!hasExternalScreen) warnings.Add("A projeção usará o monitor principal. Conecte o projetor/segundo monitor antes da apresentação.");
+
+        var projectionOpen = _projection is { IsVisible: true };
+        lines.Add((projectionOpen ? "✓" : "○") + (projectionOpen ? " Janela de projeção aberta" : " Janela de projeção ainda não aberta"));
+        if (!projectionOpen) warnings.Add("Abra a projeção e confira se ela aparece na tela correta.");
+
+        try
+        {
+            await _holyrics.TestConnectionAsync();
+            lines.Add("✓ Holyrics respondeu e autorizou ShowQuickPresentation");
+        }
+        catch (Exception ex)
+        {
+            lines.Add("✗ Holyrics: " + ex.Message);
+            warnings.Add("A integração com o Holyrics não está pronta. Confira API Server Local, IP, porta e token.");
+        }
+
+        var report = "DIAGNÓSTICO PRÉ-APRESENTAÇÃO\n\n" + string.Join("\n", lines) +
+            (warnings.Count > 0 ? "\n\nPONTOS A VERIFICAR\n• " + string.Join("\n• ", warnings) : "\n\nTudo certo nas verificações disponíveis.");
+        StatusText.Text = warnings.Count == 0
+            ? "Diagnóstico concluído: verificações disponíveis aprovadas."
+            : $"Diagnóstico concluído: {warnings.Count} ponto(s) precisam de atenção.";
+        System.Windows.MessageBox.Show(this, report, "Lyravoxen — Diagnóstico", MessageBoxButton.OK,
+            warnings.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+    }
+
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
         EnsureProjectionWindow();
