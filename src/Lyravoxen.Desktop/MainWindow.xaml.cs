@@ -42,6 +42,8 @@ public partial class MainWindow : Window
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
+    private readonly string _preferencesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "preferences.json");
+    private bool _loadingPreferences;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     public MainWindow()
@@ -63,6 +65,7 @@ public partial class MainWindow : Window
                     _webMessageHandlerAttached = true;
                 }
                 await InitializeBrowserViewAsync(YoutubeSearchView);
+                LoadPreferences();
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
                 _searchWebViewReady = true;
                 StatusText.Text = "Player pronto. Use a aba Pesquisa YouTube para procurar a próxima música.";
@@ -521,8 +524,70 @@ public partial class MainWindow : Window
 
     private void ProjectionTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_projection is null || ProjectionThemeBox?.SelectedItem is not ComboBoxItem item) return;
-        _projection.SetTheme(item.Content?.ToString() ?? "Noturno");
+        if (ProjectionThemeBox?.SelectedItem is not ComboBoxItem item) return;
+        var theme = item.Content?.ToString() ?? "Noturno";
+        _projection?.SetTheme(theme);
+        if (!_loadingPreferences) SavePreferences(theme, null);
+    }
+
+    private void LineCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
+            !int.TryParse(item.Content?.ToString(), out var count)) return;
+        _projection?.SetMaxLines(count);
+        if (!_loadingPreferences) SavePreferences(null, count);
+    }
+
+    private void LoadPreferences()
+    {
+        try
+        {
+            if (!File.Exists(_preferencesFile)) return;
+            var preferences = JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile));
+            if (preferences is null) return;
+            _loadingPreferences = true;
+            SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
+            SelectComboItem(LineCountBox, (preferences.MaxLines ?? 4).ToString(CultureInfo.InvariantCulture));
+            _loadingPreferences = false;
+            _projection?.SetTheme(preferences.Theme ?? "Noturno");
+            _projection?.SetMaxLines(preferences.MaxLines ?? 4);
+        }
+        catch
+        {
+            _loadingPreferences = false;
+            StatusText.Text = "Preferências não puderam ser carregadas; usando o padrão.";
+        }
+    }
+
+    private static void SelectComboItem(ComboBox combo, string value)
+    {
+        foreach (var candidate in combo.Items.OfType<ComboBoxItem>())
+            if (string.Equals(candidate.Content?.ToString(), value, StringComparison.OrdinalIgnoreCase))
+            { combo.SelectedItem = candidate; return; }
+    }
+
+    private void SavePreferences(string? theme, int? maxLines)
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            if (theme is not null) current.Theme = theme;
+            if (maxLines is not null) current.MaxLines = maxLines;
+            var directory = Path.GetDirectoryName(_preferencesFile)!;
+            Directory.CreateDirectory(directory);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível salvar as preferências: " + ex.Message; }
+    }
+
+    private sealed class ProjectionPreferences
+    {
+        public string? Theme { get; set; } = "Noturno";
+        public int? MaxLines { get; set; } = 4;
     }
 
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
