@@ -538,6 +538,28 @@ public partial class MainWindow : Window
         _projection.ShowLyric(_currentProjectedLyric);
     }
 
+    private void ProjectionStandby_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            EnsureProjectionWindow();
+            _projection!.ShowStandby();
+            StatusText.Text = "Tela de espera exibida no telão. A frase atual continua preservada.";
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível exibir a tela de espera: " + ex.Message; }
+    }
+
+    private void ProjectionEnding_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            EnsureProjectionWindow();
+            _projection!.ShowEnding();
+            StatusText.Text = "Tela de encerramento exibida no telão. A frase atual continua preservada.";
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível exibir a tela de encerramento: " + ex.Message; }
+    }
+
     private void TestProjection_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -828,6 +850,14 @@ public partial class MainWindow : Window
             case System.Windows.Input.Key.F10:
                 _projection?.RestoreDisplay();
                 StatusText.Text = "Projeção restaurada.";
+                e.Handled = true;
+                break;
+            case System.Windows.Input.Key.F11:
+                ProjectionStandby_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+                break;
+            case System.Windows.Input.Key.F12:
+                ProjectionEnding_Click(this, new RoutedEventArgs());
                 e.Handled = true;
                 break;
         }

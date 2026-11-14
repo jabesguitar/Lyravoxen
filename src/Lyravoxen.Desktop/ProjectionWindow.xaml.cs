@@ -28,6 +28,7 @@ public partial class ProjectionWindow : Window
     private const double BaseFontSize = 48;
     private int _maxLines = 4;
     private string _lastLyric = "";
+    private bool _showingOverlay;
 
     public void SetMaxLines(int count)
     {
@@ -38,14 +39,37 @@ public partial class ProjectionWindow : Window
     public void ShowLyric(string text)
     {
         _lastLyric = text ?? "";
+        _showingOverlay = false;
+        LyricDisplay.Visibility = Visibility.Visible;
+        OverlayPanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Text = LimitLines(_lastLyric, _maxLines);
         UpdateTextLayout(LyricDisplay.Text);
+    }
+
+    public void ShowStandby()
+    {
+        _showingOverlay = true;
+        LyricDisplay.Visibility = Visibility.Collapsed;
+        OverlayTitle.Text = "LYRAVOXEN";
+        OverlaySubtitle.Text = "A apresentação começará em instantes";
+        OverlayPanel.Visibility = Visibility.Visible;
+    }
+
+    public void ShowEnding()
+    {
+        _showingOverlay = true;
+        LyricDisplay.Visibility = Visibility.Collapsed;
+        OverlayTitle.Text = "Obrigado pela presença";
+        OverlaySubtitle.Text = "Que Deus abençoe a todos";
+        OverlayPanel.Visibility = Visibility.Visible;
     }
 
     // Tela limpa sem fechar a saída nem perder a frase atual.
     public void ClearDisplay()
     {
         LyricDisplay.Text = "";
+        OverlayPanel.Visibility = Visibility.Collapsed;
+        LyricDisplay.Visibility = Visibility.Visible;
         UpdateTextLayout("");
     }
 
