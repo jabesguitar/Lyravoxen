@@ -798,6 +798,34 @@ public partial class MainWindow : Window
         StatusText.Text = direction < 0 ? "Frase movida para cima no tempo." : "Frase movida para baixo no tempo.";
     }
 
+    private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        // Não interceptar atalhos enquanto o operador digita ou navega no navegador incorporado.
+        if (e.OriginalSource is TextBox or ComboBox or System.Windows.Controls.Primitives.TextBoxBase ||
+            e.OriginalSource is Microsoft.Web.WebView2.Wpf.WebView2)
+            return;
+
+        switch (e.Key)
+        {
+            case System.Windows.Input.Key.F6:
+                NavigateCue(-1);
+                e.Handled = true;
+                break;
+            case System.Windows.Input.Key.F7:
+                NavigateCue(1);
+                e.Handled = true;
+                break;
+            case System.Windows.Input.Key.F8:
+                ProjectSelectedCue_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+                break;
+            case System.Windows.Input.Key.F9:
+                ResumeAutomaticProjection_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+                break;
+        }
+    }
+
     private void PreviousCue_Click(object sender, RoutedEventArgs e) => NavigateCue(-1);
     private void NextCue_Click(object sender, RoutedEventArgs e) => NavigateCue(1);
 
