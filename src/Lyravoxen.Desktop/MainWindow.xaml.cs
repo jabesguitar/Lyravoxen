@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
-    private bool _webMessageHandlerAttached;
+    private bool _webMessageHandlerAttached;\n    private bool _searchWebViewReady;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
@@ -51,10 +51,58 @@ public partial class MainWindow : Window
                     YoutubePlayer.CoreWebView2.WebMessageReceived += Player_WebMessageReceived;
                     _webMessageHandlerAttached = true;
                 }
-                StatusText.Text = "Player pronto. Cole um link público do YouTube.";
+                await YoutubeSearchView.EnsureCoreWebView2Async();
+                YoutubeSearchView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
+                YoutubeSearchView.CoreWebView2.Settings.IsStatusBarEnabled = true;
+                YoutubeSearchView.CoreWebView2.NavigationCompleted += (_, _) =>
+                {
+                    if (YoutubeSearchView.Source is not null) YoutubeSearchBox.Text = YoutubeSearchView.Source.ToString();
+                };
+                _searchWebViewReady = true;
+                YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
+                StatusText.Text = "Player pronto. Use a aba Pesquisa YouTube para procurar a próxima música.";
+
             }
             catch (Exception ex) { StatusText.Text = "Não foi possível iniciar o WebView2: " + ex.Message; }
         };
+    }
+
+    private void YoutubeSearch_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_searchWebViewReady) { StatusText.Text = "A pesquisa ainda está inicializando."; return; }
+        var text = YoutubeSearchBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(text)) return;
+        if (YouTubeLink.TryGetVideoId(text) is not null)
+            YoutubeSearchView.CoreWebView2.Navigate(text);
+        else
+            YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(text));
+    }
+
+    private void YoutubeSearchBack_Click(object sender, RoutedEventArgs e)
+    {
+        if (_searchWebViewReady && YoutubeSearchView.CoreWebView2.CanGoBack) YoutubeSearchView.CoreWebView2.GoBack();
+    }
+
+    private void YoutubeSearchForward_Click(object sender, RoutedEventArgs e)
+    {
+        if (_searchWebViewReady && YoutubeSearchView.CoreWebView2.CanGoForward) YoutubeSearchView.CoreWebView2.GoForward();
+    }
+
+    private void YoutubeSearchRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        if (_searchWebViewReady) YoutubeSearchView.CoreWebView2.Reload();
+    }
+
+    private async void UseSearchedVideo_Click(object sender, RoutedEventArgs e)
+    {
+        var url = YoutubeSearchView.Source?.ToString() ?? "";
+        if (YouTubeLink.TryGetVideoId(url) is null)
+        {
+            System.Windows.MessageBox.Show("Na aba Pesquisa YouTube, abra primeiro a página do vídeo desejado. Depois clique em 'Usar vídeo aberto'.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        await LoadVideoAsync(url, true);
+        YoutubeUrlBox.Text = url;
     }
 
     private async void LoadYoutube_Click(object sender, RoutedEventArgs e)

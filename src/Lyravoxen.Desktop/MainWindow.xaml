@@ -44,6 +44,22 @@
        </StackPanel>
       </Grid>
      </TabItem>
+     <TabItem Header="Pesquisa YouTube">
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <Grid Margin="4,4,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBox x:Name="YoutubeSearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um endereço do YouTube"/>
+        <Button Grid.Column="1" Content="Pesquisar" Click="YoutubeSearch_Click"/>
+        <Button Grid.Column="2" Content="Voltar" Click="YoutubeSearchBack_Click"/>
+        <Button Grid.Column="3" Content="Avançar" Click="YoutubeSearchForward_Click"/>
+        <Button Grid.Column="4" Content="Atualizar" Click="YoutubeSearchRefresh_Click"/>
+       </Grid>
+       <wv2:WebView2 x:Name="YoutubeSearchView" Grid.Row="1"/>
+       <Grid Grid.Row="2" Margin="4,8,4,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock Text="Pesquise e abra o vídeo nesta área; a reprodução atual não será interrompida." Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+        <Button Grid.Column="1" Content="Usar vídeo aberto" Click="UseSearchedVideo_Click" Background="#176E68"/>
+       </Grid>
+      </Grid>
+     </TabItem>
      <TabItem Header="Histórico de vídeos">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="VÍDEOS UTILIZADOS" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
