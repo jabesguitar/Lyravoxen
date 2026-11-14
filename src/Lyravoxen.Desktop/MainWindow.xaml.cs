@@ -224,7 +224,11 @@ public partial class MainWindow : Window
             return;
         }
         _cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
-        if (_currentVideo is { IsOffline: true }) _currentVideo.Cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
+        if (_currentVideo is { IsOffline: true })
+        {
+            _currentVideo.Cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
+            _currentVideo.Cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
+        }
         _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
         CueList.ItemsSource = null;
         CueList.ItemsSource = _cues;
