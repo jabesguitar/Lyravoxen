@@ -437,11 +437,10 @@ public partial class MainWindow : Window
                 else if (state == 0) Dispatcher.Invoke(() => StatusText.Text = "Reprodução do YouTube finalizada.");
             }
             if (state != 1 || _cues.Count == 0) return;
-            var cueIndex = _cues.FindLastIndex(cue => cue.Seconds <= seconds);
+            var cueIndex = FindActiveCue(seconds);
             if (cueIndex == _lastAutomaticCue) return;
             _lastAutomaticCue = cueIndex;
-            var lyric = cueIndex >= 0 ? _cues[cueIndex].Text : "";
-            if (!string.IsNullOrWhiteSpace(lyric)) PublishLyric(lyric);
+            PublishLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
         }
         catch (JsonException) { }
         catch (InvalidOperationException) { }
@@ -499,11 +498,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private int FindActiveCue(double playbackSeconds)
+    {
+        // Cue.Seconds sempre representa o instante real da frase.
+        // A antecipação é aplicada na comparação, sem alterar o tempo original salvo.
+        var projectedTime = Math.Max(0, playbackSeconds) + ProjectionLeadSeconds;
+        return _cues.FindLastIndex(cue => cue.Seconds <= projectedTime);
+    }
+
     private void PublishLyric(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return;
-        if (_projection is { IsVisible: true }) _projection.ShowLyric(text);
-        _ = SendLyricToHolyricsAsync(text);
+        // Texto vazio limpa a projeção quando ainda não há frase ou a música termina.
+        if (_projection is { IsVisible: true }) _projection.ShowLyric(text ?? "");
+        _ = SendLyricToHolyricsAsync(text ?? "");
     }
 
     private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
@@ -515,13 +522,13 @@ public partial class MainWindow : Window
             double currentSeconds;
             if (_isLocalAudioPlaying) currentSeconds = LocalAudioPlayer.Position.TotalSeconds;
             else { var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("player.getCurrentTime()"); if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0) { StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente."; return; } }
-            var cueSeconds = Math.Max(0, currentSeconds - ProjectionLeadSeconds);
+            var cueSeconds = Math.Max(0, currentSeconds);
             _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
             _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             if (_currentVideo is not null) { _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline)) saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); SaveLibrary(); }
             SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture); LyricTextBox.Clear(); _lastAutomaticCue = -1;
-            StatusText.Text = "Frase marcada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s; projeção antecipada em 1,5s.";
+            StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s. Ela será projetada 1,5s antes de começar.";
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
     }
@@ -829,17 +836,18 @@ public partial class MainWindow : Window
     {
         if (!_isLocalAudioPlaying || _cues.Count == 0) return;
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
-        var cueIndex = _cues.FindLastIndex(cue => cue.Seconds <= seconds);
+        var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
-        var lyric = cueIndex >= 0 ? _cues[cueIndex].Text : "";
-        if (!string.IsNullOrWhiteSpace(lyric)) PublishLyric(lyric);
+        PublishLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
     {
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
+        PublishLyric("");
+        _lastAutomaticCue = -1;
         StatusText.Text = "Áudio offline finalizado.";
     }
 

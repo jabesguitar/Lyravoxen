@@ -52,8 +52,8 @@
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
          <Button Grid.Column="2" Content="Adicionar tempo" Click="AddCue_Click"/>
         </Grid>
-        <Button Content="Marcar frase no tempo atual (adiantar 1,5 s)" Click="MarkCueAtCurrentTime_Click" Background="#176E68"/>
-        <TextBlock Text="Digite ou selecione a frase durante a reprodução e marque quando ela começar. A projeção será antecipada em 1,5 segundo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
+        <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="#176E68"/>
+        <TextBlock Text="Marque quando a frase começar. O Lyravoxen a exibirá 1,5 segundo antes, sem alterar o tempo original." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
         <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
        </StackPanel>
       </Grid>
