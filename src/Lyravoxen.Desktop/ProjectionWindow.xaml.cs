@@ -32,13 +32,30 @@ public partial class ProjectionWindow : Window
     {
         var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         var lines = new List<string>(); var current = "";
-        foreach (var word in words)
+        var index = 0;
+        for (; index < words.Length; index++)
         {
+            var word = words[index];
             var candidate = string.IsNullOrEmpty(current) ? word : current + " " + word;
-            if (candidate.Length > 38 && current.Length > 0) { lines.Add(current); current = word; if (lines.Count >= maxLines) break; }
+            if (candidate.Length > 38 && current.Length > 0)
+            {
+                lines.Add(current);
+                current = word;
+                if (lines.Count >= maxLines - 1)
+                {
+                    index++;
+                    break;
+                }
+            }
             else current = candidate;
         }
-        if (lines.Count < maxLines && current.Length > 0) lines.Add(current);
+
+        if (index < words.Length)
+        {
+            // Nunca descartar o restante da frase: textos maiores podem ocupar mais linhas visuais.
+            current = string.Join(" ", new[] { current }.Concat(words.Skip(index)).Where(part => !string.IsNullOrWhiteSpace(part)));
+        }
+        if (current.Length > 0) lines.Add(current);
         return string.Join(Environment.NewLine, lines);
     }
 

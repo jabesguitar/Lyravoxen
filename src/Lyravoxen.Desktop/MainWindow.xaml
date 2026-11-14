@@ -38,7 +38,7 @@
      <TabItem Header="Sincronização">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
-       <TextBlock Grid.Row="1" Text="Informe a música e o intérprete para procurar uma letra sincronizada. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
+       <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <TextBox x:Name="MusicTrackBox" Grid.Row="0" Grid.Column="0" Margin="0,0,4,4" ToolTip="Título da música"/>
         <TextBox x:Name="MusicArtistBox" Grid.Row="0" Grid.Column="1" Margin="4,0,0,4" ToolTip="Nome do intérprete/artista"/>
