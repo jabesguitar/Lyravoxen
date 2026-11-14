@@ -1,15 +1,20 @@
 using System.IO;
+using System.Net;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 
 namespace Lyravoxen.Integration;
 
 public sealed class HolyricsClient
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(6) };
+    private static readonly HttpClient Http = new(new SocketsHttpHandler
+    {
+        UseProxy = false,
+        AutomaticDecompression = DecompressionMethods.None
+    }) { Timeout = TimeSpan.FromSeconds(8) };
+
     private readonly string _settingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Lyravoxen", "holyrics.dat");
@@ -30,45 +35,42 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null || string.IsNullOrWhiteSpace(text)) return;
 
-        var url = BuildUrl(settings, "ShowQuickPresentation");
-        using var response = await PostJsonWithContentLengthAsync(url, new { text });
-        var body = await response.Content.ReadAsStringAsync();
+        var body = JsonSerializer.SerializeToUtf8Bytes(new { text });
+        using var response = await SendJsonAsync(BuildUrl(settings, "ShowQuickPresentation"), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
-        // ShowQuickPresentation é documentado pelo Holyrics como método sem retorno.
-        // Portanto, não tentar interpretar o corpo como JSON.
-        if (!string.IsNullOrWhiteSpace(body))
-            EnsureApiSuccess(body);
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody))
+            EnsureApiSuccess(responseBody);
     }
 
     private static async Task CheckPermissionAsync(Settings settings, string action)
     {
-        var url = BuildUrl(settings, "CheckPermissions");
-        using var response = await PostJsonWithContentLengthAsync(url, new { actions = action });
-        var body = await response.Content.ReadAsStringAsync();
+        var body = JsonSerializer.SerializeToUtf8Bytes(new { actions = action });
+        using var response = await SendJsonAsync(BuildUrl(settings, "CheckPermissions"), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
-        if (string.IsNullOrWhiteSpace(body))
-            throw new InvalidOperationException("O Holyrics não retornou confirmação. Confira se o API Server Local está ativo na porta informada.");
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (string.IsNullOrWhiteSpace(responseBody))
+            throw new InvalidOperationException("O Holyrics não retornou confirmação. Confira se o API Server Local está ativo.");
 
-        EnsureApiSuccess(body);
+        EnsureApiSuccess(responseBody);
     }
 
-    private static async Task<HttpResponseMessage> PostJsonWithContentLengthAsync<T>(string url, T payload)
+    private static async Task<HttpResponseMessage> SendJsonAsync(string url, byte[] body)
     {
-        var json = JsonSerializer.Serialize(payload);
-        var bytes = Encoding.UTF8.GetBytes(json);
-        var content = new ByteArrayContent(bytes);
-        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        content.Headers.ContentLength = bytes.Length;
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Version = new Version(1, 1),
+            Version = HttpVersion.Version11,
             VersionPolicy = HttpVersionPolicy.RequestVersionExact,
-            Content = content
+            Content = new ByteArrayContent(body)
         };
-        return await Http.SendAsync(request);
+        request.Content.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        // ByteArrayContent informa Content-Length explicitamente; não usa Transfer-Encoding: chunked.
+        request.Content.Headers.ContentLength = body.Length;
+        return await Http.SendAsync(request, HttpCompletionOption.ResponseContentRead);
     }
 
     private static string BuildUrl(Settings settings, string action) =>
