@@ -176,6 +176,7 @@ public partial class MainWindow : Window
             return;
         }
         _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
+        SaveNextVideoPreference();
         NextTrackText.Text = "Próxima faixa preparada (" + videoId + "). A música atual continua tocando até você selecionar Tocar próxima.";
         PlayNextButton.IsEnabled = true;
         StatusText.Text = "Próxima música preparada sem interromper a reprodução atual.";
@@ -189,6 +190,7 @@ public partial class MainWindow : Window
         if (await LoadVideoAsync(url, true))
         {
             _nextVideoUrl = null;
+            SaveNextVideoPreference();
             PlayNextButton.IsEnabled = false;
             NextTrackText.Text = "Pesquise e prepare a próxima música.";
         }
@@ -633,6 +635,12 @@ public partial class MainWindow : Window
             SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
             SelectComboItem(LineCountBox, (preferences.MaxLines ?? 4).ToString(CultureInfo.InvariantCulture));
             _selectedOutputDeviceName = preferences.OutputDeviceName;
+            _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
+                ? "https://www.youtube.com/watch?v=" + queuedId : null;
+            PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
+            NextTrackText.Text = _nextVideoUrl is null
+                ? "Pesquise e prepare a próxima música."
+                : "Próxima faixa recuperada da sessão anterior.";
             PopulateOutputDisplays();
             SelectOutputDisplay(preferences.OutputDeviceName);
             _loadingPreferences = false;
@@ -677,6 +685,27 @@ public partial class MainWindow : Window
         public string? Theme { get; set; } = "Noturno";
         public int? MaxLines { get; set; } = 4;
         public string? OutputDeviceName { get; set; }
+        public string? NextVideoUrl { get; set; }
+    }
+
+    private void SaveNextVideoPreference()
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            current.NextVideoUrl = _nextVideoUrl;
+            var directory = Path.GetDirectoryName(_preferencesFile)!;
+            Directory.CreateDirectory(directory);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "A próxima música não pôde ser salva: " + ex.Message;
+        }
     }
 
     private sealed class OutputDisplayItem

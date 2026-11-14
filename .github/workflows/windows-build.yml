@@ -20,8 +20,17 @@ jobs:
         run: dotnet publish src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/windows-x64
       - name: Test cue timeline
         run: dotnet run --project tests/Lyravoxen.TimelineTests/Lyravoxen.TimelineTests.csproj -c Release
-      - name: Upload build
+      - name: Package portable ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive -Path artifacts/windows-x64/* -DestinationPath artifacts/Lyravoxen-Windows-x64-portable.zip -CompressionLevel Optimal
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: Lyravoxen-Windows-x64
           path: artifacts/windows-x64/
+      - name: Upload portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyravoxen-Windows-x64-portable
+          path: artifacts/Lyravoxen-Windows-x64-portable.zip

@@ -1,31 +1,33 @@
-# Lyravoxen — Lote 01
+# Lyravoxen — Aplicativo Windows
 
-Primeiro lote do aplicativo Windows: estrutura WPF, player oficial incorporado do YouTube,
-janela de projeção independente e sincronização manual por marcações de tempo.
+Aplicativo WPF para reprodução oficial de vídeos do YouTube, sincronização de letras e projeção em monitor independente.
 
 ## Requisitos
 - Windows 10 (1809 ou superior) ou Windows 11, 64 bits
-- .NET 8 SDK
 - WebView2 Runtime (normalmente já instalado no Windows 11; pode ser instalado no Windows 10)
+- Conexão com a internet para o player oficial do YouTube
 
-## Abrir
-1. Instale o .NET 8 SDK: https://dotnet.microsoft.com/download/dotnet/8.0
-2. Abra `src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj` no Visual Studio 2022
-   ou execute `dotnet run --project src/Lyravoxen.Desktop`.
-3. Cole um link de vídeo público do YouTube e clique em **Carregar YouTube**.
-4. Clique em **Abrir projeção** para abrir a janela de saída.
-5. Adicione linhas de letra com tempo (segundos) e texto; clique numa linha para projetá-la.
+## Pacote portátil
+O fluxo de compilação do GitHub Actions gera:
+- **Lyravoxen-Windows-x64**: arquivos publicados do aplicativo.
+- **Lyravoxen-Windows-x64-portable**: arquivo ZIP com o aplicativo publicado.
 
-## Limites deste lote
-- O player usa o player oficial incorporado do YouTube; não baixa nem extrai áudio.
-- A sincronização é manual por timestamps neste primeiro lote.
-- Reconhecimento automático de voz, alinhamento de playback e integração Holyrics ainda serão implementados nos próximos lotes.
-- Não é ainda um instalador EXE nem APK.
+Para obter o pacote, abra a execução mais recente em [GitHub Actions](https://github.com/jabesguitar/Lyravoxen/actions/workflows/windows-build.yml), entre em **Artifacts** e baixe o ZIP portátil. Extraia todo o conteúdo para uma pasta e execute `Lyravoxen.exe`. Não execute o EXE diretamente de dentro do ZIP.
 
-## Compatibilidade
-O projeto não exige AVX2, CUDA ou placa de vídeo dedicada. A compatibilidade real será validada
-nos computadores Intel Core i5-3470 e Xeon E5-2689 durante os testes.
+O pacote é publicado como self-contained para .NET 8; o WebView2 Runtime continua sendo um pré-requisito separado. Ainda não é um instalador tradicional com assistente, atalhos e desinstalador.
 
-## Estrutura
-- `src/Lyravoxen.Desktop`: aplicativo Windows
-- `docs/ROADMAP.md`: plano de desenvolvimento
+## Recursos atuais
+- Player oficial incorporado do YouTube; não baixa nem extrai áudio.
+- Sincronização manual e automática por timestamps.
+- Importação LRC/SRT e edição das frases.
+- Projeção independente, temas, tela de espera e encerramento.
+- Seleção da tela de saída e recuperação após alterações de monitor.
+- Biblioteca, histórico e fila da próxima música.
+- Integração configurável com Holyrics.
+
+## Limites e validação
+- Alguns vídeos não permitem reprodução incorporada e podem ser recusados pelo próprio YouTube.
+- A integração Holyrics requer uma instalação compatível e configuração local.
+- O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
+- Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
+- APK Android exigiria um projeto separado.
