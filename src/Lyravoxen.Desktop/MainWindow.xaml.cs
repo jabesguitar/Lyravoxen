@@ -363,16 +363,16 @@ public partial class MainWindow : Window
         var dialog = new Window
         {
             Title = title, Width = 390, Height = 165, WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            ResizeMode = ResizeMode.NoResize, Owner = Application.Current.MainWindow,
+            ResizeMode = ResizeMode.NoResize, Owner = System.Windows.Application.Current.MainWindow,
             Background = System.Windows.Media.Brushes.White
         };
         var panel = new StackPanel { Margin = new Thickness(14) };
         panel.Children.Add(new TextBlock { Text = label, Margin = new Thickness(0, 0, 0, 8) });
-        var input = new TextBox { Text = initialValue, Height = 28, Padding = new Thickness(5) };
+        var input = new System.Windows.Controls.TextBox { Text = initialValue, Height = 28, Padding = new Thickness(5) };
         panel.Children.Add(input);
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
-        var ok = new Button { Content = "Salvar", Width = 80, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
-        var cancel = new Button { Content = "Cancelar", Width = 80, IsCancel = true };
+        var buttons = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
+        var ok = new System.Windows.Controls.Button { Content = "Salvar", Width = 80, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new System.Windows.Controls.Button { Content = "Cancelar", Width = 80, IsCancel = true };
         ok.Click += (_, _) => dialog.DialogResult = true;
         buttons.Children.Add(ok); buttons.Children.Add(cancel); panel.Children.Add(buttons);
         dialog.Content = panel;
