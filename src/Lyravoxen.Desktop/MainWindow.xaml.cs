@@ -707,7 +707,100 @@ public partial class MainWindow : Window
     private void CueList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (CueList.SelectedItem is not LyricCue cue) return;
-        PublishLyric(cue.Text);
+        SecondsBox.Text = cue.Seconds.ToString("0.00", CultureInfo.InvariantCulture);
+        LyricTextBox.Text = cue.Text;
+        StatusText.Text = $"Frase selecionada: {cue.Seconds:0.00}s. Use Editar, Atualizar ou Reproduzir para controlar a projeção.";
+    }
+
+    private void EditCue_Click(object sender, RoutedEventArgs e)
+    {
+        if (CueList.SelectedItem is not LyricCue cue)
+        {
+            StatusText.Text = "Selecione uma frase na lista para editar.";
+            return;
+        }
+        SecondsBox.Text = cue.Seconds.ToString("0.00", CultureInfo.InvariantCulture);
+        LyricTextBox.Text = cue.Text;
+        LyricTextBox.Focus();
+        LyricTextBox.SelectAll();
+    }
+
+    private void UpdateCue_Click(object sender, RoutedEventArgs e)
+    {
+        if (CueList.SelectedItem is not LyricCue selected ||
+            !double.TryParse(SecondsBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) ||
+            seconds < 0 || string.IsNullOrWhiteSpace(LyricTextBox.Text))
+        {
+            StatusText.Text = "Selecione uma frase e informe um tempo e texto válidos.";
+            return;
+        }
+        selected.Seconds = seconds;
+        selected.Text = LyricTextBox.Text.Trim();
+        _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
+        RefreshCueList(selected);
+        PersistCurrentCues();
+        _lastAutomaticCue = -1;
+        StatusText.Text = "Frase atualizada e salva na biblioteca.";
+    }
+
+    private void DeleteCue_Click(object sender, RoutedEventArgs e)
+    {
+        if (CueList.SelectedItem is not LyricCue selected)
+        {
+            StatusText.Text = "Selecione uma frase para excluir.";
+            return;
+        }
+        if (System.Windows.MessageBox.Show("Excluir esta frase sincronizada?", "Lyravoxen", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+        _cues.Remove(selected);
+        RefreshCueList();
+        PersistCurrentCues();
+        _lastAutomaticCue = -1;
+        StatusText.Text = "Frase excluída.";
+    }
+
+    private void MoveCue_Click(object sender, RoutedEventArgs e)
+    {
+        if (CueList.SelectedItem is not LyricCue selected)
+        {
+            StatusText.Text = "Selecione uma frase para reordenar.";
+            return;
+        }
+        var index = _cues.IndexOf(selected);
+        var direction = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Shift) != 0 ? 1 : -1;
+        var target = index + direction;
+        if (target < 0 || target >= _cues.Count)
+        {
+            StatusText.Text = direction < 0 ? "A frase já está no início." : "A frase já está no final.";
+            return;
+        }
+        // A ordem temporal permanece coerente; reordenar significa ajustar o tempo para trocar as posições.
+        var other = _cues[target];
+        var temp = selected.Seconds;
+        selected.Seconds = other.Seconds;
+        other.Seconds = temp;
+        _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
+        RefreshCueList(selected);
+        PersistCurrentCues();
+        _lastAutomaticCue = -1;
+        StatusText.Text = direction < 0 ? "Frase movida para cima no tempo." : "Frase movida para baixo no tempo.";
+    }
+
+    private void RefreshCueList(LyricCue? selected = null)
+    {
+        CueList.ItemsSource = null;
+        CueList.ItemsSource = _cues;
+        if (selected is not null) CueList.SelectedItem = selected;
+    }
+
+    private void PersistCurrentCues()
+    {
+        if (_currentVideo is null) return;
+        _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+        foreach (var saved in _library.SelectMany(folder => folder.Videos)
+                     .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
+            saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+        SaveLibrary();
     }
 
 
