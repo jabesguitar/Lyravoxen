@@ -39,7 +39,7 @@ public sealed class HolyricsSettingsWindow : Window
     {
         if (!int.TryParse(_port.Text, out var port))
         {
-            MessageBox.Show(this, "Informe uma porta válida, por exemplo 8091.", "Lyravoxen — Holyrics", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "Informe uma porta válida, por exemplo 8091.", "Lyravoxen — Holyrics", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -49,13 +49,13 @@ public sealed class HolyricsSettingsWindow : Window
         {
             await _client.ConfigureAndTestAsync(_host.Text, port, _token.Password);
             Saved = true;
-            MessageBox.Show(this, "Conexão confirmada e configuração salva neste computador.", "Lyravoxen — Holyrics", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(this, "Conexão confirmada e configuração salva neste computador.", "Lyravoxen — Holyrics", MessageBoxButton.OK, MessageBoxImage.Information);
             DialogResult = true;
         }
         catch (Exception ex)
         {
             _status.Text = "Falha no teste de conexão.";
-            MessageBox.Show(this,
+            System.Windows.MessageBox.Show(this,
                 "Não foi possível confirmar a conexão com o Holyrics.\n\nDetalhes: " + ex.Message +
                 "\n\nConfira se o API Server Local está ativado, se a porta é 8091 e se o token tem a permissão ShowQuickPresentation em Local.",
                 "Lyravoxen — Erro de conexão", MessageBoxButton.OK, MessageBoxImage.Error);
