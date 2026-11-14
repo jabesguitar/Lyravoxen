@@ -2,14 +2,13 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 namespace Lyravoxen.Integration;
 
 public sealed class HolyricsClient
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(4) };
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(6) };
     private readonly string _settingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Lyravoxen", "holyrics.dat");
@@ -19,8 +18,9 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(host)) throw new ArgumentException("Informe o endereço do Holyrics.");
         if (port is < 1 or > 65535) throw new ArgumentOutOfRangeException(nameof(port));
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
+
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await SendAsync(settings, "Teste de conexão Lyravoxen ↔ Holyrics");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation");
         Save(settings);
     }
 
@@ -28,31 +28,60 @@ public sealed class HolyricsClient
     {
         var settings = Load();
         if (settings is null || string.IsNullOrWhiteSpace(text)) return;
-        await SendAsync(settings, text);
-    }
 
-    private static async Task SendAsync(Settings settings, string text)
-    {
-        var url = $"http://{settings.Host}:{settings.Port}/api/ShowQuickPresentation?token={Uri.EscapeDataString(settings.Token)}";
+        var url = BuildUrl(settings, "ShowQuickPresentation");
         using var response = await Http.PostAsJsonAsync(url, new { text });
         var body = await response.Content.ReadAsStringAsync();
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
+        // ShowQuickPresentation é documentado pelo Holyrics como método sem retorno.
+        // Portanto, não tentar interpretar o corpo como JSON.
+        if (!string.IsNullOrWhiteSpace(body))
+            EnsureApiSuccess(body);
+    }
+
+    private static async Task CheckPermissionAsync(Settings settings, string action)
+    {
+        var url = BuildUrl(settings, "CheckPermissions");
+        using var response = await Http.PostAsJsonAsync(url, new { actions = action });
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
+        if (string.IsNullOrWhiteSpace(body))
+            throw new InvalidOperationException("O Holyrics não retornou confirmação. Confira se o API Server Local está ativo na porta informada.");
+
+        EnsureApiSuccess(body);
+    }
+
+    private static string BuildUrl(Settings settings, string action) =>
+        $"http://{settings.Host}:{settings.Port}/api/{action}?token={Uri.EscapeDataString(settings.Token)}";
+
+    private static void EnsureApiSuccess(string body)
+    {
         using var json = JsonDocument.Parse(body);
         var root = json.RootElement;
-        if (root.TryGetProperty("status", out var status) && status.GetString() == "error")
+        if (root.TryGetProperty("status", out var status) &&
+            string.Equals(status.GetString(), "error", StringComparison.OrdinalIgnoreCase))
         {
             var detail = root.TryGetProperty("error", out var error) ? error.ToString() : "A API recusou a solicitação.";
-            throw new InvalidOperationException(detail);
+            throw new InvalidOperationException("Holyrics: " + detail);
         }
+        if (!root.TryGetProperty("status", out var ok) ||
+            !string.Equals(ok.GetString(), "ok", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Resposta inesperada do Holyrics: " + body);
     }
 
     private void Save(Settings settings)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
         var plain = JsonSerializer.SerializeToUtf8Bytes(settings);
-        var protectedBytes = ProtectedData.Protect(plain, null, DataProtectionScope.CurrentUser);
-        File.WriteAllBytes(_settingsPath, protectedBytes);
-        CryptographicOperations.ZeroMemory(plain);
+        try
+        {
+            var protectedBytes = ProtectedData.Protect(plain, null, DataProtectionScope.CurrentUser);
+            File.WriteAllBytes(_settingsPath, protectedBytes);
+        }
+        finally { CryptographicOperations.ZeroMemory(plain); }
     }
 
     private Settings? Load()
