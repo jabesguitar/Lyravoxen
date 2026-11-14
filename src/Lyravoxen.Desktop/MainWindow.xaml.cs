@@ -18,7 +18,7 @@ public partial class MainWindow : Window
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
-    private readonly DispatcherTimer _audioTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(30) };
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;

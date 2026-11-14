@@ -33,7 +33,7 @@ function onYouTubeIframeAPIReady(){
     if(player && typeof player.getCurrentTime === 'function'){
       window.chrome.webview.postMessage({type:'time',seconds:player.getCurrentTime(),state:player.getPlayerState()});
     }
-  },250);
+  },50);
 }
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
