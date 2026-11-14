@@ -70,8 +70,29 @@ public partial class MainWindow : Window
         }
         try
         {
-            StatusText.Text = "Preparando player seguro do YouTube...";
+            StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
+
+            // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
+            var preparedVideo = _library.SelectMany(folder => folder.Videos)
+                .FirstOrDefault(item => !item.IsOffline && item.VideoId == videoId);
+            _currentVideo = preparedVideo ?? new LibraryVideo
+            {
+                VideoId = videoId,
+                Url = url,
+                Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube"
+            };
+            _currentVideo.Url = url;
+            _cues.Clear();
+            _cues.AddRange(_currentVideo.Cues.OrderBy(cue => cue.Seconds)
+                .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }));
+            CueList.ItemsSource = null;
+            CueList.ItemsSource = _cues;
+            _lastAutomaticCue = -1;
+            StatusText.Text = _cues.Count > 0
+                ? $"Letra preparada: {_cues.Count} frases carregadas. Inicializando o vídeo..."
+                : "Vídeo identificado. Nenhuma letra salva para ele; você pode cadastrar as frases enquanto o player carrega.";
+
             await YoutubePlayer.EnsureCoreWebView2Async();
             Directory.CreateDirectory(_playerFolder);
             if (!_virtualHostMapped)
@@ -82,13 +103,11 @@ public partial class MainWindow : Window
             var html = YouTubePlayerPage.Build(videoId);
             await File.WriteAllTextAsync(Path.Combine(_playerFolder, "index.html"), html);
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
-            _lastAutomaticCue = -1;
             YoutubeUrlBox.Text = url;
-            _currentVideo = new LibraryVideo { VideoId = videoId, Url = url, Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube" };
-            _cues.Clear(); CueList.ItemsSource = null;
-            StatusText.Text = "Vídeo carregado. Consultando título...";
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
-            StatusText.Text = "Vídeo carregado. Dê play e cadastre os tempos das frases.";
+            StatusText.Text = _cues.Count > 0
+                ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
+                : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
         }
         catch (Exception ex) { StatusText.Text = "Erro ao carregar o player: " + ex.Message; }
     }
@@ -224,17 +243,19 @@ public partial class MainWindow : Window
             return;
         }
         _cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
-        if (_currentVideo is { IsOffline: true })
-        {
-            _currentVideo.Cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
-            _currentVideo.Cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
-        }
         _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
         CueList.ItemsSource = null;
         CueList.ItemsSource = _cues;
         LyricTextBox.Clear();
         _lastAutomaticCue = -1;
-        if (_currentVideo is { IsOffline: true }) SaveLibrary();
+        if (_currentVideo is not null)
+        {
+            _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            foreach (var saved in _library.SelectMany(folder => folder.Videos)
+                         .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
+                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            SaveLibrary();
+        }
         StatusText.Text = $"Frase adicionada em {seconds:0.0}s. Total: {_cues.Count}.";
     }
 
@@ -352,11 +373,16 @@ public partial class MainWindow : Window
         }
         var video = folder.Videos.FirstOrDefault(v => v.VideoId == _currentVideo.VideoId);
         if (video is null)
-            folder.Videos.Add(new LibraryVideo { VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, Url = _currentVideo.Url });
+            folder.Videos.Add(new LibraryVideo
+            {
+                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, Url = _currentVideo.Url,
+                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
+            });
         else
         {
             video.Title = _currentVideo.Title;
             video.Url = _currentVideo.Url;
+            video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         }
         SaveLibrary();
         RefreshLibrarySongs();
