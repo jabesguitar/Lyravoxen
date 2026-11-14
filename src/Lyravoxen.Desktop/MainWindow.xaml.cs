@@ -24,7 +24,8 @@ public partial class MainWindow : Window
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
-    private bool _webMessageHandlerAttached;\n    private bool _searchWebViewReady;
+    private bool _webMessageHandlerAttached;
+    private bool _searchWebViewReady;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
