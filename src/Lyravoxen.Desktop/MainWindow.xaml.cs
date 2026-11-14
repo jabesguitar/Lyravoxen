@@ -589,7 +589,9 @@ public partial class MainWindow : Window
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
         EnsureProjectionWindow();
-        StatusText.Text = "Janela de projeção aberta. Use Testar projeção para validar o envio de texto.";
+        if (StatusText.Text.StartsWith("Projeção aberta", StringComparison.Ordinal) ||
+            StatusText.Text.StartsWith("Nenhum monitor", StringComparison.Ordinal))
+            StatusText.Text += " Use Testar projeção para validar o envio de texto.";
     }
 
     private void EnsureProjectionWindow()
@@ -597,7 +599,10 @@ public partial class MainWindow : Window
         if (_projection is null || !_projection.IsVisible)
         {
             _projection = new ProjectionWindow();
-            _projection.ShowOnOutputDisplay();
+            var hasExternalDisplay = _projection.ShowOnOutputDisplay();
+            StatusText.Text = hasExternalDisplay
+                ? "Projeção aberta no monitor secundário."
+                : "Nenhum monitor secundário detectado. A projeção foi aberta no monitor principal.";
         }
         if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines))
             _projection.SetMaxLines(lines);
