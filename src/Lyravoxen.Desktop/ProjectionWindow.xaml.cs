@@ -83,7 +83,6 @@ public partial class ProjectionWindow : Window
 
     public void ShowEnding()
     {
-        _showingOverlay = true;
         _displayMode = ProjectionDisplayMode.Ending;
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "Obrigado pela presença";
