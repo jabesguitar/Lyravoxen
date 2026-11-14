@@ -48,8 +48,7 @@ public partial class ProjectionWindow : Window
             return;
         }
 
-        // Reduz a fonte proporcionalmente quando a frase ocupa mais linhas,
-        // mantendo o conteúdo inteiro dentro da área de projeção.
+        // O tamanho da fonte é ajustado sem alterar propriedades de altura do TextBlock.
         var visualLines = text.Split('\n').Sum(line => Math.Max(1, (int)Math.Ceiling(line.Length / 38d)));
         var scale = Math.Min(1d, Math.Sqrt(_maxLines / (double)Math.Max(_maxLines, visualLines)));
         LyricDisplay.FontSize = Math.Clamp(BaseFontSize * scale, 20, BaseFontSize);

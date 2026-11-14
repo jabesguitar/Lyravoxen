@@ -226,7 +226,9 @@ public partial class MainWindow : Window
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
-            MusicTrackBox.Text = _currentVideo.Title == "Vídeo do YouTube" ? "" : _currentVideo.Title;
+            // O título salvo no histórico pode conter também o nome do canal.
+            // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
+            MusicTrackBox.Text = "";
             MusicArtistBox.Clear();
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
@@ -381,7 +383,11 @@ public partial class MainWindow : Window
         catch { title = "Vídeo do YouTube (" + videoId + ")"; }
 
         var displayTitle = string.IsNullOrWhiteSpace(author) ? title : title + " — " + author;
-        if (_currentVideo?.VideoId == videoId) { _currentVideo.Title = displayTitle; if (string.IsNullOrWhiteSpace(MusicTrackBox.Text)) MusicTrackBox.Text = title; }
+        if (_currentVideo?.VideoId == videoId)
+        {
+            _currentVideo.Title = displayTitle;
+            MusicTrackBox.Text = title;
+        }
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
         {
@@ -469,7 +475,7 @@ public partial class MainWindow : Window
             if (state != _lastPlayerState)
             {
                 _lastPlayerState = state;
-                if (state == 1) Dispatcher.Invoke(() => StatusText.Text = _playerReady ? "YouTube tocando. Sincronização ativa." : "YouTube tocando; aguardando confirmação do player.");
+                if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando. Nenhuma letra sincronizada foi carregada.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>
                 {

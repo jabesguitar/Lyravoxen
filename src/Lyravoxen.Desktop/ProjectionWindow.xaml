@@ -7,8 +7,7 @@
   <TextBlock x:Name="LyricDisplay" Text=""
    Foreground="White" FontSize="48" FontWeight="SemiBold"
    TextAlignment="Center" TextWrapping="Wrap"
-   HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="90"
-   MaxHeight="{x:Null}"/>
+   HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="90"/>
   <TextBlock Text="LYRAVOXEN" Foreground="#527080" FontSize="13"
    HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20"/>
  </Grid>
