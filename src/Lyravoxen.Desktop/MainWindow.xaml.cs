@@ -24,6 +24,8 @@ public partial class MainWindow : Window
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
+    private int _lastPlayerState = -1;
+    private bool _playerReady;
     private bool _webMessageHandlerAttached;
     private bool _searchWebViewReady;
     private string? _nextVideoUrl;
@@ -370,17 +372,31 @@ public partial class MainWindow : Window
                 Dispatcher.Invoke(() => StatusText.Text = "O YouTube informou erro " + code + ". Verifique se o vídeo permite reprodução incorporada.");
                 return;
             }
-            if (!root.TryGetProperty("type", out type) || type.GetString() != "time") return;
+            if (!root.TryGetProperty("type", out type)) return;
+            if (type.GetString() == "ready") { _playerReady = true; Dispatcher.Invoke(() => StatusText.Text = "Player do YouTube pronto. Aguardando reprodução."); return; }
+            if (type.GetString() == "state")
+            {
+                var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
+                Dispatcher.Invoke(() => StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : playerState == 0 ? "YouTube finalizado." : "YouTube aguardando.");
+                return;
+            }
+            if (type.GetString() != "time") return;
             if (!root.TryGetProperty("seconds", out var secondsElement)) return;
             var seconds = secondsElement.GetDouble();
             var state = root.TryGetProperty("state", out var stateElement) ? stateElement.GetInt32() : -1;
+            if (state != _lastPlayerState)
+            {
+                _lastPlayerState = state;
+                if (state == 1) Dispatcher.Invoke(() => StatusText.Text = _playerReady ? "YouTube tocando. Sincronização ativa." : "YouTube tocando; aguardando confirmação do player.");
+                else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
+                else if (state == 0) Dispatcher.Invoke(() => StatusText.Text = "Reprodução do YouTube finalizada.");
+            }
             if (state != 1 || _cues.Count == 0) return;
             var cueIndex = _cues.FindLastIndex(cue => cue.Seconds <= seconds);
             if (cueIndex == _lastAutomaticCue) return;
             _lastAutomaticCue = cueIndex;
             var lyric = cueIndex >= 0 ? _cues[cueIndex].Text : "";
-            if (_projection is { IsVisible: true }) _projection.ShowLyric(lyric);
-            if (!string.IsNullOrWhiteSpace(lyric)) _ = SendLyricToHolyricsAsync(lyric);
+            if (!string.IsNullOrWhiteSpace(lyric)) PublishLyric(lyric);
         }
         catch (JsonException) { }
         catch (InvalidOperationException) { }
@@ -406,9 +422,43 @@ public partial class MainWindow : Window
 
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
-        if (_projection is null || !_projection.IsVisible) { _projection = new ProjectionWindow(); _projection.ShowOnOutputDisplay(); }
-        if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines)) _projection.SetMaxLines(lines);
-        _projection.Activate();
+        EnsureProjectionWindow();
+        StatusText.Text = "Janela de projeção aberta. Use Testar projeção para validar o envio de texto.";
+    }
+
+    private void EnsureProjectionWindow()
+    {
+        if (_projection is null || !_projection.IsVisible)
+        {
+            _projection = new ProjectionWindow();
+            _projection.ShowOnOutputDisplay();
+        }
+        if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines))
+            _projection.SetMaxLines(lines);
+    }
+
+    private void TestProjection_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            EnsureProjectionWindow();
+            const string testText = "TESTE DE PROJEÇÃO — LYRAVOXEN";
+            _projection!.ShowLyric(testText);
+            _projection.Activate();
+            StatusText.Text = "Teste enviado à janela própria do Lyravoxen. Se não aparecer no telão, verifique em qual monitor a janela abriu.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Falha ao abrir/enviar texto à projeção: " + ex.Message;
+            System.Windows.MessageBox.Show("Não foi possível testar a projeção.\\n\\n" + ex.Message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void PublishLyric(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+        if (_projection is { IsVisible: true }) _projection.ShowLyric(text);
+        _ = SendLyricToHolyricsAsync(text);
     }
 
     private void AddCue_Click(object sender, RoutedEventArgs e)
@@ -524,8 +574,7 @@ public partial class MainWindow : Window
     private void CueList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (CueList.SelectedItem is not LyricCue cue) return;
-        if (_projection is { IsVisible: true }) _projection.ShowLyric(cue.Text);
-        _ = SendLyricToHolyricsAsync(cue.Text);
+        PublishLyric(cue.Text);
     }
 
 
@@ -720,8 +769,7 @@ public partial class MainWindow : Window
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
         var lyric = cueIndex >= 0 ? _cues[cueIndex].Text : "";
-        if (_projection is { IsVisible: true }) _projection.ShowLyric(lyric);
-        if (!string.IsNullOrWhiteSpace(lyric)) _ = SendLyricToHolyricsAsync(lyric);
+        if (!string.IsNullOrWhiteSpace(lyric)) PublishLyric(lyric);
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
