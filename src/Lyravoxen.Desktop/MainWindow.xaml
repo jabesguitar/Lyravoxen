@@ -53,6 +53,12 @@
        </Border>
        <ListBox x:Name="CueList" Grid.Row="5" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
        <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4">
+        <Button Content="◀ Anterior" Click="PreviousCue_Click"/>
+        <Button Content="Próxima ▶" Click="NextCue_Click"/>
+        <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#176E68"/>
+        <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
+       </UniformGrid>
+       <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4">
         <Button Content="Editar selecionada" Click="EditCue_Click"/>
         <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
         <Button Content="Excluir frase" Click="DeleteCue_Click"/>

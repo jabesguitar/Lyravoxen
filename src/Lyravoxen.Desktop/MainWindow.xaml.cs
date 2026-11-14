@@ -25,6 +25,8 @@ public partial class MainWindow : Window
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
+    private bool _manualProjectionMode;
+    private int _manualCueIndex = -1;
     private double _playerDurationSeconds;
     private const double ProjectionLeadSeconds = 1.5;
     private int _lastPlayerState = -1;
@@ -485,7 +487,7 @@ public partial class MainWindow : Window
                     StatusText.Text = "Reprodução do YouTube finalizada.";
                 });
             }
-            if (state != 1 || _cues.Count == 0) return;
+            if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
             var cueIndex = FindActiveCue(seconds);
             if (cueIndex == _lastAutomaticCue) return;
             _lastAutomaticCue = cueIndex;
@@ -786,6 +788,48 @@ public partial class MainWindow : Window
         StatusText.Text = direction < 0 ? "Frase movida para cima no tempo." : "Frase movida para baixo no tempo.";
     }
 
+    private void PreviousCue_Click(object sender, RoutedEventArgs e) => NavigateCue(-1);
+    private void NextCue_Click(object sender, RoutedEventArgs e) => NavigateCue(1);
+
+    private void NavigateCue(int direction)
+    {
+        if (_cues.Count == 0) { StatusText.Text = "Nenhuma frase cadastrada."; return; }
+        _manualProjectionMode = true;
+        var current = _manualCueIndex >= 0 ? _manualCueIndex : Math.Max(0, FindActiveCue(GetPlaybackSeconds()));
+        _manualCueIndex = Math.Clamp(current + direction, 0, _cues.Count - 1);
+        CueList.SelectedItem = _cues[_manualCueIndex];
+        ProjectSelectedCue_Click(this, new RoutedEventArgs());
+    }
+
+    private double GetPlaybackSeconds()
+    {
+        if (_isLocalAudioPlaying) return LocalAudioPlayer.Position.TotalSeconds;
+        if (!_playerReady || YoutubePlayer.CoreWebView2 is null) return 0;
+        try
+        {
+            var encoded = YoutubePlayer.CoreWebView2.ExecuteScriptAsync("typeof player !== 'undefined' && player ? player.getCurrentTime() : 0").GetAwaiter().GetResult();
+            return double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) ? seconds : 0;
+        }
+        catch { return 0; }
+    }
+
+    private void ProjectSelectedCue_Click(object sender, RoutedEventArgs e)
+    {
+        if (CueList.SelectedItem is not LyricCue cue) { StatusText.Text = "Selecione uma frase para projetar."; return; }
+        _manualProjectionMode = true;
+        _manualCueIndex = _cues.IndexOf(cue);
+        PublishLyric(cue.Text);
+        StatusText.Text = $"Projeção manual: frase {_manualCueIndex + 1} de {_cues.Count}. A sincronização automática está pausada até retomar o modo automático.";
+    }
+
+    private void ResumeAutomaticProjection_Click(object sender, RoutedEventArgs e)
+    {
+        _manualProjectionMode = false;
+        _manualCueIndex = -1;
+        _lastAutomaticCue = -1;
+        StatusText.Text = "Modo automático retomado. A projeção acompanhará o tempo da música.";
+    }
+
     private void RefreshCueList(LyricCue? selected = null)
     {
         CueList.ItemsSource = null;
@@ -990,7 +1034,7 @@ public partial class MainWindow : Window
 
     private void ProcessAudioCue()
     {
-        if (!_isLocalAudioPlaying || _cues.Count == 0) return;
+        if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode) return;
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
         var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
