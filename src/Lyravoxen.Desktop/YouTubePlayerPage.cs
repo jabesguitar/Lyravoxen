@@ -37,6 +37,14 @@ function onYouTubeIframeAPIReady(){
   },200);
 }
 </script>
+<script>
+window.addEventListener('error', function(event){
+  if(event && event.target && event.target.tagName === 'SCRIPT' &&
+     String(event.target.src || '').includes('youtube.com/iframe_api')){
+    window.chrome.webview.postMessage({type:'playerError',code:-1,detail:'Não foi possível carregar a API oficial do player do YouTube. Verifique a conexão com a internet e tente novamente.'});
+  }
+}, true);
+</script>
 <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>

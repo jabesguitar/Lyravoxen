@@ -462,8 +462,23 @@ public partial class MainWindow : Window
             var root = message.RootElement;
             if (root.TryGetProperty("type", out var type) && type.GetString() == "playerError")
             {
-                var code = root.TryGetProperty("code", out var c) ? c.GetInt32() : 0;
-                Dispatcher.Invoke(() => StatusText.Text = "O YouTube informou erro " + code + ". Verifique se o vídeo permite reprodução incorporada.");
+                var code = root.TryGetProperty("code", out var c) && c.TryGetInt32(out var parsedCode) ? parsedCode : 0;
+                var detail = root.TryGetProperty("detail", out var detailValue) ? detailValue.GetString() : null;
+                var explanation = code switch
+                {
+                    -1 => detail ?? "Não foi possível carregar a API oficial do YouTube. Verifique a conexão.",
+                    2 => "O identificador do vídeo é inválido.",
+                    5 => "O vídeo não pôde ser reproduzido no player HTML5.",
+                    100 => "O vídeo não existe, foi removido ou está privado.",
+                    101 or 150 => "O proprietário não permite a reprodução incorporada deste vídeo.",
+                    153 => "O YouTube recusou o player por falta de identificação válida do cliente/referenciador. Atualize o WebView2 e tente novamente.",
+                    _ => "O YouTube informou erro " + code + ". Confira a disponibilidade e as permissões de incorporação do vídeo."
+                };
+                Dispatcher.Invoke(() =>
+                {
+                    _playerReady = false;
+                    StatusText.Text = "Falha no player: " + explanation;
+                });
                 return;
             }
             if (!root.TryGetProperty("type", out type)) return;
