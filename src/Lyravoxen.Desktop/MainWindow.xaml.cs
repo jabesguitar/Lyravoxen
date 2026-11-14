@@ -517,11 +517,6 @@ public partial class MainWindow : Window
         if (dialog.Saved) StatusText.Text = "Configuração do Holyrics salva. A conexão foi testada.";
     }
 
-    private void LineCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines)) _projection?.SetMaxLines(lines);
-    }
-
     private void ProjectionTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ProjectionThemeBox?.SelectedItem is not ComboBoxItem item) return;
@@ -559,7 +554,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private static void SelectComboItem(ComboBox combo, string value)
+    private static void SelectComboItem(System.Windows.Controls.ComboBox combo, string value)
     {
         foreach (var candidate in combo.Items.OfType<ComboBoxItem>())
             if (string.Equals(candidate.Content?.ToString(), value, StringComparison.OrdinalIgnoreCase))
