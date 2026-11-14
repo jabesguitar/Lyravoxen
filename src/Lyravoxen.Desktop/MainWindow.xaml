@@ -18,9 +18,9 @@
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="0,0,0,12">
-   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="YoutubeUrlBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
-    <Button Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
+    <Button x:Name="LoadYoutubeButton" Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button Grid.Column="2" Content="Abrir projeção" Background="#176E68" Click="OpenProjection_Click"/>
     <Button x:Name="PlayNextButton" Grid.Column="3" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/><Button Grid.Column="4" Content="Holyrics" Click="HolyricsSettings_Click"/><Button Grid.Column="5" Content="Testar projeção" Click="TestProjection_Click"/><Button Grid.Column="6" Content="Tela de espera" Click="ProjectionStandby_Click"/><Button Grid.Column="7" Content="Encerrar" Click="ProjectionEnding_Click"/><Button Grid.Column="8" Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verificar a preparação para a apresentação"/><ComboBox x:Name="OutputDisplayBox" Grid.Column="9" Width="150" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
    </Grid>

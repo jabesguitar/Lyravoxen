@@ -32,6 +32,8 @@ public partial class MainWindow : Window
     private const double ProjectionLeadSeconds = 1.5;
     private int _lastPlayerState = -1;
     private bool _playerReady;
+    private bool _isLoadingVideo;
+    private string _playerSessionId = "";
     private bool _webMessageHandlerAttached;
     private bool _searchWebViewReady;
     private int _browserTabNumber = 1;
@@ -183,11 +185,13 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return;
         var url = _nextVideoUrl;
-        _nextVideoUrl = null;
-        PlayNextButton.IsEnabled = false;
-        NextTrackText.Text = "Pesquise e prepare a próxima música.";
         WorkspaceTabs.SelectedIndex = 0;
-        await LoadVideoAsync(url, true);
+        if (await LoadVideoAsync(url, true))
+        {
+            _nextVideoUrl = null;
+            PlayNextButton.IsEnabled = false;
+            NextTrackText.Text = "Pesquise e prepare a próxima música.";
+        }
     }
 
     private async void LoadYoutube_Click(object sender, RoutedEventArgs e)
@@ -195,16 +199,21 @@ public partial class MainWindow : Window
         await LoadVideoAsync(YoutubeUrlBox.Text, true);
     }
 
-    private async Task LoadVideoAsync(string url, bool addToHistory)
+    private async Task<bool> LoadVideoAsync(string url, bool addToHistory)
     {
+        if (_isLoadingVideo) return false;
         var videoId = YouTubeLink.TryGetVideoId(url);
         if (videoId is null)
         {
             System.Windows.MessageBox.Show("Cole um link válido de vídeo do YouTube.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            return false;
         }
+        _isLoadingVideo = true;
+        LoadYoutubeButton.IsEnabled = false;
+        PlayNextButton.IsEnabled = false;
         try
         {
+            _playerSessionId = Guid.NewGuid().ToString("N");
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
@@ -237,7 +246,7 @@ public partial class MainWindow : Window
                 YoutubePlayer.CoreWebView2.SetVirtualHostNameToFolderMapping("lyravoxen.local", _playerFolder, CoreWebView2HostResourceAccessKind.Allow);
                 _virtualHostMapped = true;
             }
-            var html = YouTubePlayerPage.Build(videoId);
+            var html = YouTubePlayerPage.Build(videoId, _playerSessionId);
             await File.WriteAllTextAsync(Path.Combine(_playerFolder, "index.html"), html);
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
@@ -249,8 +258,20 @@ public partial class MainWindow : Window
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
+            return true;
         }
-        catch (Exception ex) { StatusText.Text = "Erro ao carregar o player: " + ex.Message; }
+        catch (Exception ex)
+        {
+            _playerReady = false;
+            StatusText.Text = "Erro ao carregar o player: " + ex.Message;
+            return false;
+        }
+        finally
+        {
+            _isLoadingVideo = false;
+            LoadYoutubeButton.IsEnabled = true;
+            PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
+        }
     }
 
     private static string NormalizeMusicText(string? value)
@@ -511,6 +532,9 @@ public partial class MainWindow : Window
         {
             using var message = JsonDocument.Parse(e.WebMessageAsJson);
             var root = message.RootElement;
+            if (!root.TryGetProperty("session", out var sessionElement) ||
+                !string.Equals(sessionElement.GetString(), _playerSessionId, StringComparison.Ordinal))
+                return; // Ignora eventos atrasados de um player/vídeo anterior.
             if (root.TryGetProperty("type", out var type) && type.GetString() == "playerError")
             {
                 var code = root.TryGetProperty("code", out var c) && c.TryGetInt32(out var parsedCode) ? parsedCode : 0;
