@@ -1,6 +1,6 @@
 using System.Windows;
-using System.Windows.Input;
 using Forms = System.Windows.Forms;
+using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace Lyravoxen;
 
@@ -27,9 +27,9 @@ public partial class ProjectionWindow : Window
 
     public void ShowLyric(string text) => LyricDisplay.Text = text;
 
-    protected override void OnKeyDown(KeyEventArgs e)
+    protected override void OnKeyDown(WpfKeyEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        if (e.Key == System.Windows.Input.Key.Escape)
         {
             WindowState = WindowState.Normal;
             Close();
