@@ -27,7 +27,7 @@ public sealed class HolyricsSettingsWindow : Window
         panel.Children.Add(new TextBlock { Text = "Endereço (IP ou 127.0.0.1)" }); panel.Children.Add(_host);
         panel.Children.Add(new TextBlock { Text = "Porta" }); panel.Children.Add(_port);
         panel.Children.Add(new TextBlock { Text = "Token (fica protegido neste computador)" }); panel.Children.Add(_token);
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var buttons = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
         var test = new WpfButton { Content = "Testar e salvar", Padding = new Thickness(14,7,14,7), IsDefault = true };
         test.Click += async (_, _) => await TestAndSaveAsync();
         var cancel = new WpfButton { Content = "Cancelar", Padding = new Thickness(14,7,14,7), Margin = new Thickness(8,0,0,0), IsCancel = true };
