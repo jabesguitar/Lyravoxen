@@ -196,6 +196,7 @@ public partial class MainWindow : Window
             PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
             _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastAutomaticCue = -1;
+            _manualProjectionMode = false; _manualCueIndex = -1;
 
             // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
             var preparedVideo = _library.SelectMany(folder => folder.Videos)
@@ -795,7 +796,13 @@ public partial class MainWindow : Window
     {
         if (_cues.Count == 0) { StatusText.Text = "Nenhuma frase cadastrada."; return; }
         _manualProjectionMode = true;
-        var current = _manualCueIndex >= 0 ? _manualCueIndex : Math.Max(0, FindActiveCue(GetPlaybackSeconds()));
+        var current = _manualCueIndex >= 0
+            ? _manualCueIndex
+            : CueList.SelectedItem is LyricCue selected
+                ? _cues.IndexOf(selected)
+                : FindActiveCue(GetPlaybackSeconds());
+        // Sem frase ativa ainda: "Próxima" começa na primeira; "Anterior" permanece na primeira.
+        if (current < 0) current = direction > 0 ? -1 : 0;
         _manualCueIndex = Math.Clamp(current + direction, 0, _cues.Count - 1);
         CueList.SelectedItem = _cues[_manualCueIndex];
         ProjectSelectedCue_Click(this, new RoutedEventArgs());
@@ -827,7 +834,10 @@ public partial class MainWindow : Window
         _manualProjectionMode = false;
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
-        StatusText.Text = "Modo automático retomado. A projeção acompanhará o tempo da música.";
+        var currentIndex = FindActiveCue(GetPlaybackSeconds());
+        _lastAutomaticCue = currentIndex;
+        PublishProjectionOnly(currentIndex >= 0 ? _cues[currentIndex].Text : "");
+        StatusText.Text = "Modo automático retomado. A projeção foi alinhada à posição atual da música.";
     }
 
     private void RefreshCueList(LyricCue? selected = null)
