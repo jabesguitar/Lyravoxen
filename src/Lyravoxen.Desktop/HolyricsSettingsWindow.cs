@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
+using WpfTextBox = System.Windows.Controls.TextBox;
+using WpfButton = System.Windows.Controls.Button;
 using Lyravoxen.Integration;
 
 namespace Lyravoxen;
@@ -7,8 +9,8 @@ namespace Lyravoxen;
 public sealed class HolyricsSettingsWindow : Window
 {
     private readonly HolyricsClient _client;
-    private readonly TextBox _host = new() { Text = "127.0.0.1", Margin = new Thickness(0, 4, 0, 10) };
-    private readonly TextBox _port = new() { Text = "8091", Margin = new Thickness(0, 4, 0, 10) };
+    private readonly WpfTextBox _host = new() { Text = "127.0.0.1", Margin = new Thickness(0, 4, 0, 10) };
+    private readonly WpfTextBox _port = new() { Text = "8091", Margin = new Thickness(0, 4, 0, 10) };
     private readonly PasswordBox _token = new() { Margin = new Thickness(0, 4, 0, 12) };
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
     public bool Saved { get; private set; }
@@ -26,9 +28,9 @@ public sealed class HolyricsSettingsWindow : Window
         panel.Children.Add(new TextBlock { Text = "Porta" }); panel.Children.Add(_port);
         panel.Children.Add(new TextBlock { Text = "Token (fica protegido neste computador)" }); panel.Children.Add(_token);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var test = new Button { Content = "Testar e salvar", Padding = new Thickness(14,7,14,7), IsDefault = true };
+        var test = new WpfButton { Content = "Testar e salvar", Padding = new Thickness(14,7,14,7), IsDefault = true };
         test.Click += async (_, _) => await TestAndSaveAsync();
-        var cancel = new Button { Content = "Cancelar", Padding = new Thickness(14,7,14,7), Margin = new Thickness(8,0,0,0), IsCancel = true };
+        var cancel = new WpfButton { Content = "Cancelar", Padding = new Thickness(14,7,14,7), Margin = new Thickness(8,0,0,0), IsCancel = true };
         buttons.Children.Add(test); buttons.Children.Add(cancel); panel.Children.Add(buttons); panel.Children.Add(_status);
         Content = panel;
     }
