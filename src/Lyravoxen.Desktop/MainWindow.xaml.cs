@@ -95,17 +95,24 @@ public partial class MainWindow : Window
         if (_searchWebViewReady) YoutubeSearchView.CoreWebView2.Reload();
     }
 
-    private void PrepareNext_Click(object sender, RoutedEventArgs e)
+    private async void PrepareNext_Click(object sender, RoutedEventArgs e)
     {
-        var currentUrl = YoutubeSearchView.Source?.ToString() ?? "";
+        if (!_searchWebViewReady) return;
+        string currentUrl;
+        try
+        {
+            var encodedUrl = await YoutubeSearchView.CoreWebView2.ExecuteScriptAsync("window.location.href");
+            currentUrl = JsonSerializer.Deserialize<string>(encodedUrl) ?? "";
+        }
+        catch { currentUrl = YoutubeSearchView.Source?.ToString() ?? ""; }
         var videoId = YouTubeLink.TryGetVideoId(currentUrl);
         if (videoId is null)
         {
-            System.Windows.MessageBox.Show("Abra a página do vídeo desejado na aba Próxima música antes de preparar a faixa.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Abra o vídeo desejado na aba Próxima música (não apenas a página de resultados) e tente preparar novamente.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
-        NextTrackText.Text = "Faixa preparada (" + videoId + "). A reprodução atual permanece intacta até você tocar em Tocar próxima.";
+        NextTrackText.Text = "Próxima faixa preparada (" + videoId + "). A música atual continua tocando até você selecionar Tocar próxima.";
         PlayNextButton.IsEnabled = true;
         StatusText.Text = "Próxima música preparada sem interromper a reprodução atual.";
     }
@@ -264,6 +271,7 @@ public partial class MainWindow : Window
     private async Task AddVideoToHistoryAsync(string videoId, string url)
     {
         string title = "Vídeo do YouTube";
+        string author = "";
         try
         {
             var endpoint = "https://www.youtube.com/oembed?url=" + Uri.EscapeDataString("https://www.youtube.com/watch?v=" + videoId) + "&format=json";
@@ -273,19 +281,22 @@ public partial class MainWindow : Window
                 using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
                 if (json.RootElement.TryGetProperty("title", out var titleElement))
                     title = titleElement.GetString() ?? title;
+                if (json.RootElement.TryGetProperty("author_name", out var authorElement))
+                    author = authorElement.GetString() ?? "";
             }
         }
         catch { title = "Vídeo do YouTube (" + videoId + ")"; }
 
-        if (_currentVideo?.VideoId == videoId) _currentVideo.Title = title;
+        var displayTitle = string.IsNullOrWhiteSpace(author) ? title : title + " — " + author;
+        if (_currentVideo?.VideoId == videoId) _currentVideo.Title = displayTitle;
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
         {
-            existing.Title = title;
+            existing.Title = displayTitle;
             existing.Url = url;
             existing.LastUsed = DateTime.Now;
         }
-        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = title, Url = url, LastUsed = DateTime.Now });
+        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, Url = url, LastUsed = DateTime.Now });
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
         SaveHistory();
         RefreshHistory();
