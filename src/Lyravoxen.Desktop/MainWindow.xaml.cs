@@ -352,7 +352,8 @@ public partial class MainWindow : Window
             }
 
             _cues.Clear();
-            _cues.AddRange(selected.Cues);
+            _cues.AddRange(selected.Cues.OrderBy(cue => cue.Seconds)
+                .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }));
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
@@ -1204,7 +1205,10 @@ public partial class MainWindow : Window
             _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = 0;
             _audioTimer.Start();
             _currentVideo = video;
-            _cues.Clear(); _cues.AddRange(video.Cues); CueList.ItemsSource = null; CueList.ItemsSource = _cues;
+            _cues.Clear();
+            _cues.AddRange(video.Cues.OrderBy(cue => cue.Seconds)
+                .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }));
+            CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             StatusText.Text = $"Reproduzindo offline: {video.Title} ({video.Format?.ToUpperInvariant()})";
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível reproduzir o áudio: " + ex.Message; }
