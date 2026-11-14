@@ -410,12 +410,44 @@ public partial class MainWindow : Window
 
     private void LoadHistory()
     {
+        var backupFile = _historyFile + ".bak";
         try
         {
-            if (File.Exists(_historyFile))
-                _history.AddRange(JsonSerializer.Deserialize<List<VideoHistoryItem>>(File.ReadAllText(_historyFile)) ?? new());
+            var sourceFile = File.Exists(_historyFile) ? _historyFile : backupFile;
+            if (File.Exists(sourceFile))
+            {
+                var loaded = JsonSerializer.Deserialize<List<VideoHistoryItem>>(File.ReadAllText(sourceFile)) ?? new();
+                _history.AddRange(loaded.Where(item => item is not null &&
+                    !string.IsNullOrWhiteSpace(item.VideoId) &&
+                    !string.IsNullOrWhiteSpace(item.Url))
+                    .GroupBy(item => item.VideoId, StringComparer.Ordinal)
+                    .Select(group => group.OrderByDescending(item => item.LastUsed).First())
+                    .OrderByDescending(item => item.LastUsed));
+                if (sourceFile == backupFile)
+                    StatusText.Text = "Histórico principal indisponível; cópia de segurança recuperada.";
+            }
         }
-        catch { _history.Clear(); }
+        catch
+        {
+            _history.Clear();
+            try
+            {
+                if (!File.Exists(backupFile)) throw new InvalidDataException("Cópia de segurança inexistente.");
+                var recovered = JsonSerializer.Deserialize<List<VideoHistoryItem>>(File.ReadAllText(backupFile)) ?? new();
+                _history.AddRange(recovered.Where(item => item is not null &&
+                    !string.IsNullOrWhiteSpace(item.VideoId) &&
+                    !string.IsNullOrWhiteSpace(item.Url))
+                    .GroupBy(item => item.VideoId, StringComparer.Ordinal)
+                    .Select(group => group.OrderByDescending(item => item.LastUsed).First())
+                    .OrderByDescending(item => item.LastUsed));
+                StatusText.Text = "Histórico recuperado da cópia de segurança. O arquivo principal foi preservado.";
+            }
+            catch
+            {
+                _history.Clear();
+                StatusText.Text = "Não foi possível ler o histórico nem sua cópia. Os arquivos originais foram preservados.";
+            }
+        }
         RefreshHistory();
     }
 
@@ -423,10 +455,20 @@ public partial class MainWindow : Window
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_historyFile)!);
-            File.WriteAllText(_historyFile, JsonSerializer.Serialize(_history, new JsonSerializerOptions { WriteIndented = true }));
+            var directory = Path.GetDirectoryName(_historyFile)!;
+            Directory.CreateDirectory(directory);
+            var tempFile = _historyFile + ".tmp";
+            var backupFile = _historyFile + ".bak";
+            var json = JsonSerializer.Serialize(_history, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(tempFile, json);
+            if (File.Exists(_historyFile))
+                File.Copy(_historyFile, backupFile, true);
+            File.Move(tempFile, _historyFile, true);
         }
-        catch (Exception ex) { StatusText.Text = "Não foi possível salvar o histórico: " + ex.Message; }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível salvar o histórico; o arquivo anterior foi preservado: " + ex.Message;
+        }
     }
 
     private void RefreshHistory()
