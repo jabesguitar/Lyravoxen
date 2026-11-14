@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using Lyravoxen.Integration;
@@ -257,6 +258,92 @@ public partial class MainWindow : Window
             SaveLibrary();
         }
         StatusText.Text = $"Frase adicionada em {seconds:0.0}s. Total: {_cues.Count}.";
+    }
+
+    private void ImportLyrics_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentVideo is null)
+        {
+            System.Windows.MessageBox.Show("Carregue primeiro um vídeo do YouTube ou selecione uma música offline.", "Importar letra", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        using var dialog = new System.Windows.Forms.OpenFileDialog
+        {
+            Title = "Selecione uma letra com marcações de tempo",
+            Filter = "Letras sincronizadas (*.lrc;*.srt)|*.lrc;*.srt",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+        try
+        {
+            var content = File.ReadAllText(dialog.FileName);
+            var imported = ParseTimedLyrics(content, Path.GetExtension(dialog.FileName));
+            if (imported.Count == 0)
+                throw new InvalidDataException("Não encontrei marcações de tempo válidas. Use um arquivo LRC ou SRT.");
+
+            _cues.Clear();
+            _cues.AddRange(imported.OrderBy(cue => cue.Seconds));
+            CueList.ItemsSource = null;
+            CueList.ItemsSource = _cues;
+            _lastAutomaticCue = -1;
+            _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+
+            foreach (var saved in _library.SelectMany(folder => folder.Videos)
+                         .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
+                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+
+            SaveLibrary();
+            StatusText.Text = $"Letra importada e preparada: {_cues.Count} frases sincronizadas.";
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show("Não foi possível importar a letra: " + ex.Message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private static List<LyricCue> ParseTimedLyrics(string content, string extension)
+    {
+        var result = new List<LyricCue>();
+        if (extension.Equals(".lrc", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var line in content.Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var matches = Regex.Matches(line, @"\\[(?<m>\\d{1,2}):(?<s>\\d{2})(?:[.:](?<f>\\d{1,3}))?\\]");
+                if (matches.Count == 0) continue;
+                var lyric = Regex.Replace(line, @"\\[[^\\]]+\\]", "").Trim();
+                if (string.IsNullOrWhiteSpace(lyric)) continue;
+                foreach (Match match in matches)
+                {
+                    var minutes = int.Parse(match.Groups["m"].Value, CultureInfo.InvariantCulture);
+                    var seconds = int.Parse(match.Groups["s"].Value, CultureInfo.InvariantCulture);
+                    var fraction = match.Groups["f"].Success ? match.Groups["f"].Value.PadRight(3, '0') : "0";
+                    var milliseconds = int.Parse(fraction, CultureInfo.InvariantCulture);
+                    result.Add(new LyricCue { Seconds = minutes * 60 + seconds + milliseconds / 1000d, Text = lyric });
+                }
+            }
+        }
+        else if (extension.Equals(".srt", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var block in Regex.Split(content, @"\\r?\\n\\s*\\r?\\n"))
+            {
+                var lines = block.Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries);
+                var timeLine = lines.FirstOrDefault(line => line.Contains("-->", StringComparison.Ordinal));
+                if (timeLine is null) continue;
+                var match = Regex.Match(timeLine, @"(?<h>\\d{2}):(?<m>\\d{2}):(?<s>\\d{2})[,.](?<f>\\d{3})");
+                if (!match.Success) continue;
+                var textStart = Array.IndexOf(lines, timeLine) + 1;
+                var lyric = string.Join(" ", lines.Skip(textStart)).Trim();
+                if (string.IsNullOrWhiteSpace(lyric)) continue;
+                var seconds = int.Parse(match.Groups["h"].Value, CultureInfo.InvariantCulture) * 3600
+                    + int.Parse(match.Groups["m"].Value, CultureInfo.InvariantCulture) * 60
+                    + int.Parse(match.Groups["s"].Value, CultureInfo.InvariantCulture)
+                    + int.Parse(match.Groups["f"].Value, CultureInfo.InvariantCulture) / 1000d;
+                result.Add(new LyricCue { Seconds = seconds, Text = lyric });
+            }
+        }
+        return result;
     }
 
     private void CueList_SelectionChanged(object sender, SelectionChangedEventArgs e)

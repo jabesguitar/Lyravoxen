@@ -33,11 +33,14 @@
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
        <TextBlock Grid.Row="1" Text="Cadastre cada frase com o tempo em segundos. Durante a reprodução, a frase correspondente será enviada automaticamente à projeção." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <ListBox x:Name="CueList" Grid.Row="2" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
-       <Grid Grid.Row="3" Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
-        <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
-        <Button Grid.Column="2" Content="Adicionar" Click="AddCue_Click"/>
-       </Grid>
+       <StackPanel Grid.Row="3" Margin="0,8,0,0">
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+         <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
+         <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
+         <Button Grid.Column="2" Content="Adicionar" Click="AddCue_Click"/>
+        </Grid>
+        <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
+       </StackPanel>
       </Grid>
      </TabItem>
      <TabItem Header="Histórico de vídeos">
