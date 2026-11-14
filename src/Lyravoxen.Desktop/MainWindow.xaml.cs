@@ -191,6 +191,7 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
+            _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastAutomaticCue = -1;
 
             // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
             var preparedVideo = _library.SelectMany(folder => folder.Videos)
@@ -521,7 +522,7 @@ public partial class MainWindow : Window
         {
             double currentSeconds;
             if (_isLocalAudioPlaying) currentSeconds = LocalAudioPlayer.Position.TotalSeconds;
-            else { var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("player.getCurrentTime()"); if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0) { StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente."; return; } }
+            else { var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("typeof player !== 'undefined' && player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : null"); if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0) { StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente."; return; } }
             var cueSeconds = Math.Max(0, currentSeconds);
             _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
             _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
