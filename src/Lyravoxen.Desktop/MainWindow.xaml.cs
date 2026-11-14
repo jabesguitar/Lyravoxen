@@ -123,11 +123,17 @@ public partial class MainWindow : Window
         return Regex.Replace(new string(chars).ToLowerInvariant(), @"[^a-z0-9]+", " ").Trim();
     }
 
+    private static bool ContainsMusicPhrase(string normalizedText, string normalizedPhrase)
+    {
+        if (string.IsNullOrWhiteSpace(normalizedText) || string.IsNullOrWhiteSpace(normalizedPhrase)) return false;
+        return (" " + normalizedText + " ").Contains(" " + normalizedPhrase + " ", StringComparison.Ordinal);
+    }
+
     private async Task TryLoadAutomaticLyricsAsync(string videoTitle)
     {
         try
         {
-            StatusText.Text = "Procurando letra e conferindo título e artista: " + videoTitle;
+            StatusText.Text = "Buscando letra; nenhuma será projetada sem conferência.";
             var endpoint = "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(videoTitle);
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
@@ -137,9 +143,9 @@ public partial class MainWindow : Window
                 StatusText.Text = "Não foi possível consultar o catálogo de letras (HTTP " + (int)response.StatusCode + ").";
                 return;
             }
+
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             if (json.RootElement.ValueKind != JsonValueKind.Array) return;
-
             var normalizedVideo = NormalizeMusicText(videoTitle);
             foreach (var item in json.RootElement.EnumerateArray())
             {
@@ -148,22 +154,28 @@ public partial class MainWindow : Window
                 var normalizedTrack = NormalizeMusicText(track);
                 var normalizedArtist = NormalizeMusicText(artist);
 
-                // Nunca aceitar apenas o primeiro resultado da busca. Exigir que o título da faixa
-                // esteja no título do vídeo e, quando informado pelo catálogo, que o artista também esteja.
-                if (string.IsNullOrWhiteSpace(normalizedTrack) ||
-                    !normalizedVideo.Contains(normalizedTrack, StringComparison.Ordinal) ||
-                    (!string.IsNullOrWhiteSpace(normalizedArtist) &&
-                     !normalizedVideo.Contains(normalizedArtist, StringComparison.Ordinal)))
+                // Correspondência por palavras inteiras para título E artista. Sem ambos, não aceitar.
+                if (!ContainsMusicPhrase(normalizedVideo, normalizedTrack) ||
+                    !ContainsMusicPhrase(normalizedVideo, normalizedArtist))
                     continue;
-
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String) continue;
                 var lrc = synced.GetString();
                 if (string.IsNullOrWhiteSpace(lrc)) continue;
-                var imported = ParseTimedLyrics(lrc, ".lrc");
+                var imported = ParseTimedLyrics(lrc, ".lrc").OrderBy(cue => cue.Seconds).ToList();
                 if (imported.Count < 2) continue;
 
+                var preview = string.Join(Environment.NewLine, imported.Take(5).Select(cue => cue.Text));
+                var confirmation = System.Windows.MessageBox.Show(
+                    "O catálogo encontrou esta possível correspondência:\n\n" +
+                    "Vídeo: " + videoTitle + "\nFaixa: " + track + "\nArtista: " + artist +
+                    "\n\nPrévia da letra:\n" + preview +
+                    "\n\nA letra corresponde exatamente à música que você carregou? Só carregaremos após sua confirmação.",
+                    "Conferir letra antes de projetar", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (confirmation != MessageBoxResult.Yes) continue;
+
                 _cues.Clear();
-                _cues.AddRange(imported.OrderBy(cue => cue.Seconds));
+                _cues.AddRange(imported);
                 CueList.ItemsSource = null;
                 CueList.ItemsSource = _cues;
                 _lastAutomaticCue = -1;
@@ -174,10 +186,10 @@ public partial class MainWindow : Window
                         saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
                     SaveLibrary();
                 }
-                StatusText.Text = "Possível correspondência: " + artist + " — " + track + ". Confira a gravação e os tempos antes de projetar.";
+                StatusText.Text = "Letra confirmada por você: " + artist + " — " + track + ". Confira os tempos antes da apresentação.";
                 return;
             }
-            StatusText.Text = "Não encontrei correspondência segura de título e artista. Não carreguei nenhuma letra para evitar projetar a música errada.";
+            StatusText.Text = "Nenhuma letra foi carregada: não houve correspondência segura de título e artista confirmada.";
         }
         catch (TaskCanceledException) { StatusText.Text = "A busca de letras demorou demais. Tente novamente mais tarde."; }
         catch (HttpRequestException ex) { StatusText.Text = "Falha na busca de letras: " + ex.Message; }
