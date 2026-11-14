@@ -230,9 +230,15 @@ public partial class MainWindow : Window
         if (dialog.Saved) StatusText.Text = "Configuração do Holyrics salva. A conexão foi testada.";
     }
 
+    private void LineCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines)) _projection?.SetMaxLines(lines);
+    }
+
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
         if (_projection is null || !_projection.IsVisible) { _projection = new ProjectionWindow(); _projection.ShowOnOutputDisplay(); }
+        if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines)) _projection.SetMaxLines(lines);
         _projection.Activate();
     }
 

@@ -25,7 +25,22 @@ public partial class ProjectionWindow : Window
         WindowState = WindowState.Maximized;
     }
 
-    public void ShowLyric(string text) => LyricDisplay.Text = text;
+    private int _maxLines = 4;
+    public void SetMaxLines(int count) { _maxLines = Math.Clamp(count, 3, 5); LyricDisplay.MaxHeight = _maxLines * LyricDisplay.FontSize * 1.3; }
+    public void ShowLyric(string text) { LyricDisplay.Text = LimitLines(text, _maxLines); }
+    private static string LimitLines(string text, int maxLines)
+    {
+        var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var lines = new List<string>(); var current = "";
+        foreach (var word in words)
+        {
+            var candidate = string.IsNullOrEmpty(current) ? word : current + " " + word;
+            if (candidate.Length > 38 && current.Length > 0) { lines.Add(current); current = word; if (lines.Count >= maxLines) break; }
+            else current = candidate;
+        }
+        if (lines.Count < maxLines && current.Length > 0) lines.Add(current);
+        return string.Join(Environment.NewLine, lines);
+    }
 
     protected override void OnKeyDown(WpfKeyEventArgs e)
     {

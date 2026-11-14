@@ -29,11 +29,12 @@
    <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="8,0,0,0">
     <TabControl Background="{StaticResource Panel}" BorderThickness="0">
      <TabItem Header="Sincronização">
-      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
-       <TextBlock Grid.Row="1" Text="Cadastre cada frase com o tempo em segundos. Durante a reprodução, a frase correspondente será enviada automaticamente à projeção." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
-       <ListBox x:Name="CueList" Grid.Row="2" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
-       <StackPanel Grid.Row="3" Margin="0,8,0,0">
+       <TextBlock Grid.Row="1" Text="Escolha quantas linhas devem aparecer no telão. A projeção mantém a fonte grande e limita o texto por tela." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
+       <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="4,0,4,6"><TextBlock Text="Linhas no telão:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,8,0"/><ComboBox x:Name="LineCountBox" Width="76" SelectedIndex="1" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/></ComboBox></StackPanel>
+       <ListBox x:Name="CueList" Grid.Row="3" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
+       <StackPanel Grid.Row="4" Margin="0,8,0,0">
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
