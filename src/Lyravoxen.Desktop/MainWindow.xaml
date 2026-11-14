@@ -4,6 +4,11 @@
  xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
  Title="Lyravoxen" Height="860" Width="1440" MinHeight="600" MinWidth="900" WindowState="Maximized"
  WindowStyle="SingleBorderWindow" ResizeMode="CanResize" WindowStartupLocation="CenterScreen" Background="{StaticResource Bg}">
+ <Window.Resources>
+  <Style TargetType="{x:Type Button}"><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="Background" Value="#243E50"/><Setter Property="BorderBrush" Value="#36566A"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="13,8"/><Setter Property="Margin" Value="3"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type Button}"><Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#31566A"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#176E68"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.42"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+  <Style TargetType="{x:Type TextBox}"><Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#0D151D"/><Setter Property="BorderBrush" Value="#355064"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="3"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TextBox}"><Border x:Name="T" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7"><ScrollViewer x:Name="PART_ContentHost" Margin="1"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="T" Property="BorderBrush" Value="#26C6B8"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+  <Style TargetType="{x:Type ComboBox}"><Setter Property="Padding" Value="7,5"/><Setter Property="Margin" Value="3"/></Style>
+ </Window.Resources>
  <Grid Margin="8,10,8,8">
  <TabControl x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
   <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}"><Setter Property="MinHeight" Value="38"/><Setter Property="Padding" Value="16,8"/><Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="{StaticResource TextMuted}"/><Setter Property="Background" Value="{StaticResource Panel}"/></Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo"><Grid Margin="18">
@@ -13,7 +18,7 @@
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="0,0,0,12">
-   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="YoutubeUrlBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
     <Button Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button Grid.Column="2" Content="Abrir projeção" Background="#176E68" Click="OpenProjection_Click"/>
@@ -45,8 +50,10 @@
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
-         <Button Grid.Column="2" Content="Adicionar" Click="AddCue_Click"/>
+         <Button Grid.Column="2" Content="Adicionar tempo" Click="AddCue_Click"/>
         </Grid>
+        <Button Content="Marcar frase no tempo atual (adiantar 1,5 s)" Click="MarkCueAtCurrentTime_Click" Background="#176E68"/>
+        <TextBlock Text="Digite ou selecione a frase durante a reprodução e marque quando ela começar. A projeção será antecipada em 1,5 segundo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
         <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
        </StackPanel>
       </Grid>

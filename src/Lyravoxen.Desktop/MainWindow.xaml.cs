@@ -24,6 +24,8 @@ public partial class MainWindow : Window
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
+    private double _playerDurationSeconds;
+    private const double ProjectionLeadSeconds = 1.5;
     private int _lastPlayerState = -1;
     private bool _playerReady;
     private bool _webMessageHandlerAttached;
@@ -426,6 +428,7 @@ public partial class MainWindow : Window
             if (!root.TryGetProperty("seconds", out var secondsElement)) return;
             var seconds = secondsElement.GetDouble();
             var state = root.TryGetProperty("state", out var stateElement) ? stateElement.GetInt32() : -1;
+            if (root.TryGetProperty("duration", out var durationElement) && durationElement.TryGetDouble(out var durationValue)) _playerDurationSeconds = durationValue;
             if (state != _lastPlayerState)
             {
                 _lastPlayerState = state;
@@ -503,6 +506,25 @@ public partial class MainWindow : Window
         _ = SendLyricToHolyricsAsync(text);
     }
 
+    private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
+    {
+        var lyric = LyricTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(lyric)) { if (CueList.SelectedItem is LyricCue selected) lyric = selected.Text; else { StatusText.Text = "Digite uma frase ou selecione uma linha antes de marcar."; return; } }
+        try
+        {
+            double currentSeconds;
+            if (_isLocalAudioPlaying) currentSeconds = LocalAudioPlayer.Position.TotalSeconds;
+            else { var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("player.getCurrentTime()"); if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0) { StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente."; return; } }
+            var cueSeconds = Math.Max(0, currentSeconds - ProjectionLeadSeconds);
+            _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
+            _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
+            CueList.ItemsSource = null; CueList.ItemsSource = _cues;
+            if (_currentVideo is not null) { _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline)) saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); SaveLibrary(); }
+            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture); LyricTextBox.Clear(); _lastAutomaticCue = -1;
+            StatusText.Text = "Frase marcada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s; projeção antecipada em 1,5s.";
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
+    }
     private void AddCue_Click(object sender, RoutedEventArgs e)
     {
         if (!double.TryParse(SecondsBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) || seconds < 0 || string.IsNullOrWhiteSpace(LyricTextBox.Text))

@@ -25,15 +25,16 @@ function onYouTubeIframeAPIReady(){
     width:'100%', height:'100%', videoId:'__VIDEO_ID__',
     playerVars:{playsinline:1, controls:1, rel:0, origin:'https://lyravoxen.local'},
     events:{
-      onReady:function(){},
+      onReady:function(){window.chrome.webview.postMessage({type:'ready'});},
+      onStateChange:function(event){window.chrome.webview.postMessage({type:'state',state:event.data});},
       onError:function(event){window.chrome.webview.postMessage({type:'playerError',code:event.data});}
     }
   });
   window.setInterval(function(){
     if(player && typeof player.getCurrentTime === 'function'){
-      window.chrome.webview.postMessage({type:'time',seconds:player.getCurrentTime(),state:player.getPlayerState()});
+      window.chrome.webview.postMessage({type:'time',seconds:player.getCurrentTime(),duration:player.getDuration(),state:player.getPlayerState()});
     }
-  },50);
+  },200);
 }
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
