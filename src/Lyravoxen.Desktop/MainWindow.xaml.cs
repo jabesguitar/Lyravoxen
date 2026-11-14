@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     private readonly string _preferencesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "preferences.json");
     private bool _loadingPreferences;
     private string? _selectedOutputDeviceName;
+    private bool _displayChangeHandlerAttached;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     public MainWindow()
@@ -53,6 +54,13 @@ public partial class MainWindow : Window
         LoadHistory();
         LoadLibrary();
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += System_DisplaySettingsChanged;
+        _displayChangeHandlerAttached = true;
+        Closed += (_, _) =>
+        {
+            if (_displayChangeHandlerAttached)
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= System_DisplaySettingsChanged;
+        };
         Loaded += async (_, _) =>
         {
             try
@@ -680,6 +688,37 @@ public partial class MainWindow : Window
                 string.Equals(item.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase));
         if (match is not null) OutputDisplayBox.SelectedItem = match;
         else if (OutputDisplayBox.Items.Count > 0) OutputDisplayBox.SelectedIndex = Math.Min(1, OutputDisplayBox.Items.Count - 1);
+    }
+
+    private void System_DisplaySettingsChanged(object? sender, EventArgs e)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => System_DisplaySettingsChanged(sender, e)));
+            return;
+        }
+
+        if (!IsLoaded) return;
+        var previousLoadingState = _loadingPreferences;
+        _loadingPreferences = true;
+        PopulateOutputDisplays();
+        SelectOutputDisplay(_selectedOutputDeviceName);
+        _loadingPreferences = previousLoadingState;
+
+        if (_projection is { IsVisible: true })
+        {
+            var actualDevice = _projection.ShowOnOutputDisplay(_selectedOutputDeviceName);
+            _projection.RestoreCurrentDisplay();
+            var actualScreen = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(screen =>
+                string.Equals(screen.DeviceName, actualDevice, StringComparison.OrdinalIgnoreCase));
+            StatusText.Text = actualScreen is null
+                ? "A tela de saída foi desconectada. A projeção foi recuperada na tela disponível."
+                : "Alteração de monitores detectada. A projeção foi reposicionada e o conteúdo foi restaurado.";
+        }
+        else
+        {
+            StatusText.Text = "Monitores atualizados. Confira a tela de saída antes de projetar.";
+        }
     }
 
     private void OutputDisplay_SelectionChanged(object sender, SelectionChangedEventArgs e)

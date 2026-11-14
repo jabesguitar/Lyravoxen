@@ -34,6 +34,9 @@ public partial class ProjectionWindow : Window
     private int _maxLines = 4;
     private string _lastLyric = "";
     private bool _showingOverlay;
+    private ProjectionDisplayMode _displayMode = ProjectionDisplayMode.Lyric;
+
+    private enum ProjectionDisplayMode { Lyric, Standby, Ending, Blank }
 
     public void SetTheme(string theme)
     {
@@ -64,6 +67,7 @@ public partial class ProjectionWindow : Window
     {
         _lastLyric = text ?? "";
         _showingOverlay = false;
+        _displayMode = ProjectionDisplayMode.Lyric;
         LyricDisplay.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Text = LimitLines(_lastLyric, _maxLines);
@@ -73,6 +77,7 @@ public partial class ProjectionWindow : Window
     public void ShowStandby()
     {
         _showingOverlay = true;
+        _displayMode = ProjectionDisplayMode.Standby;
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "LYRAVOXEN";
         OverlaySubtitle.Text = "A apresentação começará em instantes";
@@ -82,6 +87,7 @@ public partial class ProjectionWindow : Window
     public void ShowEnding()
     {
         _showingOverlay = true;
+        _displayMode = ProjectionDisplayMode.Ending;
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "Obrigado pela presença";
         OverlaySubtitle.Text = "Que Deus abençoe a todos";
@@ -91,6 +97,7 @@ public partial class ProjectionWindow : Window
     // Tela limpa sem fechar a saída nem perder a frase atual.
     public void ClearDisplay()
     {
+        _displayMode = ProjectionDisplayMode.Blank;
         LyricDisplay.Text = "";
         OverlayPanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Visible;
@@ -98,6 +105,25 @@ public partial class ProjectionWindow : Window
     }
 
     public void RestoreDisplay() => ShowLyric(_lastLyric);
+
+    public void RestoreCurrentDisplay()
+    {
+        switch (_displayMode)
+        {
+            case ProjectionDisplayMode.Standby:
+                ShowStandby();
+                break;
+            case ProjectionDisplayMode.Ending:
+                ShowEnding();
+                break;
+            case ProjectionDisplayMode.Blank:
+                ClearDisplay();
+                break;
+            default:
+                ShowLyric(_lastLyric);
+                break;
+        }
+    }
 
     private void UpdateTextLayout(string text)
     {
