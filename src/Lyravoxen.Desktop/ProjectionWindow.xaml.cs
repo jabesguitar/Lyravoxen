@@ -27,7 +27,7 @@ public partial class ProjectionWindow : Window
 
     private int _maxLines = 4;
     public void SetMaxLines(int count) { _maxLines = Math.Clamp(count, 3, 5); LyricDisplay.MaxHeight = _maxLines * LyricDisplay.FontSize * 1.3; }
-    public void ShowLyric(string text) { LyricDisplay.Text = LimitLines(text, _maxLines); LyricDisplay.UpdateLayout(); }
+    public void ShowLyric(string text) { LyricDisplay.Text = LimitLines(text, _maxLines); }
     private static string LimitLines(string text, int maxLines)
     {
         var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);

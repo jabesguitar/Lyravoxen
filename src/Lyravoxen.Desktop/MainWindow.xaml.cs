@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private bool _playerReady;
     private bool _webMessageHandlerAttached;
     private bool _searchWebViewReady;
+    private int _browserTabNumber = 1;
     private string? _nextVideoUrl;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
@@ -55,15 +56,9 @@ public partial class MainWindow : Window
                     YoutubePlayer.CoreWebView2.WebMessageReceived += Player_WebMessageReceived;
                     _webMessageHandlerAttached = true;
                 }
-                await YoutubeSearchView.EnsureCoreWebView2Async();
-                YoutubeSearchView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
-                YoutubeSearchView.CoreWebView2.Settings.IsStatusBarEnabled = true;
-                YoutubeSearchView.CoreWebView2.NavigationCompleted += (_, _) =>
-                {
-                    if (YoutubeSearchView.Source is not null) YoutubeSearchBox.Text = YoutubeSearchView.Source.ToString();
-                };
-                _searchWebViewReady = true;
+                await InitializeBrowserViewAsync(YoutubeSearchView);
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
+                _searchWebViewReady = true;
                 StatusText.Text = "Player pronto. Use a aba Pesquisa YouTube para procurar a próxima música.";
 
             }
@@ -71,42 +66,89 @@ public partial class MainWindow : Window
         };
     }
 
+    private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
+
+    private async Task InitializeBrowserViewAsync(Microsoft.Web.WebView2.Wpf.WebView2 view)
+    {
+        await view.EnsureCoreWebView2Async();
+        view.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
+        view.CoreWebView2.Settings.IsStatusBarEnabled = true;
+        view.CoreWebView2.NavigationCompleted += (_, _) =>
+        {
+            if (ReferenceEquals(ActiveBrowserView, view) && view.Source is not null)
+                Dispatcher.Invoke(() => YoutubeSearchBox.Text = view.Source.ToString());
+        };
+    }
+
+    private async void NewBrowserTab_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var view = new Microsoft.Web.WebView2.Wpf.WebView2();
+            var tab = new TabItem { Header = "YouTube " + (++_browserTabNumber), Content = view };
+            BrowserTabs.Items.Add(tab);
+            BrowserTabs.SelectedItem = tab;
+            await InitializeBrowserViewAsync(view);
+            view.CoreWebView2.Navigate("https://www.youtube.com/");
+            _searchWebViewReady = true;
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível abrir nova aba: " + ex.Message; }
+    }
+
+    private void CloseBrowserTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (BrowserTabs.Items.Count <= 1) { StatusText.Text = "Mantenha pelo menos uma aba aberta."; return; }
+        var index = BrowserTabs.SelectedIndex;
+        BrowserTabs.Items.RemoveAt(index);
+        BrowserTabs.SelectedIndex = Math.Max(0, index - 1);
+    }
+
+    private void BrowserTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!ReferenceEquals(e.Source, BrowserTabs)) return;
+        var view = ActiveBrowserView;
+        _searchWebViewReady = view?.CoreWebView2 is not null;
+        if (view?.Source is not null) YoutubeSearchBox.Text = view.Source.ToString();
+    }
+
     private void YoutubeSearch_Click(object sender, RoutedEventArgs e)
     {
-        if (!_searchWebViewReady) { StatusText.Text = "A pesquisa ainda está inicializando."; return; }
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is null) { StatusText.Text = "A aba ainda está inicializando."; return; }
         var text = YoutubeSearchBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(text)) return;
-        if (YouTubeLink.TryGetVideoId(text) is not null)
-            YoutubeSearchView.CoreWebView2.Navigate(text);
-        else
-            YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(text));
+        if (YouTubeLink.TryGetVideoId(text) is not null) view.CoreWebView2.Navigate(text);
+        else view.CoreWebView2.Navigate("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(text));
     }
 
     private void YoutubeSearchBack_Click(object sender, RoutedEventArgs e)
     {
-        if (_searchWebViewReady && YoutubeSearchView.CoreWebView2.CanGoBack) YoutubeSearchView.CoreWebView2.GoBack();
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is not null && view.CoreWebView2.CanGoBack) view.CoreWebView2.GoBack();
     }
 
     private void YoutubeSearchForward_Click(object sender, RoutedEventArgs e)
     {
-        if (_searchWebViewReady && YoutubeSearchView.CoreWebView2.CanGoForward) YoutubeSearchView.CoreWebView2.GoForward();
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is not null && view.CoreWebView2.CanGoForward) view.CoreWebView2.GoForward();
     }
 
     private void YoutubeSearchRefresh_Click(object sender, RoutedEventArgs e)
     {
-        if (_searchWebViewReady) YoutubeSearchView.CoreWebView2.Reload();
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is not null) view.CoreWebView2.Reload();
     }
-
     private async void PrepareNext_Click(object sender, RoutedEventArgs e)
     {
-        if (!_searchWebViewReady) return;
+        var browser = ActiveBrowserView;
+        if (browser?.CoreWebView2 is null) return;
         string currentUrl;
         try
         {
-            var encodedUrl = await YoutubeSearchView.CoreWebView2.ExecuteScriptAsync("window.location.href");
+            var encodedUrl = await browser.CoreWebView2.ExecuteScriptAsync("window.location.href");
             currentUrl = JsonSerializer.Deserialize<string>(encodedUrl) ?? "";
         }
-        catch { currentUrl = YoutubeSearchView.Source?.ToString() ?? ""; }
+        catch { currentUrl = browser.Source?.ToString() ?? ""; }
         var videoId = YouTubeLink.TryGetVideoId(currentUrl);
         if (videoId is null)
         {
