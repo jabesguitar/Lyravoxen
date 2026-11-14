@@ -36,7 +36,7 @@
    <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="8,0,0,0">
     <TabControl Background="{StaticResource Panel}" BorderThickness="0">
      <TabItem Header="Sincronização">
-      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
        <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -49,6 +49,7 @@
         <StackPanel>
          <TextBlock Text="PRÉVIA DO TELÃO" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="0,0,0,5"/>
          <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="42" VerticalAlignment="Center"/>
+         <TextBlock x:Name="NextProjectionPreviewText" Text="Próxima: —" Foreground="{StaticResource TextMuted}" FontSize="12" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"/>
         </StackPanel>
        </Border>
        <ListBox x:Name="CueList" Grid.Row="5" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
@@ -58,13 +59,13 @@
         <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#176E68"/>
         <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
        </UniformGrid>
-       <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4">
+       <UniformGrid Grid.Row="7" Columns="4" Margin="2,2,2,4">
         <Button Content="Editar selecionada" Click="EditCue_Click"/>
         <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
         <Button Content="Excluir frase" Click="DeleteCue_Click"/>
         <Button Content="↑ / ↓ Reordenar" Click="MoveCue_Click"/>
        </UniformGrid>
-       <StackPanel Grid.Row="7" Margin="0,8,0,0">
+       <StackPanel Grid.Row="8" Margin="0,8,0,0">
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>

@@ -566,6 +566,12 @@ public partial class MainWindow : Window
         _currentProjectedLyric = safeText;
         if (ProjectionPreviewText is not null)
             ProjectionPreviewText.Text = string.IsNullOrWhiteSpace(safeText) ? "Aguardando a próxima frase..." : safeText;
+        var activeIndex = _manualProjectionMode ? _manualCueIndex : _lastAutomaticCue;
+        var nextIndex = activeIndex + 1;
+        if (NextProjectionPreviewText is not null)
+            NextProjectionPreviewText.Text = nextIndex >= 0 && nextIndex < _cues.Count
+                ? "Próxima: " + _cues[nextIndex].Text
+                : "Próxima: —";
         if (_projection is { IsVisible: true })
             _projection.ShowLyric(safeText);
     }
