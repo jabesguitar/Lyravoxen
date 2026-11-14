@@ -825,6 +825,11 @@ public partial class MainWindow : Window
                 ResumeAutomaticProjection_Click(this, new RoutedEventArgs());
                 e.Handled = true;
                 break;
+            case System.Windows.Input.Key.F10:
+                _projection?.RestoreDisplay();
+                StatusText.Text = "Projeção restaurada.";
+                e.Handled = true;
+                break;
         }
     }
 

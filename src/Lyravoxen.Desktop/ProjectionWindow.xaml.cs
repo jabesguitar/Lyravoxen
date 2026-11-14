@@ -27,6 +27,7 @@ public partial class ProjectionWindow : Window
 
     private const double BaseFontSize = 48;
     private int _maxLines = 4;
+    private string _lastLyric = "";
 
     public void SetMaxLines(int count)
     {
@@ -36,9 +37,19 @@ public partial class ProjectionWindow : Window
 
     public void ShowLyric(string text)
     {
-        LyricDisplay.Text = LimitLines(text ?? "", _maxLines);
+        _lastLyric = text ?? "";
+        LyricDisplay.Text = LimitLines(_lastLyric, _maxLines);
         UpdateTextLayout(LyricDisplay.Text);
     }
+
+    // Tela limpa sem fechar a saída nem perder a frase atual.
+    public void ClearDisplay()
+    {
+        LyricDisplay.Text = "";
+        UpdateTextLayout("");
+    }
+
+    public void RestoreDisplay() => ShowLyric(_lastLyric);
 
     private void UpdateTextLayout(string text)
     {
@@ -88,8 +99,8 @@ public partial class ProjectionWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
-            WindowState = WindowState.Normal;
-            Close();
+            ClearDisplay();
+            e.Handled = true;
         }
         base.OnKeyDown(e);
     }
