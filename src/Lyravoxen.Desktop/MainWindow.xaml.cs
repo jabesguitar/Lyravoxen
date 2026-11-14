@@ -1004,12 +1004,29 @@ public partial class MainWindow : Window
 
     private void LoadLibrary()
     {
+        var backupFile = _libraryFile + ".bak";
         try
         {
             if (File.Exists(_libraryFile))
                 _library.AddRange(JsonSerializer.Deserialize<List<LibraryFolder>>(File.ReadAllText(_libraryFile)) ?? new());
+            else if (File.Exists(backupFile))
+                _library.AddRange(JsonSerializer.Deserialize<List<LibraryFolder>>(File.ReadAllText(backupFile)) ?? new());
         }
-        catch { _library.Clear(); }
+        catch (Exception primaryError)
+        {
+            _library.Clear();
+            try
+            {
+                if (!File.Exists(backupFile)) throw;
+                _library.AddRange(JsonSerializer.Deserialize<List<LibraryFolder>>(File.ReadAllText(backupFile)) ?? new());
+                StatusText.Text = "A biblioteca principal apresentou erro; os dados foram recuperados da cópia de segurança.";
+            }
+            catch
+            {
+                _library.Clear();
+                StatusText.Text = "Não foi possível ler a biblioteca nem sua cópia de segurança. Os arquivos originais foram preservados.";
+            }
+        }
         RefreshFolders();
     }
 
@@ -1017,10 +1034,21 @@ public partial class MainWindow : Window
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_libraryFile)!);
-            File.WriteAllText(_libraryFile, JsonSerializer.Serialize(_library, new JsonSerializerOptions { WriteIndented = true }));
+            var directory = Path.GetDirectoryName(_libraryFile)!;
+            Directory.CreateDirectory(directory);
+            var tempFile = _libraryFile + ".tmp";
+            var backupFile = _libraryFile + ".bak";
+            var json = JsonSerializer.Serialize(_library, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(tempFile, json);
+            // Só substitui o arquivo principal depois que a nova versão foi gravada por completo.
+            if (File.Exists(_libraryFile))
+                File.Copy(_libraryFile, backupFile, true);
+            File.Move(tempFile, _libraryFile, true);
         }
-        catch (Exception ex) { StatusText.Text = "Não foi possível salvar a biblioteca: " + ex.Message; }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível salvar a biblioteca; o arquivo anterior foi preservado: " + ex.Message;
+        }
     }
 
     private void RefreshFolders(string? selectFolderId = null)
