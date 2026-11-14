@@ -46,7 +46,7 @@ public partial class MainWindow : Window
         var videoId = YouTubeLink.TryGetVideoId(YoutubeUrlBox.Text);
         if (videoId is null)
         {
-            MessageBox.Show("Cole um link válido de vídeo do YouTube.", "Lyravoxen",
+            System.Windows.MessageBox.Show("Cole um link válido de vídeo do YouTube.", "Lyravoxen",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -110,7 +110,7 @@ public partial class MainWindow : Window
         if (!double.TryParse(SecondsBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds)
             || seconds < 0 || string.IsNullOrWhiteSpace(LyricTextBox.Text))
         {
-            MessageBox.Show("Informe o tempo em segundos (ex.: 12.5) e o texto da frase.",
+            System.Windows.MessageBox.Show("Informe o tempo em segundos (ex.: 12.5) e o texto da frase.",
                 "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
