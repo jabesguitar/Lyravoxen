@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text;
 
 namespace Lyravoxen.Integration;
 
@@ -30,7 +31,7 @@ public sealed class HolyricsClient
         if (settings is null || string.IsNullOrWhiteSpace(text)) return;
 
         var url = BuildUrl(settings, "ShowQuickPresentation");
-        using var response = await Http.PostAsJsonAsync(url, new { text });
+        using var response = await PostJsonWithContentLengthAsync(url, new { text });
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
@@ -43,7 +44,7 @@ public sealed class HolyricsClient
     private static async Task CheckPermissionAsync(Settings settings, string action)
     {
         var url = BuildUrl(settings, "CheckPermissions");
-        using var response = await Http.PostAsJsonAsync(url, new { actions = action });
+        using var response = await PostJsonWithContentLengthAsync(url, new { actions = action });
         var body = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
@@ -52,6 +53,22 @@ public sealed class HolyricsClient
             throw new InvalidOperationException("O Holyrics não retornou confirmação. Confira se o API Server Local está ativo na porta informada.");
 
         EnsureApiSuccess(body);
+    }
+
+    private static async Task<HttpResponseMessage> PostJsonWithContentLengthAsync<T>(string url, T payload)
+    {
+        var json = JsonSerializer.Serialize(payload);
+        var bytes = Encoding.UTF8.GetBytes(json);
+        var content = new ByteArrayContent(bytes);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        content.Headers.ContentLength = bytes.Length;
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Version = new Version(1, 1),
+            VersionPolicy = HttpVersionPolicy.RequestVersionExact,
+            Content = content
+        };
+        return await Http.SendAsync(request);
     }
 
     private static string BuildUrl(Settings settings, string action) =>
