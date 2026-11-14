@@ -26,9 +26,29 @@ public partial class ProjectionWindow : Window
     }
 
     private const double BaseFontSize = 48;
+    private string _themeName = "Noturno";
     private int _maxLines = 4;
     private string _lastLyric = "";
     private bool _showingOverlay;
+
+    public void SetTheme(string theme)
+    {
+        _themeName = theme;
+        var background = theme switch
+        {
+            "Clássico" => System.Windows.Media.Color.FromRgb(0, 0, 0),
+            "Âmbar" => System.Windows.Media.Color.FromRgb(24, 17, 10),
+            _ => System.Windows.Media.Color.FromRgb(8, 13, 18)
+        };
+        var foreground = theme == "Âmbar"
+            ? System.Windows.Media.Color.FromRgb(255, 221, 160)
+            : System.Windows.Media.Colors.White;
+        Background = new System.Windows.Media.SolidColorBrush(background);
+        LyricDisplay.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
+        OverlayTitle.Foreground = new System.Windows.Media.SolidColorBrush(
+            theme == "Âmbar" ? System.Windows.Media.Color.FromRgb(255, 184, 77) : System.Windows.Media.Color.FromRgb(38, 198, 184));
+        OverlaySubtitle.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
+    }
 
     public void SetMaxLines(int count)
     {

@@ -519,6 +519,12 @@ public partial class MainWindow : Window
         if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines)) _projection?.SetMaxLines(lines);
     }
 
+    private void ProjectionTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_projection is null || ProjectionThemeBox?.SelectedItem is not ComboBoxItem item) return;
+        _projection.SetTheme(item.Content?.ToString() ?? "Noturno");
+    }
+
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
         EnsureProjectionWindow();
@@ -534,6 +540,8 @@ public partial class MainWindow : Window
         }
         if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines))
             _projection.SetMaxLines(lines);
+        if (ProjectionThemeBox?.SelectedItem is ComboBoxItem theme)
+            _projection.SetTheme(theme.Content?.ToString() ?? "Noturno");
         // Ao abrir/reabrir a saída, recuperar imediatamente a frase que já está no ar.
         _projection.ShowLyric(_currentProjectedLyric);
     }
