@@ -1,0 +1,14 @@
+<Window x:Class="Lyravoxen.ProjectionWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Lyravoxen — Projeção" Width="1280" Height="720"
+ WindowStartupLocation="Manual" WindowStyle="None" Background="#080D12">
+ <Grid>
+  <TextBlock x:Name="LyricDisplay" Text=""
+   Foreground="White" FontSize="48" FontWeight="SemiBold"
+   TextAlignment="Center" TextWrapping="Wrap"
+   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="90"/>
+  <TextBlock Text="LYRAVOXEN" Foreground="#527080" FontSize="13"
+   HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20"/>
+ </Grid>
+</Window>

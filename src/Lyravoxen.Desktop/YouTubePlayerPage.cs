@@ -1,0 +1,41 @@
+namespace Lyravoxen;
+
+internal static class YouTubePlayerPage
+{
+    public static string Build(string videoId) => $$"""
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;width:100%;height:100%;background:#080d12;overflow:hidden}
+#player{width:100%;height:100%}
+</style>
+</head>
+<body>
+<div id="player"></div>
+<script>
+var player;
+function onYouTubeIframeAPIReady(){
+  player = new YT.Player('player', {
+    width:'100%', height:'100%', videoId:'{{videoId}}',
+    playerVars:{playsinline:1, controls:1, rel:0},
+    events:{onReady:function(){}, onStateChange:function(){}}
+  });
+  window.setInterval(function(){
+    if(player && typeof player.getCurrentTime === 'function'){
+      window.chrome.webview.postMessage({
+        type:'time',
+        seconds:player.getCurrentTime(),
+        state:player.getPlayerState()
+      });
+    }
+  },250);
+}
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
+""";
+}
