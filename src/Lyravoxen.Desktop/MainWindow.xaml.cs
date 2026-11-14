@@ -20,7 +20,7 @@ public partial class MainWindow : Window
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
-    private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(30) };
+    private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
@@ -898,6 +898,16 @@ public partial class MainWindow : Window
         PublishProjectionOnly("");
         _lastAutomaticCue = -1;
         StatusText.Text = "Áudio offline finalizado.";
+    }
+
+    private void LocalAudioPlayer_MediaFailed(object sender, ExceptionRoutedEventArgs e)
+    {
+        _audioTimer.Stop();
+        _isLocalAudioPlaying = false;
+        PublishProjectionOnly("");
+        _lastAutomaticCue = -1;
+        var detail = e.ErrorException?.Message ?? "Falha desconhecida ao abrir o arquivo.";
+        StatusText.Text = "Não foi possível decodificar o áudio: " + detail;
     }
 
     private static string? PromptForText(string title, string label, string initialValue = "")
