@@ -801,8 +801,10 @@ public partial class MainWindow : Window
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         // Não interceptar atalhos enquanto o operador digita ou navega no navegador incorporado.
-        if (e.OriginalSource is TextBox or ComboBox or System.Windows.Controls.Primitives.TextBoxBase ||
-            e.OriginalSource is Microsoft.Web.WebView2.Wpf.WebView2)
+        if (e.OriginalSource is System.Windows.Controls.TextBox or
+            System.Windows.Controls.ComboBox or
+            System.Windows.Controls.Primitives.TextBoxBase or
+            Microsoft.Web.WebView2.Wpf.WebView2)
             return;
 
         switch (e.Key)
