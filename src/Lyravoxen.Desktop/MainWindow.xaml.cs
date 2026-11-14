@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     private bool _searchWebViewReady;
     private int _browserTabNumber = 1;
     private string? _nextVideoUrl;
+    private string? _pendingQueueVideoId;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
@@ -1289,7 +1290,7 @@ public partial class MainWindow : Window
             else if (File.Exists(backupFile))
                 _library.AddRange(JsonSerializer.Deserialize<List<LibraryFolder>>(File.ReadAllText(backupFile)) ?? new());
         }
-        catch (Exception primaryError)
+        catch
         {
             _library.Clear();
             try

@@ -33,7 +33,6 @@ public partial class ProjectionWindow : Window
     private string _themeName = "Noturno";
     private int _maxLines = 4;
     private string _lastLyric = "";
-    private bool _showingOverlay;
     private ProjectionDisplayMode _displayMode = ProjectionDisplayMode.Lyric;
 
     private enum ProjectionDisplayMode { Lyric, Standby, Ending, Blank }
@@ -66,7 +65,6 @@ public partial class ProjectionWindow : Window
     public void ShowLyric(string text)
     {
         _lastLyric = text ?? "";
-        _showingOverlay = false;
         _displayMode = ProjectionDisplayMode.Lyric;
         LyricDisplay.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Collapsed;
@@ -76,7 +74,6 @@ public partial class ProjectionWindow : Window
 
     public void ShowStandby()
     {
-        _showingOverlay = true;
         _displayMode = ProjectionDisplayMode.Standby;
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "LYRAVOXEN";
