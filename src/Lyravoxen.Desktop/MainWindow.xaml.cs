@@ -16,6 +16,7 @@ namespace Lyravoxen;
 public partial class MainWindow : Window
 {
     private ProjectionWindow? _projection;
+    private string _currentProjectedLyric = "";
     private readonly List<LyricCue> _cues = new();
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
@@ -527,6 +528,8 @@ public partial class MainWindow : Window
         }
         if (LineCountBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var lines))
             _projection.SetMaxLines(lines);
+        // Ao abrir/reabrir a saída, recuperar imediatamente a frase que já está no ar.
+        _projection.ShowLyric(_currentProjectedLyric);
     }
 
     private void TestProjection_Click(object sender, RoutedEventArgs e)
@@ -557,6 +560,7 @@ public partial class MainWindow : Window
     private void PublishProjectionOnly(string text)
     {
         var safeText = text ?? "";
+        _currentProjectedLyric = safeText;
         if (ProjectionPreviewText is not null)
             ProjectionPreviewText.Text = string.IsNullOrWhiteSpace(safeText) ? "Aguardando a próxima frase..." : safeText;
         if (_projection is { IsVisible: true })
