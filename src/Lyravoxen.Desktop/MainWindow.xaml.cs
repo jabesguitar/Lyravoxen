@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private bool _manualProjectionMode;
     private int _manualCueIndex = -1;
     private double _playerDurationSeconds;
+    private double _lastKnownPlaybackSeconds;
     private const double ProjectionLeadSeconds = 1.5;
     private int _lastPlayerState = -1;
     private bool _playerReady;
@@ -195,7 +196,7 @@ public partial class MainWindow : Window
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
-            _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastAutomaticCue = -1;
+            _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastKnownPlaybackSeconds = 0; _lastAutomaticCue = -1;
             _manualProjectionMode = false; _manualCueIndex = -1;
 
             // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
@@ -474,6 +475,8 @@ public partial class MainWindow : Window
             if (type.GetString() != "time") return;
             if (!root.TryGetProperty("seconds", out var secondsElement)) return;
             var seconds = secondsElement.GetDouble();
+            if (!double.IsFinite(seconds) || seconds < 0) return;
+            _lastKnownPlaybackSeconds = seconds;
             var state = root.TryGetProperty("state", out var stateElement) ? stateElement.GetInt32() : -1;
             if (root.TryGetProperty("duration", out var durationElement) && durationElement.TryGetDouble(out var durationValue)) _playerDurationSeconds = durationValue;
             if (state != _lastPlayerState)
@@ -816,14 +819,11 @@ public partial class MainWindow : Window
 
     private double GetPlaybackSeconds()
     {
-        if (_isLocalAudioPlaying) return LocalAudioPlayer.Position.TotalSeconds;
-        if (!_playerReady || YoutubePlayer.CoreWebView2 is null) return 0;
-        try
-        {
-            var encoded = YoutubePlayer.CoreWebView2.ExecuteScriptAsync("typeof player !== 'undefined' && player ? player.getCurrentTime() : 0").GetAwaiter().GetResult();
-            return double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) ? seconds : 0;
-        }
-        catch { return 0; }
+        // Use o último relógio recebido pelo evento assíncrono do player.
+        // Não bloquear a thread da interface aguardando JavaScript do WebView2.
+        if (_isLocalAudioPlaying)
+            return Math.Max(0, LocalAudioPlayer.Position.TotalSeconds);
+        return Math.Max(0, _lastKnownPlaybackSeconds);
     }
 
     private void ProjectSelectedCue_Click(object sender, RoutedEventArgs e)
@@ -1040,6 +1040,7 @@ public partial class MainWindow : Window
             LocalAudioPlayer.Play();
             _isLocalAudioPlaying = true;
             _lastAutomaticCue = -1;
+            _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = 0;
             _audioTimer.Start();
             _currentVideo = video;
             _cues.Clear(); _cues.AddRange(video.Cues); CueList.ItemsSource = null; CueList.ItemsSource = _cues;
@@ -1052,6 +1053,7 @@ public partial class MainWindow : Window
     {
         if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode) return;
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
+        _lastKnownPlaybackSeconds = seconds;
         var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
