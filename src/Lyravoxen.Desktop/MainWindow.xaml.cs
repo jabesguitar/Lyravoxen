@@ -190,6 +190,7 @@ public partial class MainWindow : Window
         try
         {
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
+            PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
             _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastAutomaticCue = -1;
 
@@ -435,7 +436,12 @@ public partial class MainWindow : Window
                 _lastPlayerState = state;
                 if (state == 1) Dispatcher.Invoke(() => StatusText.Text = _playerReady ? "YouTube tocando. Sincronização ativa." : "YouTube tocando; aguardando confirmação do player.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
-                else if (state == 0) Dispatcher.Invoke(() => StatusText.Text = "Reprodução do YouTube finalizada.");
+                else if (state == 0) Dispatcher.Invoke(() =>
+                {
+                    PublishProjectionOnly("");
+                    _lastAutomaticCue = -1;
+                    StatusText.Text = "Reprodução do YouTube finalizada.";
+                });
             }
             if (state != 1 || _cues.Count == 0) return;
             var cueIndex = FindActiveCue(seconds);
@@ -507,11 +513,17 @@ public partial class MainWindow : Window
         return _cues.FindLastIndex(cue => cue.Seconds <= projectedTime);
     }
 
+    private void PublishProjectionOnly(string text)
+    {
+        if (_projection is { IsVisible: true }) _projection.ShowLyric(text ?? "");
+    }
+
     private void PublishLyric(string text)
     {
-        // Texto vazio limpa a projeção quando ainda não há frase ou a música termina.
-        if (_projection is { IsVisible: true }) _projection.ShowLyric(text ?? "");
-        _ = SendLyricToHolyricsAsync(text ?? "");
+        PublishProjectionOnly(text);
+        // A API do Holyrics recebe apenas letras válidas; texto vazio é usado só para limpar o telão local.
+        if (!string.IsNullOrWhiteSpace(text))
+            _ = SendLyricToHolyricsAsync(text);
     }
 
     private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
@@ -818,6 +830,7 @@ public partial class MainWindow : Window
         {
             if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
             _audioTimer.Stop();
+            PublishProjectionOnly("");
             YoutubePlayer.Visibility = Visibility.Collapsed;
             LocalAudioPlayer.Visibility = Visibility.Visible;
             LocalAudioPlayer.Source = new Uri(video.LocalPath);
@@ -847,7 +860,7 @@ public partial class MainWindow : Window
     {
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
-        PublishLyric("");
+        PublishProjectionOnly("");
         _lastAutomaticCue = -1;
         StatusText.Text = "Áudio offline finalizado.";
     }
