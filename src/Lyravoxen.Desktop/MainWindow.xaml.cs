@@ -265,7 +265,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            StatusText.Text = "Buscando letra para: " + trackName + " — " + artistName;
+            StatusText.Text = "Buscando letras e verificando correspondência: " + trackName + " — " + artistName;
             var query = Uri.EscapeDataString(trackName + " " + artistName);
             var endpoint = "https://lrclib.net/api/search?q=" + query;
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
@@ -276,54 +276,89 @@ public partial class MainWindow : Window
                 StatusText.Text = "Catálogo de letras indisponível (HTTP " + (int)response.StatusCode + ").";
                 return;
             }
+
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             if (json.RootElement.ValueKind != JsonValueKind.Array)
             {
                 StatusText.Text = "O catálogo não retornou uma lista de músicas.";
                 return;
             }
+
             var wantedTrack = NormalizeMusicText(trackName);
             var wantedArtist = NormalizeMusicText(artistName);
+            var candidates = new List<(double Score, string Track, string Artist, string Album, List<LyricCue> Cues)>();
             foreach (var item in json.RootElement.EnumerateArray())
             {
-                var foundTrack = item.TryGetProperty("trackName", out var tp) ? tp.GetString() : null;
-                var foundArtist = item.TryGetProperty("artistName", out var ap) ? ap.GetString() : null;
+                var foundTrack = item.TryGetProperty("trackName", out var tp) ? tp.GetString() ?? "" : "";
+                var foundArtist = item.TryGetProperty("artistName", out var ap) ? ap.GetString() ?? "" : "";
+                var foundAlbum = item.TryGetProperty("albumName", out var alp) ? alp.GetString() ?? "" : "";
                 var normTrack = NormalizeMusicText(foundTrack);
                 var normArtist = NormalizeMusicText(foundArtist);
-                if (!ContainsMusicPhrase(normTrack, wantedTrack) || !ContainsMusicPhrase(normArtist, wantedArtist))
+
+                // Não aceitar correspondência parcial: evitar letras de músicas homônimas ou intérpretes diferentes.
+                if (normTrack != wantedTrack || normArtist != wantedArtist)
                     continue;
-                if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String) continue;
+                if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String)
+                    continue;
                 var lrc = synced.GetString();
                 if (string.IsNullOrWhiteSpace(lrc)) continue;
                 var imported = ParseTimedLyrics(lrc, ".lrc").OrderBy(c => c.Seconds).ToList();
                 if (imported.Count < 2) continue;
-                var preview = string.Join(Environment.NewLine, imported.Take(6).Select(c => c.Text));
-                var confirmation = System.Windows.MessageBox.Show(
-                    "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
-                    "\nFaixa encontrada: " + foundTrack + "\nIntérprete: " + foundArtist +
-                    "\n\nPrévia:\n" + preview + "\n\nEsta é exatamente a gravação/letra desejada?",
-                    "Confirmar letra sincronizada", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (confirmation != MessageBoxResult.Yes) continue;
-                _cues.Clear();
-                _cues.AddRange(imported);
-                CueList.ItemsSource = null;
-                CueList.ItemsSource = _cues;
-                _lastAutomaticCue = -1;
-                if (_currentVideo is not null)
+
+                var duration = item.TryGetProperty("duration", out var durationElement) &&
+                    durationElement.ValueKind == JsonValueKind.Number ? durationElement.GetDouble() : 0;
+                var score = 100d;
+                if (duration > 0 && _playerDurationSeconds > 0)
                 {
-                    _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                    foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
-                        saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                    SaveLibrary();
+                    var difference = Math.Abs(duration - _playerDurationSeconds);
+                    score -= Math.Min(35, difference / Math.Max(1, _playerDurationSeconds) * 100);
                 }
-                StatusText.Text = "Letra sincronizada carregada: " + foundTrack + " — " + foundArtist + ". Confira os tempos com a gravação.";
+                candidates.Add((score, foundTrack, foundArtist, foundAlbum, imported));
+            }
+
+            if (candidates.Count == 0)
+            {
+                StatusText.Text = "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Confira os dados ou importe um LRC/SRT.";
                 return;
             }
-            StatusText.Text = "Nenhuma letra sincronizada com correspondência segura. Confira título/intérprete ou importe um LRC/SRT.";
+
+            var ordered = candidates.OrderByDescending(candidate => candidate.Score).ToList();
+            var selected = ordered[0];
+            var preview = string.Join(Environment.NewLine, selected.Cues.Take(8).Select(c => c.Text));
+            var durationNote = _playerDurationSeconds > 0
+                ? "\nDuração do vídeo: " + TimeSpan.FromSeconds(_playerDurationSeconds).ToString(@"mm\:ss")
+                : "";
+            var albumNote = string.IsNullOrWhiteSpace(selected.Album) ? "" : "\nÁlbum: " + selected.Album;
+            var confirmation = System.Windows.MessageBox.Show(
+                "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
+                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote +
+                "\n\nPrévia:\n" + preview +
+                "\n\nEsta é exatamente a gravação/letra desejada?",
+                "Confirmar letra sincronizada", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirmation != MessageBoxResult.Yes)
+            {
+                StatusText.Text = "Letra não aplicada. Nenhuma frase foi substituída.";
+                return;
+            }
+
+            _cues.Clear();
+            _cues.AddRange(selected.Cues);
+            CueList.ItemsSource = null;
+            CueList.ItemsSource = _cues;
+            _lastAutomaticCue = -1;
+            if (_currentVideo is not null)
+            {
+                _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
+                foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
+                    saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
+                SaveLibrary();
+            }
+            StatusText.Text = "Letra sincronizada confirmada: " + selected.Track + " — " + selected.Artist + ". Confira a sincronia com a gravação.";
         }
         catch (TaskCanceledException) { StatusText.Text = "A busca de letras excedeu o tempo limite."; }
         catch (HttpRequestException ex) { StatusText.Text = "Falha na busca de letras: " + ex.Message; }
         catch (JsonException) { StatusText.Text = "Resposta inválida do catálogo de letras."; }
+        catch (InvalidOperationException ex) { StatusText.Text = "Não foi possível interpretar os dados da letra: " + ex.Message; }
     }
 
     private async Task AddVideoToHistoryAsync(string videoId, string url)
