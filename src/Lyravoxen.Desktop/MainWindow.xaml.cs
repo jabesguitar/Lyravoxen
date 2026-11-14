@@ -361,11 +361,11 @@ public partial class MainWindow : Window
         var result = new List<LyricCue>();
         if (extension.Equals(".lrc", StringComparison.OrdinalIgnoreCase))
         {
-            foreach (var line in content.Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var line in content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var matches = Regex.Matches(line, @"\\[(?<m>\\d{1,2}):(?<s>\\d{2})(?:[.:](?<f>\\d{1,3}))?\\]");
+                var matches = Regex.Matches(line, @"\[(?<m>\d{1,2}):(?<s>\d{2})(?:[.:](?<f>\d{1,3}))?\]");
                 if (matches.Count == 0) continue;
-                var lyric = Regex.Replace(line, @"\\[[^\\]]+\\]", "").Trim();
+                var lyric = Regex.Replace(line, @"\[[^\]]+\]", "").Trim();
                 if (string.IsNullOrWhiteSpace(lyric)) continue;
                 foreach (Match match in matches)
                 {
@@ -379,12 +379,12 @@ public partial class MainWindow : Window
         }
         else if (extension.Equals(".srt", StringComparison.OrdinalIgnoreCase))
         {
-            foreach (var block in Regex.Split(content, @"\\r?\\n\\s*\\r?\\n"))
+            foreach (var block in Regex.Split(content, @"\r?\n\s*\r?\n"))
             {
-                var lines = block.Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries);
+                var lines = block.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
                 var timeLine = lines.FirstOrDefault(line => line.Contains("-->", StringComparison.Ordinal));
                 if (timeLine is null) continue;
-                var match = Regex.Match(timeLine, @"(?<h>\\d{2}):(?<m>\\d{2}):(?<s>\\d{2})[,.](?<f>\\d{3})");
+                var match = Regex.Match(timeLine, @"(?<h>\d{2}):(?<m>\d{2}):(?<s>\d{2})[,.](?<f>\d{3})");
                 if (!match.Success) continue;
                 var textStart = Array.IndexOf(lines, timeLine) + 1;
                 var lyric = string.Join(" ", lines.Skip(textStart)).Trim();
