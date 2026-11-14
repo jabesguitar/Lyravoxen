@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using Lyravoxen.Integration;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
-using Forms = System.Windows.Forms;
 
 namespace Lyravoxen;
 
@@ -27,13 +26,11 @@ public partial class MainWindow : Window
                 await YoutubePlayer.EnsureCoreWebView2Async();
                 YoutubePlayer.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 YoutubePlayer.CoreWebView2.Settings.IsStatusBarEnabled = false;
-
                 if (!_webMessageHandlerAttached)
                 {
                     YoutubePlayer.CoreWebView2.WebMessageReceived += Player_WebMessageReceived;
                     _webMessageHandlerAttached = true;
                 }
-
                 StatusText.Text = "Player pronto. Cole um link público do YouTube.";
             }
             catch (Exception ex)
@@ -52,19 +49,14 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-
         try
         {
             await YoutubePlayer.EnsureCoreWebView2Async();
-            var html = YouTubePlayerPage.Build(videoId);
-            YoutubePlayer.NavigateToString(html);
+            YoutubePlayer.NavigateToString(YouTubePlayerPage.Build(videoId));
             _lastAutomaticCue = -1;
             StatusText.Text = "Vídeo carregado. Dê play e cadastre os tempos das frases.";
         }
-        catch (Exception ex)
-        {
-            StatusText.Text = "Erro ao carregar o player: " + ex.Message;
-        }
+        catch (Exception ex) { StatusText.Text = "Erro ao carregar o player: " + ex.Message; }
     }
 
     private void Player_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -75,31 +67,38 @@ public partial class MainWindow : Window
             var root = message.RootElement;
             if (!root.TryGetProperty("type", out var type) || type.GetString() != "time") return;
             if (!root.TryGetProperty("seconds", out var secondsElement)) return;
-
             var seconds = secondsElement.GetDouble();
             var state = root.TryGetProperty("state", out var stateElement) ? stateElement.GetInt32() : -1;
             if (state != 1 || _cues.Count == 0) return;
-
             var cueIndex = _cues.FindLastIndex(cue => cue.Seconds <= seconds);
             if (cueIndex == _lastAutomaticCue) return;
-
             _lastAutomaticCue = cueIndex;
-            if (_projection is { IsVisible: true })
-                _projection.ShowLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
-            if (cueIndex >= 0)
-                _ = SendLyricToHolyricsAsync(_cues[cueIndex].Text);
+            var lyric = cueIndex >= 0 ? _cues[cueIndex].Text : "";
+            if (_projection is { IsVisible: true }) _projection.ShowLyric(lyric);
+            if (!string.IsNullOrWhiteSpace(lyric)) _ = SendLyricToHolyricsAsync(lyric);
         }
-        catch (JsonException)
+        catch (JsonException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    private async Task SendLyricToHolyricsAsync(string text)
+    {
+        try { await _holyrics.ShowTextAsync(text); }
+        catch (Exception ex)
         {
-            // Ignora mensagens incompletas ou inesperadas do player incorporado.
-        }
-        catch (InvalidOperationException)
-        {
-            // O player pode enviar uma mensagem durante a troca de vídeo.
+            Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message);
         }
     }
 
-    private async Task SendLyricToHolyricsAsync(string text)\n    {\n        try { await _holyrics.ShowTextAsync(text); }\n        catch (Exception ex) { Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message); }\n    }\n\n    private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)\n    {\n        var dialog = new HolyricsSettingsWindow(_holyrics) { Owner = this };\n        dialog.ShowDialog();\n        if (dialog.Saved) StatusText.Text = "Configuração do Holyrics salva. Use Testar conexão para validar o acesso.";\n    }\n\n    private void OpenProjection_Click(object sender, RoutedEventArgs e)
+    private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new HolyricsSettingsWindow(_holyrics) { Owner = this };
+        dialog.ShowDialog();
+        if (dialog.Saved)
+            StatusText.Text = "Configuração do Holyrics salva. A conexão foi testada.";
+    }
+
+    private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
         if (_projection is null || !_projection.IsVisible)
         {
@@ -118,7 +117,6 @@ public partial class MainWindow : Window
                 "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-
         _cues.Add(new LyricCue { Seconds = seconds, Text = LyricTextBox.Text.Trim() });
         _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
         CueList.ItemsSource = null;
@@ -130,6 +128,8 @@ public partial class MainWindow : Window
 
     private void CueList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (CueList.SelectedItem is LyricCue cue)\n        {\n            if (_projection is { IsVisible: true }) _projection.ShowLyric(cue.Text);\n            _ = SendLyricToHolyricsAsync(cue.Text);\n        }
+        if (CueList.SelectedItem is not LyricCue cue) return;
+        if (_projection is { IsVisible: true }) _projection.ShowLyric(cue.Text);
+        _ = SendLyricToHolyricsAsync(cue.Text);
     }
 }
