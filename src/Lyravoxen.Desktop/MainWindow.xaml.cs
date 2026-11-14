@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using Lyravoxen.Integration;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
 using Forms = System.Windows.Forms;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window
     private readonly List<LyricCue> _cues = new();
     private int _lastAutomaticCue = -1;
     private bool _webMessageHandlerAttached;
+    private readonly HolyricsClient _holyrics = new();
 
     public MainWindow()
     {
@@ -84,6 +86,8 @@ public partial class MainWindow : Window
             _lastAutomaticCue = cueIndex;
             if (_projection is { IsVisible: true })
                 _projection.ShowLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
+            if (cueIndex >= 0)
+                _ = SendLyricToHolyricsAsync(_cues[cueIndex].Text);
         }
         catch (JsonException)
         {
@@ -95,7 +99,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OpenProjection_Click(object sender, RoutedEventArgs e)
+    private async Task SendLyricToHolyricsAsync(string text)\n    {\n        try { await _holyrics.ShowTextAsync(text); }\n        catch (Exception ex) { Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message); }\n    }\n\n    private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)\n    {\n        var dialog = new HolyricsSettingsWindow(_holyrics) { Owner = this };\n        dialog.ShowDialog();\n        if (dialog.Saved) StatusText.Text = "Configuração do Holyrics salva. Use Testar conexão para validar o acesso.";\n    }\n\n    private void OpenProjection_Click(object sender, RoutedEventArgs e)
     {
         if (_projection is null || !_projection.IsVisible)
         {
@@ -126,7 +130,6 @@ public partial class MainWindow : Window
 
     private void CueList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (CueList.SelectedItem is LyricCue cue && _projection is { IsVisible: true })
-            _projection.ShowLyric(cue.Text);
+        if (CueList.SelectedItem is LyricCue cue)\n        {\n            if (_projection is { IsVisible: true }) _projection.ShowLyric(cue.Text);\n            _ = SendLyricToHolyricsAsync(cue.Text);\n        }
     }
 }

@@ -19,12 +19,13 @@
   </DockPanel>
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="0,0,0,12">
    <Grid>
-    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="YoutubeUrlBox" Grid.Column="0" VerticalContentAlignment="Center"
              ToolTip="Cole aqui o link do YouTube"/>
     <Button Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button Grid.Column="2" Content="Abrir projeção" Background="#176E68"
             Click="OpenProjection_Click"/>
+    <Button Grid.Column="3" Content="Holyrics" Click="HolyricsSettings_Click"/>
    </Grid>
   </Border>
   <Grid Grid.Row="2">
