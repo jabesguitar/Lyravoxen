@@ -115,11 +115,19 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Erro ao carregar o player: " + ex.Message; }
     }
 
+    private static string NormalizeMusicText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "";
+        var decomposed = value.Normalize(NormalizationForm.FormD);
+        var chars = decomposed.Where(ch => CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark).ToArray();
+        return Regex.Replace(new string(chars).ToLowerInvariant(), @"[^a-z0-9]+", " ").Trim();
+    }
+
     private async Task TryLoadAutomaticLyricsAsync(string videoTitle)
     {
         try
         {
-            StatusText.Text = "Procurando letra sincronizada para: " + videoTitle;
+            StatusText.Text = "Procurando letra e conferindo título e artista: " + videoTitle;
             var endpoint = "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(videoTitle);
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
@@ -131,13 +139,29 @@ public partial class MainWindow : Window
             }
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             if (json.RootElement.ValueKind != JsonValueKind.Array) return;
+
+            var normalizedVideo = NormalizeMusicText(videoTitle);
             foreach (var item in json.RootElement.EnumerateArray())
             {
+                var track = item.TryGetProperty("trackName", out var trackProp) ? trackProp.GetString() : null;
+                var artist = item.TryGetProperty("artistName", out var artistProp) ? artistProp.GetString() : null;
+                var normalizedTrack = NormalizeMusicText(track);
+                var normalizedArtist = NormalizeMusicText(artist);
+
+                // Nunca aceitar apenas o primeiro resultado da busca. Exigir que o título da faixa
+                // esteja no título do vídeo e, quando informado pelo catálogo, que o artista também esteja.
+                if (string.IsNullOrWhiteSpace(normalizedTrack) ||
+                    !normalizedVideo.Contains(normalizedTrack, StringComparison.Ordinal) ||
+                    (!string.IsNullOrWhiteSpace(normalizedArtist) &&
+                     !normalizedVideo.Contains(normalizedArtist, StringComparison.Ordinal)))
+                    continue;
+
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String) continue;
                 var lrc = synced.GetString();
                 if (string.IsNullOrWhiteSpace(lrc)) continue;
                 var imported = ParseTimedLyrics(lrc, ".lrc");
                 if (imported.Count < 2) continue;
+
                 _cues.Clear();
                 _cues.AddRange(imported.OrderBy(cue => cue.Seconds));
                 CueList.ItemsSource = null;
@@ -150,10 +174,10 @@ public partial class MainWindow : Window
                         saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
                     SaveLibrary();
                 }
-                StatusText.Text = "Letra sincronizada encontrada: " + _cues.Count + " frases. Confira se corresponde à gravação.";
+                StatusText.Text = "Possível correspondência: " + artist + " — " + track + ". Confira a gravação e os tempos antes de projetar.";
                 return;
             }
-            StatusText.Text = "Não encontrei letra sincronizada correspondente. Importe um arquivo LRC/SRT ou cadastre os tempos.";
+            StatusText.Text = "Não encontrei correspondência segura de título e artista. Não carreguei nenhuma letra para evitar projetar a música errada.";
         }
         catch (TaskCanceledException) { StatusText.Text = "A busca de letras demorou demais. Tente novamente mais tarde."; }
         catch (HttpRequestException ex) { StatusText.Text = "Falha na busca de letras: " + ex.Message; }
