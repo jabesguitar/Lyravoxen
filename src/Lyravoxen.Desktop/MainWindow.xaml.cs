@@ -15,6 +15,9 @@ public partial class MainWindow : Window
     private ProjectionWindow? _projection;
     private readonly List<LyricCue> _cues = new();
     private readonly List<VideoHistoryItem> _history = new();
+    private readonly List<LibraryFolder> _library = new();
+    private LibraryVideo? _currentVideo;
+    private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
     private bool _webMessageHandlerAttached;
     private bool _virtualHostMapped;
@@ -22,12 +25,14 @@ public partial class MainWindow : Window
     private readonly HolyricsClient _holyrics = new();
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
+    private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     public MainWindow()
     {
         InitializeComponent();
         LoadHistory();
+        LoadLibrary();
         Loaded += async (_, _) =>
         {
             try
@@ -74,6 +79,7 @@ public partial class MainWindow : Window
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             _lastAutomaticCue = -1;
             YoutubeUrlBox.Text = url;
+            _currentVideo = new LibraryVideo { VideoId = videoId, Url = url, Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube" };
             StatusText.Text = "Vídeo carregado. Consultando título...";
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
             StatusText.Text = "Vídeo carregado. Dê play e cadastre os tempos das frases.";
@@ -97,6 +103,7 @@ public partial class MainWindow : Window
         }
         catch { title = "Vídeo do YouTube (" + videoId + ")"; }
 
+        if (_currentVideo?.VideoId == videoId) _currentVideo.Title = title;
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
         {
@@ -224,6 +231,153 @@ public partial class MainWindow : Window
         if (CueList.SelectedItem is not LyricCue cue) return;
         if (_projection is { IsVisible: true }) _projection.ShowLyric(cue.Text);
         _ = SendLyricToHolyricsAsync(cue.Text);
+    }
+
+
+    private void LoadLibrary()
+    {
+        try
+        {
+            if (File.Exists(_libraryFile))
+                _library.AddRange(JsonSerializer.Deserialize<List<LibraryFolder>>(File.ReadAllText(_libraryFile)) ?? new());
+        }
+        catch { _library.Clear(); }
+        RefreshFolders();
+    }
+
+    private void SaveLibrary()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_libraryFile)!);
+            File.WriteAllText(_libraryFile, JsonSerializer.Serialize(_library, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível salvar a biblioteca: " + ex.Message; }
+    }
+
+    private void RefreshFolders(string? selectFolderId = null)
+    {
+        if (!IsInitialized) return;
+        _librarySelectionChanging = true;
+        LibraryFolderList.ItemsSource = null;
+        LibraryFolderList.ItemsSource = _library;
+        if (selectFolderId is not null)
+            LibraryFolderList.SelectedItem = _library.FirstOrDefault(f => f.Id == selectFolderId);
+        else if (LibraryFolderList.SelectedItem is null && _library.Count > 0)
+            LibraryFolderList.SelectedIndex = 0;
+        _librarySelectionChanging = false;
+        RefreshLibrarySongs();
+    }
+
+    private void RefreshLibrarySongs()
+    {
+        if (!IsInitialized) return;
+        var folder = LibraryFolderList.SelectedItem as LibraryFolder;
+        var search = LibrarySearchBox?.Text?.Trim() ?? "";
+        var songs = folder?.Videos ?? new List<LibraryVideo>();
+        var filtered = string.IsNullOrWhiteSpace(search)
+            ? songs
+            : songs.Where(v => v.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        _librarySelectionChanging = true;
+        LibrarySongList.ItemsSource = null;
+        LibrarySongList.ItemsSource = filtered;
+        _librarySelectionChanging = false;
+    }
+
+    private void LibraryFolder_SelectionChanged(object sender, SelectionChangedEventArgs e) => RefreshLibrarySongs();
+    private void LibrarySearch_TextChanged(object sender, TextChangedEventArgs e) => RefreshLibrarySongs();
+    private void LibrarySearch_Click(object sender, RoutedEventArgs e) => RefreshLibrarySongs();
+
+    private void CreateFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var name = PromptForText("Criar pasta", "Nome da nova pasta:");
+        if (string.IsNullOrWhiteSpace(name)) return;
+        if (_library.Any(f => string.Equals(f.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            System.Windows.MessageBox.Show("Já existe uma pasta com esse nome.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var folder = new LibraryFolder { Name = name.Trim() };
+        _library.Add(folder);
+        SaveLibrary();
+        RefreshFolders(folder.Id);
+        StatusText.Text = "Pasta criada: " + folder.Name;
+    }
+
+    private void RenameFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (LibraryFolderList.SelectedItem is not LibraryFolder folder) return;
+        var name = PromptForText("Renomear pasta", "Novo nome:", folder.Name);
+        if (string.IsNullOrWhiteSpace(name)) return;
+        folder.Name = name.Trim();
+        SaveLibrary();
+        RefreshFolders(folder.Id);
+    }
+
+    private void DeleteFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (LibraryFolderList.SelectedItem is not LibraryFolder folder) return;
+        var result = System.Windows.MessageBox.Show(
+            $"Excluir a pasta '{folder.Name}' e os atalhos de vídeos guardados nela? Os vídeos originais não serão apagados.",
+            "Confirmar exclusão", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes) return;
+        _library.Remove(folder);
+        SaveLibrary();
+        RefreshFolders();
+    }
+
+    private void AddCurrentVideoToFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
+        {
+            System.Windows.MessageBox.Show("Crie ou selecione uma pasta primeiro.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (_currentVideo is null)
+        {
+            System.Windows.MessageBox.Show("Carregue um vídeo do YouTube antes de adicioná-lo à pasta.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var video = folder.Videos.FirstOrDefault(v => v.VideoId == _currentVideo.VideoId);
+        if (video is null)
+            folder.Videos.Add(new LibraryVideo { VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, Url = _currentVideo.Url });
+        else
+        {
+            video.Title = _currentVideo.Title;
+            video.Url = _currentVideo.Url;
+        }
+        SaveLibrary();
+        RefreshLibrarySongs();
+        StatusText.Text = $"Vídeo adicionado à pasta '{folder.Name}'.";
+    }
+
+    private async void LibrarySong_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_librarySelectionChanging || LibrarySongList.SelectedItem is not LibraryVideo video) return;
+        LibrarySongList.SelectedItem = null;
+        await LoadVideoAsync(video.Url, true);
+    }
+
+    private static string? PromptForText(string title, string label, string initialValue = "")
+    {
+        var dialog = new Window
+        {
+            Title = title, Width = 390, Height = 165, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize, Owner = Application.Current.MainWindow,
+            Background = System.Windows.Media.Brushes.White
+        };
+        var panel = new StackPanel { Margin = new Thickness(14) };
+        panel.Children.Add(new TextBlock { Text = label, Margin = new Thickness(0, 0, 0, 8) });
+        var input = new TextBox { Text = initialValue, Height = 28, Padding = new Thickness(5) };
+        panel.Children.Add(input);
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
+        var ok = new Button { Content = "Salvar", Width = 80, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new Button { Content = "Cancelar", Width = 80, IsCancel = true };
+        ok.Click += (_, _) => dialog.DialogResult = true;
+        buttons.Children.Add(ok); buttons.Children.Add(cancel); panel.Children.Add(buttons);
+        dialog.Content = panel;
+        dialog.Loaded += (_, _) => { input.Focus(); input.SelectAll(); };
+        return dialog.ShowDialog() == true ? input.Text : null;
     }
 
     private sealed class VideoHistoryItem
