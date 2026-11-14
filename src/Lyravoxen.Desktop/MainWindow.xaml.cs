@@ -535,9 +535,9 @@ public partial class MainWindow : Window
         {
             EnsureProjectionWindow();
             const string testText = "TESTE DE PROJEÇÃO — LYRAVOXEN";
-            _projection!.ShowLyric(testText);
-            _projection.Activate();
-            StatusText.Text = "Teste enviado à janela própria do Lyravoxen. Se não aparecer no telão, verifique em qual monitor a janela abriu.";
+            PublishProjectionOnly(testText);
+            _projection!.Activate();
+            StatusText.Text = "Teste exibido na prévia e na janela de projeção. Confira o monitor de saída.";
         }
         catch (Exception ex)
         {
@@ -556,7 +556,11 @@ public partial class MainWindow : Window
 
     private void PublishProjectionOnly(string text)
     {
-        if (_projection is { IsVisible: true }) _projection.ShowLyric(text ?? "");
+        var safeText = text ?? "";
+        if (ProjectionPreviewText is not null)
+            ProjectionPreviewText.Text = string.IsNullOrWhiteSpace(safeText) ? "Aguardando a próxima frase..." : safeText;
+        if (_projection is { IsVisible: true })
+            _projection.ShowLyric(safeText);
     }
 
     private void PublishLyric(string text)

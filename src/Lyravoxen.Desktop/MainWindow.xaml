@@ -36,7 +36,7 @@
    <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="8,0,0,0">
     <TabControl Background="{StaticResource Panel}" BorderThickness="0">
      <TabItem Header="Sincronização">
-      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
        <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -45,8 +45,14 @@
         <Button Grid.Row="1" Grid.ColumnSpan="2" Content="Buscar letra sincronizada" Click="SearchLyrics_Click" Background="#176E68" Margin="0,4,0,0"/>
        </Grid>
        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,6"><TextBlock Text="Linhas no telão:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,8,0"/><ComboBox x:Name="LineCountBox" Width="76" SelectedIndex="1" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/></ComboBox></StackPanel>
-       <ListBox x:Name="CueList" Grid.Row="4" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
-       <StackPanel Grid.Row="5" Margin="0,8,0,0">
+       <Border Grid.Row="4" Background="#0D151D" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="10" Margin="4,2,4,6">
+        <StackPanel>
+         <TextBlock Text="PRÉVIA DO TELÃO" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="0,0,0,5"/>
+         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="42" VerticalAlignment="Center"/>
+        </StackPanel>
+       </Border>
+       <ListBox x:Name="CueList" Grid.Row="5" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
+       <StackPanel Grid.Row="6" Margin="0,8,0,0">
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
