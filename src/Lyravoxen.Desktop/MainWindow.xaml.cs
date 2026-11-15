@@ -975,7 +975,7 @@ public partial class MainWindow : Window
     private void PublishLyric(string text)
     {
         PublishProjectionOnly(text);
-        // A API do Holyrics recebe apenas letras válidas; texto vazio é usado só para limpar o telão local.
+        // Texto vazio fecha a apresentação rápida no Holyrics e limpa a projeção local.
         _ = SendLyricToHolyricsAsync(text);
     }
 
