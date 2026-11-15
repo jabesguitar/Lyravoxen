@@ -255,19 +255,25 @@ public partial class MainWindow : Window
     }
     private async void PrepareNext_Click(object sender, RoutedEventArgs e)
     {
-        var browser = ActiveBrowserView;
-        if (browser?.CoreWebView2 is null) return;
-        string currentUrl;
-        try
-        {
-            var encodedUrl = await browser.CoreWebView2.ExecuteScriptAsync("window.location.href");
-            currentUrl = JsonSerializer.Deserialize<string>(encodedUrl) ?? "";
-        }
-        catch { currentUrl = browser.Source?.ToString() ?? ""; }
+        // Primeiro aceita um link colado diretamente na barra. Se não houver um link
+        // válido ali, usa o vídeo atualmente aberto no navegador interno.
+        var currentUrl = YoutubeSearchBox.Text.Trim();
         var videoId = YouTubeLink.TryGetVideoId(currentUrl);
+        var browser = ActiveBrowserView;
+        if (videoId is null && browser?.CoreWebView2 is not null)
+        {
+            try
+            {
+                var encodedUrl = await browser.CoreWebView2.ExecuteScriptAsync("window.location.href");
+                currentUrl = JsonSerializer.Deserialize<string>(encodedUrl) ?? "";
+            }
+            catch { currentUrl = browser.Source?.ToString() ?? ""; }
+            videoId = YouTubeLink.TryGetVideoId(currentUrl);
+        }
         if (videoId is null)
         {
-            System.Windows.MessageBox.Show("Abra o vídeo desejado na aba Próxima música (não apenas a página de resultados) e tente preparar novamente.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Cole um link direto de vídeo do YouTube na barra superior ou abra o vídeo desejado no navegador interno. Uma página de resultados não pode ser preparada como música.", "Preparar próxima música", MessageBoxButton.OK, MessageBoxImage.Information);
+            YoutubeSearchBox.Focus();
             return;
         }
         _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
