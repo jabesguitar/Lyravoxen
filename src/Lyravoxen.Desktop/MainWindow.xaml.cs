@@ -2049,6 +2049,7 @@ public partial class MainWindow : Window
         saved.Composer = MusicComposerBox.Text.Trim();
         saved.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         if (existing is null) folder.Videos.Add(saved);
+        if (_currentVideo is null || _currentVideo.IsLyricsOnly) _currentVideo = saved;
         SaveLibrary();
         RefreshLibrarySongs();
         StatusText.Text = $"Letra/hino '{title}' salva na pasta '{folder.Name}'. Ela poderá ser aberta novamente sem pesquisar e sem vídeo.";
@@ -2095,6 +2096,12 @@ public partial class MainWindow : Window
         LibrarySongList.SelectedItem = null;
         if (video.IsLyricsOnly)
         {
+            _audioTimer.Stop();
+            _isLocalAudioPlaying = false;
+            LocalAudioPlayer.Stop();
+            _ = StopYoutubeCaptureAsync();
+            if (YoutubePlayer.CoreWebView2 is not null)
+                _ = YoutubePlayer.CoreWebView2.ExecuteScriptAsync("if (typeof player !== 'undefined' && player) player.pauseVideo();");
             _currentVideo = video;
             MusicTrackBox.Text = video.SongTitle ?? video.Title;
             MusicArtistBox.Text = video.Performer ?? "";
