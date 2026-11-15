@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private LibraryVideo? _currentVideo;
     private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
     private bool _isLocalAudioPlaying;
+    private bool _playbackEnded;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
     private bool _manualProjectionMode;
@@ -218,6 +219,7 @@ public partial class MainWindow : Window
         try
         {
             _playerSessionId = Guid.NewGuid().ToString("N");
+            _playbackEnded = false;
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
@@ -588,7 +590,11 @@ public partial class MainWindow : Window
             if (type.GetString() == "state")
             {
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
-                Dispatcher.Invoke(() => StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : playerState == 0 ? "YouTube finalizado." : "YouTube aguardando.");
+                Dispatcher.Invoke(() =>
+                {
+                    if (playerState == 0) EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                    else StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : "YouTube aguardando.";
+                });
                 return;
             }
             if (type.GetString() != "time") return;
@@ -604,11 +610,7 @@ public partial class MainWindow : Window
                 if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando. Nenhuma letra sincronizada foi carregada.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>
-                {
-                    PublishProjectionOnly("");
-                    _lastAutomaticCue = -1;
-                    StatusText.Text = "Reprodução do YouTube finalizada.";
-                });
+                    EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente."));
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
             var cueIndex = FindActiveCue(seconds);
@@ -1476,6 +1478,7 @@ public partial class MainWindow : Window
         {
             if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
             _audioTimer.Stop();
+            _playbackEnded = false;
             PublishProjectionOnly("");
             YoutubePlayer.Visibility = Visibility.Collapsed;
             LocalAudioPlayer.Visibility = Visibility.Visible;
@@ -1507,12 +1510,42 @@ public partial class MainWindow : Window
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
+        => EndPlayback("Áudio offline finalizado. Projeção encerrada automaticamente.");
+
+    private void EndPlayback(string status)
     {
+        if (_playbackEnded) return;
+        _playbackEnded = true;
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
-        PublishProjectionOnly("");
+        _manualProjectionMode = false;
+        _manualCueIndex = -1;
         _lastAutomaticCue = -1;
-        StatusText.Text = "Áudio offline finalizado.";
+        PublishProjectionOnly("");
+        StatusText.Text = status;
+        _ = CloseHolyricsQuickPresentationAsync();
+    }
+
+    private async Task CloseHolyricsQuickPresentationAsync()
+    {
+        try { await _holyrics.CloseQuickPresentationAsync(); }
+        catch (Exception ex)
+        {
+            Dispatcher.Invoke(() => StatusText.Text += " Não foi possível fechar a apresentação rápida do Holyrics: " + ex.Message);
+        }
+    }
+
+    private async void EndPlaybackManually_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isLocalAudioPlaying)
+                LocalAudioPlayer.Stop();
+            else if (YoutubePlayer.CoreWebView2 is not null)
+                await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("if(typeof player !== 'undefined' && player && typeof player.stopVideo === 'function') player.stopVideo();");
+        }
+        catch { /* A limpeza da projeção não depende de o player aceitar o comando de parada. */ }
+        EndPlayback("Música encerrada manualmente. Projeção limpa; aplicativo pronto para a próxima faixa.");
     }
 
     private void LocalAudioPlayer_MediaFailed(object sender, ExceptionRoutedEventArgs e)
