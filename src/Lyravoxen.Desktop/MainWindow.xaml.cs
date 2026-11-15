@@ -671,6 +671,9 @@ public partial class MainWindow : Window
             _lastAutomaticCue = -1;
             if (_currentVideo is not null)
             {
+                _currentVideo.SongTitle = MusicTrackBox.Text.Trim();
+                _currentVideo.Performer = MusicArtistBox.Text.Trim();
+                _currentVideo.Composer = MusicComposerBox.Text.Trim();
                 _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
                 foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
                     saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
@@ -1854,7 +1857,12 @@ public partial class MainWindow : Window
         _currentVideo.Composer = MusicComposerBox.Text.Trim();
         foreach (var saved in _library.SelectMany(folder => folder.Videos)
                      .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
+        {
             saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            saved.SongTitle = _currentVideo.SongTitle;
+            saved.Performer = _currentVideo.Performer;
+            saved.Composer = _currentVideo.Composer;
+        }
         SaveLibrary();
     }
 
