@@ -1102,10 +1102,10 @@ public partial class MainWindow : Window
                 var expectedLine = reference[bestIndex];
                 if (!_cues.Any(c => Math.Abs(c.Seconds - segment.StartSeconds) < 1.4 && NormalizeMusicText(c.Text) == NormalizeMusicText(expectedLine)))
                 {
-                    var cue = new LyricCue { Seconds = Math.Max(0, segment.StartSeconds), Text = expectedLine };
-                    _cues.Add(cue);
+                    var referenceCue = new LyricCue { Seconds = Math.Max(0, segment.StartSeconds), Text = expectedLine };
+                    _cues.Add(referenceCue);
                     _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
-                    RefreshCueList(cue);
+                    RefreshCueList(referenceCue);
                     PersistCurrentCues();
                     var active = FindActiveCue(GetPlaybackSeconds());
                     if (!_manualProjectionMode && active >= 0)
