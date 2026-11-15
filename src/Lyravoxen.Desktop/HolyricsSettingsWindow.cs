@@ -24,7 +24,7 @@ public sealed class HolyricsSettingsWindow : Window
         Background = System.Windows.Media.Brushes.White;
         var panel = new StackPanel { Margin = new Thickness(22) };
         panel.Children.Add(new TextBlock { Text = "API Server local do Holyrics", FontSize = 18, FontWeight = FontWeights.Bold, Margin = new Thickness(0,0,0,8) });
-        panel.Children.Add(new TextBlock { Text = "Requer API v2.24.0 ou superior e permissões ShowQuickPresentation + CloseCurrentQuickPresentation em escopo Local.", TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.DimGray, Margin = new Thickness(0,0,0,8) });
+        panel.Children.Add(new TextBlock { Text = "Requer API v2.25.0 ou superior e permissões ShowQuickPresentation + CloseCurrentQuickPresentation em escopo Local.", TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.DimGray, Margin = new Thickness(0,0,0,8) });
         panel.Children.Add(new TextBlock { Text = "Endereço (IP ou 127.0.0.1)" }); panel.Children.Add(_host);
         panel.Children.Add(new TextBlock { Text = "Porta" }); panel.Children.Add(_port);
         panel.Children.Add(new TextBlock { Text = "Token (fica protegido neste computador)" }); panel.Children.Add(_token);
@@ -58,7 +58,7 @@ public sealed class HolyricsSettingsWindow : Window
             _status.Text = "Falha no teste de conexão.";
             System.Windows.MessageBox.Show(this,
                 "Não foi possível confirmar a conexão com o Holyrics.\n\nDetalhes: " + ex.Message +
-                "\n\nConfira se o API Server Local está ativado, se a porta é 8091 e se o Holyrics usa API v2.24.0 ou superior e se o token tem ShowQuickPresentation e CloseCurrentQuickPresentation em Local.",
+                "\n\nConfira se o API Server Local está ativado, se a porta é 8091 e se o Holyrics usa API v2.25.0 ou superior e se o token tem ShowQuickPresentation e CloseCurrentQuickPresentation em Local.",
                 "Lyravoxen — Erro de conexão", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally { testButton.IsEnabled = true; }
