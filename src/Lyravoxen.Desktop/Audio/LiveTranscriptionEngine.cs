@@ -134,8 +134,9 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         if (processor is null) return;
         await foreach (var segment in processor.ProcessAsync(samples, token).ConfigureAwait(false))
         {
-            var start = segment.Start.TotalSeconds;
-            var end = segment.End.TotalSeconds;
+            var offsetSeconds = startSample / (double)TargetSampleRate;
+            var start = offsetSeconds + segment.Start.TotalSeconds;
+            var end = offsetSeconds + segment.End.TotalSeconds;
             var text = segment.Text?.Trim();
             if (string.IsNullOrWhiteSpace(text) || end <= _lastEmittedEndSeconds + 0.35) continue;
             _lastEmittedEndSeconds = end;
