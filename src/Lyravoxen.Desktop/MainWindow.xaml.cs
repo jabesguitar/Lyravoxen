@@ -452,9 +452,10 @@ public partial class MainWindow : Window
             _manualCueIndex = 0;
             _lastAutomaticCue = -1;
             LineCountBox.SelectedIndex = 0; // Cada slide importado do Holyrics ocupa uma tela no avanço manual.
+            CaptureCueTimesCheckBox.IsChecked = true;
             CueList.SelectedItem = _cues[0];
             PublishLyric(BuildProjectionCueBlock(0));
-            StatusText.Text = $"Importadas {slides.Count} telas de letra. A primeira tela já foi enviada ao telão. Como o áudio é playback instrumental, use Anterior/Próxima para avançar no ritmo da música ou marque os tempos manualmente.";
+            StatusText.Text = $"Importadas {slides.Count} telas de letra. A primeira tela já foi enviada ao telão. Como o áudio é playback instrumental, avance em Próxima no ritmo da música: os tempos serão registrados automaticamente para sincronizar as próximas reproduções.";
         }
         catch (Exception ex)
         {
@@ -1662,7 +1663,21 @@ public partial class MainWindow : Window
                 : FindActiveCue(GetPlaybackSeconds());
         // Sem frase ativa ainda: "Próxima" começa na primeira; "Anterior" permanece na primeira.
         if (current < 0) current = direction > 0 ? -1 : 0;
-        _manualCueIndex = Math.Clamp(current + direction, 0, _cues.Count - 1);
+        var nextIndex = Math.Clamp(current + direction, 0, _cues.Count - 1);
+        if (direction > 0 && CaptureCueTimesCheckBox?.IsChecked == true && nextIndex > 0)
+        {
+            // Ao avançar durante o playback instrumental, registra o instante real
+            // em que a próxima tela deve entrar. Slides repetidos continuam separados.
+            _cues[nextIndex].Seconds = GetPlaybackSeconds();
+            if (_currentVideo is not null)
+            {
+                _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                PersistCurrentCues();
+            }
+        }
+        _manualCueIndex = nextIndex;
+        CueList.ItemsSource = null;
+        CueList.ItemsSource = _cues;
         CueList.SelectedItem = _cues[_manualCueIndex];
         ProjectSelectedCue_Click(this, new RoutedEventArgs());
     }
