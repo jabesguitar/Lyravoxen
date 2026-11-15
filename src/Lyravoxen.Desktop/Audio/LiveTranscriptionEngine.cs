@@ -54,7 +54,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
             if (!File.Exists(_modelPath))
             {
                 StatusChanged?.Invoke("Baixando o modelo de transcrição em português (primeira execução)...");
-                using var model = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(GgmlType.Tiny, linked.Token);
+                using var model = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(GgmlType.Tiny, QuantizationType.Q5_0, linked.Token);
                 await using var output = new FileStream(_modelPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 await model.CopyToAsync(output, linked.Token);
             }
