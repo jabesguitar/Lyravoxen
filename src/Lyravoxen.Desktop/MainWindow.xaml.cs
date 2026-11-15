@@ -262,6 +262,7 @@ public partial class MainWindow : Window
         PlayNextButton.IsEnabled = false;
         try
         {
+            await StopYoutubeCaptureAsync();
             _playerSessionId = Guid.NewGuid().ToString("N");
             Interlocked.Increment(ref _lyricsSearchVersion); // invalida qualquer busca da música anterior
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
