@@ -56,6 +56,7 @@ public partial class MainWindow : Window
     private bool _displayChangeHandlerAttached;
     private ProcessAudioCapture? _youtubeAudioCapture;
     private LiveTranscriptionEngine? _transcriptionEngine;
+    private Task? _transcriptionEngineStartTask;
     private readonly SemaphoreSlim _captureLock = new(1, 1);
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
@@ -727,6 +728,8 @@ public partial class MainWindow : Window
 
             if (_transcriptionEngine is null)
             {
+                if (Environment.OSVersion.Version.Build < 20348)
+                    throw new PlatformNotSupportedException("A transcrição local exige Windows 11/Server 2022. O player continua funcionando com letras de catálogo, LRC/SRT ou cadastro manual.");
                 var modelPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "Lyravoxen", "Models", "ggml-tiny-q5_0.bin");
                 var hardware = HardwareDiagnostics.Collect();
@@ -735,16 +738,11 @@ public partial class MainWindow : Window
                 engine.Failed += ex => Dispatcher.BeginInvoke(() => StatusText.Text = "Reconhecimento indisponível: " + ex.Message);
                 engine.SegmentRecognized += segment => Dispatcher.BeginInvoke(() => ApplyRecognizedSegment(segment));
                 _transcriptionEngine = engine;
-                try { await engine.StartAsync(); }
-                catch
-                {
-                    _transcriptionEngine = null;
-                    await engine.DisposeAsync();
-                    throw;
-                }
+                // Start the model download/load in the background. Capture begins immediately,
+                // so the first song is not lost while the model is being prepared.
+                _transcriptionEngineStartTask = InitializeTranscriptionEngineAsync(engine);
             }
 
-            // A troca de faixa já invalida o estado anterior; captura só é iniciada quando o player está tocando.
             if (_lastPlayerState != 1) return;
             _transcriptionEngine.ResetTimeline(_lastKnownPlaybackSeconds, _playerSessionId);
             var pid = YoutubePlayer.CoreWebView2.BrowserProcessId;
@@ -757,7 +755,7 @@ public partial class MainWindow : Window
             try
             {
                 await capture.StartAsync(pid);
-                Dispatcher.Invoke(() => StatusText.Text = "Captura isolada ativa. Transcrevendo áudio em português...");
+                Dispatcher.Invoke(() => StatusText.Text = "Captura isolada ativa. Preparando a transcrição local em português...");
             }
             catch
             {
@@ -771,6 +769,19 @@ public partial class MainWindow : Window
             Dispatcher.Invoke(() => StatusText.Text = "Transcrição/captura indisponível: " + ex.Message);
         }
         finally { _captureLock.Release(); }
+    }
+
+    private async Task InitializeTranscriptionEngineAsync(LiveTranscriptionEngine engine)
+    {
+        try { await engine.StartAsync(); }
+        catch (Exception ex)
+        {
+            if (ReferenceEquals(_transcriptionEngine, engine))
+                _transcriptionEngine = null;
+            try { await StopYoutubeCaptureAsync(); } catch { }
+            try { await engine.DisposeAsync(); } catch { }
+            Dispatcher.BeginInvoke(() => StatusText.Text = "Transcrição local indisponível: " + ex.Message);
+        }
     }
 
     private void ApplyRecognizedSegment(TranscriptionSegment segment)
@@ -808,6 +819,11 @@ public partial class MainWindow : Window
         var engine = _transcriptionEngine;
         _transcriptionEngine = null;
         if (engine is not null) await engine.DisposeAsync();
+        if (_transcriptionEngineStartTask is not null)
+        {
+            try { await _transcriptionEngineStartTask; } catch { }
+            _transcriptionEngineStartTask = null;
+        }
     }
 
     private async Task StopYoutubeCaptureAsync()
