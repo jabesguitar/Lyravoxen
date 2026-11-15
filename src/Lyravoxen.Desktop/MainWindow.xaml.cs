@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private bool _isLocalAudioPlaying;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
+    private int _lastAutomaticBlockStart = int.MinValue;
     private bool _manualProjectionMode;
     private int _manualCueIndex = -1;
     private double _playerDurationSeconds;
@@ -328,6 +329,7 @@ public partial class MainWindow : Window
             PublishLyric("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
             _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastKnownPlaybackSeconds = 0; _lastAutomaticCue = -1;
+            _lastAutomaticBlockStart = int.MinValue;
             _manualProjectionMode = false; _manualCueIndex = -1;
 
             // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
@@ -912,6 +914,7 @@ public partial class MainWindow : Window
                     {
                         PublishLyric("");
                         _lastAutomaticCue = -1;
+                        _lastAutomaticBlockStart = -1;
                         _manualProjectionMode = false;
                         _manualCueIndex = -1;
                         StatusText.Text = "Reprodução do YouTube finalizada. Projeção limpa.";
@@ -945,13 +948,16 @@ public partial class MainWindow : Window
                 else if (state == 0)
                 {
                     _ = StopYoutubeCaptureAsync();
-                    Dispatcher.Invoke(() => { PublishLyric(""); _lastAutomaticCue = -1; StatusText.Text = "Reprodução do YouTube finalizada."; });
+                    Dispatcher.Invoke(() => { PublishLyric(""); _lastAutomaticCue = -1; _lastAutomaticBlockStart = -1; StatusText.Text = "Reprodução do YouTube finalizada."; });
                 }
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
             var cueIndex = FindActiveCue(seconds);
             if (cueIndex == _lastAutomaticCue) return;
             _lastAutomaticCue = cueIndex;
+            var blockStart = GetProjectionBlockStart(cueIndex);
+            if (blockStart == _lastAutomaticBlockStart) return;
+            _lastAutomaticBlockStart = blockStart;
             PublishLyric(BuildProjectionCueBlock(cueIndex));
         }
         catch (JsonException) { }
@@ -1181,7 +1187,16 @@ public partial class MainWindow : Window
         _projection?.SetMaxLines(Math.Clamp(count, 1, 10));
         if (!_loadingPreferences) SavePreferences(null, count);
         var activeIndex = _manualProjectionMode ? _manualCueIndex : FindActiveCue(GetPlaybackSeconds());
-        if (activeIndex >= 0) PublishLyric(BuildProjectionCueBlock(activeIndex));
+        if (activeIndex >= 0)
+        {
+            _lastAutomaticBlockStart = GetProjectionBlockStart(activeIndex);
+            PublishLyric(BuildProjectionCueBlock(activeIndex));
+        }
+        else
+        {
+            _lastAutomaticBlockStart = -1;
+            PublishLyric("");
+        }
     }
 
     private void LoadPreferences()
@@ -1490,14 +1505,24 @@ public partial class MainWindow : Window
         return CueTimeline.FindActiveIndex(_cues, playbackSeconds, ProjectionLeadSeconds);
     }
 
-    private string BuildProjectionCueBlock(int activeIndex)
+    private int GetProjectionLineCount()
     {
         var count = 4;
         if (LineCountBox?.SelectedItem is ComboBoxItem item &&
             int.TryParse(item.Content?.ToString(), out var selectedCount))
             count = Math.Clamp(selectedCount, 1, 10);
-        return CueTimeline.BuildProjectionBlock(_cues, activeIndex, count);
+        return count;
     }
+
+    private int GetProjectionBlockStart(int activeIndex)
+    {
+        if (activeIndex < 0) return -1;
+        var count = GetProjectionLineCount();
+        return (activeIndex / count) * count;
+    }
+
+    private string BuildProjectionCueBlock(int activeIndex) =>
+        CueTimeline.BuildProjectionBlock(_cues, activeIndex, GetProjectionLineCount());
 
     private void PublishProjectionOnly(string text)
     {
@@ -1843,6 +1868,7 @@ public partial class MainWindow : Window
         _lastAutomaticCue = -1;
         var currentIndex = FindActiveCue(GetPlaybackSeconds());
         _lastAutomaticCue = currentIndex;
+        _lastAutomaticBlockStart = GetProjectionBlockStart(currentIndex);
         PublishLyric(BuildProjectionCueBlock(currentIndex));
         StatusText.Text = "Modo automático retomado. A projeção foi alinhada à posição atual da música.";
     }
@@ -2134,6 +2160,7 @@ public partial class MainWindow : Window
             _isLocalAudioPlaying = true;
             _lastAutomaticCue = -1;
             _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = 0;
+            _lastAutomaticBlockStart = int.MinValue;
             _audioTimer.Start();
             _currentVideo = video;
             _cues.Clear();
@@ -2152,6 +2179,9 @@ public partial class MainWindow : Window
         var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
+        var blockStart = GetProjectionBlockStart(cueIndex);
+        if (blockStart == _lastAutomaticBlockStart) return;
+        _lastAutomaticBlockStart = blockStart;
         PublishLyric(BuildProjectionCueBlock(cueIndex));
     }
 
