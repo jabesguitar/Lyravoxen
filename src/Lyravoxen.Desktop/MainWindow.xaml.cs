@@ -490,7 +490,6 @@ public partial class MainWindow : Window
             result = action;
             enteredText = editor.Text;
             dialog.DialogResult = true;
-            dialog.Close();
         }
         var noButton = new Button { Content = "Não", MinWidth = 90, Margin = new Thickness(4) };
         var createButton = new Button { Content = "Criar", MinWidth = 90, Margin = new Thickness(4) };
