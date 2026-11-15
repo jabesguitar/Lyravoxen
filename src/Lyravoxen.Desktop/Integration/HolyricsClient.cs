@@ -15,6 +15,8 @@ public sealed class HolyricsClient
         AutomaticDecompression = DecompressionMethods.None
     }) { Timeout = TimeSpan.FromSeconds(8) };
 
+    public bool IsConfigured => File.Exists(_settingsPath);
+
     private readonly string _settingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Lyravoxen", "holyrics.dat");
