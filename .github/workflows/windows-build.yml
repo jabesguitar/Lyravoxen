@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main, fix/simultaneous-lyrics-and-controls, fix/reliable-sync-and-internal-youtube-tabs]
+    branches: [main, fix/simultaneous-lyrics-and-controls, fix/reliable-sync-and-internal-youtube-tabs, spike/process-loopback-net9]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
       - name: Restore
         run: dotnet restore src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj
       - name: Build
