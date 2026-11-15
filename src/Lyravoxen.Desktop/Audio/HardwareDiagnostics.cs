@@ -88,6 +88,35 @@ internal sealed record HardwareDiagnostics(
             $"Recommended inference threads: {RecommendedInferenceThreads}");
     }
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private sealed class MemoryStatusEx
+    {
+        public uint Length = (uint)Marshal.SizeOf<MemoryStatusEx>();
+        public uint MemoryLoad;
+        public ulong TotalPhysical;
+        public ulong AvailablePhysical;
+        public ulong TotalPageFile;
+        public ulong AvailablePageFile;
+        public ulong TotalVirtual;
+        public ulong AvailableVirtual;
+        public ulong AvailableExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx buffer);
+
+    private static long GetAvailablePhysicalMemory()
+    {
+        if (!System.OperatingSystem.IsWindows()) return GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+        try
+        {
+            var status = new MemoryStatusEx();
+            return GlobalMemoryStatusEx(status) ? checked((long)status.AvailablePhysical) : 0;
+        }
+        catch { return 0; }
+    }
+
     private static string ReadCpuName()
     {
         if (!System.OperatingSystem.IsWindows()) return "Unknown";
@@ -124,9 +153,9 @@ internal static class PerformanceProfileSettings
         {
             (_, PerformanceProfile.LowResource) => "tiny-quantized",
             (CompatibilityTier.LegacyX64, _) => "tiny-quantized-scalar-or-sse2",
-            (CompatibilityTier.Avx, _) => "tiny-or-base-quantized-avx",
             (CompatibilityTier.Avx2, PerformanceProfile.Quality) => "base-or-larger-quantized-avx2",
             (CompatibilityTier.Avx, PerformanceProfile.Quality) => "base-quantized-avx",
+            (CompatibilityTier.Avx, _) => "tiny-or-base-quantized-avx",
             _ => "tiny-or-base-quantized"
         };
 }
