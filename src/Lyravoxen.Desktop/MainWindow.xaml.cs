@@ -428,7 +428,7 @@ public partial class MainWindow : Window
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Procurando automaticamente uma letra sincronizada para este título...";
-            if (_cues.Count == 0 && !string.IsNullOrWhiteSpace(MusicTrackBox.Text))
+            if (_cues.Count == 0 && (_currentVideo is null || !_referenceLyrics.ContainsKey(_currentVideo.VideoId)) && !string.IsNullOrWhiteSpace(MusicTrackBox.Text))
                 await TryLoadAutomaticLyricsAsync(MusicTrackBox.Text, "");
             return true;
         }
