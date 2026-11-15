@@ -133,11 +133,13 @@
     </Grid>
    </Border>
    <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="10" Padding="8" Margin="0,0,0,8">
-    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-     <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Text="IDENTIFICAÇÃO DA MÚSICA — TÍTULO E CANTOR" Foreground="{StaticResource Accent}" FontWeight="Bold" Margin="4,0,4,3"/>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="2*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <TextBlock Grid.Row="0" Grid.ColumnSpan="5" Text="IDENTIFICAÇÃO DA MÚSICA — TÍTULO E CANTOR" Foreground="{StaticResource Accent}" FontWeight="Bold" Margin="4,0,4,3"/>
      <TextBox x:Name="SearchTrackBox" Grid.Row="1" Grid.Column="0" ToolTip="Nome ou título da música" VerticalContentAlignment="Center"/>
      <TextBox x:Name="SearchArtistBox" Grid.Row="1" Grid.Column="1" ToolTip="Nome do cantor/intérprete" VerticalContentAlignment="Center"/>
      <Button Grid.Row="1" Grid.Column="2" Content="Buscar letra" Click="SearchLyricsFromBrowser_Click" Background="#176E68"/>
+     <Button Grid.Row="1" Grid.Column="3" Content="Sites gospel" Click="SearchHymnSources_Click" Margin="4,0,0,0" ToolTip="Pesquisar em portais especializados em hinos e louvores"/>
+     <Button Grid.Row="1" Grid.Column="4" Content="Sites gerais" Click="SearchLyricsSources_Click" Margin="4,0,0,0" ToolTip="Pesquisar em portais gerais de letras e música"/>
     </Grid>
    </Border>
    <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="ABAS DO NAVEGADOR" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="14,6"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="14,6" Margin="6,0,0,0"/></DockPanel><TabControl x:Name="BrowserTabs" Grid.Row="1" Background="#080D12" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
