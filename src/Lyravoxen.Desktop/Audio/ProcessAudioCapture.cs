@@ -1,156 +1,98 @@
 using System.Runtime.Versioning;
-using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
+using NAudio.Wave;
 
 namespace Lyravoxen.Audio;
 
 /// <summary>
-/// Experimental, process-scoped WASAPI loopback capture.
-/// This class never falls back to system-wide loopback.
+/// Experimental process-scoped WASAPI loopback capture.
+/// Never falls back to system-wide loopback.
 /// </summary>
 [SupportedOSPlatform("windows10.0.19041.0")]
 internal sealed class ProcessAudioCapture : IAsyncDisposable
 {
-    private AudioClient? _client;
-    private AudioCaptureClient? _capture;
-    private CancellationTokenSource? _stop;
-    private Task? _worker;
+    private WasapiRecorder? _recorder;
 
     public event EventHandler<AudioChunkEventArgs>? AudioChunkAvailable;
     public event Action<Exception>? CaptureFailed;
 
-    public bool IsCapturing => _worker is { IsCompleted: false };
-    public int SampleRate { get; private set; }
-    public int Channels { get; private set; }
-    public int BitsPerSample { get; private set; }
+    public bool IsCapturing => _recorder?.CaptureState == CaptureState.Capturing;
+    public int SampleRate => _recorder?.WaveFormat.SampleRate ?? 0;
+    public int Channels => _recorder?.WaveFormat.Channels ?? 0;
+    public int BitsPerSample => _recorder?.WaveFormat.BitsPerSample ?? 0;
 
-    public async Task StartAsync(uint processId, CancellationToken cancellationToken = default)
+    public async Task StartAsync(uint processId)
     {
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
             throw new PlatformNotSupportedException("A captura por processo exige Windows 10 versão 2004 (build 19041) ou superior.");
-        if (processId == 0)
-            throw new ArgumentOutOfRangeException(nameof(processId));
+        if (processId == 0) throw new ArgumentOutOfRangeException(nameof(processId));
 
         await StopAsync().ConfigureAwait(false);
 
-        var client = await AudioClient.ActivateProcessLoopbackAsync(
-            processId, ProcessLoopbackMode.IncludeTargetProcessTree).ConfigureAwait(false);
+        var recorder = await new WasapiRecorderBuilder()
+            .WithProcessLoopback(processId, ProcessLoopbackMode.IncludeTargetProcessTree)
+            .WithBufferLength(50)
+            .WithMmcssThreadPriority("Audio")
+            .BuildAsync().ConfigureAwait(false);
 
+        recorder.DataAvailable += OnDataAvailable;
+        recorder.RecordingStopped += OnRecordingStopped;
         try
         {
-            var format = client.MixFormat;
-            client.Initialize(
-                AudioClientShareMode.Shared,
-                AudioClientStreamFlags.Loopback,
-                10_000_000, // buffer de referência de 1 segundo; captura é drenada em pacotes menores
-                0,
-                format,
-                Guid.Empty);
-
-            var capture = client.AudioCaptureClient;
-            var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-            _client = client;
-            _capture = capture;
-            _stop = stop;
-            SampleRate = format.SampleRate;
-            Channels = format.Channels;
-            BitsPerSample = format.BitsPerSample;
-
-            client.Start();
-            _worker = Task.Run(() => CaptureLoopAsync(client, capture, format.BlockAlign, stop.Token), CancellationToken.None);
+            recorder.StartRecording();
+            _recorder = recorder;
         }
         catch
         {
-            client.Dispose();
+            recorder.DataAvailable -= OnDataAvailable;
+            recorder.RecordingStopped -= OnRecordingStopped;
+            await recorder.DisposeAsync().ConfigureAwait(false);
             throw;
         }
     }
 
-    private async Task CaptureLoopAsync(AudioClient client, AudioCaptureClient capture, int blockAlign, CancellationToken token)
+    private void OnDataAvailable(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
     {
-        try
-        {
-            while (!token.IsCancellationRequested)
-            {
-                var packetFrames = capture.GetNextPacketSize();
-                if (packetFrames == 0)
-                {
-                    await Task.Delay(4, token).ConfigureAwait(false);
-                    continue;
-                }
+        var recorder = _recorder;
+        if (recorder is null) return;
 
-                while (packetFrames > 0 && !token.IsCancellationRequested)
-                {
-                    var pointer = capture.GetBuffer(out var frames, out var flags, out _, out _);
-                    try
-                    {
-                        var byteCount = checked(frames * blockAlign);
-                        var bytes = new byte[byteCount];
-                        if ((flags & AudioClientBufferFlags.Silent) == 0 && byteCount > 0)
-                            Marshal.Copy(pointer, bytes, 0, byteCount);
+        // The WASAPI span is valid only during this callback. Copy immediately before
+        // handing the packet to the bounded recognition pipeline.
+        var copy = buffer.ToArray();
+        var format = recorder.WaveFormat;
+        var frames = format.BlockAlign > 0 ? copy.Length / format.BlockAlign : 0;
+        AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(
+            copy, format.SampleRate, format.Channels, format.BitsPerSample, frames, devicePosition, qpcPosition));
+    }
 
-                        AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(bytes, SampleRate, Channels, BitsPerSample, frames));
-                    }
-                    finally
-                    {
-                        capture.ReleaseBuffer(frames);
-                    }
-
-                    packetFrames = capture.GetNextPacketSize();
-                }
-            }
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Expected during track change or shutdown.
-        }
-        catch (Exception ex)
-        {
-            CaptureFailed?.Invoke(ex);
-        }
+    private void OnRecordingStopped(object? sender, StoppedEventArgs e)
+    {
+        if (e.Exception is not null) CaptureFailed?.Invoke(e.Exception);
     }
 
     public async Task StopAsync()
     {
-        var stop = _stop;
-        var worker = _worker;
-        var client = _client;
-        var capture = _capture;
+        var recorder = _recorder;
+        _recorder = null;
+        if (recorder is null) return;
 
-        _stop = null;
-        _worker = null;
-        _client = null;
-        _capture = null;
-
-        if (stop is not null)
-        {
-            await stop.CancelAsync().ConfigureAwait(false);
-            if (worker is not null)
-            {
-                try { await worker.ConfigureAwait(false); }
-                catch (OperationCanceledException) { }
-            }
-            stop.Dispose();
-        }
-
-        if (client is not null)
-        {
-            try { client.Stop(); } catch { /* already stopped by device/OS */ }
-        }
-        capture?.Dispose();
-        client?.Dispose();
+        recorder.DataAvailable -= OnDataAvailable;
+        recorder.RecordingStopped -= OnRecordingStopped;
+        await recorder.DisposeAsync().ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync() => await StopAsync().ConfigureAwait(false);
 }
 
 internal sealed class AudioChunkEventArgs(
-    byte[] data, int sampleRate, int channels, int bitsPerSample, int frames) : EventArgs
+    byte[] data, int sampleRate, int channels, int bitsPerSample,
+    int frames, long devicePosition, long qpcPosition) : EventArgs
 {
     public byte[] Data { get; } = data;
     public int SampleRate { get; } = sampleRate;
     public int Channels { get; } = channels;
     public int BitsPerSample { get; } = bitsPerSample;
     public int Frames { get; } = frames;
+    public long DevicePosition { get; } = devicePosition;
+    public long QpcPosition { get; } = qpcPosition;
 }
