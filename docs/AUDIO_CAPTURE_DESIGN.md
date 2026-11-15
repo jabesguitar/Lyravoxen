@@ -82,3 +82,37 @@ Compatibility requirements:
 - Provide a low-resource mode that reduces recognition window frequency/threads and shows that transcription may lag rather than stalling playback.
 - Required benchmark machines: Intel i5 development PC and Xeon E5-2689 v0 church PC (or equivalent Sandy Bridge AVX-only CPU), with 8 GB RAM.
 - CI must include a CPU-feature-safe build configuration; CI cannot replace a real benchmark on the Xeon-class machine.
+
+
+## Multi-church distribution: broad hardware compatibility policy
+
+The product is intended for distribution to churches with unknown and varied hardware. The Xeon E5-2689 v0 is one low-resource reference machine, not the minimum supported CPU.
+
+### Compatibility tiers
+- Tier A (legacy x64): older Intel/AMD x64 CPUs with SSE2, no AVX requirement. Core playback, local projection, manual LRC/SRT, and catalog lookup must remain available.
+- Tier B (AVX-capable): optional accelerated local transcription using a compatible CPU build/model.
+- Tier C (AVX2-capable): optional faster inference backend/model, selected only after runtime feature detection.
+- GPU acceleration is optional only. NVIDIA CUDA, modern GPUs, AVX2 and AVX-512 must never be mandatory to launch or play audio.
+
+### Runtime selection
+- Detect OS version, process-loopback availability, CPU instruction sets, physical/logical cores and available memory at startup.
+- Select a compatible inference backend/model at runtime. Never ship one binary path that assumes AVX2.
+- Provide an explicit compatibility mode that disables unsupported acceleration.
+- If process-loopback is unavailable on an older Windows build, keep playback and manual/catalog lyric features operational and explain that live audio transcription requires a newer Windows API.
+- Do not fall back to system-wide audio capture, microphone capture, or an unverified capture source.
+
+### Performance profiles
+- Low-resource: one inference worker, smallest quantized model, reduced recognition cadence, bounded queue, lower CPU priority.
+- Balanced: up to two inference workers, compact quantized model.
+- Quality: optional higher-accuracy model and more workers on capable CPUs; never block audio playback or UI.
+- Allow users to change profiles and show an estimated hardware capability, not promise a fixed transcription latency.
+
+### Packaging and release
+- Keep the baseline app architecture x64 and avoid CPU-specific compiler flags in the main executable.
+- Package inference backends separately where their native binaries have different CPU requirements; select only a compatible backend at runtime.
+- Include a diagnostic report with OS, CPU name/features, RAM, GPU, WebView2 runtime, capture API availability and selected inference profile.
+- Maintain a feature matrix and test on at least one SSE2-only/no-AVX x64 CPU, one AVX-only CPU (Xeon E5-2689 v0), and one AVX2 CPU.
+- CI builds prove compilation only. Hardware compatibility requires runtime tests on representative physical machines or trustworthy emulation; do not label a tier supported based only on CI.
+
+### Product rule
+Core playback and projection must not be held hostage by transcription support. On unsupported or very slow machines, the app remains useful: play the YouTube source, use synchronized catalog lyrics when available, and allow LRC/SRT/manual lyrics.
