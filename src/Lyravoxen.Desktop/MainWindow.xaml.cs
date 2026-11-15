@@ -1668,7 +1668,7 @@ public partial class MainWindow : Window
         {
             // Ao avançar durante o playback instrumental, registra o instante real
             // em que a próxima tela deve entrar. Slides repetidos continuam separados.
-            _cues[nextIndex].Seconds = GetPlaybackSeconds();
+            _cues[nextIndex].Seconds = GetPlaybackSeconds() + ProjectionLeadSeconds;
             if (_currentVideo is not null)
             {
                 _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
