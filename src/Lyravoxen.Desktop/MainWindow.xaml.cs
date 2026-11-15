@@ -1476,6 +1476,14 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Não foi possível exibir a tela de espera: " + ex.Message; }
     }
 
+    private async void EndProjection_Click(object sender, RoutedEventArgs e)
+    {
+        await ClearProjectionAfterPlaybackAsync();
+        StatusText.Text = _holyrics.IsConfigured
+            ? "Projeção encerrada pelo Lyravoxen. O telão foi limpo e a apresentação rápida do Holyrics foi fechada."
+            : "Projeção local encerrada. Configure o Holyrics para também fechar a apresentação rápida nele.";
+    }
+
     private void ProjectionEnding_Click(object sender, RoutedEventArgs e)
     {
         try
