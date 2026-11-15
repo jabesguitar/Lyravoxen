@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     private readonly HolyricsClient _holyrics = new();
     private readonly SemaphoreSlim _holyricsSendLock = new(1, 1);
     private long _holyricsSendVersion;
+    private bool _holyricsTakeoverActive;
     private long _lyricsSearchVersion;
     private bool _pauseOnPlayerReady;
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
@@ -264,6 +265,7 @@ public partial class MainWindow : Window
         {
             await StopYoutubeCaptureAsync();
             _playerSessionId = Guid.NewGuid().ToString("N");
+            _holyricsTakeoverActive = false;
             _transcriptionEngine?.ResetTimeline(0, _playerSessionId);
             Interlocked.Increment(ref _lyricsSearchVersion); // invalida qualquer busca da música anterior
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
@@ -852,7 +854,15 @@ public partial class MainWindow : Window
             try
             {
                 if (requestVersion != Interlocked.Read(ref _holyricsSendVersion)) return;
-                await _holyrics.ShowTextAsync(text);
+                if (!string.IsNullOrWhiteSpace(text) && !_holyricsTakeoverActive)
+                {
+                    await _holyrics.TakeOverProjectionAsync(text);
+                    _holyricsTakeoverActive = true;
+                }
+                else
+                {
+                    await _holyrics.ShowTextAsync(text);
+                }
                 if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
                     Dispatcher.Invoke(() => StatusText.Text = string.IsNullOrWhiteSpace(text)
                         ? "Holyrics confirmou o fechamento da apresentação rápida."
