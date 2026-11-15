@@ -49,8 +49,7 @@ public sealed class HolyricsClient
             text = query,
             title = true,
             artist = true,
-            lyrics = false,
-            fields = "id,title,artist,author"
+            lyrics = false
         });
         using var response = await SendJsonAsync(BuildUrl(settings, "SearchLyrics"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -80,10 +79,26 @@ public sealed class HolyricsClient
         if (!json.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object ||
             !data.TryGetProperty("slides", out var slides) || slides.ValueKind != JsonValueKind.Array)
             return Array.Empty<string>();
-        return slides.EnumerateArray()
+        var slideTexts = slides.EnumerateArray()
             .Select(slide => slide.TryGetProperty("text", out var text) ? text.GetString() ?? "" : "")
-            .Where(text => !string.IsNullOrWhiteSpace(text))
             .ToArray();
+
+        // Holyrics stores the song arrangement as one-based slide indexes (e.g. 1,2,3,2).
+        // Respect repetitions so a playback follows the same verse/chorus order as the song.
+        if (data.TryGetProperty("order", out var orderElement) &&
+            orderElement.ValueKind == JsonValueKind.String)
+        {
+            var ordered = orderElement.GetString()?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => int.TryParse(value, out var index) ? index - 1 : -1)
+                .Where(index => index >= 0 && index < slideTexts.Length)
+                .Select(index => slideTexts[index])
+                .Where(text => !string.IsNullOrWhiteSpace(text))
+                .ToArray();
+            if (ordered is { Length: > 0 }) return ordered;
+        }
+
+        return slideTexts.Where(text => !string.IsNullOrWhiteSpace(text)).ToArray();
     }
 
     public async Task TakeOverProjectionAsync(string firstText)
