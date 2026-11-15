@@ -27,7 +27,7 @@ O pacote é publicado como self-contained para .NET 8; o WebView2 Runtime contin
 
 ## Configuração da integração com Holyrics
 1. No Holyrics, ative o **API Server Local** e confira o endereço e a porta configurados.
-2. Use uma versão do Holyrics com API v2.24.0 ou superior e crie ou selecione um token com as permissões locais `ShowQuickPresentation` e `CloseCurrentQuickPresentation`.
+2. Use uma versão do Holyrics com API v2.25.0 ou superior e crie ou selecione um token com as permissões locais `ShowQuickPresentation` e `CloseCurrentQuickPresentation`.
 3. No Lyravoxen, abra **Holyrics**, informe o IP do computador onde o API Server está ativo, a porta e o token; use `127.0.0.1` quando os dois programas estiverem no mesmo computador.
 4. Clique em **Testar e salvar**. O diagnóstico do Lyravoxen verifica as duas permissões.
 
