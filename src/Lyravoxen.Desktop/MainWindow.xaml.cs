@@ -335,7 +335,10 @@ public partial class MainWindow : Window
             };
             _currentVideo.Url = url;
             MusicTrackBox.Text = _currentVideo.Title == "Vídeo do YouTube" ? "" : _currentVideo.Title.Split(" — ", 2)[0];
-            MusicArtistBox.Clear();
+            MusicArtistBox.Text = _currentVideo.Performer ?? "";
+            MusicComposerBox.Text = _currentVideo.Composer ?? "";
+            if (!string.IsNullOrWhiteSpace(_currentVideo.SongTitle))
+                MusicTrackBox.Text = _currentVideo.SongTitle;
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
@@ -1489,6 +1492,14 @@ public partial class MainWindow : Window
             _projection.ShowLyric(safeText);
     }
 
+    private void ApplyProjectionPreview_Click(object sender, RoutedEventArgs e)
+    {
+        var edited = ProjectionPreviewText.Text ?? "";
+        _manualProjectionMode = true;
+        PublishLyric(edited);
+        StatusText.Text = "Prévia editada enviada ao telão. O modo automático fica pausado até você retomá-lo.";
+    }
+
     private void PublishLyric(string text)
     {
         PublishProjectionOnly(text);
@@ -1824,6 +1835,9 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+        _currentVideo.SongTitle = MusicTrackBox.Text.Trim();
+        _currentVideo.Performer = MusicArtistBox.Text.Trim();
+        _currentVideo.Composer = MusicComposerBox.Text.Trim();
         foreach (var saved in _library.SelectMany(folder => folder.Videos)
                      .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
             saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
