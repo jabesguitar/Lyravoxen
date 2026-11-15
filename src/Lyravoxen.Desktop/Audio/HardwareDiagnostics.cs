@@ -35,7 +35,7 @@ internal sealed record HardwareDiagnostics(
     {
         var cpuName = ReadCpuName();
         var os = RuntimeInformation.OSDescription;
-        var processLoopback = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
+        var processLoopback = System.OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
         var avx2 = Avx2.IsSupported;
         var avx = Avx.IsSupported;
         var sse2 = Sse2.IsSupported;
@@ -87,7 +87,7 @@ internal sealed record HardwareDiagnostics(
 
     private static string ReadCpuName()
     {
-        if (!OperatingSystem.IsWindows()) return "Unknown";
+        if (!System.OperatingSystem.IsWindows()) return "Unknown";
         try
         {
             using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
