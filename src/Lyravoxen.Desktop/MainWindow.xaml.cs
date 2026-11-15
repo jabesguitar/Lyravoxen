@@ -407,9 +407,7 @@ public partial class MainWindow : Window
             var choices = string.Join(Environment.NewLine, results.Select((song, index) =>
                 $"{index + 1}. {song.Title}" + (string.IsNullOrWhiteSpace(song.Artist) ? "" : $" — {song.Artist}")));
             var selectedText = PromptForText("Escolher música do Holyrics",
-                "Digite o número da música para importar:
-
-" + choices, "1");
+                "Digite o número da música para importar:\n\n" + choices, "1");
             if (!int.TryParse(selectedText, out var selectedIndex) || selectedIndex < 1 || selectedIndex > results.Count)
                 return;
 
