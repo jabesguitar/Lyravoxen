@@ -424,10 +424,10 @@ public partial class MainWindow : Window
                 : "";
             var albumNote = string.IsNullOrWhiteSpace(selected.Album) ? "" : "\nÁlbum: " + selected.Album;
             var choice = ShowLyricsChoiceDialog(
-                "Confira a correspondência antes de projetar.\\n\\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
-                "\\nFaixa encontrada: " + selected.Track + "\\nIntérprete: " + selected.Artist + albumNote + durationNote +
-                "\\n\\nPrévia:\\n" + preview +
-                "\\n\\nEsta é exatamente a gravação/letra desejada?");
+                "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
+                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote +
+                "\n\nPrévia:\n" + preview +
+                "\n\nEsta é exatamente a gravação/letra desejada?");
 
             if (choice.Action == "Não")
             {
@@ -1088,7 +1088,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.Text = "Falha ao abrir/enviar texto à projeção: " + ex.Message;
-            System.Windows.MessageBox.Show("Não foi possível testar a projeção.\\n\\n" + ex.Message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show("Não foi possível testar a projeção.\n\n" + ex.Message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
