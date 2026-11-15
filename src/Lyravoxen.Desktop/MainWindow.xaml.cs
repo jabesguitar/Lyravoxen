@@ -1617,14 +1617,15 @@ public partial class MainWindow : Window
         const double minimumInstrumentalGap = 10.0;
         const double blankBeforeNextLyric = 4.0;
         return nextStart - gapStart >= minimumInstrumentalGap &&
-               playbackSeconds >= nextStart - blankBeforeNextLyric &&
+               playbackSeconds >= gapStart + blankBeforeNextLyric &&
                playbackSeconds < nextStart;
     }
 
     private void UpdateAutomaticProjection(double playbackSeconds)
     {
         var cueIndex = FindActiveCue(playbackSeconds);
-        var instrumentalGap = IsInstrumentalGap(playbackSeconds, cueIndex);
+        var cueHasText = cueIndex >= 0 && !string.IsNullOrWhiteSpace(_cues[cueIndex].Text);
+        var instrumentalGap = cueIndex >= 0 && (!cueHasText || IsInstrumentalGap(playbackSeconds, cueIndex));
         var blockState = instrumentalGap ? -2 : GetProjectionBlockStart(cueIndex);
         if (cueIndex == _lastAutomaticCue && blockState == _lastAutomaticBlockStart) return;
 
