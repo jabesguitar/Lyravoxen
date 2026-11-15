@@ -1605,6 +1605,83 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
     }
+
+    private void LoadPastedLyrics_Click(object sender, RoutedEventArgs e)
+    {
+        var lines = (PastedLyricsBox.Text ?? "")
+            .Replace("\r", "")
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .ToList();
+        if (lines.Count == 0)
+        {
+            StatusText.Text = "Cole a letra no espaço acima, colocando cada verso em uma linha.";
+            PastedLyricsBox.Focus();
+            return;
+        }
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Abra primeiro a música/vídeo que será sincronizado; depois carregue a letra colada.";
+            return;
+        }
+
+        _pastedLyrics.Clear();
+        _pastedLyrics.AddRange(lines);
+        _pastedLyricsIndex = 0;
+        _cues.Clear();
+        RefreshCueList();
+        _manualProjectionMode = true;
+        _manualCueIndex = -1;
+        _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = int.MinValue;
+        PersistCurrentCues();
+        StatusText.Text = $"Letra carregada: {_pastedLyrics.Count} versos. Dê play e clique em Marcar próximo verso no início de cada frase.";
+    }
+
+    private void MarkNextPastedLyric_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pastedLyrics.Count == 0 || _pastedLyricsIndex >= _pastedLyrics.Count)
+        {
+            StatusText.Text = "Carregue uma letra no espaço de colagem antes de marcar os tempos.";
+            return;
+        }
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Abra primeiro o vídeo ou áudio que será sincronizado.";
+            return;
+        }
+        if (!_isLocalAudioPlaying && _lastPlayerState != 1)
+        {
+            StatusText.Text = "Inicie a reprodução antes de marcar o verso.";
+            return;
+        }
+
+        var seconds = GetPlaybackSeconds() + ProjectionLeadSeconds;
+        var cue = new LyricCue { Seconds = Math.Max(0, seconds), Text = _pastedLyrics[_pastedLyricsIndex] };
+        _cues.Add(cue);
+        _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
+        _manualCueIndex = _cues.IndexOf(cue);
+        _pastedLyricsIndex++;
+        _manualProjectionMode = true;
+        _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = int.MinValue;
+        RefreshCueList(cue);
+        PersistCurrentCues();
+        PublishLyric(BuildProjectionCueBlock(_manualCueIndex));
+
+        if (_pastedLyricsIndex >= _pastedLyrics.Count)
+        {
+            _manualProjectionMode = false;
+            _lastAutomaticCue = FindActiveCue(GetPlaybackSeconds());
+            _lastAutomaticBlockStart = GetProjectionBlockStart(_lastAutomaticCue);
+            StatusText.Text = $"Sincronização concluída: {_cues.Count} versos registrados e salvos. A projeção automática continuará acompanhando a música.";
+        }
+        else
+        {
+            StatusText.Text = $"Verso {_pastedLyricsIndex}/{_pastedLyrics.Count} marcado em {seconds:0.00}s. Clique novamente no início do próximo verso.";
+        }
+    }
+
     private void AddCue_Click(object sender, RoutedEventArgs e)
     {
         if (!double.TryParse(SecondsBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) || seconds < 0 || string.IsNullOrWhiteSpace(LyricTextBox.Text))
