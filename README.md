@@ -46,6 +46,10 @@ Fontes especializadas incluídas na pesquisa gospel:
 - Gospel Sony Music (gospelsonymusic.com.br)
 - Hinário Evangélico (hinarioevangelico.com)
 - Hinário Digital ReformaBrasil (reformabrasil.com.br)
+- Hinoteca (hinoteca.com.br)
+- Hinário Online (hinarioonline.com.br)
+- Hinário CCB (hinarioccb.net)
+- Hymns for Worship (hymnsforworship.app)
 
 Fontes gerais de música e letras:
 - Letras.mus.br
@@ -53,6 +57,7 @@ Fontes gerais de música e letras:
 - Vagalume
 - Letras.com
 - Musixmatch
+- Genius
 
 A lista é uma coleção de pontos de partida para pesquisa, não uma declaração de parceria, API oficial ou autorização para copiar conteúdo. A disponibilidade e a qualidade variam por música, versão, gravação e hinário. O fluxo automático sincronizado continua usando LRCLIB; os demais portais são abertos para conferência pelo usuário. Quando a fonte não oferece API pública e licença adequada, o Lyravoxen não tenta extrair em massa nem republicar letras protegidas. O usuário pode importar LRC/SRT ou cadastrar a letra e seus tempos conforme os direitos de uso aplicáveis.
 
