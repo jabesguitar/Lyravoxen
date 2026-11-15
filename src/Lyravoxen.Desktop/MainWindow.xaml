@@ -17,13 +17,28 @@
    <StackPanel><TextBlock Text="LYRAVOXEN" Foreground="{StaticResource Accent}" FontSize="25" FontWeight="Bold"/><TextBlock Text="Música em sintonia com palavras." Foreground="{StaticResource TextMuted}" FontSize="12"/></StackPanel>
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
-  <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="0,0,0,12">
-   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <TextBox x:Name="YoutubeUrlBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
-    <Button x:Name="LoadYoutubeButton" Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
-    <Button Grid.Column="2" Content="Abrir projeção" Background="#176E68" Click="OpenProjection_Click" ToolTip="Abre o telão no monitor selecionado."/>
-    <Button x:Name="PlayNextButton" Grid.Column="3" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False" ToolTip="Carrega a música que você preparou na aba Próxima música."/><Button Grid.Column="4" Content="Holyrics" Click="HolyricsSettings_Click" ToolTip="Configura endereço, porta e token da integração com o Holyrics."/><Button Grid.Column="10" Content="Testar Holyrics" Click="TestHolyrics_Click" ToolTip="Enviar uma frase de teste diretamente ao Holyrics"/><Button Grid.Column="5" Content="Testar projeção" Click="TestProjection_Click" ToolTip="Envia uma frase de teste ao telão."/><Button Grid.Column="6" Content="Tela de espera" Click="ProjectionStandby_Click" ToolTip="Exibe a mensagem de espera sem fechar a projeção."/><Button Grid.Column="7" Content="Tela final" Click="ProjectionEnding_Click" ToolTip="Exibe a mensagem de encerramento no telão."/><Button Grid.Column="11" Content="Encerrar projeção" Click="EndProjection_Click" Background="#8C3B42" ToolTip="Fecha a tela de saída do Lyravoxen e encerra a apresentação no Holyrics."/><Button Grid.Column="12" Content="Fechar Holyrics" Click="CloseHolyricsPresentation_Click" Background="#713C48" ToolTip="Fecha a apresentação atual do Holyrics. Atalho: Ctrl+F9."/><Button Grid.Column="8" Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verificar a preparação para a apresentação"/><ComboBox x:Name="OutputDisplayBox" Grid.Column="9" Width="150" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
-   </Grid>
+  <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="9" Margin="0,0,0,12">
+   <StackPanel>
+    <WrapPanel VerticalAlignment="Center">
+     <TextBox x:Name="YoutubeUrlBox" Width="260" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
+     <Button x:Name="LoadYoutubeButton" Content="Carregar YouTube" Click="LoadYoutube_Click" Background="#176E68"/>
+     <Button Content="Abrir projeção" Click="OpenProjection_Click" ToolTip="Abre o telão no monitor selecionado."/>
+     <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False" ToolTip="Carrega a música preparada na aba Próxima música."/>
+     <Button Content="Encerrar projeção" Click="EndProjection_Click" Background="#8C3B42" ToolTip="Fecha a janela de saída do Lyravoxen e solicita a limpeza no Holyrics."/>
+    </WrapPanel>
+    <Expander Header="Ferramentas e configuração" Foreground="{StaticResource TextMuted}" Margin="3,4,3,0">
+     <WrapPanel Margin="0,4,0,0">
+      <Button Content="Holyrics: configurar" Click="HolyricsSettings_Click" ToolTip="Configura endereço, porta e token da integração."/>
+      <Button Content="Testar Holyrics" Click="TestHolyrics_Click" ToolTip="Envia uma frase de teste diretamente ao Holyrics."/>
+      <Button Content="Testar projeção" Click="TestProjection_Click" ToolTip="Envia uma frase de teste ao telão."/>
+      <Button Content="Tela de espera" Click="ProjectionStandby_Click" ToolTip="Exibe a mensagem de espera."/>
+      <Button Content="Tela final" Click="ProjectionEnding_Click" ToolTip="Exibe a mensagem de encerramento."/>
+      <Button Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verifica as condições principais da apresentação."/>
+      <ComboBox x:Name="OutputDisplayBox" Width="175" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
+      <Button Content="Limpar Holyrics" Click="CloseHolyricsPresentation_Click" Background="#713C48" ToolTip="Envia o comando de limpar conteúdo ao Holyrics. Atalho: Ctrl+F9."/>
+     </WrapPanel>
+    </Expander>
+   </StackPanel>
   </Border>
   <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
    <Border Grid.Column="0" Background="#080D12" CornerRadius="12" Padding="8" Margin="0,0,8,0">
@@ -188,11 +203,11 @@
     <TextBlock Text="Prévia do telão: edite o texto diretamente e clique Aplicar prévia editada para enviar exatamente o texto digitado. Isso pausa o automático; clique Automático para retomar a sincronização." TextWrapping="Wrap" Margin="0,2"/>
     <TextBlock Text="Anterior/Próxima: percorrem as frases. Projetar envia a selecionada ou o bloco correspondente. Automático devolve o controle ao relógio da música." TextWrapping="Wrap" Margin="0,2"/>
     <TextBlock Text="Editar: carrega a frase nos campos de tempo e texto. Atualizar: grava as alterações. Excluir: remove a frase após confirmação. Reordenar: clique para mover para cima; segure Shift e clique para mover para baixo. A ordem é ajustada pelos tempos." TextWrapping="Wrap" Margin="0,2"/>
-    <TextBlock Text="Adicionar tempo cadastra a frase digitada usando o tempo em segundos. Marcar frase no tempo atual usa o instante do player. Importar letra aceita LRC/SRT; Importar música do Holyrics traz os slides para avanço manual. Para letras não reconhecidas, cole o texto no quadro Colar letra e sincronizar manualmente, com um verso por linha. Carregue a letra, dê play e clique Marcar próximo verso no início de cada frase; os tempos serão salvos e usados automaticamente nas próximas reproduções." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Adicionar tempo cadastra a frase digitada usando o tempo em segundos. Marcar frase no tempo atual usa o instante do player. Importar letra aceita LRC/SRT; Importar música do Holyrics traz os slides para avanço manual. Para letras sem sincronização, a aba Sincronização manual permite colar um verso por linha e marcar cada início durante a reprodução. Esse processo ainda é manual: o botão Carregar letra colada não calcula os tempos automaticamente." TextWrapping="Wrap" Margin="0,2"/>
     <TextBlock Text="Salvar letra/hino sem vídeo: na aba Biblioteca, selecione uma pasta e clique nesse botão. Ele guarda título, intérprete, compositor e frases sincronizadas mesmo sem um link ou arquivo de áudio. Depois, selecione o item salvo para abrir a letra e projetá-la manualmente." TextWrapping="Wrap" Margin="0,2"/>
     <TextBlock Text="FILA E ATALHOS" FontWeight="Bold" FontSize="15" Margin="0,12,0,4"/>
     <TextBlock Text="Na aba Próxima música, cole um link na barra superior e clique Ir. Colar insere o endereço da área de transferência; Copiar URL copia a página atual. Abra o vídeo desejado e clique Preparar próxima." TextWrapping="Wrap" Margin="0,2"/>
-    <TextBlock Text="Atalhos: F6 anterior; F7 próxima; F8 projetar; F9 automático; F10 restaurar projeção; F11 tela de espera; F12 tela final; ESC fecha a janela do telão e volta à área de trabalho; Ctrl+F9 fecha a apresentação atual do Holyrics. Também há botões Sair da projeção no telão, Encerrar projeção e Fechar Holyrics na tela principal. Os atalhos do operador não atuam enquanto você digita em campos de texto." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Atalhos: F6 anterior; F7 próxima; F8 projetar; F9 automático; F10 restaurar projeção; F11 tela de espera; F12 tela final; ESC fecha a janela do telão e volta à área de trabalho; Ctrl+F9 solicita a limpeza do conteúdo projetado no Holyrics. Esse comando não fecha o programa Holyrics nem garante o fechamento da apresentação; ele envia a ação de limpar conteúdo pela integração. Os atalhos do operador não atuam enquanto você digita em campos de texto." TextWrapping="Wrap" Margin="0,2"/>
    </StackPanel>
   </ScrollViewer>
  </TabItem>
