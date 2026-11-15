@@ -1071,6 +1071,10 @@ public partial class MainWindow : Window
         lines.Add($"Perfil sugerido: {hardware.RecommendedProfile}; threads de IA: {hardware.RecommendedInferenceThreads}");
         lines.Add($"Modelo sugerido para futura transcrição: {Lyravoxen.Audio.PerformanceProfileSettings.GetModelHint(hardware.Tier, hardware.RecommendedProfile)}");
         lines.Add("A reprodução e a projeção não dependem do motor de transcrição.");
+        var whisperWindowsSupported = OperatingSystem.IsWindows() && Environment.OSVersion.Version.Build >= 20348;
+        lines.Add($"Sistema compatível com o runtime Whisper (Windows 11/Server 2022+): {whisperWindowsSupported}");
+        if (!whisperWindowsSupported)
+            warnings.Add("O runtime Whisper escolhido exige Windows 11 ou Windows Server 2022. Neste Windows, use letras de catálogo, LRC/SRT ou cadastro manual.");
         lines.Add($"Captura por processo disponível no Windows: {hardware.ProcessLoopbackApiAvailable}");
         if (!hardware.Sse2 && hardware.Architecture == "X64")
             warnings.Add("O processador não reportou SSE2. Alguns motores de IA podem não ser compatíveis.");
