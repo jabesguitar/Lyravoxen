@@ -733,7 +733,13 @@ public partial class MainWindow : Window
                 engine.Failed += ex => Dispatcher.BeginInvoke(() => StatusText.Text = "Reconhecimento indisponível: " + ex.Message);
                 engine.SegmentRecognized += segment => Dispatcher.BeginInvoke(() => ApplyRecognizedSegment(segment));
                 _transcriptionEngine = engine;
-                await engine.StartAsync();
+                try { await engine.StartAsync(); }
+                catch
+                {
+                    _transcriptionEngine = null;
+                    await engine.DisposeAsync();
+                    throw;
+                }
             }
 
             // A troca de faixa já invalida o estado anterior; captura só é iniciada quando o player está tocando.
@@ -741,7 +747,7 @@ public partial class MainWindow : Window
             _transcriptionEngine.ResetTimeline(_lastKnownPlaybackSeconds);
             var pid = YoutubePlayer.CoreWebView2.BrowserProcessId;
             if (pid == 0) throw new InvalidOperationException("O WebView2 não informou o PID do player.");
-            var capture = new ProcessAudioCapture();
+            var capture = new ProcessAudioCapture(() => Volatile.Read(ref _lastKnownPlaybackSeconds));
             capture.AudioChunkAvailable += (_, chunk) => _transcriptionEngine?.TryWrite(chunk);
             capture.CaptureFailed += ex => Dispatcher.BeginInvoke(() =>
                 StatusText.Text = "Falha na captura isolada do YouTube: " + ex.Message);
