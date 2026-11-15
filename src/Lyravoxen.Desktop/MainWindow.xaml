@@ -120,12 +120,15 @@
  <TabItem Header="＋ Próxima música">
   <Grid Margin="18"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <Border Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,0,0,10">
-    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <TextBox x:Name="YoutubeSearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
-     <Button Grid.Column="1" Content="Pesquisar" Click="YoutubeSearch_Click"/>
-     <Button Grid.Column="2" Content="Voltar" Click="YoutubeSearchBack_Click"/>
-     <Button Grid.Column="3" Content="Avançar" Click="YoutubeSearchForward_Click"/>
-     <Button Grid.Column="4" Content="Atualizar" Click="YoutubeSearchRefresh_Click"/>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <TextBox x:Name="YoutubeSearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Digite um endereço completo ou pesquise no YouTube" KeyDown="YoutubeSearchBox_KeyDown"/>
+     <Button Grid.Column="1" Content="Ir" Click="YoutubeSearch_Click" ToolTip="Abrir endereço ou pesquisar"/>
+     <Button Grid.Column="2" Content="←" Click="YoutubeSearchBack_Click" ToolTip="Voltar"/>
+     <Button Grid.Column="3" Content="→" Click="YoutubeSearchForward_Click" ToolTip="Avançar"/>
+     <Button Grid.Column="4" Content="⟳" Click="YoutubeSearchRefresh_Click" ToolTip="Atualizar"/>
+     <Button Grid.Column="5" Content="Início" Click="YoutubeSearchHome_Click" ToolTip="Abrir YouTube"/>
+     <Button Grid.Column="6" Content="Colar" Click="YoutubeSearchPaste_Click" ToolTip="Colar endereço copiado"/>
+     <Button Grid.Column="7" Content="Copiar URL" Click="YoutubeSearchCopy_Click" ToolTip="Copiar endereço da página atual"/>
     </Grid>
    </Border>
    <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="ABAS DO NAVEGADOR" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="14,6"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="14,6" Margin="6,0,0,0"/></DockPanel><TabControl x:Name="BrowserTabs" Grid.Row="1" Background="#080D12" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
