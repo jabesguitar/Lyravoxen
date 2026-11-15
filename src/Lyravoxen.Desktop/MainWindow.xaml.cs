@@ -1195,7 +1195,7 @@ public partial class MainWindow : Window
         else
         {
             _lastAutomaticBlockStart = -1;
-            PublishLyric("");
+            if (!string.IsNullOrWhiteSpace(_currentProjectedLyric)) PublishLyric("");
         }
     }
 
@@ -2191,6 +2191,7 @@ public partial class MainWindow : Window
         _isLocalAudioPlaying = false;
         PublishLyric("");
         _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = -1;
         StatusText.Text = "Áudio offline finalizado.";
     }
 
@@ -2200,6 +2201,7 @@ public partial class MainWindow : Window
         _isLocalAudioPlaying = false;
         PublishLyric("");
         _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = -1;
         var detail = e.ErrorException?.Message ?? "Falha desconhecida ao abrir o arquivo.";
         StatusText.Text = "Não foi possível decodificar o áudio: " + detail;
     }
