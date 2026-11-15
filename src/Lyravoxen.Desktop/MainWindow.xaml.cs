@@ -355,6 +355,63 @@ public partial class MainWindow : Window
         return union == 0 ? 0 : (double)expectedWords.Intersect(candidateWords).Count() / union;
     }
 
+    private async void ImportHolyricsSong_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var query = PromptForText("Importar música do Holyrics", "Digite parte do título ou o nome do intérprete:");
+            if (string.IsNullOrWhiteSpace(query)) return;
+            StatusText.Text = "Pesquisando a biblioteca de músicas do Holyrics...";
+            var results = await _holyrics.SearchSongsAsync(query.Trim());
+            if (results.Count == 0)
+            {
+                StatusText.Text = "Nenhuma música encontrada na biblioteca do Holyrics.";
+                return;
+            }
+
+            var choices = string.Join(Environment.NewLine, results.Select((song, index) =>
+                $"{index + 1}. {song.Title}" + (string.IsNullOrWhiteSpace(song.Artist) ? "" : $" — {song.Artist}")));
+            var selectedText = PromptForText("Escolher música do Holyrics",
+                "Digite o número da música para importar:
+
+" + choices, "1");
+            if (!int.TryParse(selectedText, out var selectedIndex) || selectedIndex < 1 || selectedIndex > results.Count)
+                return;
+
+            var selected = results[selectedIndex - 1];
+            StatusText.Text = "Importando slides da música: " + selected.Title;
+            var slides = await _holyrics.GetSongSlidesAsync(selected.Id);
+            if (slides.Count == 0)
+            {
+                StatusText.Text = "A música foi encontrada, mas não possui slides de letra disponíveis.";
+                return;
+            }
+
+            _cues.Clear();
+            for (var index = 0; index < slides.Count; index++)
+                _cues.Add(new LyricCue { Seconds = 0, Text = slides[index].Trim() });
+            _currentVideo ??= new LibraryVideo
+            {
+                VideoId = YouTubeLink.TryGetVideoId(YoutubeUrlBox.Text) ?? "holyrics-" + selected.Id,
+                Url = YoutubeUrlBox.Text,
+                Title = selected.Title + (string.IsNullOrWhiteSpace(selected.Artist) ? "" : " — " + selected.Artist)
+            };
+            _currentVideo.Title = selected.Title + (string.IsNullOrWhiteSpace(selected.Artist) ? "" : " — " + selected.Artist);
+            _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            RefreshCueList(_cues.FirstOrDefault());
+            PersistCurrentCues();
+            _manualProjectionMode = true;
+            _manualCueIndex = -1;
+            _lastAutomaticCue = -1;
+            StatusText.Text = $"Importadas {slides.Count} telas de letra. Como o áudio é playback instrumental, use Anterior/Próxima para avançar no ritmo da música ou marque os tempos manualmente.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível importar a música do Holyrics: " + ex.Message;
+            System.Windows.MessageBox.Show(this, ex.Message, "Importação do Holyrics", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private async void SearchLyrics_Click(object sender, RoutedEventArgs e)
     {
         var track = MusicTrackBox.Text.Trim();
