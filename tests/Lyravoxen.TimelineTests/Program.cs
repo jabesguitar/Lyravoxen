@@ -27,6 +27,10 @@ var firstFour = string.Join(Environment.NewLine, "linha 1", "linha 2", "linha 3"
 Check(CueTimeline.BuildProjectionBlock(blockCues, 0, 4) == firstFour, "as quatro linhas do primeiro bloco aparecem juntas desde o início");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 1, 4) == firstFour, "o bloco permanece completo enquanto suas frases avançam");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 3, 4) == firstFour, "última frase do bloco não remove as anteriores");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 0, 2) == string.Join(Environment.NewLine, "linha 1", "linha 2"), "duas linhas aparecem simultaneamente");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 1, 2) == string.Join(Environment.NewLine, "linha 1", "linha 2"), "bloco de duas linhas permanece inteiro");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 2, 2) == string.Join(Environment.NewLine, "linha 3", "linha 4"), "bloco de duas linhas substitui o anterior por completo");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 4, 5) == string.Join(Environment.NewLine, "linha 5", "linha 6", "linha 7"), "bloco de cinco linhas inclui todas as frases disponíveis");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 4, 4) == string.Join(Environment.NewLine, "linha 5", "linha 6", "linha 7"), "bloco seguinte substitui todas as linhas anteriores de uma vez");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 5) == string.Join(Environment.NewLine, "linha 6", "linha 7"), "último bloco parcial exibe somente as linhas restantes");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 1) == "linha 7", "uma linha por bloco");
