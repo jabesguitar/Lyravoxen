@@ -446,6 +446,35 @@ public partial class MainWindow : Window
             };
             _currentVideo.Title = selected.Title + (string.IsNullOrWhiteSpace(selected.Artist) ? "" : " — " + selected.Artist);
             _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            // Preserve imported arrangements and learned playback timings in the library
+            // whenever this song is linked to a YouTube URL.
+            if (!string.IsNullOrWhiteSpace(_currentVideo.Url))
+            {
+                var holyricsFolder = _library.FirstOrDefault(folder =>
+                    string.Equals(folder.Name, "Músicas do Holyrics", StringComparison.OrdinalIgnoreCase));
+                if (holyricsFolder is null)
+                {
+                    holyricsFolder = new LibraryFolder { Name = "Músicas do Holyrics" };
+                    _library.Add(holyricsFolder);
+                }
+                var savedSong = holyricsFolder.Videos.FirstOrDefault(video =>
+                    string.Equals(video.VideoId, _currentVideo.VideoId, StringComparison.Ordinal));
+                if (savedSong is null)
+                {
+                    savedSong = new LibraryVideo
+                    {
+                        VideoId = _currentVideo.VideoId,
+                        Url = _currentVideo.Url,
+                        Title = _currentVideo.Title
+                    };
+                    holyricsFolder.Videos.Add(savedSong);
+                }
+                savedSong.Url = _currentVideo.Url;
+                savedSong.Title = _currentVideo.Title;
+                savedSong.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                SaveLibrary();
+                RefreshFolders(holyricsFolder.Id);
+            }
             RefreshCueList(_cues.FirstOrDefault());
             PersistCurrentCues();
             _manualProjectionMode = true;
