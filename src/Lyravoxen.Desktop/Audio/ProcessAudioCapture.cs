@@ -70,8 +70,18 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
         var copy = buffer.ToArray();
         var format = recorder.WaveFormat;
         var frames = format.BlockAlign > 0 ? copy.Length / format.BlockAlign : 0;
-        AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(
-            copy, format.SampleRate, format.Channels, format.BitsPerSample, format.Encoding == WaveFormatEncoding.IeeeFloat, _mediaTimeProvider?.Invoke() ?? 0, _sessionProvider?.Invoke() ?? string.Empty, frames, devicePosition, qpcPosition));
+        try
+        {
+            AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(
+                copy, format.SampleRate, format.Channels, format.BitsPerSample,
+                format.Encoding == WaveFormatEncoding.IeeeFloat,
+                _mediaTimeProvider?.Invoke() ?? 0, _sessionProvider?.Invoke() ?? string.Empty,
+                frames, devicePosition, qpcPosition));
+        }
+        catch (Exception ex)
+        {
+            try { CaptureFailed?.Invoke(ex); } catch { /* Never let subscriber errors escape the real-time audio callback. */ }
+        }
     }
 
     private void OnRecordingStopped(object? sender, StoppedEventArgs e)
