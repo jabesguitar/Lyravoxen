@@ -817,7 +817,8 @@ public partial class MainWindow : Window
         {
             var capture = _youtubeAudioCapture;
             _youtubeAudioCapture = null;
-            if (capture is not null) await capture.DisposeAsync();
+            if (capture is not null && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+                await capture.DisposeAsync();
         }
         finally { _captureLock.Release(); }
     }
