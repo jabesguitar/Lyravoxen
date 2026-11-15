@@ -501,7 +501,7 @@ public partial class MainWindow : Window
             "mbiblia.com.br", "gospelsonymusic.com.br", "hinarioevangelico.com",
             "reformabrasil.com.br", "hinoteca.com.br", "hinarioonline.com.br",
             "hinarioccb.net", "hymnsforworship.app"
-        }, "hinos evangélicos Harpa Cristã louvores");
+        });
     }
 
     private void SearchLyricsSources_Click(object sender, RoutedEventArgs e)
@@ -510,10 +510,10 @@ public partial class MainWindow : Window
         {
             "letras.mus.br", "cifraclub.com.br", "vagalume.com.br",
             "letras.com", "musixmatch.com", "genius.com"
-        }, "letra música louvor");
+        });
     }
 
-    private void SearchAcrossLyricSites(IEnumerable<string> domains, string category)
+    private void SearchAcrossLyricSites(IEnumerable<string> domains)
     {
         var track = SearchTrackBox.Text.Trim();
         var artist = SearchArtistBox.Text.Trim();
@@ -524,7 +524,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var terms = string.Join(" ", new[] { track, artist, category }.Where(value => !string.IsNullOrWhiteSpace(value)));
+        var terms = string.Join(" ", new[] { track, artist }.Where(value => !string.IsNullOrWhiteSpace(value)));
         var siteFilter = string.Join(" OR ", domains.Select(domain => "site:" + domain));
         var query = Uri.EscapeDataString(terms + " (" + siteFilter + ")");
         var view = ActiveBrowserView;
