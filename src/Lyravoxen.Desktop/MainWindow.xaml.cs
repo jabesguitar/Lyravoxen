@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using Lyravoxen.Integration;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
+using Lyravoxen.Audio;
 
 namespace Lyravoxen;
 
@@ -53,6 +54,11 @@ public partial class MainWindow : Window
     private bool _loadingPreferences;
     private string? _selectedOutputDeviceName;
     private bool _displayChangeHandlerAttached;
+    private ProcessAudioCapture? _youtubeAudioCapture;
+    private AudioChunkBuffer? _youtubeAudioBuffer;
+    private CancellationTokenSource? _youtubeAudioCts;
+    private Task? _youtubeAudioDrainTask;
+    private readonly SemaphoreSlim _captureLock = new(1, 1);
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     public MainWindow()
@@ -680,14 +686,21 @@ public partial class MainWindow : Window
             if (state != _lastPlayerState)
             {
                 _lastPlayerState = state;
-                if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando, mas não há letra com tempos carregada. Use Buscar letra sincronizada.");
-                else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
-                else if (state == 0) Dispatcher.Invoke(() =>
+                if (state == 1)
                 {
-                    PublishLyric("");
-                    _lastAutomaticCue = -1;
-                    StatusText.Text = "Reprodução do YouTube finalizada.";
-                });
+                    Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : "YouTube tocando. Preparando captura isolada de áudio.");
+                    _ = StartYoutubeCaptureAsync();
+                }
+                else if (state == 2)
+                {
+                    _ = StopYoutubeCaptureAsync();
+                    Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
+                }
+                else if (state == 0)
+                {
+                    _ = StopYoutubeCaptureAsync();
+                    Dispatcher.Invoke(() => { PublishLyric(""); _lastAutomaticCue = -1; StatusText.Text = "Reprodução do YouTube finalizada."; });
+                }
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
             var cueIndex = FindActiveCue(seconds);
@@ -697,6 +710,74 @@ public partial class MainWindow : Window
         }
         catch (JsonException) { }
         catch (InvalidOperationException) { }
+    }
+
+
+    // O player usa um ambiente WebView2 próprio, separado das abas de pesquisa.
+    // A captura fica restrita à árvore de processos desse ambiente.
+    private async Task StartYoutubeCaptureAsync()
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) || YoutubePlayer.CoreWebView2 is null) return;
+        await _captureLock.WaitAsync();
+        try
+        {
+            if (_lastPlayerState != 1 || _youtubeAudioCapture?.IsCapturing == true) return;
+            await StopYoutubeCaptureCoreAsync();
+            var pid = YoutubePlayer.CoreWebView2.BrowserProcessId;
+            if (pid == 0) return;
+            var capture = new ProcessAudioCapture();
+            var buffer = new AudioChunkBuffer(40);
+            var cts = new CancellationTokenSource();
+            capture.AudioChunkAvailable += (_, chunk) => buffer.TryWrite(chunk);
+            capture.CaptureFailed += ex => Dispatcher.BeginInvoke(() =>
+                StatusText.Text = "Falha na captura de áudio: " + ex.Message);
+            _youtubeAudioCapture = capture;
+            _youtubeAudioBuffer = buffer;
+            _youtubeAudioCts = cts;
+            _youtubeAudioDrainTask = DrainYoutubeAudioAsync(buffer, cts.Token);
+            await capture.StartAsync(pid);
+            Dispatcher.Invoke(() => StatusText.Text = "Captura isolada ativa: " +
+                capture.SampleRate + " Hz, " + capture.Channels + " canais. Reconhecimento ainda não conectado.");
+        }
+        catch (Exception ex)
+        {
+            await StopYoutubeCaptureCoreAsync();
+            Dispatcher.Invoke(() => StatusText.Text = "Captura isolada indisponível: " + ex.Message);
+        }
+        finally { _captureLock.Release(); }
+    }
+
+    private static async Task DrainYoutubeAudioAsync(AudioChunkBuffer buffer, CancellationToken token)
+    {
+        try { while (await buffer.ReadAsync(token).ConfigureAwait(false) is not null) { } }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task StopYoutubeCaptureAsync()
+    {
+        await _captureLock.WaitAsync();
+        try { await StopYoutubeCaptureCoreAsync(); }
+        finally { _captureLock.Release(); }
+    }
+
+    private async Task StopYoutubeCaptureCoreAsync()
+    {
+        var capture = _youtubeAudioCapture;
+        _youtubeAudioCapture = null;
+        if (capture is not null) await capture.DisposeAsync();
+        var cts = _youtubeAudioCts;
+        _youtubeAudioCts = null;
+        cts?.Cancel();
+        var buffer = _youtubeAudioBuffer;
+        _youtubeAudioBuffer = null;
+        buffer?.Complete();
+        if (_youtubeAudioDrainTask is not null)
+        {
+            try { await _youtubeAudioDrainTask; } catch (OperationCanceledException) { }
+            _youtubeAudioDrainTask = null;
+        }
+        cts?.Dispose();
+        buffer?.Dispose();
     }
 
     private async Task SendLyricToHolyricsAsync(string text)
