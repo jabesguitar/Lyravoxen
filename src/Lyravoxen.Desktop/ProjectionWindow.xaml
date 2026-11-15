@@ -7,12 +7,14 @@
   <StackPanel x:Name="OverlayPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
    <TextBlock x:Name="OverlayTitle" Text="LYRAVOXEN" Foreground="#26C6B8" FontSize="48" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center"/>
    <TextBlock x:Name="OverlaySubtitle" Text="" Foreground="#F2F6F8" FontSize="24" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+
   </StackPanel>
   <TextBlock x:Name="LyricDisplay" Text=""
    Foreground="White" FontSize="48" FontWeight="SemiBold"
    TextAlignment="Center" TextWrapping="Wrap"
    HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="90"/>
   <TextBlock Text="LYRAVOXEN" Foreground="#527080" FontSize="13"
-   HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20"/>
+   HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20,20,20,58"/>
+  <Button Content="SAIR DA PROJEÇÃO  •  ESC" Click="ExitProjectionButton_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="12" Padding="14,8" FontSize="12" FontWeight="Bold" Foreground="#081018" Background="#26C6B8" BorderThickness="0" Cursor="Hand" ToolTip="Fecha esta tela em tela cheia e retorna à área de trabalho do computador."/>
  </Grid>
 </Window>

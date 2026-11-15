@@ -8,6 +8,8 @@ public partial class ProjectionWindow : Window
 {
     public ProjectionWindow() => InitializeComponent();
 
+    public event EventHandler<RoutedEventArgs>? HolyricsCloseRequested;
+
     public string? ShowOnOutputDisplay(string? preferredDeviceName = null)
     {
         var screens = Forms.Screen.AllScreens;
@@ -58,7 +60,7 @@ public partial class ProjectionWindow : Window
 
     public void SetMaxLines(int count)
     {
-        _maxLines = Math.Clamp(count, 3, 5);
+        _maxLines = Math.Clamp(count, 1, 10);
         UpdateTextLayout(LyricDisplay.Text);
     }
 
@@ -165,12 +167,22 @@ public partial class ProjectionWindow : Window
         return string.Join(Environment.NewLine, lines);
     }
 
+    private void ExitProjectionButton_Click(object sender, RoutedEventArgs e) => Close();
+
     protected override void OnKeyDown(WpfKeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
-            ClearDisplay();
+            Close();
             e.Handled = true;
+            return;
+        }
+        if (e.Key == System.Windows.Input.Key.F9 &&
+            (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control)
+        {
+            HolyricsCloseRequested?.Invoke(this, new RoutedEventArgs());
+            e.Handled = true;
+            return;
         }
         base.OnKeyDown(e);
     }

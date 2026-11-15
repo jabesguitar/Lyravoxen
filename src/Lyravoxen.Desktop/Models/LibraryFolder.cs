@@ -13,8 +13,12 @@ public sealed class LibraryVideo
 {
     public string VideoId { get; set; } = "";
     public string Title { get; set; } = "";
+    public string SongTitle { get; set; } = "";
+    public string Performer { get; set; } = "";
+    public string Composer { get; set; } = "";
     public string Url { get; set; } = "";
     public bool IsOffline { get; set; }
+    public bool IsLyricsOnly { get; set; }
     public string? LocalPath { get; set; }
     public string? Format { get; set; }
     public List<LyricCue> Cues { get; set; } = new();
