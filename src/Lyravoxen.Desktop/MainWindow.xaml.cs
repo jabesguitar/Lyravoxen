@@ -42,6 +42,8 @@ public partial class MainWindow : Window
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
+    private readonly SemaphoreSlim _holyricsSendLock = new(1, 1);
+    private long _holyricsSendVersion;
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
@@ -622,8 +624,26 @@ public partial class MainWindow : Window
 
     private async Task SendLyricToHolyricsAsync(string text)
     {
-        try { await _holyrics.ShowTextAsync(text); }
-        catch (Exception ex) { Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message); }
+        // Mantém a ordem da apresentação: uma resposta lenta não pode sobrescrever uma frase mais nova.
+        var requestVersion = Interlocked.Increment(ref _holyricsSendVersion);
+        try
+        {
+            await _holyricsSendLock.WaitAsync();
+            try
+            {
+                if (requestVersion != Interlocked.Read(ref _holyricsSendVersion)) return;
+                await _holyrics.ShowTextAsync(text);
+            }
+            finally
+            {
+                _holyricsSendLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
+                Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message);
+        }
     }
 
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
@@ -645,7 +665,7 @@ public partial class MainWindow : Window
     {
         if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
             !int.TryParse(item.Content?.ToString(), out var count)) return;
-        _projection?.SetMaxLines(count);
+        _projection?.SetMaxLines(Math.Clamp(count, 1, 10));
         if (!_loadingPreferences) SavePreferences(null, count);
     }
 
@@ -1258,7 +1278,7 @@ public partial class MainWindow : Window
         _lastAutomaticCue = -1;
         var currentIndex = FindActiveCue(GetPlaybackSeconds());
         _lastAutomaticCue = currentIndex;
-        PublishProjectionOnly(currentIndex >= 0 ? _cues[currentIndex].Text : "");
+        PublishLyric(currentIndex >= 0 ? _cues[currentIndex].Text : "");
         StatusText.Text = "Modo automático retomado. A projeção foi alinhada à posição atual da música.";
     }
 
