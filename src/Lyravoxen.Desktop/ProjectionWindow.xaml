@@ -7,6 +7,7 @@
   <StackPanel x:Name="OverlayPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
    <TextBlock x:Name="OverlayTitle" Text="LYRAVOXEN" Foreground="#26C6B8" FontSize="48" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center"/>
    <TextBlock x:Name="OverlaySubtitle" Text="" Foreground="#F2F6F8" FontSize="24" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+   <Button x:Name="ExitOverlayButton" Content="ESC  —  VOLTAR À PROJEÇÃO" Click="ExitOverlayButton_Click" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,26,0,0" Padding="18,10" FontSize="16" FontWeight="Bold" Foreground="#081018" Background="#26C6B8" BorderThickness="0" Cursor="Hand"/>
   </StackPanel>
   <TextBlock x:Name="LyricDisplay" Text=""
    Foreground="White" FontSize="48" FontWeight="SemiBold"
