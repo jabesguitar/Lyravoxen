@@ -19,6 +19,8 @@ public partial class MainWindow : Window
     private ProjectionWindow? _projection;
     private string _currentProjectedLyric = "";
     private readonly List<LyricCue> _cues = new();
+    private readonly List<string> _pastedLyrics = new();
+    private int _pastedLyricsIndex;
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
@@ -914,13 +916,12 @@ public partial class MainWindow : Window
                     _ = StopYoutubeCaptureAsync();
                     Dispatcher.Invoke(() =>
                     {
-                        PublishLyric("");
                         _lastAutomaticCue = -1;
                         _lastAutomaticBlockStart = -1;
                         _manualProjectionMode = false;
                         _manualCueIndex = -1;
-                        StatusText.Text = "Reprodução do YouTube finalizada. Projeção limpa.";
                     });
+                    _ = ClearProjectionAfterPlaybackAsync();
                 }
                 else
                     Dispatcher.Invoke(() => StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : "YouTube aguardando.");
@@ -950,7 +951,8 @@ public partial class MainWindow : Window
                 else if (state == 0)
                 {
                     _ = StopYoutubeCaptureAsync();
-                    Dispatcher.Invoke(() => { PublishLyric(""); _lastAutomaticCue = -1; _lastAutomaticBlockStart = -1; StatusText.Text = "Reprodução do YouTube finalizada."; });
+                    Dispatcher.Invoke(() => { _lastAutomaticCue = -1; _lastAutomaticBlockStart = -1; _manualProjectionMode = false; _manualCueIndex = -1; });
+                    _ = ClearProjectionAfterPlaybackAsync();
                 }
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
@@ -1558,6 +1560,30 @@ public partial class MainWindow : Window
         // Texto vazio fecha a apresentação rápida no Holyrics e libera o próximo takeover.
         if (string.IsNullOrWhiteSpace(text)) _holyricsTakeoverActive = false;
         _ = SendLyricToHolyricsAsync(text);
+    }
+
+    private async Task ClearProjectionAfterPlaybackAsync()
+    {
+        PublishProjectionOnly("");
+        if (!_holyrics.IsConfigured) return;
+        // Invalida envios pendentes para nenhum verso atrasado reaparecer após o fim.
+        var requestVersion = Interlocked.Increment(ref _holyricsSendVersion);
+        try
+        {
+            await _holyricsSendLock.WaitAsync();
+            try
+            {
+                if (requestVersion != Interlocked.Read(ref _holyricsSendVersion)) return;
+                await _holyrics.ClearProjectionAsync();
+                _holyricsTakeoverActive = false;
+                Dispatcher.BeginInvoke(() => StatusText.Text = "Música finalizada. Projeção do Holyrics encerrada automaticamente.");
+            }
+            finally { _holyricsSendLock.Release(); }
+        }
+        catch (Exception ex)
+        {
+            Dispatcher.BeginInvoke(() => StatusText.Text = "A música terminou, mas não foi possível limpar o Holyrics automaticamente: " + ex.Message);
+        }
     }
 
     private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
@@ -2203,9 +2229,11 @@ public partial class MainWindow : Window
     {
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
-        PublishLyric("");
         _lastAutomaticCue = -1;
         _lastAutomaticBlockStart = -1;
+        _manualProjectionMode = false;
+        _manualCueIndex = -1;
+        _ = ClearProjectionAfterPlaybackAsync();
         StatusText.Text = "Áudio offline finalizado.";
     }
 
