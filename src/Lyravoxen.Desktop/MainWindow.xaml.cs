@@ -72,7 +72,11 @@ public partial class MainWindow : Window
         {
             try
             {
-                await YoutubePlayer.EnsureCoreWebView2Async();
+                Directory.CreateDirectory(_playerFolder);
+                var playerWebViewData = Path.Combine(_playerFolder, "WebView2UserData");
+                Directory.CreateDirectory(playerWebViewData);
+                var playerEnvironment = await CoreWebView2Environment.CreateAsync(userDataFolder: playerWebViewData);
+                await YoutubePlayer.EnsureCoreWebView2Async(playerEnvironment);
                 YoutubePlayer.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 YoutubePlayer.CoreWebView2.Settings.IsStatusBarEnabled = false;
                 if (!_webMessageHandlerAttached)
@@ -281,7 +285,8 @@ public partial class MainWindow : Window
                 ? $"Letra preparada: {_cues.Count} frases carregadas. Inicializando o vídeo..."
                 : "Vídeo identificado. Nenhuma letra salva para ele; você pode cadastrar as frases enquanto o player carrega.";
 
-            await YoutubePlayer.EnsureCoreWebView2Async();
+            if (YoutubePlayer.CoreWebView2 is null)
+                throw new InvalidOperationException("O ambiente isolado do player ainda não foi inicializado.");
             Directory.CreateDirectory(_playerFolder);
             if (!_virtualHostMapped)
             {
