@@ -895,7 +895,21 @@ public partial class MainWindow : Window
             if (type.GetString() == "state")
             {
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
-                Dispatcher.Invoke(() => StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : playerState == 0 ? "YouTube finalizado." : "YouTube aguardando.");
+                if (playerState == 0)
+                {
+                    _lastPlayerState = 0;
+                    _ = StopYoutubeCaptureAsync();
+                    Dispatcher.Invoke(() =>
+                    {
+                        PublishLyric("");
+                        _lastAutomaticCue = -1;
+                        _manualProjectionMode = false;
+                        _manualCueIndex = -1;
+                        StatusText.Text = "Reprodução do YouTube finalizada. Projeção limpa.";
+                    });
+                }
+                else
+                    Dispatcher.Invoke(() => StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : "YouTube aguardando.");
                 return;
             }
             if (type.GetString() != "time") return;
