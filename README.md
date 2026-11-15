@@ -34,6 +34,28 @@ O pacote experimental desta branch é publicado como self-contained para .NET 9;
 
 A permissão `ShowQuickPresentation` envia cada frase sincronizada ao telão do Holyrics. A permissão `CloseCurrentQuickPresentation` permite limpar a apresentação rápida quando a música muda, termina ou a frase é apagada. O fechamento atua somente sobre a apresentação rápida controlada por essa API; não deve ser usado para encerrar uma apresentação comum de slides.
 
+## Busca ampliada de hinos, louvores e letras
+
+Na aba **Próxima música**, informe o título, intérprete ou número do hino e use os atalhos **Sites gospel** e **Sites gerais**. Eles abrem pesquisas agrupadas por domínio no navegador interno, sem copiar automaticamente letras de terceiros para a biblioteca.
+
+Fontes especializadas incluídas na pesquisa gospel:
+- Harpa Cristã Digital (harpacrista.digital)
+- O Gospel (ogospel.com.br)
+- Agenda Pregador (agendapregador.com.br)
+- mBíblia (mbiblia.com.br)
+- Gospel Sony Music (gospelsonymusic.com.br)
+- Hinário Evangélico (hinarioevangelico.com)
+- Hinário Digital ReformaBrasil (reformabrasil.com.br)
+
+Fontes gerais de música e letras:
+- Letras.mus.br
+- Cifra Club
+- Vagalume
+- Letras.com
+- Musixmatch
+
+A lista é uma coleção de pontos de partida para pesquisa, não uma declaração de parceria, API oficial ou autorização para copiar conteúdo. A disponibilidade e a qualidade variam por música, versão, gravação e hinário. O fluxo automático sincronizado continua usando LRCLIB; os demais portais são abertos para conferência pelo usuário. Quando a fonte não oferece API pública e licença adequada, o Lyravoxen não tenta extrair em massa nem republicar letras protegidas. O usuário pode importar LRC/SRT ou cadastrar a letra e seus tempos conforme os direitos de uso aplicáveis.
+
 ## Busca automática de letras sincronizadas
 Ao carregar um vídeo do YouTube sem letras salvas, o Lyravoxen consulta o catálogo LRCLIB usando o título obtido do vídeo. Se houver candidatos, mostra a gravação, a duração e uma prévia para confirmação antes de aplicar os tempos. O intérprete é opcional e pode melhorar a correspondência. Nem toda música — especialmente gravações ao vivo, versões de igreja ou vídeos com títulos diferentes — possui letra sincronizada nesse catálogo; nesses casos, importe um arquivo LRC/SRT ou cadastre os tempos manualmente.
 
