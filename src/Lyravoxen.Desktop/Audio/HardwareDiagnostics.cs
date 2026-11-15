@@ -45,11 +45,14 @@ internal sealed record HardwareDiagnostics(
         var tier = avx2 ? CompatibilityTier.Avx2 :
             avx ? CompatibilityTier.Avx : CompatibilityTier.LegacyX64;
 
-        // Conservative default: never consume all logical processors.
-        var threads = logical <= 2 ? 1 : Math.Clamp(logical / 8, 1, 2);
-        var profile = logical >= 8 && availableMemory >= 8L * 1024 * 1024 * 1024
-            ? PerformanceProfile.Balanced
-            : PerformanceProfile.LowResource;
+        // Auto adapts in both directions: older PCs stay lightweight, while
+        // modern systems can use more inference capacity without consuming every core.
+        var profile = logical >= 16 && availableMemory >= 16L * 1024 * 1024 * 1024
+            ? PerformanceProfile.Quality
+            : logical >= 4 && availableMemory >= 6L * 1024 * 1024 * 1024
+                ? PerformanceProfile.Balanced
+                : PerformanceProfile.LowResource;
+        var threads = PerformanceProfileSettings.GetInferenceThreads(profile, logical);
 
         return new HardwareDiagnostics(
             os,
@@ -109,8 +112,9 @@ internal static class PerformanceProfileSettings
         return profile switch
         {
             PerformanceProfile.LowResource => 1,
-            PerformanceProfile.Balanced => Math.Clamp(available / 8, 1, 2),
-            PerformanceProfile.Quality => Math.Clamp(available / 4, 1, 4),
+            // Leave capacity for Windows, the UI and real-time audio.
+            PerformanceProfile.Balanced => Math.Clamp(available / 3, 1, 4),
+            PerformanceProfile.Quality => Math.Clamp(available - 2, 2, 8),
             _ => 1
         };
     }
@@ -121,7 +125,8 @@ internal static class PerformanceProfileSettings
             (_, PerformanceProfile.LowResource) => "tiny-quantized",
             (CompatibilityTier.LegacyX64, _) => "tiny-quantized-scalar-or-sse2",
             (CompatibilityTier.Avx, _) => "tiny-or-base-quantized-avx",
-            (CompatibilityTier.Avx2, PerformanceProfile.Quality) => "base-quantized-avx2",
+            (CompatibilityTier.Avx2, PerformanceProfile.Quality) => "base-or-larger-quantized-avx2",
+            (CompatibilityTier.Avx, PerformanceProfile.Quality) => "base-quantized-avx",
             _ => "tiny-or-base-quantized"
         };
 }
