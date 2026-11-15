@@ -27,10 +27,14 @@
 - [x] Busca de letras sincronizadas com confirmação antes de aplicar
 - [x] Testes automatizados da linha do tempo e antecipação configurável no código
 - [ ] Transcrição local e offline da música tocada no player, sem depender de LRCLIB ou Holyrics
-- [ ] Captura isolada do áudio do processo do Lyravoxen no Windows (WASAPI process loopback), sem gravar sons de outros aplicativos
+- [ ] Pré-carregar o modelo de reconhecimento ao iniciar o aplicativo (ou em segundo plano), para não esperar o modelo depois que a música começar
+- [ ] Enquanto o YouTube carrega, consultar catálogo e preparar título/artista; iniciar a captura assim que o player emitir áudio
+- [ ] Captura isolada do áudio do player via WASAPI process loopback, sem gravar sons de outros aplicativos; avaliar isolamento do processo WebView2 para não capturar abas de pesquisa
 - [ ] Motor de reconhecimento local baseado em whisper.cpp, com download opcional do modelo e suporte a CPUs sem AVX2
+- [ ] Processamento contínuo em janelas curtas com sobreposição, resultados parciais e timestamps alinhados ao relógio da reprodução
+- [ ] Buffer circular para manter alguns segundos de áudio enquanto o reconhecimento trabalha; não atrasar nem acelerar a música
+- [ ] Exibir prévia assim que houver trechos confiáveis; indicar estado de reconhecimento e atraso estimado, sem projetar texto incerto automaticamente
 - [ ] Converter a transcrição em trechos com timestamps; validar/ajustar os tempos e o texto no editor antes da projeção
-- [ ] Processamento por blocos durante a reprodução, com indicação clara de atraso e progresso
 - [ ] Fallback para catálogo de letras, arquivos LRC/SRT e cadastro manual
 - [ ] Testes práticos com músicas cantadas, ao vivo, instrumentais e diferentes gravações
 
