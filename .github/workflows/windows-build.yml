@@ -2,6 +2,8 @@ name: Windows build
 
 on:
   push:
+    branches: [main, fix/simultaneous-lyrics-and-controls]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 

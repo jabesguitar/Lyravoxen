@@ -42,6 +42,8 @@ public partial class MainWindow : Window
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
+    private readonly SemaphoreSlim _holyricsSendLock = new(1, 1);
+    private long _holyricsSendVersion;
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
@@ -219,7 +221,7 @@ public partial class MainWindow : Window
         {
             _playerSessionId = Guid.NewGuid().ToString("N");
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
-            PublishProjectionOnly("");
+            PublishLyric("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
             _playerReady = false; _lastPlayerState = -1; _playerDurationSeconds = 0; _lastKnownPlaybackSeconds = 0; _lastAutomaticCue = -1;
             _manualProjectionMode = false; _manualCueIndex = -1;
@@ -605,7 +607,7 @@ public partial class MainWindow : Window
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>
                 {
-                    PublishProjectionOnly("");
+                    PublishLyric("");
                     _lastAutomaticCue = -1;
                     StatusText.Text = "Reprodução do YouTube finalizada.";
                 });
@@ -622,8 +624,26 @@ public partial class MainWindow : Window
 
     private async Task SendLyricToHolyricsAsync(string text)
     {
-        try { await _holyrics.ShowTextAsync(text); }
-        catch (Exception ex) { Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message); }
+        // Mantém a ordem da apresentação: uma resposta lenta não pode sobrescrever uma frase mais nova.
+        var requestVersion = Interlocked.Increment(ref _holyricsSendVersion);
+        try
+        {
+            await _holyricsSendLock.WaitAsync();
+            try
+            {
+                if (requestVersion != Interlocked.Read(ref _holyricsSendVersion)) return;
+                await _holyrics.ShowTextAsync(text);
+            }
+            finally
+            {
+                _holyricsSendLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
+                Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message);
+        }
     }
 
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
@@ -645,7 +665,7 @@ public partial class MainWindow : Window
     {
         if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
             !int.TryParse(item.Content?.ToString(), out var count)) return;
-        _projection?.SetMaxLines(count);
+        _projection?.SetMaxLines(Math.Clamp(count, 1, 10));
         if (!_loadingPreferences) SavePreferences(null, count);
     }
 
@@ -843,7 +863,7 @@ public partial class MainWindow : Window
         try
         {
             await _holyrics.TestConnectionAsync();
-            lines.Add("✓ Holyrics respondeu e autorizou ShowQuickPresentation");
+            lines.Add("✓ Holyrics respondeu e autorizou ShowQuickPresentation e CloseCurrentQuickPresentation");
         }
         catch (Exception ex)
         {
@@ -955,9 +975,8 @@ public partial class MainWindow : Window
     private void PublishLyric(string text)
     {
         PublishProjectionOnly(text);
-        // A API do Holyrics recebe apenas letras válidas; texto vazio é usado só para limpar o telão local.
-        if (!string.IsNullOrWhiteSpace(text))
-            _ = SendLyricToHolyricsAsync(text);
+        // Texto vazio fecha a apresentação rápida no Holyrics e limpa a projeção local.
+        _ = SendLyricToHolyricsAsync(text);
     }
 
     private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
@@ -1258,7 +1277,7 @@ public partial class MainWindow : Window
         _lastAutomaticCue = -1;
         var currentIndex = FindActiveCue(GetPlaybackSeconds());
         _lastAutomaticCue = currentIndex;
-        PublishProjectionOnly(currentIndex >= 0 ? _cues[currentIndex].Text : "");
+        PublishLyric(currentIndex >= 0 ? _cues[currentIndex].Text : "");
         StatusText.Text = "Modo automático retomado. A projeção foi alinhada à posição atual da música.";
     }
 
@@ -1476,7 +1495,7 @@ public partial class MainWindow : Window
         {
             if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
             _audioTimer.Stop();
-            PublishProjectionOnly("");
+            PublishLyric("");
             YoutubePlayer.Visibility = Visibility.Collapsed;
             LocalAudioPlayer.Visibility = Visibility.Visible;
             LocalAudioPlayer.Source = new Uri(video.LocalPath);
@@ -1510,7 +1529,7 @@ public partial class MainWindow : Window
     {
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
-        PublishProjectionOnly("");
+        PublishLyric("");
         _lastAutomaticCue = -1;
         StatusText.Text = "Áudio offline finalizado.";
     }
@@ -1519,7 +1538,7 @@ public partial class MainWindow : Window
     {
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
-        PublishProjectionOnly("");
+        PublishLyric("");
         _lastAutomaticCue = -1;
         var detail = e.ErrorException?.Message ?? "Falha desconhecida ao abrir o arquivo.";
         StatusText.Text = "Não foi possível decodificar o áudio: " + detail;
