@@ -86,13 +86,14 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
 }
 
 internal sealed class AudioChunkEventArgs(
-    byte[] data, int sampleRate, int channels, int bitsPerSample,
+    byte[] data, int sampleRate, int channels, int bitsPerSample, bool isIeeeFloat,
     int frames, long devicePosition, long qpcPosition) : EventArgs
 {
     public byte[] Data { get; } = data;
     public int SampleRate { get; } = sampleRate;
     public int Channels { get; } = channels;
-    public int BitsPerSample { get; } = bitsPerSample;\n    public bool IsIeeeFloat { get; } = isIeeeFloat;
+    public int BitsPerSample { get; } = bitsPerSample;
+    public bool IsIeeeFloat { get; } = isIeeeFloat;
     public int Frames { get; } = frames;
     public long DevicePosition { get; } = devicePosition;
     public long QpcPosition { get; } = qpcPosition;
