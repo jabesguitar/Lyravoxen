@@ -493,6 +493,22 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void SearchLyricsFromBrowser_Click(object sender, RoutedEventArgs e)
+    {
+        var track = SearchTrackBox.Text.Trim();
+        var artist = SearchArtistBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(track))
+        {
+            StatusText.Text = "Informe o título da música para pesquisar a letra.";
+            SearchTrackBox.Focus();
+            return;
+        }
+        MusicTrackBox.Text = track;
+        MusicArtistBox.Text = artist;
+        WorkspaceTabs.SelectedIndex = 0;
+        await TryLoadAutomaticLyricsAsync(track, artist);
+    }
+
     private async void SearchLyrics_Click(object sender, RoutedEventArgs e)
     {
         var track = MusicTrackBox.Text.Trim();
@@ -649,7 +665,11 @@ public partial class MainWindow : Window
         if (_currentVideo?.VideoId == videoId)
         {
             _currentVideo.Title = displayTitle;
-            MusicTrackBox.Text = title;
+            var identity = SplitVideoTitle(title);
+            MusicTrackBox.Text = identity.Track;
+            MusicArtistBox.Text = identity.Artist;
+            if (SearchTrackBox is not null) SearchTrackBox.Text = identity.Track;
+            if (SearchArtistBox is not null) SearchArtistBox.Text = identity.Artist;
         }
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
@@ -662,6 +682,18 @@ public partial class MainWindow : Window
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
         SaveHistory();
         RefreshHistory();
+    }
+
+    private static (string Track, string Artist) SplitVideoTitle(string title)
+    {
+        var separators = new[] { " - ", " – ", " — ", " | " };
+        foreach (var separator in separators)
+        {
+            var parts = title.Split(separator, 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2 && parts[0].Length > 1 && parts[1].Length > 1)
+                return (parts[1], parts[0]);
+        }
+        return (title.Trim(), "");
     }
 
     private void LoadHistory()
@@ -1395,7 +1427,8 @@ public partial class MainWindow : Window
         if (LineCountBox?.SelectedItem is ComboBoxItem item &&
             int.TryParse(item.Content?.ToString(), out var selectedCount))
             count = Math.Clamp(selectedCount, 1, 10);
-        var firstIndex = Math.Max(0, activeIndex - count + 1);
+        // Blocos fixos: o bloco anterior desaparece quando o próximo começa.
+        var firstIndex = (activeIndex / count) * count;
         return string.Join(Environment.NewLine, _cues.Skip(firstIndex).Take(activeIndex - firstIndex + 1)
             .Select(cue => cue.Text.Trim()).Where(text => !string.IsNullOrWhiteSpace(text)));
     }
@@ -1981,7 +2014,7 @@ public partial class MainWindow : Window
         var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
-        PublishLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
+        PublishLyric(BuildProjectionCueBlock(cueIndex));
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
