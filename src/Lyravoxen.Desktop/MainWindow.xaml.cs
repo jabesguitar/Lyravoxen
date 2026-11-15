@@ -935,7 +935,8 @@ public partial class MainWindow : Window
     {
         if (_projection is null || !_projection.IsVisible)
         {
-            _projection = new ProjectionWindow();
+            _projection = new ProjectionWindow { Owner = this };
+            _projection.Closed += (_, _) => _projection = null;
             var actualDevice = _projection.ShowOnOutputDisplay(_selectedOutputDeviceName);
             var actualScreen = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(screen =>
                 string.Equals(screen.DeviceName, actualDevice, StringComparison.OrdinalIgnoreCase));
