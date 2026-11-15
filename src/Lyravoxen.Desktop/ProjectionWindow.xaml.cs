@@ -8,6 +8,8 @@ public partial class ProjectionWindow : Window
 {
     public ProjectionWindow() => InitializeComponent();
 
+    public event EventHandler<RoutedEventArgs>? HolyricsCloseRequested;
+
     public string? ShowOnOutputDisplay(string? preferredDeviceName = null)
     {
         var screens = Forms.Screen.AllScreens;
@@ -68,7 +70,6 @@ public partial class ProjectionWindow : Window
         _displayMode = ProjectionDisplayMode.Lyric;
         LyricDisplay.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Collapsed;
-        ExitOverlayButton.Visibility = Visibility.Collapsed;
         LyricDisplay.Text = LimitLines(_lastLyric, _maxLines);
         UpdateTextLayout(LyricDisplay.Text);
     }
@@ -79,7 +80,6 @@ public partial class ProjectionWindow : Window
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "LYRAVOXEN";
         OverlaySubtitle.Text = "A apresentação começará em instantes";
-        ExitOverlayButton.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Visible;
     }
 
@@ -89,7 +89,6 @@ public partial class ProjectionWindow : Window
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "Obrigado pela presença";
         OverlaySubtitle.Text = "Que Deus abençoe a todos";
-        ExitOverlayButton.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Visible;
     }
 
@@ -99,7 +98,6 @@ public partial class ProjectionWindow : Window
         _displayMode = ProjectionDisplayMode.Blank;
         LyricDisplay.Text = "";
         OverlayPanel.Visibility = Visibility.Collapsed;
-        ExitOverlayButton.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Visible;
         UpdateTextLayout("");
     }
@@ -169,13 +167,20 @@ public partial class ProjectionWindow : Window
         return string.Join(Environment.NewLine, lines);
     }
 
-    private void ExitOverlayButton_Click(object sender, RoutedEventArgs e) => RestoreDisplay();
+    private void ExitProjectionButton_Click(object sender, RoutedEventArgs e) => Close();
 
     protected override void OnKeyDown(WpfKeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
-            RestoreDisplay();
+            Close();
+            e.Handled = true;
+            return;
+        }
+        if (e.Key == System.Windows.Input.Key.F9 &&
+            (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control)
+        {
+            HolyricsCloseRequested?.Invoke(this, new RoutedEventArgs());
             e.Handled = true;
             return;
         }
