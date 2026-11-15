@@ -43,3 +43,16 @@
 - [ ] Instalador Windows x64
 - [ ] Testes no i5-3470 e Xeon E5-2689
 - [ ] Aplicativo Android complementar (projeto separado)
+
+
+## Princípios de qualidade do produto
+- [ ] Separar reprodução, captura de áudio, reconhecimento, linha do tempo, projeção e integrações em módulos independentes
+- [ ] Usar identificador de sessão por música para impedir resultados atrasados de alterarem a faixa atual
+- [ ] Executar reconhecimento em segundo plano com cancelamento ao trocar de faixa e limites de CPU/memória configuráveis
+- [ ] Exibir estados reais: carregando, reconhecendo, prévia disponível, sincronizado, sem correspondência e erro
+- [ ] Não projetar transcrições incertas sem confirmação ou política de confiança configurada
+- [ ] Manter funcionamento principal sem internet após disponibilizar o modelo local, exceto reprodução de links online
+- [ ] Criar testes automatizados para troca rápida de músicas, concorrência, timestamps, buffer, cancelamento e perda de conexão
+- [ ] Medir latência ponta a ponta e consumo de CPU/RAM em hardware antigo antes de definir requisitos mínimos
+- [ ] Criar testes de integração com WebView2 e Holyrics opcional; falha do Holyrics não pode interromper o player nem a projeção própria
+- [ ] Publicar versões somente após build, testes automatizados e validação manual dos fluxos críticos
