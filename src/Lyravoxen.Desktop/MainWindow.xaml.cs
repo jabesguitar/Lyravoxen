@@ -436,9 +436,11 @@ public partial class MainWindow : Window
             RefreshCueList(_cues.FirstOrDefault());
             PersistCurrentCues();
             _manualProjectionMode = true;
-            _manualCueIndex = -1;
+            _manualCueIndex = 0;
             _lastAutomaticCue = -1;
-            StatusText.Text = $"Importadas {slides.Count} telas de letra. Como o áudio é playback instrumental, use Anterior/Próxima para avançar no ritmo da música ou marque os tempos manualmente.";
+            CueList.SelectedItem = _cues[0];
+            PublishLyric(BuildProjectionCueBlock(0));
+            StatusText.Text = $"Importadas {slides.Count} telas de letra. A primeira tela já foi enviada ao telão. Como o áudio é playback instrumental, use Anterior/Próxima para avançar no ritmo da música ou marque os tempos manualmente.";
         }
         catch (Exception ex)
         {
@@ -1351,7 +1353,8 @@ public partial class MainWindow : Window
     private void PublishLyric(string text)
     {
         PublishProjectionOnly(text);
-        // Texto vazio fecha a apresentação rápida no Holyrics e limpa a projeção local.
+        // Texto vazio fecha a apresentação rápida no Holyrics e libera o próximo takeover.
+        if (string.IsNullOrWhiteSpace(text)) _holyricsTakeoverActive = false;
         _ = SendLyricToHolyricsAsync(text);
     }
 
