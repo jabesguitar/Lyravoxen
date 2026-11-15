@@ -634,6 +634,7 @@ public partial class MainWindow : Window
                     153 => "O YouTube recusou o player por falta de identificação válida do cliente/referenciador. Atualize o WebView2 e tente novamente.",
                     _ => "O YouTube informou erro " + code + ". Confira a disponibilidade e as permissões de incorporação do vídeo."
                 };
+                _ = StopYoutubeCaptureAsync();
                 Dispatcher.Invoke(() =>
                 {
                     _playerReady = false;
