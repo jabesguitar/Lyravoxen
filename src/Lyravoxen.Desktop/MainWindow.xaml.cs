@@ -206,7 +206,7 @@ public partial class MainWindow : Window
 
     private void YoutubeSearchPaste_Click(object sender, RoutedEventArgs e)
     {
-        if (Clipboard.ContainsText()) YoutubeSearchBox.Text = Clipboard.GetText();
+        if (System.Windows.Clipboard.ContainsText()) YoutubeSearchBox.Text = System.Windows.Clipboard.GetText();
         YoutubeSearchBox.Focus();
     }
 
@@ -216,7 +216,7 @@ public partial class MainWindow : Window
         var address = view?.Source?.ToString();
         if (!string.IsNullOrWhiteSpace(address))
         {
-            Clipboard.SetText(address);
+            System.Windows.Clipboard.SetText(address);
             StatusText.Text = "Endereço copiado: " + address;
         }
     }
