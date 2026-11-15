@@ -17,7 +17,7 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
     private Task? _worker;
 
     public event EventHandler<AudioChunkEventArgs>? AudioChunkAvailable;
-    public event EventHandler<Exception>? CaptureFailed;
+    public event Action<Exception>? CaptureFailed;
 
     public bool IsCapturing => _worker is { IsCompleted: false };
     public int SampleRate { get; private set; }
@@ -107,7 +107,7 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            CaptureFailed?.Invoke(this, ex);
+            CaptureFailed?.Invoke(ex);
         }
     }
 
