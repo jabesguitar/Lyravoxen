@@ -154,6 +154,29 @@
     </Grid>
    </Border>
   </Grid>
- </TabItem></TabControl>
+ </TabItem>
+ <TabItem Header="Ajuda">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="22">
+   <StackPanel MaxWidth="1050">
+    <TextBlock Text="GUIA RÁPIDO DO LYRAVOXEN" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Accent}" Margin="0,0,0,12"/>
+    <TextBlock Text="APRESENTAÇÃO E TELÃO" FontWeight="Bold" FontSize="15" Margin="0,8,0,4"/>
+    <TextBlock Text="Abrir projeção: abre a janela de saída no monitor escolhido. Use quando o telão ainda não estiver aberto. Testar projeção: envia uma frase de teste para conferir o monitor antes da apresentação." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Tela de espera: mostra uma mensagem enquanto você prepara a música. Encerrar: mostra a mensagem de agradecimento. Esc na janela de projeção limpa a tela." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Diagnóstico: verifica as condições principais detectáveis da apresentação. Não substitui um teste real do telão. Holyrics: abre as configurações da integração; configure e teste a conexão antes de usar." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Trocar próxima música: prepara a faixa aberta na aba Próxima música sem interromper a atual. Depois, use Tocar próxima para carregá-la." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="LETRAS E SINCRONIZAÇÃO" FontWeight="Bold" FontSize="15" Margin="0,12,0,4"/>
+    <TextBlock Text="Título é o nome da música. Intérprete é quem canta. Autor/compositor é quem escreveu a obra; pode ser diferente do intérprete." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Linhas simultâneas (1 a 10): define quantas frases formam uma página. Exemplo: 2 mostra as linhas 1 e 2 juntas; quando começa a linha 3, ambas saem e entram 3 e 4. O último bloco pode ter menos linhas." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Prévia do telão: edite o texto diretamente e clique Aplicar prévia editada para enviar exatamente o texto digitado. Isso pausa o automático; clique Automático para retomar a sincronização." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Anterior/Próxima: percorrem as frases. Projetar envia a selecionada ou o bloco correspondente. Automático devolve o controle ao relógio da música." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Editar: carrega a frase nos campos de tempo e texto. Atualizar: grava as alterações. Excluir: remove a frase após confirmação. Reordenar: clique para mover para cima; segure Shift e clique para mover para baixo. A ordem é ajustada pelos tempos." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Adicionar tempo cadastra a frase digitada usando o tempo em segundos. Marcar frase no tempo atual usa o instante do player. Importar letra aceita LRC/SRT; Importar música do Holyrics traz os slides para avanço manual." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="FILA E ATALHOS" FontWeight="Bold" FontSize="15" Margin="0,12,0,4"/>
+    <TextBlock Text="Na aba Próxima música, cole um link na barra superior e clique Ir. Colar insere o endereço da área de transferência; Copiar URL copia a página atual. Abra o vídeo desejado e clique Preparar próxima." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Atalhos: F6 anterior; F7 próxima; F8 projetar; F9 automático; F10 restaurar projeção; F11 tela de espera; F12 encerramento. Os atalhos não atuam enquanto você digita em campos de texto." TextWrapping="Wrap" Margin="0,2"/>
+   </StackPanel>
+  </ScrollViewer>
+ </TabItem>
+ </TabControl>
  </Grid>
 </Window>
