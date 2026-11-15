@@ -143,6 +143,22 @@ public sealed class HolyricsClient
             EnsureApiSuccess(responseBody);
     }
 
+    // Encerramento explícito da projeção: fecha a apresentação rápida criada pelo
+    // Lyravoxen e também a apresentação atual do Holyrics, sem exigir ESC no operador.
+    public async Task ClearProjectionAsync()
+    {
+        var settings = Load();
+        if (settings is null) return;
+        await CheckPermissionAsync(settings, "CloseCurrentQuickPresentation,CloseCurrentPresentation");
+        await CloseQuickPresentationAsync(settings);
+        using var response = await SendJsonAsync(BuildUrl(settings, "CloseCurrentPresentation"), "{}"u8.ToArray());
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode} ao limpar a projeção: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody))
+            EnsureApiSuccess(responseBody);
+    }
+
     private static async Task CloseQuickPresentationAsync(Settings settings)
     {
         using var response = await SendJsonAsync(BuildUrl(settings, "CloseCurrentQuickPresentation"), "{}"u8.ToArray());
