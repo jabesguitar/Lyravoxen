@@ -493,6 +493,49 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SearchHymnSources_Click(object sender, RoutedEventArgs e)
+    {
+        SearchAcrossLyricSites(new[]
+        {
+            "harpacrista.digital", "ogospel.com.br", "agendapregador.com.br",
+            "mbiblia.com.br", "gospelsonymusic.com.br", "hinarioevangelico.com",
+            "reformabrasil.com.br"
+        }, "hinos evangélicos Harpa Cristã louvores");
+    }
+
+    private void SearchLyricsSources_Click(object sender, RoutedEventArgs e)
+    {
+        SearchAcrossLyricSites(new[]
+        {
+            "letras.mus.br", "cifraclub.com.br", "vagalume.com.br",
+            "letras.com", "musixmatch.com"
+        }, "letra música louvor");
+    }
+
+    private void SearchAcrossLyricSites(IEnumerable<string> domains, string category)
+    {
+        var track = SearchTrackBox.Text.Trim();
+        var artist = SearchArtistBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(track))
+        {
+            StatusText.Text = "Informe o título ou número do hino antes de pesquisar nos sites.";
+            SearchTrackBox.Focus();
+            return;
+        }
+
+        var terms = string.Join(" ", new[] { track, artist, category }.Where(value => !string.IsNullOrWhiteSpace(value)));
+        var siteFilter = string.Join(" OR ", domains.Select(domain => "site:" + domain));
+        var query = Uri.EscapeDataString(terms + " (" + siteFilter + ")");
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is null)
+        {
+            StatusText.Text = "A aba do navegador ainda está inicializando. Tente novamente em instantes.";
+            return;
+        }
+        view.CoreWebView2.Navigate("https://www.google.com/search?q=" + query);
+        StatusText.Text = "Pesquisando em " + domains.Count() + " fontes: " + string.Join(", ", domains);
+    }
+
     private async void SearchLyricsFromBrowser_Click(object sender, RoutedEventArgs e)
     {
         var track = SearchTrackBox.Text.Trim();
