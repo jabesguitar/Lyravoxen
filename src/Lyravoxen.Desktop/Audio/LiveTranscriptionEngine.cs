@@ -57,12 +57,25 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_modelPath)!);
+            if (File.Exists(_modelPath) && new FileInfo(_modelPath).Length < 1024 * 1024)
+                File.Delete(_modelPath);
             if (!File.Exists(_modelPath))
             {
                 StatusChanged?.Invoke("Baixando o modelo de transcrição em português (primeira execução)...");
-                using var model = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(GgmlType.Tiny, QuantizationType.Q5_0, linked.Token);
-                await using var output = new FileStream(_modelPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                await model.CopyToAsync(output, linked.Token);
+                var temporaryModel = _modelPath + ".download";
+                try
+                {
+                    using var model = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(GgmlType.Tiny, QuantizationType.Q5_0, linked.Token);
+                    await using (var output = new FileStream(temporaryModel, FileMode.Create, FileAccess.Write, FileShare.None))
+                        await model.CopyToAsync(output, linked.Token);
+                    if (!File.Exists(temporaryModel) || new FileInfo(temporaryModel).Length < 1024 * 1024)
+                        throw new InvalidDataException("O download do modelo terminou incompleto.");
+                    File.Move(temporaryModel, _modelPath, true);
+                }
+                finally
+                {
+                    if (File.Exists(temporaryModel)) File.Delete(temporaryModel);
+                }
             }
 
             StatusChanged?.Invoke("Carregando o modelo local de transcrição...");
