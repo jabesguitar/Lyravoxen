@@ -19,15 +19,18 @@ Check(CueTimeline.FindActiveIndex(normalized, 5.5, 1.5) == 1, "troca para frase 
 Check(CueTimeline.FindActiveIndex(normalized, 20, 1.5) == 2, "depois da última frase");
 Check(CueTimeline.FindActiveIndex(normalized, 5.5, 1.5) == 1, "seek para trás recalcula frase sem estado residual");
 Check(CueTimeline.FindActiveIndex(normalized, double.NaN, 1.5) == -1, "tempo inválido não projeta frase");
+
 var blockCues = Enumerable.Range(1, 7)
     .Select(index => new LyricCue { Seconds = index * 2, Text = "linha " + index })
     .ToList();
-Check(CueTimeline.BuildProjectionBlock(blockCues, 0, 4) == "linha 1", "bloco de quatro começa com uma linha");
-Check(CueTimeline.BuildProjectionBlock(blockCues, 3, 4) == string.Join(Environment.NewLine, "linha 1", "linha 2", "linha 3", "linha 4"), "bloco de quatro acumula quatro linhas");
-Check(CueTimeline.BuildProjectionBlock(blockCues, 4, 4) == "linha 5", "novo bloco substitui o bloco anterior");
-Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 5) == string.Join(Environment.NewLine, "linha 6", "linha 7"), "último bloco parcial mantém apenas linhas restantes");
-Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 0) == "linha 7", "limite inferior de linhas é um");
-Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 99) == string.Join(Environment.NewLine, blockCues.Select(cue => cue.Text)), "limite superior de linhas é dez");
+var firstFour = string.Join(Environment.NewLine, "linha 1", "linha 2", "linha 3", "linha 4");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 0, 4) == firstFour, "as quatro linhas do primeiro bloco aparecem juntas desde o início");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 1, 4) == firstFour, "o bloco permanece completo enquanto suas frases avançam");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 3, 4) == firstFour, "última frase do bloco não remove as anteriores");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 4, 4) == string.Join(Environment.NewLine, "linha 5", "linha 6", "linha 7"), "bloco seguinte substitui todas as linhas anteriores de uma vez");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 5) == string.Join(Environment.NewLine, "linha 6", "linha 7"), "último bloco parcial exibe somente as linhas restantes");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 1) == "linha 7", "uma linha por bloco");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 10) == string.Join(Environment.NewLine, blockCues.Select(cue => cue.Text)), "limite superior de dez linhas");
 Check(CueTimeline.BuildProjectionBlock(blockCues, -1, 4) == "", "índice inválido limpa projeção");
 
 Console.WriteLine("Todos os testes da linha do tempo passaram.");
