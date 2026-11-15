@@ -672,6 +672,9 @@ public partial class MainWindow : Window
 
     private async Task SendLyricToHolyricsAsync(string text)
     {
+        // Não anunciar entrega ao Holyrics se o usuário ainda não configurou a integração.
+        if (!_holyrics.IsConfigured) return;
+
         // Mantém a ordem da apresentação: uma resposta lenta não pode sobrescrever uma frase mais nova.
         var requestVersion = Interlocked.Increment(ref _holyricsSendVersion);
         try
