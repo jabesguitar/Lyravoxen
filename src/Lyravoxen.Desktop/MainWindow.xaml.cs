@@ -291,7 +291,9 @@ public partial class MainWindow : Window
             // Mantém o título obtido dos metadados do YouTube; o intérprete pode ser informado opcionalmente.
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
-                : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
+                : "Player preparado. Procurando automaticamente uma letra sincronizada para este título...";
+            if (_cues.Count == 0 && !string.IsNullOrWhiteSpace(MusicTrackBox.Text))
+                await TryLoadAutomaticLyricsAsync(MusicTrackBox.Text, "");
             return true;
         }
         catch (Exception ex)
