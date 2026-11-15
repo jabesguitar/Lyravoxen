@@ -110,10 +110,25 @@ public partial class MainWindow : Window
         view.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
         view.CoreWebView2.Settings.IsStatusBarEnabled = true;
         view.CoreWebView2.NewWindowRequested += Browser_NewWindowRequested;
+        view.CoreWebView2.DocumentTitleChanged += (_, _) =>
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (BrowserTabs.Items.OfType<TabItem>().FirstOrDefault(tab => ReferenceEquals(tab.Content, view)) is { } tab)
+                {
+                    var title = view.CoreWebView2.DocumentTitle;
+                    tab.Header = string.IsNullOrWhiteSpace(title) ? "Nova aba" :
+                        title.Length > 26 ? title[..23] + "..." : title;
+                }
+            });
+        };
         view.CoreWebView2.NavigationCompleted += (_, _) =>
         {
-            if (ReferenceEquals(ActiveBrowserView, view) && view.Source is not null)
-                Dispatcher.Invoke(() => YoutubeSearchBox.Text = view.Source.ToString());
+            Dispatcher.Invoke(() =>
+            {
+                if (ReferenceEquals(ActiveBrowserView, view) && view.Source is not null)
+                    YoutubeSearchBox.Text = view.Source.ToString();
+            });
         };
     }
 
