@@ -2045,12 +2045,17 @@ public partial class MainWindow : Window
             folder.Videos.Add(new LibraryVideo
             {
                 VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, Url = _currentVideo.Url,
+                SongTitle = MusicTrackBox.Text.Trim(), Performer = MusicArtistBox.Text.Trim(),
+                Composer = MusicComposerBox.Text.Trim(),
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         else
         {
             video.Title = _currentVideo.Title;
             video.Url = _currentVideo.Url;
+            video.SongTitle = MusicTrackBox.Text.Trim();
+            video.Performer = MusicArtistBox.Text.Trim();
+            video.Composer = MusicComposerBox.Text.Trim();
             video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         }
         SaveLibrary();
