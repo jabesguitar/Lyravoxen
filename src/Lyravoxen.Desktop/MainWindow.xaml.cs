@@ -477,6 +477,7 @@ public partial class MainWindow : Window
         var editor = new System.Windows.Controls.TextBox
         {
             AcceptsReturn = true,
+            Text = _currentVideo?.LyricsText ?? "",
             TextWrapping = TextWrapping.Wrap,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             MinHeight = 120,
