@@ -473,8 +473,8 @@ public partial class MainWindow : Window
             Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#14212B")!
         };
         var layout = new DockPanel { Margin = new Thickness(16) };
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var editor = new TextBox
+        var buttons = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+        var editor = new System.Windows.Controls.TextBox
         {
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
@@ -491,9 +491,9 @@ public partial class MainWindow : Window
             enteredText = editor.Text;
             dialog.DialogResult = true;
         }
-        var noButton = new Button { Content = "Não", MinWidth = 90, Margin = new Thickness(4) };
-        var createButton = new Button { Content = "Criar", MinWidth = 90, Margin = new Thickness(4) };
-        var yesButton = new Button { Content = "Sim", MinWidth = 90, Margin = new Thickness(4), IsEnabled = hasMatch, Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#176E68")! };
+        var noButton = new System.Windows.Controls.Button { Content = "Não", MinWidth = 90, Margin = new Thickness(4) };
+        var createButton = new System.Windows.Controls.Button { Content = "Criar", MinWidth = 90, Margin = new Thickness(4) };
+        var yesButton = new System.Windows.Controls.Button { Content = "Sim", MinWidth = 90, Margin = new Thickness(4), IsEnabled = hasMatch, Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#176E68")! };
         noButton.Click += (_, _) => Finish("Não");
         createButton.Click += (_, _) => Finish("Criar");
         yesButton.Click += (_, _) => Finish("Sim");
