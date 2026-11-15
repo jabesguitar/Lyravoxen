@@ -1601,12 +1601,6 @@ public partial class MainWindow : Window
 
     private void ImportLyrics_Click(object sender, RoutedEventArgs e)
     {
-        if (_currentVideo is null)
-        {
-            System.Windows.MessageBox.Show("Carregue primeiro um vídeo do YouTube ou selecione uma música offline.", "Importar letra", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
         using var dialog = new System.Windows.Forms.OpenFileDialog
         {
             Title = "Selecione uma letra com marcações de tempo",
@@ -1627,14 +1621,18 @@ public partial class MainWindow : Window
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
-            _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-
-            foreach (var saved in _library.SelectMany(folder => folder.Videos)
-                         .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
-                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-
-            SaveLibrary();
-            StatusText.Text = $"Letra importada e preparada: {_cues.Count} frases sincronizadas.";
+            _lastAutomaticBlockStart = int.MinValue;
+            if (_currentVideo is not null)
+            {
+                _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                foreach (var saved in _library.SelectMany(folder => folder.Videos)
+                             .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
+                    saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                SaveLibrary();
+            }
+            StatusText.Text = _currentVideo is null
+                ? $"Letra importada: {_cues.Count} frases. Informe o título e salve como letra/hino sem vídeo na Biblioteca."
+                : $"Letra importada e preparada: {_cues.Count} frases sincronizadas.";
         }
         catch (Exception ex)
         {
