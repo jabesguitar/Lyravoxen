@@ -56,9 +56,6 @@ public partial class MainWindow : Window
     private bool _displayChangeHandlerAttached;
     private ProcessAudioCapture? _youtubeAudioCapture;
     private LiveTranscriptionEngine? _transcriptionEngine;
-    private AudioChunkBuffer? _youtubeAudioBuffer;
-    private CancellationTokenSource? _youtubeAudioCts;
-    private Task? _youtubeAudioDrainTask;
     private readonly SemaphoreSlim _captureLock = new(1, 1);
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
@@ -74,7 +71,7 @@ public partial class MainWindow : Window
         {
             if (_displayChangeHandlerAttached)
                 Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= System_DisplaySettingsChanged;
-            _ = StopYoutubeCaptureAsync();
+            _ = DisposeAudioServicesAsync();
         };
         Loaded += async (_, _) =>
         {
@@ -741,6 +738,7 @@ public partial class MainWindow : Window
 
             // A troca de faixa já invalida o estado anterior; captura só é iniciada quando o player está tocando.
             if (_lastPlayerState != 1) return;
+            _transcriptionEngine.ResetTimeline(_lastKnownPlaybackSeconds);
             var pid = YoutubePlayer.CoreWebView2.BrowserProcessId;
             if (pid == 0) throw new InvalidOperationException("O WebView2 não informou o PID do player.");
             var capture = new ProcessAudioCapture();
@@ -794,6 +792,14 @@ public partial class MainWindow : Window
             ProjectionPreviewText.Text = "Transcrição: " + cue.Text;
             NextProjectionPreviewText.Text = "Reconhecida em " + TimeSpan.FromSeconds(cue.Seconds).ToString(@"mm\\:ss");
         }
+    }
+
+    private async Task DisposeAudioServicesAsync()
+    {
+        await StopYoutubeCaptureAsync();
+        var engine = _transcriptionEngine;
+        _transcriptionEngine = null;
+        if (engine is not null) await engine.DisposeAsync();
     }
 
     private async Task StopYoutubeCaptureAsync()
