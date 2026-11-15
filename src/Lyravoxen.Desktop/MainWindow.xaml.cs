@@ -436,6 +436,7 @@ public partial class MainWindow : Window
             _manualProjectionMode = true;
             _manualCueIndex = 0;
             _lastAutomaticCue = -1;
+            LineCountBox.SelectedIndex = 0; // Cada slide importado do Holyrics ocupa uma tela no avanço manual.
             CueList.SelectedItem = _cues[0];
             PublishLyric(BuildProjectionCueBlock(0));
             StatusText.Text = $"Importadas {slides.Count} telas de letra. A primeira tela já foi enviada ao telão. Como o áudio é playback instrumental, use Anterior/Próxima para avançar no ritmo da música ou marque os tempos manualmente.";
