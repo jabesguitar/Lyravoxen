@@ -423,36 +423,135 @@ public partial class MainWindow : Window
                 ? "\nDuração do vídeo: " + TimeSpan.FromSeconds(_playerDurationSeconds).ToString(@"mm\:ss")
                 : "";
             var albumNote = string.IsNullOrWhiteSpace(selected.Album) ? "" : "\nÁlbum: " + selected.Album;
-            var confirmation = System.Windows.MessageBox.Show(
-                "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
-                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote +
-                "\n\nPrévia:\n" + preview +
-                "\n\nEsta é exatamente a gravação/letra desejada?",
-                "Confirmar letra sincronizada", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (confirmation != MessageBoxResult.Yes)
+            var choice = ShowLyricsChoiceDialog(
+                "Confira a correspondência antes de projetar.\\n\\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
+                "\\nFaixa encontrada: " + selected.Track + "\\nIntérprete: " + selected.Artist + albumNote + durationNote +
+                "\\n\\nPrévia:\\n" + preview +
+                "\\n\\nEsta é exatamente a gravação/letra desejada?");
+
+            if (choice.Action == "Não")
             {
-                StatusText.Text = "Letra não aplicada. Nenhuma frase foi substituída.";
+                StatusText.Text = "Sugestão rejeitada. A letra atual foi mantida sem alterações.";
                 return;
             }
 
-            _cues.Clear();
-            _cues.AddRange(CueTimeline.Normalize(selected.Cues));
-            CueList.ItemsSource = null;
-            CueList.ItemsSource = _cues;
-            _lastAutomaticCue = -1;
-            if (_currentVideo is not null)
+            if (choice.Action == "Criar")
             {
-                _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
-                    saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                SaveLibrary();
+                var typedLyrics = choice.Text.Trim();
+                if (string.IsNullOrWhiteSpace(typedLyrics))
+                {
+                    StatusText.Text = "Nenhuma letra foi informada. A letra atual foi mantida.";
+                    return;
+                }
+
+                var createdCues = ParseTimedLyrics(typedLyrics, ".lrc").OrderBy(c => c.Seconds).ToList();
+                if (createdCues.Count >= 2)
+                {
+                    ApplyLyricsToCurrentTrack(createdCues);
+                    if (_currentVideo is not null) _currentVideo.LyricsText = typedLyrics;
+                    SaveLibrary();
+                    StatusText.Text = "Letra criada com marcações LRC e vinculada à música. Confira a sincronia.";
+                }
+                else if (_currentVideo is not null)
+                {
+                    _currentVideo.LyricsText = typedLyrics;
+                    SaveLibrary();
+                    StatusText.Text = "Letra salva e vinculada à música para reutilização. O texto ainda não possui tempos; importe um LRC/SRT sincronizado para projetá-lo automaticamente.";
+                }
+                else
+                {
+                    StatusText.Text = "Carregue uma faixa antes de vincular a letra à biblioteca.";
+                }
+                return;
             }
+
+            ApplyLyricsToCurrentTrack(selected.Cues);
             StatusText.Text = "Letra sincronizada confirmada: " + selected.Track + " — " + selected.Artist + ". Confira a sincronia com a gravação.";
         }
         catch (TaskCanceledException) { StatusText.Text = "A busca de letras excedeu o tempo limite."; }
         catch (HttpRequestException ex) { StatusText.Text = "Falha na busca de letras: " + ex.Message; }
         catch (JsonException) { StatusText.Text = "Resposta inválida do catálogo de letras."; }
         catch (InvalidOperationException ex) { StatusText.Text = "Não foi possível interpretar os dados da letra: " + ex.Message; }
+    }
+
+    private (string Action, string Text) ShowLyricsChoiceDialog(string message)
+    {
+        var dialog = new Window
+        {
+            Title = "Confirmar letra encontrada",
+            Owner = this,
+            Width = 620,
+            Height = 540,
+            MinWidth = 480,
+            MinHeight = 420,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.CanResize,
+            Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#14212B")!
+        };
+        var layout = new DockPanel { Margin = new Thickness(16) };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var editor = new TextBox
+        {
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            MinHeight = 120,
+            Margin = new Thickness(0, 10, 0, 12),
+            ToolTip = "Cole ou digite a letra. Marcações LRC serão aproveitadas."
+        };
+        var result = "Não";
+        var enteredText = "";
+        void Finish(string action)
+        {
+            result = action;
+            enteredText = editor.Text;
+            dialog.DialogResult = true;
+            dialog.Close();
+        }
+        var noButton = new Button { Content = "Não", MinWidth = 90, Margin = new Thickness(4) };
+        var createButton = new Button { Content = "Criar", MinWidth = 90, Margin = new Thickness(4) };
+        var yesButton = new Button { Content = "Sim", MinWidth = 90, Margin = new Thickness(4), Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#176E68")! };
+        noButton.Click += (_, _) => Finish("Não");
+        createButton.Click += (_, _) => Finish("Criar");
+        yesButton.Click += (_, _) => Finish("Sim");
+        buttons.Children.Add(noButton);
+        buttons.Children.Add(createButton);
+        buttons.Children.Add(yesButton);
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        layout.Children.Add(buttons);
+        var content = new StackPanel();
+        content.Children.Add(new TextBlock { Text = message, Foreground = System.Windows.Media.Brushes.White, TextWrapping = TextWrapping.Wrap });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Sim: usar a letra encontrada. Não: manter a letra atual. Criar: informar a letra correta:",
+            Foreground = System.Windows.Media.Brushes.LightGray,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 12, 0, 0)
+        });
+        content.Children.Add(editor);
+        layout.Children.Add(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        dialog.Content = layout;
+        dialog.ShowDialog();
+        return (result, enteredText);
+    }
+
+    private void ApplyLyricsToCurrentTrack(IEnumerable<LyricCue> cues)
+    {
+        _cues.Clear();
+        _cues.AddRange(CueTimeline.Normalize(cues));
+        CueList.ItemsSource = null;
+        CueList.ItemsSource = _cues;
+        _lastAutomaticCue = -1;
+        if (_currentVideo is not null)
+        {
+            _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
+            foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
+            {
+                saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
+                saved.LyricsText = _currentVideo.LyricsText;
+            }
+            SaveLibrary();
+        }
     }
 
     private async Task AddVideoToHistoryAsync(string videoId, string url)
