@@ -28,7 +28,7 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation,SearchLyrics,GetLyrics");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation,SearchLyrics,GetLyrics,MediaPlayerAction");
         Save(settings);
     }
 
@@ -37,7 +37,7 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation,MediaPlayerAction");
     }
 
     public async Task<IReadOnlyList<HolyricsSong>> SearchSongsAsync(string query)
