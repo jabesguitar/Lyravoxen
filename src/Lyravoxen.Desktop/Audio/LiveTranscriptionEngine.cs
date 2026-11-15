@@ -18,7 +18,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
     private const int WindowSamples = TargetSampleRate * 8;
     private const int HopSamples = TargetSampleRate * 3;
     private readonly Channel<AudioChunkEventArgs> _queue = Channel.CreateBounded<AudioChunkEventArgs>(
-        new BoundedChannelOptions(24) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true, SingleWriter = false });
+        new BoundedChannelOptions(600) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true, SingleWriter = false });
     private readonly CancellationTokenSource _cts = new();
     private readonly string _modelPath;
     private readonly int _threads;
