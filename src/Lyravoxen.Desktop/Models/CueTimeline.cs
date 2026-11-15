@@ -9,14 +9,14 @@ public static class CueTimeline
             .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text ?? "" })
             .ToList();
 
-    // Fixed-size projection blocks: lines accumulate within the current block,
-    // and the entire previous block is replaced when the next block begins.
+    // A projection page is a complete group: show every line in the group together
+    // as soon as its first cue becomes active. The next group replaces it atomically.
     public static string BuildProjectionBlock(IReadOnlyList<LyricCue> cues, int activeIndex, int lineCount)
     {
         if (cues is null || activeIndex < 0 || activeIndex >= cues.Count) return "";
         var count = Math.Clamp(lineCount, 1, 10);
         var firstIndex = (activeIndex / count) * count;
-        return string.Join(Environment.NewLine, cues.Skip(firstIndex).Take(activeIndex - firstIndex + 1)
+        return string.Join(Environment.NewLine, cues.Skip(firstIndex).Take(count)
             .Select(cue => cue.Text?.Trim() ?? "")
             .Where(text => !string.IsNullOrWhiteSpace(text)));
     }
