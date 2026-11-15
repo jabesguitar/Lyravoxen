@@ -56,6 +56,9 @@ public partial class MainWindow : Window
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
+    private readonly string _referenceLyricsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "reference-lyrics.json");
+    private readonly Dictionary<string, List<string>> _referenceLyrics = new(StringComparer.OrdinalIgnoreCase);
+    private int _referenceLyricIndex;
     private readonly string _preferencesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "preferences.json");
     private bool _loadingPreferences;
     private string? _selectedOutputDeviceName;
@@ -83,6 +86,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         LoadHistory();
         LoadLibrary();
+        LoadReferenceLyrics();
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += System_DisplaySettingsChanged;
         _displayChangeHandlerAttached = true;
@@ -370,6 +374,7 @@ public partial class MainWindow : Window
         {
             await StopYoutubeCaptureAsync();
             _playerSessionId = Guid.NewGuid().ToString("N");
+            _referenceLyricIndex = 0;
             _holyricsTakeoverActive = false;
             _transcriptionEngine?.ResetTimeline(0, _playerSessionId);
             Interlocked.Increment(ref _lyricsSearchVersion); // invalida qualquer busca da música anterior
@@ -418,6 +423,7 @@ public partial class MainWindow : Window
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
+            await OfferReferenceLyricsAsync();
             // Mantém o título obtido dos metadados do YouTube; o intérprete pode ser informado opcionalmente.
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
@@ -1081,6 +1087,39 @@ public partial class MainWindow : Window
     {
         if (_lastPlayerState != 1 || string.IsNullOrWhiteSpace(segment.Text)) return;
         var normalized = NormalizeMusicText(segment.Text);
+        if (_currentVideo is not null && _referenceLyrics.TryGetValue(_currentVideo.VideoId, out var reference) && reference.Count > 0)
+        {
+            var bestIndex = -1;
+            var bestScore = 0d;
+            var end = Math.Min(reference.Count, _referenceLyricIndex + 7);
+            for (var i = _referenceLyricIndex; i < end; i++)
+            {
+                var score = MusicTextSimilarity(NormalizeMusicText(reference[i]), normalized);
+                if (score > bestScore) { bestScore = score; bestIndex = i; }
+            }
+            if (bestIndex >= 0 && bestScore >= 0.28)
+            {
+                var expectedLine = reference[bestIndex];
+                if (!_cues.Any(c => Math.Abs(c.Seconds - segment.StartSeconds) < 1.4 && NormalizeMusicText(c.Text) == NormalizeMusicText(expectedLine)))
+                {
+                    var cue = new LyricCue { Seconds = Math.Max(0, segment.StartSeconds), Text = expectedLine };
+                    _cues.Add(cue);
+                    _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
+                    RefreshCueList(cue);
+                    PersistCurrentCues();
+                    var active = FindActiveCue(GetPlaybackSeconds());
+                    if (!_manualProjectionMode && active >= 0)
+                    {
+                        _lastAutomaticCue = active;
+                        _lastAutomaticBlockStart = int.MinValue;
+                        PublishLyric(BuildProjectionCueBlock(active));
+                        _lastAutomaticBlockStart = GetProjectionBlockStart(active);
+                    }
+                }
+                _referenceLyricIndex = bestIndex + 1;
+            }
+            return;
+        }
         if (string.IsNullOrWhiteSpace(normalized)) return;
         var existing = _cues.FirstOrDefault(cue =>
             Math.Abs(cue.Seconds - segment.StartSeconds) < 1.8 &&
@@ -1106,6 +1145,76 @@ public partial class MainWindow : Window
             ProjectionPreviewText.Text = "Transcrição: " + cue.Text;
             NextProjectionPreviewText.Text = "Reconhecida em " + TimeSpan.FromSeconds(cue.Seconds).ToString(@"mm\\:ss");
         }
+    }
+
+
+    private void LoadReferenceLyrics()
+    {
+        try
+        {
+            if (!File.Exists(_referenceLyricsFile)) return;
+            var saved = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(File.ReadAllText(_referenceLyricsFile));
+            if (saved is null) return;
+            foreach (var item in saved) _referenceLyrics[item.Key] = item.Value ?? new List<string>();
+        }
+        catch { _referenceLyrics.Clear(); }
+    }
+
+    private void SaveReferenceLyrics()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_referenceLyricsFile)!);
+            File.WriteAllText(_referenceLyricsFile, JsonSerializer.Serialize(_referenceLyrics, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível salvar a letra de referência: " + ex.Message; }
+    }
+
+    private async Task OfferReferenceLyricsAsync()
+    {
+        if (_currentVideo is null || _cues.Count > 0) return;
+        if (_referenceLyrics.TryGetValue(_currentVideo.VideoId, out var existing) && existing.Count > 0)
+        {
+            var use = System.Windows.MessageBox.Show($"Encontrei uma letra cadastrada para esta música ({existing.Count} linhas). Deseja usar essa letra como referência para o reconhecimento do áudio?", "Letra encontrada", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (use == MessageBoxResult.Yes)
+            {
+                _referenceLyricIndex = 0;
+                StatusText.Text = "Letra de referência carregada. Ao tocar, o áudio será reconhecido e os versos correspondentes serão sincronizados.";
+                return;
+            }
+        }
+        var action = System.Windows.MessageBox.Show($"A música “{MusicTrackBox.Text}” ainda não tem uma letra cadastrada.\n\nSim: criar ou editar a letra.\nNão: continuar sem letra cadastrada.", "Cadastrar letra desta música", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (action != MessageBoxResult.Yes) return;
+        var draft = _referenceLyrics.TryGetValue(_currentVideo.VideoId, out var saved) ? string.Join(Environment.NewLine, saved) : "";
+        var edited = PromptForLyrics("Criar / editar letra", "Cole a letra completa (uma linha por verso):", draft);
+        if (edited is null) return;
+        var lines = edited.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(line => !string.IsNullOrWhiteSpace(line)).ToList();
+        if (lines.Count == 0) { StatusText.Text = "Nenhuma linha foi cadastrada."; return; }
+        _referenceLyrics[_currentVideo.VideoId] = lines;
+        _referenceLyricIndex = 0;
+        SaveReferenceLyrics();
+        _currentVideo.SongTitle = MusicTrackBox.Text.Trim();
+        _currentVideo.Performer = MusicArtistBox.Text.Trim();
+        _currentVideo.Composer = MusicComposerBox.Text.Trim();
+        SaveLibrary();
+        StatusText.Text = $"Letra cadastrada com {lines.Count} linhas. Dê play: o reconhecimento do áudio procurará cada verso.";
+    }
+
+    private static string? PromptForLyrics(string title, string label, string initialValue = "")
+    {
+        var dialog = new Window { Title = title, Width = 680, Height = 560, WindowStartupLocation = WindowStartupLocation.CenterOwner, ResizeMode = ResizeMode.CanResize, Owner = System.Windows.Application.Current.MainWindow, Background = System.Windows.Media.Brushes.White };
+        var panel = new StackPanel { Margin = new Thickness(14) };
+        panel.Children.Add(new TextBlock { Text = label, Margin = new Thickness(0, 0, 0, 8), FontWeight = FontWeights.SemiBold });
+        var input = new System.Windows.Controls.TextBox { Text = initialValue, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MinHeight = 420, Padding = new Thickness(8), FontSize = 14 };
+        panel.Children.Add(input);
+        var buttons = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
+        var ok = new System.Windows.Controls.Button { Content = "Salvar letra", Width = 110, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new System.Windows.Controls.Button { Content = "Cancelar", Width = 90, IsCancel = true };
+        ok.Click += (_, _) => dialog.DialogResult = true;
+        buttons.Children.Add(ok); buttons.Children.Add(cancel); panel.Children.Add(buttons);
+        dialog.Content = panel;
+        dialog.Loaded += (_, _) => { input.Focus(); input.CaretIndex = input.Text.Length; };
+        return dialog.ShowDialog() == true ? input.Text : null;
     }
 
     private async Task DisposeAudioServicesAsync()
