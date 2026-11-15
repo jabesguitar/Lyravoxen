@@ -110,7 +110,7 @@
           <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
          </Grid>
          <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
-         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/></StackPanel>
+         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Salvar letra/hino sem vídeo" Click="SaveLyricsOnly_Click" Margin="0,5,0,0" Background="#176E68" ToolTip="Guarda título, autor, intérprete e letra sincronizada mesmo sem vídeo ou áudio."/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/></StackPanel>
         </Grid>
        </Grid>
       </Grid>
