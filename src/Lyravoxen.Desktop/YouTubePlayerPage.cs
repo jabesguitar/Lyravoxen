@@ -21,6 +21,7 @@ html,body{margin:0;width:100%;height:100%;background:#080d12;overflow:hidden}
 <script>
 var player;
 const sessionId = '__SESSION_ID__';
+const startPaused = __START_PAUSED__;
 function sendMessage(message){ message.session = sessionId; window.chrome.webview.postMessage(message); }
 function onYouTubeIframeAPIReady(){
   player = new YT.Player('player', {
