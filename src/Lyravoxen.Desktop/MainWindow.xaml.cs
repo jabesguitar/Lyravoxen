@@ -1934,6 +1934,10 @@ public partial class MainWindow : Window
                 ProjectSelectedCue_Click(this, new RoutedEventArgs());
                 e.Handled = true;
                 break;
+            case System.Windows.Input.Key.F9 when (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control:
+                _ = CloseHolyricsPresentationAsync();
+                e.Handled = true;
+                break;
             case System.Windows.Input.Key.F9:
                 ResumeAutomaticProjection_Click(this, new RoutedEventArgs());
                 e.Handled = true;
@@ -1949,10 +1953,6 @@ public partial class MainWindow : Window
                 break;
             case System.Windows.Input.Key.F12:
                 ProjectionEnding_Click(this, new RoutedEventArgs());
-                e.Handled = true;
-                break;
-            case System.Windows.Input.Key.F9 when (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control:
-                _ = CloseHolyricsPresentationAsync();
                 e.Handled = true;
                 break;
         }
