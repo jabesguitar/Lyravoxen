@@ -541,8 +541,8 @@ public partial class MainWindow : Window
         }
         else
         {
-            SaveLibrary();
-            StatusText.Text = "Letra salva e vinculada à música para reutilização. O texto ainda não possui tempos; para sincronização automática real, é necessário gerar marcações a partir do áudio. Por enquanto, importe um LRC/SRT sincronizado.";
+            PersistCurrentVideoToLibrary();
+            StatusText.Text = "Letra salva e vinculada à música na biblioteca para reutilização. O texto ainda não possui tempos; para sincronização automática real, é necessário gerar marcações a partir do áudio. Por enquanto, importe um LRC/SRT sincronizado.";
         }
     }
 
