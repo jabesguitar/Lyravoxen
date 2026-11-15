@@ -35,6 +35,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
     private double _lastChunkMediaEndSeconds;
     private string _sessionId = string.Empty;
     private int _started;
+    private int _disposed;
 
     public event Action<string>? StatusChanged;
     public event Action<TranscriptionSegment>? SegmentRecognized;
@@ -50,6 +51,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         if (!OperatingSystem.IsWindows() || Environment.OSVersion.Version.Build < 20348)
             throw new PlatformNotSupportedException("A transcrição local exige Windows 11 ou Windows Server 2022 ou superior. A reprodução e as letras manuais continuam disponíveis.");
         if (Interlocked.Exchange(ref _started, 1) != 0) return;
@@ -250,6 +252,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _queue.Writer.TryComplete();
         _cts.Cancel();
         if (_worker is not null)
