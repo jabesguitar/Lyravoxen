@@ -288,7 +288,7 @@ public partial class MainWindow : Window
                 YoutubePlayer.CoreWebView2.SetVirtualHostNameToFolderMapping("lyravoxen.local", _playerFolder, CoreWebView2HostResourceAccessKind.Allow);
                 _virtualHostMapped = true;
             }
-            var html = YouTubePlayerPage.Build(videoId, _playerSessionId);
+            var html = YouTubePlayerPage.Build(videoId, _playerSessionId, startPaused: _pauseOnPlayerReady);
             await File.WriteAllTextAsync(Path.Combine(_playerFolder, "index.html"), html);
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
