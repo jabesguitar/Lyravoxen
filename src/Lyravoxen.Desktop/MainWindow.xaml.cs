@@ -787,6 +787,7 @@ public partial class MainWindow : Window
                 if (state == 1)
                 {
                     Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : "YouTube tocando. Preparando captura isolada de áudio.");
+                    _ = TakeOverHolyricsForPlaybackAsync();
                     _ = StartYoutubeCaptureAsync();
                 }
                 else if (state == 2)
@@ -932,6 +933,27 @@ public partial class MainWindow : Window
                 await capture.DisposeAsync();
         }
         finally { _captureLock.Release(); }
+    }
+
+    private async Task TakeOverHolyricsForPlaybackAsync()
+    {
+        if (!_holyrics.IsConfigured || _holyricsTakeoverActive) return;
+        try
+        {
+            await _holyricsSendLock.WaitAsync();
+            try
+            {
+                if (_holyricsTakeoverActive) return;
+                await _holyrics.TakeOverProjectionAsync("");
+                _holyricsTakeoverActive = true;
+                Dispatcher.BeginInvoke(() => StatusText.Text = "Player do Holyrics parado; Lyravoxen assumiu a projeção para esta música.");
+            }
+            finally { _holyricsSendLock.Release(); }
+        }
+        catch (Exception ex)
+        {
+            Dispatcher.BeginInvoke(() => StatusText.Text = "Não foi possível assumir o Holyrics: " + ex.Message);
+        }
     }
 
     private async Task SendLyricToHolyricsAsync(string text)
