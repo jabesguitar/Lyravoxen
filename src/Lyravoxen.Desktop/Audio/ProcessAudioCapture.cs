@@ -13,8 +13,13 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
 {
     private WasapiRecorder? _recorder;
     private readonly Func<double>? _mediaTimeProvider;
+    private readonly Func<string>? _sessionProvider;
 
-    public ProcessAudioCapture(Func<double>? mediaTimeProvider = null) => _mediaTimeProvider = mediaTimeProvider;
+    public ProcessAudioCapture(Func<double>? mediaTimeProvider = null, Func<string>? sessionProvider = null)
+    {
+        _mediaTimeProvider = mediaTimeProvider;
+        _sessionProvider = sessionProvider;
+    }
 
     public event EventHandler<AudioChunkEventArgs>? AudioChunkAvailable;
     public event Action<Exception>? CaptureFailed;
@@ -66,7 +71,7 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
         var format = recorder.WaveFormat;
         var frames = format.BlockAlign > 0 ? copy.Length / format.BlockAlign : 0;
         AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(
-            copy, format.SampleRate, format.Channels, format.BitsPerSample, format.Encoding == WaveFormatEncoding.IeeeFloat, _mediaTimeProvider?.Invoke() ?? 0, frames, devicePosition, qpcPosition));
+            copy, format.SampleRate, format.Channels, format.BitsPerSample, format.Encoding == WaveFormatEncoding.IeeeFloat, _mediaTimeProvider?.Invoke() ?? 0, _sessionProvider?.Invoke() ?? string.Empty, frames, devicePosition, qpcPosition));
     }
 
     private void OnRecordingStopped(object? sender, StoppedEventArgs e)
@@ -90,7 +95,7 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
 
 internal sealed class AudioChunkEventArgs(
     byte[] data, int sampleRate, int channels, int bitsPerSample, bool isIeeeFloat,
-    double mediaTimeSeconds, int frames, long devicePosition, long qpcPosition) : EventArgs
+    double mediaTimeSeconds, string sessionId, int frames, long devicePosition, long qpcPosition) : EventArgs
 {
     public byte[] Data { get; } = data;
     public int SampleRate { get; } = sampleRate;
@@ -98,6 +103,7 @@ internal sealed class AudioChunkEventArgs(
     public int BitsPerSample { get; } = bitsPerSample;
     public bool IsIeeeFloat { get; } = isIeeeFloat;
     public double MediaTimeSeconds { get; } = mediaTimeSeconds;
+    public string SessionId { get; } = sessionId;
     public int Frames { get; } = frames;
     public long DevicePosition { get; } = devicePosition;
     public long QpcPosition { get; } = qpcPosition;
