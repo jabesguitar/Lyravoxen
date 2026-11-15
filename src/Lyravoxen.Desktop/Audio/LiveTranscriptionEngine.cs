@@ -97,7 +97,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
                 foreach (var window in windows)
                 {
                     token.ThrowIfCancellationRequested();
-                    await TranscribeWindowAsync(window, token).ConfigureAwait(false);
+                    await TranscribeWindowAsync(window.Samples, window.StartSample, token).ConfigureAwait(false);
                 }
             }
         }
