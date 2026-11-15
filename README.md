@@ -33,6 +33,9 @@ O pacote é publicado como self-contained para .NET 8; o WebView2 Runtime contin
 
 A permissão `ShowQuickPresentation` envia cada frase sincronizada ao telão do Holyrics. A permissão `CloseCurrentQuickPresentation` permite limpar a apresentação rápida quando a música muda, termina ou a frase é apagada. O fechamento atua somente sobre a apresentação rápida controlada por essa API; não deve ser usado para encerrar uma apresentação comum de slides.
 
+## Busca automática de letras sincronizadas
+Ao carregar um vídeo do YouTube sem letras salvas, o Lyravoxen consulta o catálogo LRCLIB usando o título obtido do vídeo. Se houver candidatos, mostra a gravação, a duração e uma prévia para confirmação antes de aplicar os tempos. O intérprete é opcional e pode melhorar a correspondência. Nem toda música — especialmente gravações ao vivo, versões de igreja ou vídeos com títulos diferentes — possui letra sincronizada nesse catálogo; nesses casos, importe um arquivo LRC/SRT ou cadastre os tempos manualmente.
+
 ## Limites e validação
 - Alguns vídeos não permitem reprodução incorporada e podem ser recusados pelo próprio YouTube.
 - A integração Holyrics requer uma instalação compatível e configuração local.
