@@ -352,6 +352,7 @@ public partial class MainWindow : Window
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
+            _lastAutomaticBlockStart = int.MinValue;
             StatusText.Text = _cues.Count > 0
                 ? $"Letra preparada: {_cues.Count} frases carregadas. Inicializando o vídeo..."
                 : "Vídeo identificado. Nenhuma letra salva para ele; você pode cadastrar as frases enquanto o player carrega.";
@@ -677,6 +678,7 @@ public partial class MainWindow : Window
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
+            _lastAutomaticBlockStart = int.MinValue;
             if (_currentVideo is not null)
             {
                 _currentVideo.SongTitle = MusicTrackBox.Text.Trim();
@@ -1570,7 +1572,7 @@ public partial class MainWindow : Window
             _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             if (_currentVideo is not null) { _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline)) saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); SaveLibrary(); }
-            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture); LyricTextBox.Clear(); _lastAutomaticCue = -1;
+            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture); LyricTextBox.Clear(); _lastAutomaticCue = -1; _lastAutomaticBlockStart = int.MinValue;
             StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s. Ela será projetada 1,5s antes de começar.";
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
@@ -1588,6 +1590,7 @@ public partial class MainWindow : Window
         CueList.ItemsSource = _cues;
         LyricTextBox.Clear();
         _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = int.MinValue;
         if (_currentVideo is not null)
         {
             _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
@@ -1719,6 +1722,7 @@ public partial class MainWindow : Window
         RefreshCueList(selected);
         PersistCurrentCues();
         _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = int.MinValue;
         StatusText.Text = "Frase atualizada e salva na biblioteca.";
     }
 
@@ -1735,6 +1739,7 @@ public partial class MainWindow : Window
         RefreshCueList();
         PersistCurrentCues();
         _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = int.MinValue;
         StatusText.Text = "Frase excluída.";
     }
 
@@ -1762,6 +1767,7 @@ public partial class MainWindow : Window
         RefreshCueList(selected);
         PersistCurrentCues();
         _lastAutomaticCue = -1;
+        _lastAutomaticBlockStart = int.MinValue;
         StatusText.Text = direction < 0 ? "Frase movida para cima no tempo." : "Frase movida para baixo no tempo.";
     }
 
@@ -2110,6 +2116,7 @@ public partial class MainWindow : Window
             _manualProjectionMode = true;
             _manualCueIndex = _cues.Count > 0 ? 0 : -1;
             _lastAutomaticCue = -1;
+            _lastAutomaticBlockStart = int.MinValue;
             StatusText.Text = $"Letra salva carregada: {video.Title}. Sem vídeo associado; use Anterior/Próxima e Projetar para apresentar manualmente.";
             if (_cues.Count > 0) PublishLyric(BuildProjectionCueBlock(0));
             return;
