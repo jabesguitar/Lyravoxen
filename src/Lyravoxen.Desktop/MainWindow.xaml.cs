@@ -414,7 +414,7 @@ public partial class MainWindow : Window
             {
                 var createChoice = ShowLyricsChoiceDialog(
                     "Não encontrei uma letra sincronizada com correspondência exata para " + trackName + " — " + artistName +
-                    ". Para evitar aplicar a letra de outra música, nenhuma sugestão será usada automaticamente.\\n\\nVocê pode criar e vincular a letra correta agora.");
+                    ". Para evitar aplicar a letra de outra música, nenhuma sugestão será usada automaticamente.\n\nVocê pode criar e vincular a letra correta agora.", false);
                 if (createChoice.Action == "Criar")
                 {
                     SaveCreatedLyricsText(createChoice.Text);
@@ -458,7 +458,7 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex) { StatusText.Text = "Não foi possível interpretar os dados da letra: " + ex.Message; }
     }
 
-    private (string Action, string Text) ShowLyricsChoiceDialog(string message)
+    private (string Action, string Text) ShowLyricsChoiceDialog(string message, bool hasMatch = true)
     {
         var dialog = new Window
         {
@@ -493,7 +493,7 @@ public partial class MainWindow : Window
         }
         var noButton = new Button { Content = "Não", MinWidth = 90, Margin = new Thickness(4) };
         var createButton = new Button { Content = "Criar", MinWidth = 90, Margin = new Thickness(4) };
-        var yesButton = new Button { Content = "Sim", MinWidth = 90, Margin = new Thickness(4), Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#176E68")! };
+        var yesButton = new Button { Content = "Sim", MinWidth = 90, Margin = new Thickness(4), IsEnabled = hasMatch, Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#176E68")! };
         noButton.Click += (_, _) => Finish("Não");
         createButton.Click += (_, _) => Finish("Criar");
         yesButton.Click += (_, _) => Finish("Sim");
