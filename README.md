@@ -74,3 +74,9 @@ Ao carregar um vídeo do YouTube sem letras salvas, o Lyravoxen consulta o catá
 - O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
 - Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
 - APK Android exigiria um projeto separado.\n- A captura por processo exige Windows 10 2004 (build 19041) ou superior; o runtime Whisper empacotado nesta branch exige Windows 11/Server 2022. Em Windows 10, o player continua disponível, mas a transcrição local é desativada.\n- A transcrição de música cantada não é garantida: Whisper é um reconhecedor de áudio/fala e pode omitir, alterar ou inventar palavras em vocais musicais. Em playback instrumental, sem voz, Whisper não consegue reconstruir as palavras da letra; use a importação da música/letra do Holyrics e avance manualmente ou marque os tempos da letra. Para sincronização instrumental totalmente automática é necessário um sistema de alinhamento/matching musical específico e uma fonte da letra, não apenas ASR.\n- Ainda é necessário testar fisicamente a exclusividade do processo WebView2, a latência e a carga de CPU no computador da igreja.
+
+
+### Projeção e tela do operador
+- A tela de espera e a tela final agora oferecem um botão visível para voltar à projeção; a tecla ESC faz a mesma ação.
+- O painel de sincronização foi reorganizado para resoluções desktop menores, com lista de versos e controles principais visíveis e ferramentas adicionais em uma área rolável.
+- O botão **Encerrar projeção** na aba Ao vivo limpa a saída local e encerra a apresentação rápida no Holyrics.
