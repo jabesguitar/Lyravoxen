@@ -105,9 +105,9 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         catch (Exception ex) { Failed?.Invoke(ex); }
     }
 
-    private List<float[]> ExtractWindows()
+    private List<(float[] Samples, long StartSample)> ExtractWindows()
     {
-        var windows = new List<float[]>();
+        var windows = new List<(float[] Samples, long StartSample)>();
         var currentEnd = _sampleBaseIndex + _samples.Count;
         while (currentEnd >= _nextWindowEnd)
         {
