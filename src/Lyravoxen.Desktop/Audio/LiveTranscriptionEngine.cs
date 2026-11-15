@@ -88,7 +88,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
             {
                 var mono = ConvertToMono16k(chunk);
                 if (mono.Length == 0) continue;
-                List<float[]> windows;
+                List<(float[] Samples, long StartSample)> windows;
                 lock (_sampleLock)
                 {
                     _samples.AddRange(mono);
@@ -114,7 +114,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
             var start = _nextWindowEnd - WindowSamples;
             var offset = checked((int)(start - _sampleBaseIndex));
             if (offset >= 0 && offset + WindowSamples <= _samples.Count)
-                windows.Add(_samples.GetRange(offset, WindowSamples).ToArray());
+                windows.Add((_samples.GetRange(offset, WindowSamples).ToArray(), start));
             _nextWindowEnd += HopSamples;
         }
 
@@ -128,7 +128,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         return windows;
     }
 
-    private async Task TranscribeWindowAsync(float[] samples, CancellationToken token)
+    private async Task TranscribeWindowAsync(float[] samples, long startSample, CancellationToken token)
     {
         var processor = _processor;
         if (processor is null) return;
