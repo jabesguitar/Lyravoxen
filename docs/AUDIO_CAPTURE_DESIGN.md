@@ -52,3 +52,12 @@ Microsoft references:
 - Alternative: implement the small process-loopback interop layer against the Microsoft ApplicationLoopback sample while retaining .NET 8; compare maintenance and test costs before choosing.
 - NAudio process-loopback API source: https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/CoreAudioApi/AudioClient.cs
 - Microsoft API sample: https://github.com/microsoft/Windows-classic-samples/tree/main/Samples/ApplicationLoopback
+
+
+## First implementation spike
+- Added an isolated .NET 9 branch using `NAudio.Wasapi 3.0.0`.
+- Added `ProcessAudioCapture`, based on `WasapiRecorderBuilder.WithProcessLoopback`, with a 50 ms requested buffer, process-tree inclusion, copied packet data, sample format, device position and QPC timestamps.
+- The service intentionally has no system-loopback fallback.
+- This is an implementation spike only: it is not yet connected to the player UI or a speech-recognition engine.
+- Required next checks: compile on CI, inspect actual WebView2 browser process PID, test that the dedicated player environment's process tree is isolated from search tabs, and verify captured packets on a real Windows machine.
+- NAudio process-loopback API documentation/source: https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/WasapiRecorderBuilder.cs and https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/WasapiRecorder.cs
