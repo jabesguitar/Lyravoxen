@@ -68,6 +68,7 @@ public partial class ProjectionWindow : Window
         _displayMode = ProjectionDisplayMode.Lyric;
         LyricDisplay.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Collapsed;
+        ExitOverlayButton.Visibility = Visibility.Collapsed;
         LyricDisplay.Text = LimitLines(_lastLyric, _maxLines);
         UpdateTextLayout(LyricDisplay.Text);
     }
@@ -78,6 +79,7 @@ public partial class ProjectionWindow : Window
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "LYRAVOXEN";
         OverlaySubtitle.Text = "A apresentação começará em instantes";
+        ExitOverlayButton.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Visible;
     }
 
@@ -87,6 +89,7 @@ public partial class ProjectionWindow : Window
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "Obrigado pela presença";
         OverlaySubtitle.Text = "Que Deus abençoe a todos";
+        ExitOverlayButton.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Visible;
     }
 
@@ -96,6 +99,7 @@ public partial class ProjectionWindow : Window
         _displayMode = ProjectionDisplayMode.Blank;
         LyricDisplay.Text = "";
         OverlayPanel.Visibility = Visibility.Collapsed;
+        ExitOverlayButton.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Visible;
         UpdateTextLayout("");
     }
@@ -165,12 +169,15 @@ public partial class ProjectionWindow : Window
         return string.Join(Environment.NewLine, lines);
     }
 
+    private void ExitOverlayButton_Click(object sender, RoutedEventArgs e) => RestoreDisplay();
+
     protected override void OnKeyDown(WpfKeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
-            ClearDisplay();
+            RestoreDisplay();
             e.Handled = true;
+            return;
         }
         base.OnKeyDown(e);
     }
