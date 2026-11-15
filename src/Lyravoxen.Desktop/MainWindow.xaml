@@ -18,11 +18,11 @@
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="0,0,0,12">
-   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="YoutubeUrlBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
     <Button x:Name="LoadYoutubeButton" Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button Grid.Column="2" Content="Abrir projeção" Background="#176E68" Click="OpenProjection_Click"/>
-    <Button x:Name="PlayNextButton" Grid.Column="3" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/><Button Grid.Column="4" Content="Holyrics" Click="HolyricsSettings_Click"/><Button Grid.Column="5" Content="Testar projeção" Click="TestProjection_Click"/><Button Grid.Column="6" Content="Tela de espera" Click="ProjectionStandby_Click"/><Button Grid.Column="7" Content="Encerrar" Click="ProjectionEnding_Click"/><Button Grid.Column="8" Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verificar a preparação para a apresentação"/><ComboBox x:Name="OutputDisplayBox" Grid.Column="9" Width="150" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/><Button Grid.Column="10" Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e limpar a projeção no Lyravoxen e no Holyrics"/>
+    <Button x:Name="PlayNextButton" Grid.Column="3" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/><Button Grid.Column="4" Content="Holyrics" Click="HolyricsSettings_Click"/><Button Grid.Column="5" Content="Testar projeção" Click="TestProjection_Click"/><Button Grid.Column="6" Content="Tela de espera" Click="ProjectionStandby_Click"/><Button Grid.Column="7" Content="Encerrar" Click="ProjectionEnding_Click"/><Button Grid.Column="8" Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verificar a preparação para a apresentação"/><ComboBox x:Name="OutputDisplayBox" Grid.Column="9" Width="150" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/><Button Grid.Column="10" Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e limpar a projeção no Lyravoxen e no Holyrics"/><Button Grid.Column="11" Content="Fechar projeção" Click="CloseProjection_Click" ToolTip="Fechar a janela de saída sem encerrar o aplicativo"/>
    </Grid>
   </Border>
   <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="0.85*"/></Grid.ColumnDefinitions>
@@ -53,13 +53,13 @@
         </StackPanel>
        </Border>
        <ListBox x:Name="CueList" Grid.Row="5" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
-       <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4">
+       <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4" MinHeight="42">
         <Button Content="◀ Anterior" Click="PreviousCue_Click"/>
         <Button Content="Próxima ▶" Click="NextCue_Click"/>
         <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#176E68"/>
         <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
        </UniformGrid>
-       <UniformGrid Grid.Row="7" Columns="4" Margin="2,2,2,4">
+       <UniformGrid Grid.Row="7" Columns="4" Margin="2,2,2,4" MinHeight="42">
         <Button Content="Editar selecionada" Click="EditCue_Click"/>
         <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
         <Button Content="Excluir frase" Click="DeleteCue_Click"/>
@@ -124,14 +124,20 @@
      <Button Grid.Column="1" Content="Pesquisar" Click="YoutubeSearch_Click"/>
      <Button Grid.Column="2" Content="Voltar" Click="YoutubeSearchBack_Click"/>
      <Button Grid.Column="3" Content="Avançar" Click="YoutubeSearchForward_Click"/>
-     <Button Grid.Column="4" Content="Atualizar" Click="YoutubeSearchRefresh_Click"/>
+     <Button Grid.Column="4" Content="Atualizar" Click="YoutubeSearchRefresh_Click"/><Button Grid.Column="5" Content="Copiar link" Click="CopyNextLink_Click" ToolTip="Copiar o endereço do vídeo aberto"/>
     </Grid>
    </Border>
-   <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="ABAS DO NAVEGADOR" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="14,6"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="14,6" Margin="6,0,0,0"/></DockPanel><TabControl x:Name="BrowserTabs" Grid.Row="1" Background="#080D12" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
+   <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="BUSCA DE MÚSICAS E LETRAS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="YouTube" Click="SearchYouTubeSource_Click" Padding="10,5"/><Button Content="Cifra Club" Click="SearchCifraClub_Click" Padding="10,5"/><Button Content="Letras.mus.br" Click="SearchLetrasMusBr_Click" Padding="10,5"/><Button Content="Vagalume" Click="SearchVagalume_Click" Padding="10,5"/><Button Content="Harpa Cristã" Click="SearchHarpa_Click" Padding="10,5"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="10,5"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="10,5" Margin="6,0,0,0"/></DockPanel><TabControl x:Name="BrowserTabs" Grid.Row="1" Background="#080D12" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
    <Border Grid.Row="2" Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,10,0,0">
-    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <StackPanel><TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontWeight="Bold"/><TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/></StackPanel>
-     <Button Grid.Column="1" Content="Preparar próxima" Click="PrepareNext_Click" Background="#176E68"/>
+    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel Grid.Row="0"><TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontWeight="Bold"/><TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/></StackPanel>
+     <Button Grid.Row="0" Grid.Column="1" Content="Preparar próxima" Click="PrepareNext_Click" Background="#176E68"/>
+     <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="1.5*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBox x:Name="ManualTrackTitleBox" Grid.Column="0" ToolTip="Título da música" VerticalContentAlignment="Center"/>
+      <TextBox x:Name="ManualTrackArtistBox" Grid.Column="1" ToolTip="Intérprete ou autor" VerticalContentAlignment="Center"/>
+      <TextBox x:Name="ManualTrackUrlBox" Grid.Column="2" ToolTip="Cole aqui o link direto do YouTube" VerticalContentAlignment="Center"/>
+      <Button Grid.Column="3" Content="Carregar faixa informada" Click="LoadManualTrack_Click" Background="#176E68"/>
+     </Grid>
     </Grid>
    </Border>
   </Grid>
