@@ -116,3 +116,16 @@ The product is intended for distribution to churches with unknown and varied har
 
 ### Product rule
 Core playback and projection must not be held hostage by transcription support. On unsupported or very slow machines, the app remains useful: play the YouTube source, use synchronized catalog lyrics when available, and allow LRC/SRT/manual lyrics.
+
+
+## Product priority clarification: modern and legacy computers are equal priorities
+
+Both modern/high-performance computers and older/low-resource computers are first-class targets. Do not optimize exclusively for the Xeon reference machine.
+
+- Modern systems must be able to use higher-quality transcription models, more inference workers, faster partial-result cadence and optional hardware acceleration when supported.
+- Older systems must retain a lightweight CPU-only path with a compact quantized model, conservative worker count and bounded memory.
+- Runtime adaptation chooses the best available backend/model/profile from detected CPU features, RAM, OS APIs and user preference.
+- The user can choose Auto, Low Resource, Balanced or High Quality. Auto is the default; manual choice is respected but must never enable an unsupported instruction set.
+- Capture and playback remain independent of inference. If high-quality recognition cannot keep up, reduce inference load or report lag; never stall music playback.
+- The app should not impose a universal two-thread cap: thread count is profile- and hardware-dependent, with safe headroom left for playback, UI and Windows.
+- Modern and legacy acceptance tests are both release blockers. The Xeon E5-2689 v0 is a compatibility reference, not the performance ceiling or sole priority.
