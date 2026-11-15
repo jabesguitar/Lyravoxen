@@ -63,7 +63,7 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
         var format = recorder.WaveFormat;
         var frames = format.BlockAlign > 0 ? copy.Length / format.BlockAlign : 0;
         AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(
-            copy, format.SampleRate, format.Channels, format.BitsPerSample, frames, devicePosition, qpcPosition));
+            copy, format.SampleRate, format.Channels, format.BitsPerSample, format.Encoding == WaveFormatEncoding.IeeeFloat, frames, devicePosition, qpcPosition));
     }
 
     private void OnRecordingStopped(object? sender, StoppedEventArgs e)
@@ -92,7 +92,7 @@ internal sealed class AudioChunkEventArgs(
     public byte[] Data { get; } = data;
     public int SampleRate { get; } = sampleRate;
     public int Channels { get; } = channels;
-    public int BitsPerSample { get; } = bitsPerSample;
+    public int BitsPerSample { get; } = bitsPerSample;\n    public bool IsIeeeFloat { get; } = isIeeeFloat;
     public int Frames { get; } = frames;
     public long DevicePosition { get; } = devicePosition;
     public long QpcPosition { get; } = qpcPosition;
