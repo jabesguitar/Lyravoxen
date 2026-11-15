@@ -1,4 +1,6 @@
 using System.Text;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using System.IO;
 using System.Windows.Threading;
 using System.Globalization;
@@ -63,6 +65,18 @@ public partial class MainWindow : Window
     private Task? _transcriptionEngineStartTask;
     private readonly SemaphoreSlim _captureLock = new(1, 1);
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
+    private const int GlobalHotkeyId = 0x4C59;
+    private const int WmHotkey = 0x0312;
+    private const uint ModControl = 0x0002;
+    private const uint VkF9 = 0x78;
+    private HwndSource? _hotkeySource;
+    private bool _globalHotkeyRegistered;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint modifiers, uint virtualKey);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     public MainWindow()
     {
@@ -72,8 +86,10 @@ public partial class MainWindow : Window
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += System_DisplaySettingsChanged;
         _displayChangeHandlerAttached = true;
+        SourceInitialized += (_, _) => RegisterGlobalHotkey();
         Closed += (_, _) =>
         {
+            UnregisterGlobalHotkey();
             if (_displayChangeHandlerAttached)
                 Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= System_DisplaySettingsChanged;
             _ = DisposeAudioServicesAsync();
@@ -103,6 +119,36 @@ public partial class MainWindow : Window
             }
             catch (Exception ex) { StatusText.Text = "Não foi possível iniciar o WebView2: " + ex.Message; }
         };
+    }
+
+    private void RegisterGlobalHotkey()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        _hotkeySource = HwndSource.FromHwnd(handle);
+        _hotkeySource?.AddHook(GlobalHotkeyWindowProc);
+        _globalHotkeyRegistered = RegisterHotKey(handle, GlobalHotkeyId, ModControl, VkF9);
+        if (!_globalHotkeyRegistered)
+            StatusText.Text = "Ctrl+F9 não pôde ser registrado globalmente (atalho já está em uso). Use o botão Fechar Holyrics.";
+    }
+
+    private void UnregisterGlobalHotkey()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        if (_globalHotkeyRegistered && handle != IntPtr.Zero)
+            UnregisterHotKey(handle, GlobalHotkeyId);
+        _globalHotkeyRegistered = false;
+        _hotkeySource?.RemoveHook(GlobalHotkeyWindowProc);
+        _hotkeySource = null;
+    }
+
+    private IntPtr GlobalHotkeyWindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WmHotkey && wParam.ToInt32() == GlobalHotkeyId)
+        {
+            _ = CloseHolyricsPresentationAsync();
+            handled = true;
+        }
+        return IntPtr.Zero;
     }
 
     private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
@@ -956,13 +1002,7 @@ public partial class MainWindow : Window
                 }
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
-            var cueIndex = FindActiveCue(seconds);
-            if (cueIndex == _lastAutomaticCue) return;
-            _lastAutomaticCue = cueIndex;
-            var blockStart = GetProjectionBlockStart(cueIndex);
-            if (blockStart == _lastAutomaticBlockStart) return;
-            _lastAutomaticBlockStart = blockStart;
-            PublishLyric(BuildProjectionCueBlock(cueIndex));
+            UpdateAutomaticProjection(seconds);
         }
         catch (JsonException) { }
         catch (InvalidOperationException) { }
@@ -1560,6 +1600,37 @@ public partial class MainWindow : Window
         if (activeIndex < 0) return -1;
         var count = GetProjectionLineCount();
         return (activeIndex / count) * count;
+    }
+
+    // Limpa o telão durante pausas instrumentais longas entre blocos de letra.
+    private bool IsInstrumentalGap(double playbackSeconds, int activeIndex)
+    {
+        if (activeIndex < 0 || activeIndex >= _cues.Count) return false;
+        var lineCount = GetProjectionLineCount();
+        var currentBlockStart = (activeIndex / lineCount) * lineCount;
+        var nextBlockStart = currentBlockStart + lineCount;
+        if (nextBlockStart >= _cues.Count) return false;
+
+        var currentBlockLast = Math.Min(currentBlockStart + lineCount - 1, _cues.Count - 1);
+        var gapStart = _cues[currentBlockLast].Seconds;
+        var nextStart = _cues[nextBlockStart].Seconds;
+        const double minimumInstrumentalGap = 10.0;
+        const double blankBeforeNextLyric = 4.0;
+        return nextStart - gapStart >= minimumInstrumentalGap &&
+               playbackSeconds >= nextStart - blankBeforeNextLyric &&
+               playbackSeconds < nextStart;
+    }
+
+    private void UpdateAutomaticProjection(double playbackSeconds)
+    {
+        var cueIndex = FindActiveCue(playbackSeconds);
+        var instrumentalGap = IsInstrumentalGap(playbackSeconds, cueIndex);
+        var blockState = instrumentalGap ? -2 : GetProjectionBlockStart(cueIndex);
+        if (cueIndex == _lastAutomaticCue && blockState == _lastAutomaticBlockStart) return;
+
+        _lastAutomaticCue = cueIndex;
+        _lastAutomaticBlockStart = blockState;
+        PublishLyric(cueIndex < 0 || instrumentalGap ? "" : BuildProjectionCueBlock(cueIndex));
     }
 
     private string BuildProjectionCueBlock(int activeIndex) =>
@@ -2332,13 +2403,7 @@ public partial class MainWindow : Window
         if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode) return;
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
         _lastKnownPlaybackSeconds = seconds;
-        var cueIndex = FindActiveCue(seconds);
-        if (cueIndex == _lastAutomaticCue) return;
-        _lastAutomaticCue = cueIndex;
-        var blockStart = GetProjectionBlockStart(cueIndex);
-        if (blockStart == _lastAutomaticBlockStart) return;
-        _lastAutomaticBlockStart = blockStart;
-        PublishLyric(BuildProjectionCueBlock(cueIndex));
+        UpdateAutomaticProjection(seconds);
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
