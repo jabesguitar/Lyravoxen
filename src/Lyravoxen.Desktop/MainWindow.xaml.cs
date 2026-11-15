@@ -73,6 +73,7 @@ public partial class MainWindow : Window
         {
             if (_displayChangeHandlerAttached)
                 Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= System_DisplaySettingsChanged;
+            _ = StopYoutubeCaptureAsync();
         };
         Loaded += async (_, _) =>
         {
