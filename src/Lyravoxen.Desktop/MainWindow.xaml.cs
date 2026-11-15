@@ -945,9 +945,11 @@ public partial class MainWindow : Window
         lines.Add("HARDWARE E COMPATIBILIDADE");
         lines.Add($"CPU: {hardware.CpuName}");
         lines.Add($"Arquitetura: {hardware.Architecture}; núcleos lógicos: {hardware.LogicalProcessors}");
-        lines.Add($"Memória disponível estimada: {hardware.AvailableMemoryBytes / (1024 * 1024)} MB");
+        lines.Add($"Memória física disponível: {hardware.AvailableMemoryBytes / (1024 * 1024)} MB");
         lines.Add($"Instruções: SSE2={hardware.Sse2}; AVX={hardware.Avx}; AVX2={hardware.Avx2}");
         lines.Add($"Perfil sugerido: {hardware.RecommendedProfile}; threads de IA: {hardware.RecommendedInferenceThreads}");
+        lines.Add($"Modelo sugerido para futura transcrição: {Lyravoxen.Audio.PerformanceProfileSettings.GetModelHint(hardware.Tier, hardware.RecommendedProfile)}");
+        lines.Add("A reprodução e a projeção não dependem do motor de transcrição.");
         lines.Add($"Captura por processo disponível no Windows: {hardware.ProcessLoopbackApiAvailable}");
         if (!hardware.Sse2 && hardware.Architecture == "X64")
             warnings.Add("O processador não reportou SSE2. Alguns motores de IA podem não ser compatíveis.");
