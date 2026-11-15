@@ -54,12 +54,16 @@ Microsoft references:
 - Microsoft API sample: https://github.com/microsoft/Windows-classic-samples/tree/main/Samples/ApplicationLoopback
 
 
-## First implementation spike
-- Added an isolated .NET 9 branch using `NAudio.Wasapi 3.0.0`.
-- Added `ProcessAudioCapture`, based on `WasapiRecorderBuilder.WithProcessLoopback`, with a 50 ms requested buffer, process-tree inclusion, copied packet data, sample format, device position and QPC timestamps.
-- The service intentionally has no system-loopback fallback.
-- This is an implementation spike only: it is not yet connected to the player UI or a speech-recognition engine.
-- Required next checks: compile on CI, inspect actual WebView2 browser process PID, test that the dedicated player environment's process tree is isolated from search tabs, and verify captured packets on a real Windows machine.
+## First implementation spike and live transcription
+- The experimental branch targets .NET 9 and uses `NAudio.Wasapi 3.0.0` for process-loopback capture.
+- `ProcessAudioCapture` uses `WasapiRecorderBuilder.WithProcessLoopback`, requests a 50 ms buffer, includes the target process tree, copies callback data, and preserves sample format plus device/QPC timestamps. It never falls back to system-wide capture.
+- The main window starts capture only when the YouTube player reports the playing state; it stops on pause/end, track switch, and application close.
+- The player WebView2 control uses a dedicated user-data folder. Capture targets its `CoreWebView2.BrowserProcessId` process tree. Isolation from all renderer/audio utility processes and search-tab audio still requires physical verification.
+- `LiveTranscriptionEngine` converts captured PCM to mono 16 kHz, uses bounded audio buffering, and processes overlapping 8-second windows with a 3-second hop.
+- The first local model is Whisper Tiny Q5_0, downloaded once to the user's LocalAppData model folder. CPU runtime selection includes both the optimized CPU runtime and the no-AVX fallback; thread count follows the detected hardware profile.
+- Recognized segments are anchored to the player's media clock and added to the editable cue timeline/library. The recognizer is experimental for sung vocals; it can omit or misrecognize lyrics and should be reviewed before public projection.
+- Process-loopback capture requires Windows 10 2004 (build 19041) or later. The packaged Whisper native runtimes currently document Windows 11 / Windows Server 2022 and Microsoft Visual C++ 2015-2022 x64 as prerequisites. On older Windows, playback/manual/catalog lyric paths remain available but local transcription is disabled.
+- CI can prove restore/build/publish only. Still required: real Windows capture test, no contamination from Holyrics/search tabs, end-to-end latency measurement, and CPU/RAM benchmark on both the i5 and Xeon E5-2689 v0.
 - NAudio process-loopback API documentation/source: https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/WasapiRecorderBuilder.cs and https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/WasapiRecorder.cs
 
 
