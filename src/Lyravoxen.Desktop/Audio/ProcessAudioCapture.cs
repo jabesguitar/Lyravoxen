@@ -12,6 +12,9 @@ namespace Lyravoxen.Audio;
 internal sealed class ProcessAudioCapture : IAsyncDisposable
 {
     private WasapiRecorder? _recorder;
+    private readonly Func<double>? _mediaTimeProvider;
+
+    public ProcessAudioCapture(Func<double>? mediaTimeProvider = null) => _mediaTimeProvider = mediaTimeProvider;
 
     public event EventHandler<AudioChunkEventArgs>? AudioChunkAvailable;
     public event Action<Exception>? CaptureFailed;
@@ -63,7 +66,7 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
         var format = recorder.WaveFormat;
         var frames = format.BlockAlign > 0 ? copy.Length / format.BlockAlign : 0;
         AudioChunkAvailable?.Invoke(this, new AudioChunkEventArgs(
-            copy, format.SampleRate, format.Channels, format.BitsPerSample, format.Encoding == WaveFormatEncoding.IeeeFloat, frames, devicePosition, qpcPosition));
+            copy, format.SampleRate, format.Channels, format.BitsPerSample, format.Encoding == WaveFormatEncoding.IeeeFloat, _mediaTimeProvider?.Invoke() ?? 0, frames, devicePosition, qpcPosition));
     }
 
     private void OnRecordingStopped(object? sender, StoppedEventArgs e)
@@ -87,13 +90,14 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
 
 internal sealed class AudioChunkEventArgs(
     byte[] data, int sampleRate, int channels, int bitsPerSample, bool isIeeeFloat,
-    int frames, long devicePosition, long qpcPosition) : EventArgs
+    double mediaTimeSeconds, int frames, long devicePosition, long qpcPosition) : EventArgs
 {
     public byte[] Data { get; } = data;
     public int SampleRate { get; } = sampleRate;
     public int Channels { get; } = channels;
     public int BitsPerSample { get; } = bitsPerSample;
     public bool IsIeeeFloat { get; } = isIeeeFloat;
+    public double MediaTimeSeconds { get; } = mediaTimeSeconds;
     public int Frames { get; } = frames;
     public long DevicePosition { get; } = devicePosition;
     public long QpcPosition { get; } = qpcPosition;
