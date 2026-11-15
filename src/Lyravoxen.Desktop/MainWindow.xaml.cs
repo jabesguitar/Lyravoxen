@@ -546,6 +546,49 @@ public partial class MainWindow : Window
         }
     }
 
+    private void PersistCurrentVideoToLibrary()
+    {
+        if (_currentVideo is null) return;
+
+        var savedItems = _library.SelectMany(folder => folder.Videos)
+            .Where(video => video.VideoId == _currentVideo.VideoId && video.IsOffline == _currentVideo.IsOffline)
+            .ToList();
+        if (savedItems.Count == 0)
+        {
+            var folder = LibraryFolderList.SelectedItem as LibraryFolder
+                ?? _library.FirstOrDefault(item => string.Equals(item.Name, "Minhas músicas", StringComparison.OrdinalIgnoreCase));
+            if (folder is null)
+            {
+                folder = new LibraryFolder { Name = "Minhas músicas" };
+                _library.Add(folder);
+            }
+            folder.Videos.Add(new LibraryVideo
+            {
+                VideoId = _currentVideo.VideoId,
+                Title = _currentVideo.Title,
+                Url = _currentVideo.Url,
+                IsOffline = _currentVideo.IsOffline,
+                LocalPath = _currentVideo.LocalPath,
+                Format = _currentVideo.Format,
+                LyricsText = _currentVideo.LyricsText,
+                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
+            });
+        }
+        else
+        {
+            foreach (var saved in savedItems)
+            {
+                saved.Title = _currentVideo.Title;
+                saved.Url = _currentVideo.Url;
+                saved.LyricsText = _currentVideo.LyricsText;
+                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            }
+        }
+
+        SaveLibrary();
+        RefreshFolders((LibraryFolderList.SelectedItem as LibraryFolder)?.Id);
+    }
+
     private void ApplyLyricsToCurrentTrack(IEnumerable<LyricCue> cues)
     {
         _cues.Clear();
@@ -556,12 +599,7 @@ public partial class MainWindow : Window
         if (_currentVideo is not null)
         {
             _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-            foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
-            {
-                saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                saved.LyricsText = _currentVideo.LyricsText;
-            }
-            SaveLibrary();
+            PersistCurrentVideoToLibrary();
         }
     }
 
