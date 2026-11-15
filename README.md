@@ -21,6 +21,10 @@ O pacote experimental desta branch é publicado como self-contained para .NET 9;
 - Player oficial incorporado do YouTube; não baixa nem extrai áudio.
 - Sincronização manual e automática por timestamps.
 - Importação LRC/SRT e edição das frases.
+- Projeção em blocos simultâneos de 1 a 10 linhas: cada bloco completo substitui o anterior de uma só vez.
+- Prévia do telão editável, com envio manual do texto revisado.
+- Biblioteca para salvar letras e hinos sem vídeo, com título, intérprete e autor/compositor.
+- Guia de ajuda integrado com explicação dos controles e atalhos.
 - Projeção independente, temas, tela de espera e encerramento.
 - Seleção da tela de saída e recuperação após alterações de monitor.
 - Biblioteca, histórico e fila da próxima música.
