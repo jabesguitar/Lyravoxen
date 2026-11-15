@@ -1448,6 +1448,7 @@ public partial class MainWindow : Window
         if (_projection is null || !_projection.IsVisible)
         {
             _projection = new ProjectionWindow();
+            _projection.HolyricsCloseRequested += CloseHolyricsPresentation_Click;
             var actualDevice = _projection.ShowOnOutputDisplay(_selectedOutputDeviceName);
             var actualScreen = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(screen =>
                 string.Equals(screen.DeviceName, actualDevice, StringComparison.OrdinalIgnoreCase));
@@ -1478,10 +1479,36 @@ public partial class MainWindow : Window
 
     private async void EndProjection_Click(object sender, RoutedEventArgs e)
     {
-        await ClearProjectionAfterPlaybackAsync();
+        _projection?.Close();
+        _projection = null;
+        await CloseHolyricsPresentationAsync();
         StatusText.Text = _holyrics.IsConfigured
-            ? "Projeção encerrada pelo Lyravoxen. O telão foi limpo e a apresentação rápida do Holyrics foi fechada."
-            : "Projeção local encerrada. Configure o Holyrics para também fechar a apresentação rápida nele.";
+            ? "Projeção encerrada: tela do Lyravoxen fechada e apresentação do Holyrics encerrada."
+            : "Tela do Lyravoxen fechada. Configure o Holyrics para também encerrar a apresentação nele.";
+    }
+
+    private async void CloseHolyricsPresentation_Click(object? sender, RoutedEventArgs e)
+    {
+        await CloseHolyricsPresentationAsync();
+    }
+
+    private async Task CloseHolyricsPresentationAsync()
+    {
+        if (!_holyrics.IsConfigured)
+        {
+            StatusText.Text = "Configure a integração com o Holyrics para fechar a apresentação remotamente.";
+            return;
+        }
+        try
+        {
+            await _holyrics.ClearProjectionAsync();
+            _holyricsTakeoverActive = false;
+            StatusText.Text = "Apresentação do Holyrics fechada pelo Lyravoxen.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível fechar a apresentação do Holyrics: " + ex.Message;
+        }
     }
 
     private void ProjectionEnding_Click(object sender, RoutedEventArgs e)
@@ -1922,6 +1949,10 @@ public partial class MainWindow : Window
                 break;
             case System.Windows.Input.Key.F12:
                 ProjectionEnding_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+                break;
+            case System.Windows.Input.Key.F9 when (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control:
+                _ = CloseHolyricsPresentationAsync();
                 e.Handled = true;
                 break;
         }
