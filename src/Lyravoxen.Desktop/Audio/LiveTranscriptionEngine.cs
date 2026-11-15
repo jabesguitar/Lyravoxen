@@ -32,6 +32,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
     private double _lastEmittedEndSeconds;
     private double _timelineOffsetSeconds;
     private long _generation;
+    private double _lastChunkMediaEndSeconds;
     private int _started;
 
     public event Action<string>? StatusChanged;
@@ -48,6 +49,8 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
+        if (!OperatingSystem.IsWindows() || Environment.OSVersion.Version.Build < 20348)
+            throw new PlatformNotSupportedException("A transcrição local exige Windows 11 ou Windows Server 2022 ou superior. A reprodução e as letras manuais continuam disponíveis.");
         if (Interlocked.Exchange(ref _started, 1) != 0) return;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
         try
@@ -91,6 +94,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
             _nextWindowEnd = WindowSamples;
             _timelineOffsetSeconds = Math.Max(0, mediaTimeSeconds);
             _lastEmittedEndSeconds = _timelineOffsetSeconds;
+            _lastChunkMediaEndSeconds = _timelineOffsetSeconds;
         }
     }
 
