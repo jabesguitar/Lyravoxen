@@ -37,13 +37,14 @@ internal sealed class ProcessAudioCapture : IAsyncDisposable
 
         recorder.DataAvailable += OnDataAvailable;
         recorder.RecordingStopped += OnRecordingStopped;
+        _recorder = recorder;
         try
         {
             recorder.StartRecording();
-            _recorder = recorder;
         }
         catch
         {
+            _recorder = null;
             recorder.DataAvailable -= OnDataAvailable;
             recorder.RecordingStopped -= OnRecordingStopped;
             await recorder.DisposeAsync().ConfigureAwait(false);
