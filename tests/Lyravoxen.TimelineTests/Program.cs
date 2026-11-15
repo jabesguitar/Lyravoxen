@@ -26,7 +26,7 @@ Check(CueTimeline.BuildProjectionBlock(blockCues, 0, 4) == "linha 1", "bloco de 
 Check(CueTimeline.BuildProjectionBlock(blockCues, 3, 4) == string.Join(Environment.NewLine, "linha 1", "linha 2", "linha 3", "linha 4"), "bloco de quatro acumula quatro linhas");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 4, 4) == "linha 5", "novo bloco substitui o bloco anterior");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 5) == string.Join(Environment.NewLine, "linha 6", "linha 7"), "último bloco parcial mantém apenas linhas restantes");
-Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 0) == "linha 1" + Environment.NewLine + "linha 2" + Environment.NewLine + "linha 3" + Environment.NewLine + "linha 4" + Environment.NewLine + "linha 5" + Environment.NewLine + "linha 6" + Environment.NewLine + "linha 7", "limite inferior de linhas é um");
+Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 0) == "linha 7", "limite inferior de linhas é um");
 Check(CueTimeline.BuildProjectionBlock(blockCues, 6, 99) == string.Join(Environment.NewLine, blockCues.Select(cue => cue.Text)), "limite superior de linhas é dez");
 Check(CueTimeline.BuildProjectionBlock(blockCues, -1, 4) == "", "índice inválido limpa projeção");
 
