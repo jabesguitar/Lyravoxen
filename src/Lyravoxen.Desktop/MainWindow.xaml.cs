@@ -182,8 +182,43 @@ public partial class MainWindow : Window
         if (view?.CoreWebView2 is null) { StatusText.Text = "A aba ainda está inicializando."; return; }
         var text = YoutubeSearchBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(text)) return;
-        if (YouTubeLink.TryGetVideoId(text) is not null) view.CoreWebView2.Navigate(text);
-        else view.CoreWebView2.Navigate("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(text));
+        if (Uri.TryCreate(text, UriKind.Absolute, out var address) &&
+            (address.Scheme == Uri.UriSchemeHttp || address.Scheme == Uri.UriSchemeHttps))
+            view.CoreWebView2.Navigate(address.ToString());
+        else
+            view.CoreWebView2.Navigate("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(text));
+    }
+
+    private void YoutubeSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+        {
+            e.Handled = true;
+            YoutubeSearch_Click(sender, new RoutedEventArgs());
+        }
+    }
+
+    private void YoutubeSearchHome_Click(object sender, RoutedEventArgs e)
+    {
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is not null) view.CoreWebView2.Navigate("https://www.youtube.com/");
+    }
+
+    private void YoutubeSearchPaste_Click(object sender, RoutedEventArgs e)
+    {
+        if (Clipboard.ContainsText()) YoutubeSearchBox.Text = Clipboard.GetText();
+        YoutubeSearchBox.Focus();
+    }
+
+    private void YoutubeSearchCopy_Click(object sender, RoutedEventArgs e)
+    {
+        var view = ActiveBrowserView;
+        var address = view?.Source?.ToString();
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            Clipboard.SetText(address);
+            StatusText.Text = "Endereço copiado: " + address;
+        }
     }
 
     private void YoutubeSearchBack_Click(object sender, RoutedEventArgs e)
