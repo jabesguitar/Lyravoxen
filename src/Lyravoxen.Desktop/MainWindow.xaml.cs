@@ -160,6 +160,56 @@ public partial class MainWindow : Window
         var view = ActiveBrowserView;
         if (view?.CoreWebView2 is not null) view.CoreWebView2.Reload();
     }
+
+    private void CopyNextLink_Click(object sender, RoutedEventArgs e)
+    {
+        var view = ActiveBrowserView;
+        var url = view?.Source?.ToString();
+        if (string.IsNullOrWhiteSpace(url)) url = YoutubeSearchBox.Text.Trim();
+        if (YouTubeLink.TryGetVideoId(url) is not null)
+        {
+            Clipboard.SetText(url);
+            StatusText.Text = "Link do vídeo copiado para a área de transferência.";
+        }
+        else StatusText.Text = "Abra um vídeo do YouTube antes de copiar o link.";
+    }
+
+    private void NavigateSearchSource(string baseUrl)
+    {
+        var view = ActiveBrowserView;
+        if (view?.CoreWebView2 is null) { StatusText.Text = "A aba ainda está inicializando."; return; }
+        var query = YoutubeSearchBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(query)) query = MusicTrackBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(query)) query = ManualTrackTitleBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(query)) { StatusText.Text = "Digite o nome da música na barra de pesquisa."; return; }
+        view.CoreWebView2.Navigate(baseUrl + Uri.EscapeDataString(query));
+    }
+
+    private void SearchYouTubeSource_Click(object sender, RoutedEventArgs e) => NavigateSearchSource("https://www.youtube.com/results?search_query=");
+    private void SearchCifraClub_Click(object sender, RoutedEventArgs e) => NavigateSearchSource("https://www.cifraclub.com.br/?q=");
+    private void SearchLetrasMusBr_Click(object sender, RoutedEventArgs e) => NavigateSearchSource("https://www.letras.mus.br/?q=");
+    private void SearchVagalume_Click(object sender, RoutedEventArgs e) => NavigateSearchSource("https://www.vagalume.com.br/search.php?art=");
+    private void SearchHarpa_Click(object sender, RoutedEventArgs e) => NavigateSearchSource("https://www.google.com/search?q=" + Uri.EscapeDataString("Harpa Cristã letra ") );
+    private async void LoadManualTrack_Click(object sender, RoutedEventArgs e)
+    {
+        var title = ManualTrackTitleBox.Text.Trim();
+        var artist = ManualTrackArtistBox.Text.Trim();
+        var url = ManualTrackUrlBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist) || YouTubeLink.TryGetVideoId(url) is null)
+        {
+            System.Windows.MessageBox.Show("Informe o título, o intérprete/autor e cole um link válido do YouTube.", "Cadastro manual de música", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (await LoadVideoAsync(url, true))
+        {
+            MusicTrackBox.Text = title;
+            MusicArtistBox.Text = artist;
+            YoutubeUrlBox.Text = url;
+            StatusText.Text = "Faixa carregada com os dados informados manualmente. Agora busque a letra sincronizada ou importe um arquivo LRC/SRT.";
+            WorkspaceTabs.SelectedIndex = 0;
+        }
+    }
+
     private async void PrepareNext_Click(object sender, RoutedEventArgs e)
     {
         var browser = ActiveBrowserView;
@@ -259,8 +309,7 @@ public partial class MainWindow : Window
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
             // O título salvo no histórico pode conter também o nome do canal.
             // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
-            MusicTrackBox.Text = "";
-            MusicArtistBox.Clear();
+            // OEmbed preenche título e canal; mantenha os campos para o operador conferir/corrigir.
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
@@ -430,6 +479,7 @@ public partial class MainWindow : Window
         {
             _currentVideo.Title = displayTitle;
             MusicTrackBox.Text = title;
+            MusicArtistBox.Text = author;
         }
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
@@ -860,6 +910,17 @@ public partial class MainWindow : Window
             : $"Diagnóstico concluído: {warnings.Count} ponto(s) precisam de atenção.";
         System.Windows.MessageBox.Show(this, report, "Lyravoxen — Diagnóstico", MessageBoxButton.OK,
             warnings.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+    }
+
+    private void CloseProjection_Click(object sender, RoutedEventArgs e)
+    {
+        if (_projection is { IsVisible: true })
+        {
+            _projection.Close();
+            _projection = null;
+            StatusText.Text = "Janela de projeção fechada. O Lyravoxen continua aberto.";
+        }
+        else StatusText.Text = "A janela de projeção já está fechada.";
     }
 
     private void OpenProjection_Click(object sender, RoutedEventArgs e)
