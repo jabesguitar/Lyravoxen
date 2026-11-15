@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         await view.EnsureCoreWebView2Async();
         view.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
         view.CoreWebView2.Settings.IsStatusBarEnabled = true;
+        view.CoreWebView2.NewWindowRequested += Browser_NewWindowRequested;
         view.CoreWebView2.NavigationCompleted += (_, _) =>
         {
             if (ReferenceEquals(ActiveBrowserView, view) && view.Source is not null)
@@ -107,15 +108,43 @@ public partial class MainWindow : Window
     {
         try
         {
-            var view = new Microsoft.Web.WebView2.Wpf.WebView2();
-            var tab = new TabItem { Header = "YouTube " + (++_browserTabNumber), Content = view };
-            BrowserTabs.Items.Add(tab);
-            BrowserTabs.SelectedItem = tab;
-            await InitializeBrowserViewAsync(view);
+            var view = await CreateBrowserTabAsync(selectTab: true);
             view.CoreWebView2.Navigate("https://www.youtube.com/");
             _searchWebViewReady = true;
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível abrir nova aba: " + ex.Message; }
+    }
+
+    private async Task<Microsoft.Web.WebView2.Wpf.WebView2> CreateBrowserTabAsync(bool selectTab)
+    {
+        var view = new Microsoft.Web.WebView2.Wpf.WebView2();
+        var tab = new TabItem { Header = "YouTube " + (++_browserTabNumber), Content = view };
+        BrowserTabs.Items.Add(tab);
+        if (selectTab) BrowserTabs.SelectedItem = tab;
+        await InitializeBrowserViewAsync(view);
+        return view;
+    }
+
+    private async void Browser_NewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
+    {
+        // O WebView2 abre links target=_blank no navegador padrão se não receber outro WebView.
+        // Direciona esses links para uma nova aba interna do Lyravoxen.
+        var deferral = e.GetDeferral();
+        e.Handled = true;
+        try
+        {
+            var view = await CreateBrowserTabAsync(selectTab: true);
+            e.NewWindow = view.CoreWebView2;
+            _searchWebViewReady = true;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível abrir o link em uma aba interna: " + ex.Message;
+        }
+        finally
+        {
+            deferral.Complete();
+        }
     }
 
     private void CloseBrowserTab_Click(object sender, RoutedEventArgs e)
@@ -236,6 +265,8 @@ public partial class MainWindow : Window
                 Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube"
             };
             _currentVideo.Url = url;
+            MusicTrackBox.Text = _currentVideo.Title == "Vídeo do YouTube" ? "" : _currentVideo.Title.Split(" — ", 2)[0];
+            MusicArtistBox.Clear();
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
@@ -257,10 +288,7 @@ public partial class MainWindow : Window
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
-            // O título salvo no histórico pode conter também o nome do canal.
-            // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
-            MusicTrackBox.Text = "";
-            MusicArtistBox.Clear();
+            // Mantém o título obtido dos metadados do YouTube; o intérprete pode ser informado opcionalmente.
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
@@ -294,13 +322,24 @@ public partial class MainWindow : Window
         return (" " + normalizedText + " ").Contains(" " + normalizedPhrase + " ", StringComparison.Ordinal);
     }
 
+    private static double MusicTextSimilarity(string expected, string candidate)
+    {
+        if (string.IsNullOrWhiteSpace(expected) || string.IsNullOrWhiteSpace(candidate)) return 0;
+        if (expected == candidate) return 1;
+        if (ContainsMusicPhrase(candidate, expected) || ContainsMusicPhrase(expected, candidate)) return 0.92;
+        var expectedWords = expected.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
+        var candidateWords = candidate.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
+        var union = expectedWords.Union(candidateWords).Count();
+        return union == 0 ? 0 : (double)expectedWords.Intersect(candidateWords).Count() / union;
+    }
+
     private async void SearchLyrics_Click(object sender, RoutedEventArgs e)
     {
         var track = MusicTrackBox.Text.Trim();
         var artist = MusicArtistBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(track) || string.IsNullOrWhiteSpace(artist))
+        if (string.IsNullOrWhiteSpace(track))
         {
-            System.Windows.MessageBox.Show("Informe o título da música e o nome do intérprete para evitar carregar a letra de outra faixa.", "Buscar letra", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("O título da música é necessário. O intérprete é opcional; se não souber, deixe em branco e confira a correspondência antes de aplicar.", "Buscar letra", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         await TryLoadAutomaticLyricsAsync(track, artist);
@@ -311,7 +350,7 @@ public partial class MainWindow : Window
         try
         {
             StatusText.Text = "Buscando letras e verificando correspondência: " + trackName + " — " + artistName;
-            var query = Uri.EscapeDataString(trackName + " " + artistName);
+            var query = Uri.EscapeDataString(string.Join(" ", new[] { trackName, artistName }.Where(value => !string.IsNullOrWhiteSpace(value))));
             var endpoint = "https://lrclib.net/api/search?q=" + query;
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
@@ -340,9 +379,12 @@ public partial class MainWindow : Window
                 var normTrack = NormalizeMusicText(foundTrack);
                 var normArtist = NormalizeMusicText(foundArtist);
 
-                // Não aceitar correspondência parcial: evitar letras de músicas homônimas ou intérpretes diferentes.
-                if (normTrack != wantedTrack || normArtist != wantedArtist)
-                    continue;
+                // O título do vídeo pode conter "ao vivo", "clipe oficial" ou outros sufixos.
+                // Aceita candidatos aproximados, mas sempre pede confirmação antes de substituir a letra.
+                var trackSimilarity = MusicTextSimilarity(wantedTrack, normTrack);
+                var artistSimilarity = string.IsNullOrWhiteSpace(wantedArtist) ? 0 : MusicTextSimilarity(wantedArtist, normArtist);
+                if (trackSimilarity < 0.42) continue;
+                if (!string.IsNullOrWhiteSpace(wantedArtist) && artistSimilarity < 0.40) continue;
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String)
                     continue;
                 var lrc = synced.GetString();
@@ -352,18 +394,20 @@ public partial class MainWindow : Window
 
                 var duration = item.TryGetProperty("duration", out var durationElement) &&
                     durationElement.ValueKind == JsonValueKind.Number ? durationElement.GetDouble() : 0;
-                var score = 100d;
+                var score = string.IsNullOrWhiteSpace(wantedArtist)
+                    ? trackSimilarity * 85 + 10
+                    : trackSimilarity * 70 + artistSimilarity * 20 + 10;
                 if (duration > 0 && _playerDurationSeconds > 0)
                 {
                     var difference = Math.Abs(duration - _playerDurationSeconds);
-                    score -= Math.Min(35, difference / Math.Max(1, _playerDurationSeconds) * 100);
+                    score -= Math.Min(25, difference / Math.Max(1, _playerDurationSeconds) * 25);
                 }
                 candidates.Add((score, foundTrack, foundArtist, foundAlbum, imported));
             }
 
             if (candidates.Count == 0)
             {
-                StatusText.Text = "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Confira os dados ou importe um LRC/SRT.";
+                StatusText.Text = "Não encontrei letra sincronizada suficientemente parecida. Confira o título, tente informar o intérprete ou importe um arquivo LRC/SRT.";
                 return;
             }
 
@@ -374,11 +418,15 @@ public partial class MainWindow : Window
                 ? "\nDuração do vídeo: " + TimeSpan.FromSeconds(_playerDurationSeconds).ToString(@"mm\:ss")
                 : "";
             var albumNote = string.IsNullOrWhiteSpace(selected.Album) ? "" : "\nÁlbum: " + selected.Album;
+            var alternatives = string.Join(Environment.NewLine, ordered.Skip(1).Take(3)
+                .Select(candidate => "• " + candidate.Track + " — " + candidate.Artist));
+            var alternativesNote = string.IsNullOrWhiteSpace(alternatives) ? "" : "\n\nOutras correspondências encontradas:\n" + alternatives;
             var confirmation = System.Windows.MessageBox.Show(
                 "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
-                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote +
-                "\n\nPrévia:\n" + preview +
-                "\n\nEsta é exatamente a gravação/letra desejada?",
+                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist +
+                "\nCompatibilidade estimada: " + selected.Score.ToString("0", CultureInfo.InvariantCulture) + "%" + albumNote + durationNote +
+                "\n\nPrévia:\n" + preview + alternativesNote +
+                "\n\nEsta é a gravação/letra correta? A aplicação só acontece se você confirmar.",
                 "Confirmar letra sincronizada", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirmation != MessageBoxResult.Yes)
             {
@@ -603,7 +651,7 @@ public partial class MainWindow : Window
             if (state != _lastPlayerState)
             {
                 _lastPlayerState = state;
-                if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando. Nenhuma letra sincronizada foi carregada.");
+                if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando, mas não há letra com tempos carregada. Use Buscar letra sincronizada.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>
                 {
@@ -633,6 +681,10 @@ public partial class MainWindow : Window
             {
                 if (requestVersion != Interlocked.Read(ref _holyricsSendVersion)) return;
                 await _holyrics.ShowTextAsync(text);
+                if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
+                    Dispatcher.Invoke(() => StatusText.Text = string.IsNullOrWhiteSpace(text)
+                        ? "Holyrics confirmou o fechamento da apresentação rápida."
+                        : "Holyrics confirmou o recebimento da frase.");
             }
             finally
             {
@@ -643,6 +695,23 @@ public partial class MainWindow : Window
         {
             if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
                 Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message);
+        }
+    }
+
+    private async void TestHolyrics_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            StatusText.Text = "Verificando conexão e permissões do Holyrics...";
+            await _holyrics.TestConnectionAsync();
+            await _holyrics.ShowTextAsync("TESTE DE CONEXÃO — LYRAVOXEN");
+            StatusText.Text = "Holyrics confirmou o envio. Confira se a frase de teste apareceu na saída do Holyrics.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Falha no teste do Holyrics: " + ex.Message;
+            System.Windows.MessageBox.Show(this, "Não foi possível enviar a frase de teste ao Holyrics.\n\n" + ex.Message,
+                "Lyravoxen — Holyrics", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
