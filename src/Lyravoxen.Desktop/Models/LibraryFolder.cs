@@ -18,6 +18,7 @@ public sealed class LibraryVideo
     public string Composer { get; set; } = "";
     public string Url { get; set; } = "";
     public bool IsOffline { get; set; }
+    public bool IsLyricsOnly { get; set; }
     public string? LocalPath { get; set; }
     public string? Format { get; set; }
     public List<LyricCue> Cues { get; set; } = new();
