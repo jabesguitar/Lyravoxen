@@ -33,6 +33,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
     private double _timelineOffsetSeconds;
     private long _generation;
     private double _lastChunkMediaEndSeconds;
+    private string _sessionId = string.Empty;
     private int _started;
 
     public event Action<string>? StatusChanged;
@@ -83,7 +84,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         }
     }
 
-    public void ResetTimeline(double mediaTimeSeconds)
+    public void ResetTimeline(double mediaTimeSeconds, string sessionId)
     {
         lock (_sampleLock)
         {
@@ -93,6 +94,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
             _sampleBaseIndex = 0;
             _nextWindowEnd = WindowSamples;
             _timelineOffsetSeconds = Math.Max(0, mediaTimeSeconds);
+            _sessionId = sessionId ?? string.Empty;
             _lastEmittedEndSeconds = _timelineOffsetSeconds;
             _lastChunkMediaEndSeconds = _timelineOffsetSeconds;
         }
@@ -111,6 +113,8 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
                 List<(float[] Samples, long StartSample, long Generation)> windows;
                 lock (_sampleLock)
                 {
+                    if (!string.Equals(chunk.SessionId, _sessionId, StringComparison.Ordinal))
+                        continue; // Never mix packets from the previous YouTube video/session.
                     if (_samples.Count == 0 && _sampleBaseIndex == 0 && chunk.MediaTimeSeconds > 0)
                     {
                         _timelineOffsetSeconds = chunk.MediaTimeSeconds;
