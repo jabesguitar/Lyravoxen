@@ -26,9 +26,13 @@
 - [x] Editor manual de tempos, importação LRC/SRT e correção de frases
 - [x] Busca de letras sincronizadas com confirmação antes de aplicar
 - [x] Testes automatizados da linha do tempo e antecipação configurável no código
-- [ ] Reconhecimento de voz compatível com CPUs sem AVX2
-- [ ] Alinhamento de letra para playback instrumental
-- [ ] Testes práticos de sincronização em diferentes gravações
+- [ ] Transcrição local e offline da música tocada no player, sem depender de LRCLIB ou Holyrics
+- [ ] Captura isolada do áudio do processo do Lyravoxen no Windows (WASAPI process loopback), sem gravar sons de outros aplicativos
+- [ ] Motor de reconhecimento local baseado em whisper.cpp, com download opcional do modelo e suporte a CPUs sem AVX2
+- [ ] Converter a transcrição em trechos com timestamps; validar/ajustar os tempos e o texto no editor antes da projeção
+- [ ] Processamento por blocos durante a reprodução, com indicação clara de atraso e progresso
+- [ ] Fallback para catálogo de letras, arquivos LRC/SRT e cadastro manual
+- [ ] Testes práticos com músicas cantadas, ao vivo, instrumentais e diferentes gravações
 
 ## Lote 05 — Distribuição
 - [x] Compilação automatizada Windows x64
