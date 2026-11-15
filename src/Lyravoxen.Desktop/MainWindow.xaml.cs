@@ -168,7 +168,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(url)) url = YoutubeSearchBox.Text.Trim();
         if (YouTubeLink.TryGetVideoId(url) is not null)
         {
-            Clipboard.SetText(url);
+            System.Windows.Clipboard.SetText(url);
             StatusText.Text = "Link do vídeo copiado para a área de transferência.";
         }
         else StatusText.Text = "Abra um vídeo do YouTube antes de copiar o link.";
