@@ -41,3 +41,14 @@ Microsoft references:
 - Seek/restart resets the media-time anchor.
 - Capture failure does not stop playback or the app's own projection.
 - Test on supported Windows builds and the target older CPUs; record CPU, memory, and end-to-end latency.
+
+
+## .NET and NAudio implementation decision (2026-11-15)
+- NAudio's current `AudioClient.ActivateProcessLoopbackAsync(uint, ProcessLoopbackMode)` implementation provides a managed wrapper for the Windows process-loopback activation path.
+- The current NAudio 3.x Wasapi packages target .NET 9. The desktop application currently targets .NET 8.
+- Do not add NAudio 3.x to the current .NET 8 project without verifying package target compatibility.
+- Before implementation, create a dedicated upgrade branch or trial CI matrix targeting .NET 9, verify WebView2, WPF, ProtectedData, self-contained win-x64 publish, and timeline tests.
+- Keep the existing .NET 8 branch/build available until the .NET 9 candidate passes all CI checks and a manual Windows smoke test.
+- Alternative: implement the small process-loopback interop layer against the Microsoft ApplicationLoopback sample while retaining .NET 8; compare maintenance and test costs before choosing.
+- NAudio process-loopback API source: https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/CoreAudioApi/AudioClient.cs
+- Microsoft API sample: https://github.com/microsoft/Windows-classic-samples/tree/main/Samples/ApplicationLoopback
