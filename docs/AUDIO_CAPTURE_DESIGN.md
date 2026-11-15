@@ -61,3 +61,24 @@ Microsoft references:
 - This is an implementation spike only: it is not yet connected to the player UI or a speech-recognition engine.
 - Required next checks: compile on CI, inspect actual WebView2 browser process PID, test that the dedicated player environment's process tree is isolated from search tabs, and verify captured packets on a real Windows machine.
 - NAudio process-loopback API documentation/source: https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/WasapiRecorderBuilder.cs and https://github.com/naudio/NAudio/blob/main/src/NAudio.Wasapi/WasapiRecorder.cs
+
+
+## Minimum-hardware target: church PC
+Previously supplied target hardware:
+- Intel Xeon E5-2689 v0, 8 cores / 16 threads, 2.60 GHz base, x64 (Sandy Bridge generation; AVX but no AVX2).
+- 8 GB DDR3 RAM.
+- NVIDIA GeForce GT 710 2 GB.
+- SATA SSD, Windows 64-bit.
+
+Compatibility requirements:
+- Do not require AVX2, AVX-512, CUDA, or a modern GPU.
+- Build the capture and DSP path for x64 baseline/SSE2; AVX may be an optional optimized path only after runtime CPU feature detection.
+- Keep audio capture independent of inference. Capture must remain responsive while recognition is paused, slow, or unavailable.
+- Use bounded buffers and back-pressure/drop policy for recognition windows; never allow unbounded RAM growth.
+- Run inference at low priority / below playback and UI, with configurable CPU thread count (default 2 on this target) and a pause/throttle control.
+- Start with a quantized tiny model and benchmark a quantized base model as an optional quality mode. Do not download/load large models by default.
+- Do not depend on GT 710 GPU acceleration. CPU-only mode is the required baseline.
+- Target memory budget: keep the recognition worker/model footprint configurable and avoid loading multiple models simultaneously; record actual peak working set during benchmark.
+- Provide a low-resource mode that reduces recognition window frequency/threads and shows that transcription may lag rather than stalling playback.
+- Required benchmark machines: Intel i5 development PC and Xeon E5-2689 v0 church PC (or equivalent Sandy Bridge AVX-only CPU), with 8 GB RAM.
+- CI must include a CPU-feature-safe build configuration; CI cannot replace a real benchmark on the Xeon-class machine.
