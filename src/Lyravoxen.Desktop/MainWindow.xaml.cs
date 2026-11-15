@@ -228,6 +228,7 @@ public partial class MainWindow : Window
         if (!await LoadVideoAsync(url, true))
         {
             _pendingQueueVideoId = null;
+            _pauseOnPlayerReady = false;
             PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
         }
     }
@@ -353,7 +354,7 @@ public partial class MainWindow : Window
 
     private async Task TryLoadAutomaticLyricsAsync(string trackName, string artistName)
     {
-        var searchVersion = Interlocked.Read(ref _lyricsSearchVersion);
+        var searchVersion = Interlocked.Increment(ref _lyricsSearchVersion);
         var searchSession = _playerSessionId;
         var searchVideoId = _currentVideo?.VideoId;
         try
@@ -762,8 +763,8 @@ public partial class MainWindow : Window
             !int.TryParse(item.Content?.ToString(), out var count)) return;
         _projection?.SetMaxLines(Math.Clamp(count, 1, 10));
         if (!_loadingPreferences) SavePreferences(null, count);
-        var activeIndex = _manualProjectionMode ? _manualCueIndex : _lastAutomaticCue;
-        PublishLyric(BuildProjectionCueBlock(activeIndex));
+        var activeIndex = _manualProjectionMode ? _manualCueIndex : FindActiveCue(GetPlaybackSeconds());
+        if (activeIndex >= 0) PublishLyric(BuildProjectionCueBlock(activeIndex));
     }
 
     private void LoadPreferences()
