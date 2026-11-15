@@ -20,7 +20,7 @@ O pacote é publicado como self-contained para .NET 8; o WebView2 Runtime contin
 - Player oficial incorporado do YouTube; não baixa nem extrai áudio.
 - Sincronização manual e automática por timestamps.
 - Importação LRC/SRT e edição das frases.
-- Projeção independente, temas, tela de espera e encerramento.
+- Projeção independente, temas, tela de espera e encerramento automático ao fim do áudio, com comando manual no aplicativo.
 - Seleção da tela de saída e recuperação após alterações de monitor.
 - Biblioteca, histórico e fila da próxima música.
 - Integração configurável com Holyrics.

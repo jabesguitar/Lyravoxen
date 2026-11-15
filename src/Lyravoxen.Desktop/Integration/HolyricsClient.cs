@@ -26,7 +26,7 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
         Save(settings);
     }
 
@@ -35,7 +35,7 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
     }
 
     public async Task ShowTextAsync(string text)
@@ -45,6 +45,20 @@ public sealed class HolyricsClient
 
         var body = JsonSerializer.SerializeToUtf8Bytes(new { text });
         using var response = await SendJsonAsync(BuildUrl(settings, "ShowQuickPresentation"), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody))
+            EnsureApiSuccess(responseBody);
+    }
+
+    public async Task CloseQuickPresentationAsync()
+    {
+        var settings = Load();
+        if (settings is null) return;
+
+        var body = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string>());
+        using var response = await SendJsonAsync(BuildUrl(settings, "CloseCurrentQuickPresentation"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
