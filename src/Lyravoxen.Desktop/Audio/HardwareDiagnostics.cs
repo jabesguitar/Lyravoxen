@@ -36,9 +36,9 @@ internal sealed record HardwareDiagnostics(
         var cpuName = ReadCpuName();
         var os = RuntimeInformation.OSDescription;
         var processLoopback = System.OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041);
-        var avx2 = Avx2.IsSupported;
-        var avx = Avx.IsSupported;
-        var sse2 = Sse2.IsSupported;
+        var avx2 = System.Runtime.Intrinsics.X86.Avx2.IsSupported;
+        var avx = System.Runtime.Intrinsics.X86.Avx.IsSupported;
+        var sse2 = System.Runtime.Intrinsics.X86.Sse2.IsSupported;
         var logical = Math.Max(1, Environment.ProcessorCount);
         var availableMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
 
