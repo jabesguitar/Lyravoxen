@@ -57,7 +57,7 @@ public sealed class HolyricsSettingsWindow : Window
             _status.Text = "Falha no teste de conexão.";
             System.Windows.MessageBox.Show(this,
                 "Não foi possível confirmar a conexão com o Holyrics.\n\nDetalhes: " + ex.Message +
-                "\n\nConfira se o API Server Local está ativado, se a porta é 8091 e se o token tem a permissão ShowQuickPresentation em Local.",
+                "\n\nConfira se o API Server Local está ativado, se a porta é 8091 e se o token tem as permissões ShowQuickPresentation e CloseCurrentQuickPresentation em Local.",
                 "Lyravoxen — Erro de conexão", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally { testButton.IsEnabled = true; }
