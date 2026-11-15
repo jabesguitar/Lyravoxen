@@ -35,7 +35,7 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
     }
 
     public async Task ShowTextAsync(string text)
