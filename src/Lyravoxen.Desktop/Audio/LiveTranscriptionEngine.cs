@@ -30,6 +30,8 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
     private long _sampleBaseIndex;
     private long _nextWindowEnd = WindowSamples;
     private double _lastEmittedEndSeconds;
+    private double _timelineOffsetSeconds;
+    private long _generation;
     private int _started;
 
     public event Action<string>? StatusChanged;
@@ -78,6 +80,20 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         }
     }
 
+    public void ResetTimeline(double mediaTimeSeconds)
+    {
+        lock (_sampleLock)
+        {
+            Interlocked.Increment(ref _generation);
+            while (_queue.Reader.TryRead(out _)) { }
+            _samples.Clear();
+            _sampleBaseIndex = 0;
+            _nextWindowEnd = WindowSamples;
+            _timelineOffsetSeconds = Math.Max(0, mediaTimeSeconds);
+            _lastEmittedEndSeconds = _timelineOffsetSeconds;
+        }
+    }
+
     public bool TryWrite(AudioChunkEventArgs chunk) => IsRunning && _queue.Writer.TryWrite(chunk);
 
     private async Task ProcessQueueAsync(CancellationToken token)
@@ -88,7 +104,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
             {
                 var mono = ConvertToMono16k(chunk);
                 if (mono.Length == 0) continue;
-                List<(float[] Samples, long StartSample)> windows;
+                List<(float[] Samples, long StartSample, long Generation)> windows;
                 lock (_sampleLock)
                 {
                     _samples.AddRange(mono);
@@ -97,7 +113,7 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
                 foreach (var window in windows)
                 {
                     token.ThrowIfCancellationRequested();
-                    await TranscribeWindowAsync(window.Samples, window.StartSample, token).ConfigureAwait(false);
+                    await TranscribeWindowAsync(window.Samples, window.StartSample, window.Generation, token).ConfigureAwait(false);
                 }
             }
         }
@@ -105,16 +121,16 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         catch (Exception ex) { Failed?.Invoke(ex); }
     }
 
-    private List<(float[] Samples, long StartSample)> ExtractWindows()
+    private List<(float[] Samples, long StartSample, long Generation)> ExtractWindows()
     {
-        var windows = new List<(float[] Samples, long StartSample)>();
+        var windows = new List<(float[] Samples, long StartSample, long Generation)>();
         var currentEnd = _sampleBaseIndex + _samples.Count;
         while (currentEnd >= _nextWindowEnd)
         {
             var start = _nextWindowEnd - WindowSamples;
             var offset = checked((int)(start - _sampleBaseIndex));
             if (offset >= 0 && offset + WindowSamples <= _samples.Count)
-                windows.Add((_samples.GetRange(offset, WindowSamples).ToArray(), start));
+                windows.Add((_samples.GetRange(offset, WindowSamples).ToArray(), start, Interlocked.Read(ref _generation)));
             _nextWindowEnd += HopSamples;
         }
 
@@ -128,13 +144,14 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
         return windows;
     }
 
-    private async Task TranscribeWindowAsync(float[] samples, long startSample, CancellationToken token)
+    private async Task TranscribeWindowAsync(float[] samples, long startSample, long generation, CancellationToken token)
     {
         var processor = _processor;
         if (processor is null) return;
         await foreach (var segment in processor.ProcessAsync(samples, token).ConfigureAwait(false))
         {
-            var offsetSeconds = startSample / (double)TargetSampleRate;
+            if (generation != Interlocked.Read(ref _generation)) continue;
+            var offsetSeconds = _timelineOffsetSeconds + startSample / (double)TargetSampleRate;
             var start = offsetSeconds + segment.Start.TotalSeconds;
             var end = offsetSeconds + segment.End.TotalSeconds;
             var text = segment.Text?.Trim();
