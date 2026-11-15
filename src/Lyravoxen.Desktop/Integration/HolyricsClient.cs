@@ -15,6 +15,8 @@ public sealed class HolyricsClient
         AutomaticDecompression = DecompressionMethods.None
     }) { Timeout = TimeSpan.FromSeconds(8) };
 
+    public bool IsConfigured => File.Exists(_settingsPath);
+
     private readonly string _settingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Lyravoxen", "holyrics.dat");
@@ -26,7 +28,7 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
         Save(settings);
     }
 
@@ -35,19 +37,35 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
     }
 
     public async Task ShowTextAsync(string text)
     {
         var settings = Load();
-        if (settings is null || string.IsNullOrWhiteSpace(text)) return;
+        if (settings is null) return;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            await CloseQuickPresentationAsync(settings);
+            return;
+        }
 
         var body = JsonSerializer.SerializeToUtf8Bytes(new { text });
         using var response = await SendJsonAsync(BuildUrl(settings, "ShowQuickPresentation"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody))
+            EnsureApiSuccess(responseBody);
+    }
+
+    private static async Task CloseQuickPresentationAsync(Settings settings)
+    {
+        using var response = await SendJsonAsync(BuildUrl(settings, "CloseCurrentQuickPresentation"), "{}"u8.ToArray());
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode} ao fechar a apresentação rápida: {responseBody}");
         if (!string.IsNullOrWhiteSpace(responseBody))
             EnsureApiSuccess(responseBody);
     }

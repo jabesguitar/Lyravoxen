@@ -2,7 +2,7 @@ namespace Lyravoxen;
 
 internal static class YouTubePlayerPage
 {
-    public static string Build(string videoId, string sessionId)
+    public static string Build(string videoId, string sessionId, bool startPaused = false)
     {
         const string template = """
 <!doctype html>
@@ -21,13 +21,14 @@ html,body{margin:0;width:100%;height:100%;background:#080d12;overflow:hidden}
 <script>
 var player;
 const sessionId = '__SESSION_ID__';
+const startPaused = __START_PAUSED__;
 function sendMessage(message){ message.session = sessionId; window.chrome.webview.postMessage(message); }
 function onYouTubeIframeAPIReady(){
   player = new YT.Player('player', {
     width:'100%', height:'100%', videoId:'__VIDEO_ID__',
     playerVars:{playsinline:1, controls:1, rel:0, origin:'https://lyravoxen.local'},
     events:{
-      onReady:function(){sendMessage({type:'ready'});},
+      onReady:function(){if(startPaused) player.pauseVideo(); sendMessage({type:'ready'});},
       onStateChange:function(event){sendMessage({type:'state',state:event.data});},
       onError:function(event){sendMessage({type:'playerError',code:event.data});}
     }
@@ -52,6 +53,7 @@ window.addEventListener('error', function(event){
 </html>
 """;
         return template.Replace("__VIDEO_ID__", videoId, StringComparison.Ordinal)
-            .Replace("__SESSION_ID__", sessionId, StringComparison.Ordinal);
+            .Replace("__SESSION_ID__", sessionId, StringComparison.Ordinal)
+            .Replace("__START_PAUSED__", startPaused ? "true" : "false", StringComparison.Ordinal);
     }
 }

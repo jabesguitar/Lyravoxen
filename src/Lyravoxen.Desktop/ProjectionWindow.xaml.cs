@@ -58,7 +58,7 @@ public partial class ProjectionWindow : Window
 
     public void SetMaxLines(int count)
     {
-        _maxLines = Math.Clamp(count, 3, 5);
+        _maxLines = Math.Clamp(count, 1, 10);
         UpdateTextLayout(LyricDisplay.Text);
     }
 

@@ -18,11 +18,11 @@
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="0,0,0,12">
-   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="YoutubeUrlBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
     <Button x:Name="LoadYoutubeButton" Grid.Column="1" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button Grid.Column="2" Content="Abrir projeção" Background="#176E68" Click="OpenProjection_Click"/>
-    <Button x:Name="PlayNextButton" Grid.Column="3" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/><Button Grid.Column="4" Content="Holyrics" Click="HolyricsSettings_Click"/><Button Grid.Column="5" Content="Testar projeção" Click="TestProjection_Click"/><Button Grid.Column="6" Content="Tela de espera" Click="ProjectionStandby_Click"/><Button Grid.Column="7" Content="Encerrar" Click="ProjectionEnding_Click"/><Button Grid.Column="8" Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verificar a preparação para a apresentação"/><ComboBox x:Name="OutputDisplayBox" Grid.Column="9" Width="150" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
+    <Button x:Name="PlayNextButton" Grid.Column="3" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/><Button Grid.Column="4" Content="Holyrics" Click="HolyricsSettings_Click"/><Button Grid.Column="10" Content="Testar Holyrics" Click="TestHolyrics_Click" ToolTip="Enviar uma frase de teste diretamente ao Holyrics"/><Button Grid.Column="5" Content="Testar projeção" Click="TestProjection_Click"/><Button Grid.Column="6" Content="Tela de espera" Click="ProjectionStandby_Click"/><Button Grid.Column="7" Content="Encerrar" Click="ProjectionEnding_Click"/><Button Grid.Column="8" Content="Diagnóstico" Click="RunDiagnostics_Click" ToolTip="Verificar a preparação para a apresentação"/><ComboBox x:Name="OutputDisplayBox" Grid.Column="9" Width="150" Margin="3" VerticalContentAlignment="Center" ToolTip="Escolha a tela onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
    </Grid>
   </Border>
   <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="0.85*"/></Grid.ColumnDefinitions>
@@ -38,34 +38,34 @@
      <TabItem Header="Sincronização">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
-       <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
+       <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. O título é preenchido pelo YouTube; o intérprete é opcional. Confira a gravação antes de aplicar a letra sincronizada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <TextBox x:Name="MusicTrackBox" Grid.Row="0" Grid.Column="0" Margin="0,0,4,4" ToolTip="Título da música"/>
-        <TextBox x:Name="MusicArtistBox" Grid.Row="0" Grid.Column="1" Margin="4,0,0,4" ToolTip="Nome do intérprete/artista"/>
+        <TextBox x:Name="MusicArtistBox" Grid.Row="0" Grid.Column="1" Margin="4,0,0,4" ToolTip="Intérprete/artista (opcional, melhora a busca)"/>
         <Button Grid.Row="1" Grid.ColumnSpan="2" Content="Buscar letra sincronizada" Click="SearchLyrics_Click" Background="#176E68" Margin="0,4,0,0"/>
        </Grid>
-       <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,6"><TextBlock Text="Linhas:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="58" SelectedIndex="1" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/></ComboBox><TextBlock Text="Tema:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,5,0"/><ComboBox x:Name="ProjectionThemeBox" Width="125" SelectedIndex="0" SelectionChanged="ProjectionTheme_SelectionChanged"><ComboBoxItem Content="Noturno"/><ComboBoxItem Content="Clássico"/><ComboBoxItem Content="Âmbar"/></ComboBox></StackPanel>
-       <Border Grid.Row="4" Background="#0D151D" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="10" Margin="4,2,4,6">
+       <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,6"><TextBlock Text="Linhas:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="58" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="Tema:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,5,0"/><ComboBox x:Name="ProjectionThemeBox" Width="125" SelectedIndex="0" SelectionChanged="ProjectionTheme_SelectionChanged"><ComboBoxItem Content="Noturno"/><ComboBoxItem Content="Clássico"/><ComboBoxItem Content="Âmbar"/></ComboBox></StackPanel>
+       <Border Grid.Row="4" MaxHeight="108" Background="#0D151D" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="8" Margin="4,2,4,5">
         <StackPanel>
          <TextBlock Text="PRÉVIA DO TELÃO" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="0,0,0,5"/>
-         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="42" VerticalAlignment="Center"/>
+         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="30" VerticalAlignment="Center"/>
          <TextBlock x:Name="NextProjectionPreviewText" Text="Próxima: —" Foreground="{StaticResource TextMuted}" FontSize="12" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"/>
         </StackPanel>
        </Border>
        <ListBox x:Name="CueList" Grid.Row="5" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
        <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4">
-        <Button Content="◀ Anterior" Click="PreviousCue_Click"/>
-        <Button Content="Próxima ▶" Click="NextCue_Click"/>
-        <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#176E68"/>
-        <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
+        <Button Content="◀ Anterior" Click="PreviousCue_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
+        <Button Content="Próxima ▶" Click="NextCue_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
+        <Button Content="Projetar" Click="ProjectSelectedCue_Click" Background="#176E68" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
+        <Button Content="Automático" Click="ResumeAutomaticProjection_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
        </UniformGrid>
        <UniformGrid Grid.Row="7" Columns="4" Margin="2,2,2,4">
-        <Button Content="Editar selecionada" Click="EditCue_Click"/>
-        <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
-        <Button Content="Excluir frase" Click="DeleteCue_Click"/>
-        <Button Content="↑ / ↓ Reordenar" Click="MoveCue_Click"/>
+        <Button Content="Editar" Click="EditCue_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
+        <Button Content="Atualizar" Click="UpdateCue_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
+        <Button Content="Excluir" Click="DeleteCue_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
+        <Button Content="Reordenar" Click="MoveCue_Click" FontSize="10" Padding="4,3" Margin="1" MinHeight="26"/>
        </UniformGrid>
-       <StackPanel Grid.Row="8" Margin="0,8,0,0">
+       <ScrollViewer Grid.Row="8" Margin="0,5,0,0" MaxHeight="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
@@ -74,7 +74,7 @@
         <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="#176E68"/>
         <TextBlock Text="Para antecipar a projeção, marque cerca de 1,5 segundo antes de a frase começar. O horário registrado não será alterado automaticamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
         <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
-       </StackPanel>
+       </StackPanel></ScrollViewer>
       </Grid>
      </TabItem>
      <TabItem Header="Histórico de vídeos">
