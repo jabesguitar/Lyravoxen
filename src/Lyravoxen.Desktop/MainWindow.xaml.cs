@@ -1987,6 +1987,41 @@ public partial class MainWindow : Window
         RefreshFolders();
     }
 
+    private void SaveLyricsOnly_Click(object sender, RoutedEventArgs e)
+    {
+        var title = MusicTrackBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            StatusText.Text = "Informe o título da música ou o número do hino antes de salvar.";
+            MusicTrackBox.Focus();
+            return;
+        }
+        if (_cues.Count == 0)
+        {
+            StatusText.Text = "Não há letra carregada para salvar. Busque uma letra ou cadastre/importa as frases primeiro.";
+            return;
+        }
+        if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
+        {
+            StatusText.Text = "Selecione uma pasta na Biblioteca ou crie uma pasta para guardar a letra.";
+            WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+        var existing = folder.Videos.FirstOrDefault(item => item.IsLyricsOnly &&
+            string.Equals(item.SongTitle, title, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(item.Composer, MusicComposerBox.Text.Trim(), StringComparison.OrdinalIgnoreCase));
+        var saved = existing ?? new LibraryVideo { VideoId = "lyrics-" + Guid.NewGuid().ToString("N"), IsLyricsOnly = true };
+        saved.Title = title;
+        saved.SongTitle = title;
+        saved.Performer = MusicArtistBox.Text.Trim();
+        saved.Composer = MusicComposerBox.Text.Trim();
+        saved.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+        if (existing is null) folder.Videos.Add(saved);
+        SaveLibrary();
+        RefreshLibrarySongs();
+        StatusText.Text = $"Letra/hino '{title}' salva na pasta '{folder.Name}'. Ela poderá ser aberta novamente sem pesquisar e sem vídeo.";
+    }
+
     private void AddCurrentVideoToFolder_Click(object sender, RoutedEventArgs e)
     {
         if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
@@ -2021,6 +2056,22 @@ public partial class MainWindow : Window
     {
         if (_librarySelectionChanging || LibrarySongList.SelectedItem is not LibraryVideo video) return;
         LibrarySongList.SelectedItem = null;
+        if (video.IsLyricsOnly)
+        {
+            _currentVideo = video;
+            MusicTrackBox.Text = video.SongTitle ?? video.Title;
+            MusicArtistBox.Text = video.Performer ?? "";
+            MusicComposerBox.Text = video.Composer ?? "";
+            _cues.Clear();
+            _cues.AddRange(CueTimeline.Normalize(video.Cues));
+            RefreshCueList(_cues.FirstOrDefault());
+            _manualProjectionMode = true;
+            _manualCueIndex = _cues.Count > 0 ? 0 : -1;
+            _lastAutomaticCue = -1;
+            StatusText.Text = $"Letra salva carregada: {video.Title}. Sem vídeo associado; use Anterior/Próxima e Projetar para apresentar manualmente.";
+            if (_cues.Count > 0) PublishLyric(BuildProjectionCueBlock(0));
+            return;
+        }
         if (video.IsOffline && !string.IsNullOrWhiteSpace(video.LocalPath)) { PlayLocalAudio(video); return; }
         await LoadVideoAsync(video.Url, true);
     }
