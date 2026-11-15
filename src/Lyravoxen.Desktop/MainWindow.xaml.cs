@@ -263,6 +263,7 @@ public partial class MainWindow : Window
         {
             await StopYoutubeCaptureAsync();
             _playerSessionId = Guid.NewGuid().ToString("N");
+            _transcriptionEngine?.ResetTimeline(0, _playerSessionId);
             Interlocked.Increment(ref _lyricsSearchVersion); // invalida qualquer busca da música anterior
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             PublishLyric("");
@@ -744,10 +745,10 @@ public partial class MainWindow : Window
 
             // A troca de faixa já invalida o estado anterior; captura só é iniciada quando o player está tocando.
             if (_lastPlayerState != 1) return;
-            _transcriptionEngine.ResetTimeline(_lastKnownPlaybackSeconds);
+            _transcriptionEngine.ResetTimeline(_lastKnownPlaybackSeconds, _playerSessionId);
             var pid = YoutubePlayer.CoreWebView2.BrowserProcessId;
             if (pid == 0) throw new InvalidOperationException("O WebView2 não informou o PID do player.");
-            var capture = new ProcessAudioCapture(() => Volatile.Read(ref _lastKnownPlaybackSeconds));
+            var capture = new ProcessAudioCapture(() => Volatile.Read(ref _lastKnownPlaybackSeconds), () => Volatile.Read(ref _playerSessionId));
             capture.AudioChunkAvailable += (_, chunk) => _transcriptionEngine?.TryWrite(chunk);
             capture.CaptureFailed += ex => Dispatcher.BeginInvoke(() =>
                 StatusText.Text = "Falha na captura isolada do YouTube: " + ex.Message);
