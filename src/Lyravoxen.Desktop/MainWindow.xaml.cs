@@ -1466,15 +1466,11 @@ public partial class MainWindow : Window
 
     private string BuildProjectionCueBlock(int activeIndex)
     {
-        if (activeIndex < 0 || activeIndex >= _cues.Count) return "";
         var count = 4;
         if (LineCountBox?.SelectedItem is ComboBoxItem item &&
             int.TryParse(item.Content?.ToString(), out var selectedCount))
             count = Math.Clamp(selectedCount, 1, 10);
-        // Blocos fixos: o bloco anterior desaparece quando o próximo começa.
-        var firstIndex = (activeIndex / count) * count;
-        return string.Join(Environment.NewLine, _cues.Skip(firstIndex).Take(activeIndex - firstIndex + 1)
-            .Select(cue => cue.Text.Trim()).Where(text => !string.IsNullOrWhiteSpace(text)));
+        return CueTimeline.BuildProjectionBlock(_cues, activeIndex, count);
     }
 
     private void PublishProjectionOnly(string text)
