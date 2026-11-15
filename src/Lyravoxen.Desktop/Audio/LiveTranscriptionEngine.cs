@@ -111,7 +111,25 @@ internal sealed class LiveTranscriptionEngine : IAsyncDisposable
                 List<(float[] Samples, long StartSample, long Generation)> windows;
                 lock (_sampleLock)
                 {
+                    if (_samples.Count == 0 && _sampleBaseIndex == 0 && chunk.MediaTimeSeconds > 0)
+                    {
+                        _timelineOffsetSeconds = chunk.MediaTimeSeconds;
+                        _lastEmittedEndSeconds = _timelineOffsetSeconds;
+                    }
+                    else if (_lastChunkMediaEndSeconds > 0 &&
+                             chunk.MediaTimeSeconds > _lastChunkMediaEndSeconds + 0.5)
+                    {
+                        // If the bounded queue dropped too much audio, start a fresh media-time
+                        // segment rather than publishing lyrics with a compressed/wrong timeline.
+                        Interlocked.Increment(ref _generation);
+                        _samples.Clear();
+                        _sampleBaseIndex = 0;
+                        _nextWindowEnd = WindowSamples;
+                        _timelineOffsetSeconds = chunk.MediaTimeSeconds;
+                        _lastEmittedEndSeconds = _timelineOffsetSeconds;
+                    }
                     _samples.AddRange(mono);
+                    _lastChunkMediaEndSeconds = chunk.MediaTimeSeconds + mono.Length / (double)TargetSampleRate;
                     windows = ExtractWindows();
                 }
                 foreach (var window in windows)
