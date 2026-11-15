@@ -412,7 +412,15 @@ public partial class MainWindow : Window
 
             if (candidates.Count == 0)
             {
-                StatusText.Text = "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Confira os dados ou importe um LRC/SRT.";
+                var createChoice = ShowLyricsChoiceDialog(
+                    "Não encontrei uma letra sincronizada com correspondência exata para " + trackName + " — " + artistName +
+                    ". Para evitar aplicar a letra de outra música, nenhuma sugestão será usada automaticamente.\\n\\nVocê pode criar e vincular a letra correta agora.");
+                if (createChoice.Action == "Criar")
+                {
+                    SaveCreatedLyricsText(createChoice.Text);
+                    return;
+                }
+                StatusText.Text = "Nenhuma letra aplicada. A faixa atual e sua letra foram preservadas.";
                 return;
             }
 
@@ -437,31 +445,7 @@ public partial class MainWindow : Window
 
             if (choice.Action == "Criar")
             {
-                var typedLyrics = choice.Text.Trim();
-                if (string.IsNullOrWhiteSpace(typedLyrics))
-                {
-                    StatusText.Text = "Nenhuma letra foi informada. A letra atual foi mantida.";
-                    return;
-                }
-
-                var createdCues = ParseTimedLyrics(typedLyrics, ".lrc").OrderBy(c => c.Seconds).ToList();
-                if (createdCues.Count >= 2)
-                {
-                    ApplyLyricsToCurrentTrack(createdCues);
-                    if (_currentVideo is not null) _currentVideo.LyricsText = typedLyrics;
-                    SaveLibrary();
-                    StatusText.Text = "Letra criada com marcações LRC e vinculada à música. Confira a sincronia.";
-                }
-                else if (_currentVideo is not null)
-                {
-                    _currentVideo.LyricsText = typedLyrics;
-                    SaveLibrary();
-                    StatusText.Text = "Letra salva e vinculada à música para reutilização. O texto ainda não possui tempos; importe um LRC/SRT sincronizado para projetá-lo automaticamente.";
-                }
-                else
-                {
-                    StatusText.Text = "Carregue uma faixa antes de vincular a letra à biblioteca.";
-                }
+                SaveCreatedLyricsText(choice.Text);
                 return;
             }
 
@@ -533,6 +517,34 @@ public partial class MainWindow : Window
         dialog.Content = layout;
         dialog.ShowDialog();
         return (result, enteredText);
+    }
+
+    private void SaveCreatedLyricsText(string text)
+    {
+        var typedLyrics = text.Trim();
+        if (string.IsNullOrWhiteSpace(typedLyrics))
+        {
+            StatusText.Text = "Nenhuma letra foi informada. A letra atual foi mantida.";
+            return;
+        }
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Carregue uma faixa antes de vincular a letra à biblioteca.";
+            return;
+        }
+
+        var createdCues = ParseTimedLyrics(typedLyrics, ".lrc").OrderBy(c => c.Seconds).ToList();
+        _currentVideo.LyricsText = typedLyrics;
+        if (createdCues.Count >= 2)
+        {
+            ApplyLyricsToCurrentTrack(createdCues);
+            StatusText.Text = "Letra criada com marcações LRC e vinculada à música. Confira a sincronia.";
+        }
+        else
+        {
+            SaveLibrary();
+            StatusText.Text = "Letra salva e vinculada à música para reutilização. O texto ainda não possui tempos; para sincronização automática real, é necessário gerar marcações a partir do áudio. Por enquanto, importe um LRC/SRT sincronizado.";
+        }
     }
 
     private void ApplyLyricsToCurrentTrack(IEnumerable<LyricCue> cues)
