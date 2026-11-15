@@ -188,7 +188,7 @@
     <TextBlock Text="Salvar letra/hino sem vídeo: na aba Biblioteca, selecione uma pasta e clique nesse botão. Ele guarda título, intérprete, compositor e frases sincronizadas mesmo sem um link ou arquivo de áudio. Depois, selecione o item salvo para abrir a letra e projetá-la manualmente." TextWrapping="Wrap" Margin="0,2"/>
     <TextBlock Text="FILA E ATALHOS" FontWeight="Bold" FontSize="15" Margin="0,12,0,4"/>
     <TextBlock Text="Na aba Próxima música, cole um link na barra superior e clique Ir. Colar insere o endereço da área de transferência; Copiar URL copia a página atual. Abra o vídeo desejado e clique Preparar próxima." TextWrapping="Wrap" Margin="0,2"/>
-    <TextBlock Text="Atalhos: F6 anterior; F7 próxima; F8 projetar; F9 automático; F10 restaurar projeção; F11 tela de espera; F12 encerramento. Os atalhos não atuam enquanto você digita em campos de texto." TextWrapping="Wrap" Margin="0,2"/>
+    <TextBlock Text="Atalhos: F6 anterior; F7 próxima; F8 projetar; F9 automático; F10 restaurar projeção; F11 tela de espera; F12 tela final; ESC fecha a janela do telão e volta à área de trabalho; Ctrl+F9 fecha a apresentação atual do Holyrics. Também há botões Sair da projeção no telão, Encerrar projeção e Fechar Holyrics na tela principal. Os atalhos do operador não atuam enquanto você digita em campos de texto." TextWrapping="Wrap" Margin="0,2"/>
    </StackPanel>
   </ScrollViewer>
  </TabItem>
