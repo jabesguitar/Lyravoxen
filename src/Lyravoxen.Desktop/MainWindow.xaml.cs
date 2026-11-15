@@ -941,6 +941,19 @@ public partial class MainWindow : Window
         var lines = new List<string>();
         var warnings = new List<string>();
 
+        var hardware = Lyravoxen.Audio.HardwareDiagnostics.Collect();
+        lines.Add("HARDWARE E COMPATIBILIDADE");
+        lines.Add($"CPU: {hardware.CpuName}");
+        lines.Add($"Arquitetura: {hardware.Architecture}; núcleos lógicos: {hardware.LogicalProcessors}");
+        lines.Add($"Memória disponível estimada: {hardware.AvailableMemoryBytes / (1024 * 1024)} MB");
+        lines.Add($"Instruções: SSE2={hardware.Sse2}; AVX={hardware.Avx}; AVX2={hardware.Avx2}");
+        lines.Add($"Perfil sugerido: {hardware.RecommendedProfile}; threads de IA: {hardware.RecommendedInferenceThreads}");
+        lines.Add($"Captura por processo disponível no Windows: {hardware.ProcessLoopbackApiAvailable}");
+        if (!hardware.Sse2 && hardware.Architecture == "X64")
+            warnings.Add("O processador não reportou SSE2. Alguns motores de IA podem não ser compatíveis.");
+        if (!hardware.ProcessLoopbackApiAvailable)
+            warnings.Add("Este Windows não oferece captura WASAPI por processo. Reprodução e letras de catálogo continuam disponíveis.");
+
         bool webViewReady = false;
         try { webViewReady = YoutubePlayer.CoreWebView2 is not null; } catch { }
         lines.Add((webViewReady ? "✓" : "✗") + " Player/WebView2 inicializado");
