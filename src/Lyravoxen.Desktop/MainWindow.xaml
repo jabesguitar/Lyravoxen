@@ -119,7 +119,7 @@
  <TabItem Header="＋ Próxima música">
   <Grid Margin="18"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <Border Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,0,0,10">
-    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
      <TextBox x:Name="YoutubeSearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
      <Button Grid.Column="1" Content="Pesquisar" Click="YoutubeSearch_Click"/>
      <Button Grid.Column="2" Content="Voltar" Click="YoutubeSearchBack_Click"/>
