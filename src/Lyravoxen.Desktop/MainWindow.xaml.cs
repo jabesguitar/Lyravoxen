@@ -55,6 +55,7 @@ public partial class MainWindow : Window
     private string? _selectedOutputDeviceName;
     private bool _displayChangeHandlerAttached;
     private ProcessAudioCapture? _youtubeAudioCapture;
+    private LiveTranscriptionEngine? _transcriptionEngine;
     private AudioChunkBuffer? _youtubeAudioBuffer;
     private CancellationTokenSource? _youtubeAudioCts;
     private Task? _youtubeAudioDrainTask;
@@ -724,62 +725,87 @@ public partial class MainWindow : Window
         try
         {
             if (_lastPlayerState != 1 || _youtubeAudioCapture?.IsCapturing == true) return;
-            await StopYoutubeCaptureCoreAsync();
+
+            if (_transcriptionEngine is null)
+            {
+                var modelPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Lyravoxen", "Models", "ggml-tiny-q5_0.bin");
+                var hardware = HardwareDiagnostics.Collect();
+                var engine = new LiveTranscriptionEngine(modelPath, hardware.RecommendedInferenceThreads);
+                engine.StatusChanged += message => Dispatcher.BeginInvoke(() => StatusText.Text = message);
+                engine.Failed += ex => Dispatcher.BeginInvoke(() => StatusText.Text = "Reconhecimento indisponível: " + ex.Message);
+                engine.SegmentRecognized += segment => Dispatcher.BeginInvoke(() => ApplyRecognizedSegment(segment));
+                _transcriptionEngine = engine;
+                await engine.StartAsync();
+            }
+
+            // A troca de faixa já invalida o estado anterior; captura só é iniciada quando o player está tocando.
+            if (_lastPlayerState != 1) return;
             var pid = YoutubePlayer.CoreWebView2.BrowserProcessId;
-            if (pid == 0) return;
+            if (pid == 0) throw new InvalidOperationException("O WebView2 não informou o PID do player.");
             var capture = new ProcessAudioCapture();
-            var buffer = new AudioChunkBuffer(40);
-            var cts = new CancellationTokenSource();
-            capture.AudioChunkAvailable += (_, chunk) => buffer.TryWrite(chunk);
+            capture.AudioChunkAvailable += (_, chunk) => _transcriptionEngine?.TryWrite(chunk);
             capture.CaptureFailed += ex => Dispatcher.BeginInvoke(() =>
-                StatusText.Text = "Falha na captura de áudio: " + ex.Message);
+                StatusText.Text = "Falha na captura isolada do YouTube: " + ex.Message);
             _youtubeAudioCapture = capture;
-            _youtubeAudioBuffer = buffer;
-            _youtubeAudioCts = cts;
-            _youtubeAudioDrainTask = DrainYoutubeAudioAsync(buffer, cts.Token);
-            await capture.StartAsync(pid);
-            Dispatcher.Invoke(() => StatusText.Text = "Captura isolada ativa: " +
-                capture.SampleRate + " Hz, " + capture.Channels + " canais. Reconhecimento ainda não conectado.");
+            try
+            {
+                await capture.StartAsync(pid);
+                Dispatcher.Invoke(() => StatusText.Text = "Captura isolada ativa. Transcrevendo áudio em português...");
+            }
+            catch
+            {
+                _youtubeAudioCapture = null;
+                await capture.DisposeAsync();
+                throw;
+            }
         }
         catch (Exception ex)
         {
-            await StopYoutubeCaptureCoreAsync();
-            Dispatcher.Invoke(() => StatusText.Text = "Captura isolada indisponível: " + ex.Message);
+            Dispatcher.Invoke(() => StatusText.Text = "Transcrição/captura indisponível: " + ex.Message);
         }
         finally { _captureLock.Release(); }
     }
 
-    private static async Task DrainYoutubeAudioAsync(AudioChunkBuffer buffer, CancellationToken token)
+    private void ApplyRecognizedSegment(TranscriptionSegment segment)
     {
-        try { while (await buffer.ReadAsync(token).ConfigureAwait(false) is not null) { } }
-        catch (OperationCanceledException) { }
+        if (_lastPlayerState != 1 || string.IsNullOrWhiteSpace(segment.Text)) return;
+        var normalized = NormalizeMusicText(segment.Text);
+        if (string.IsNullOrWhiteSpace(normalized)) return;
+        var existing = _cues.FirstOrDefault(cue =>
+            Math.Abs(cue.Seconds - segment.StartSeconds) < 1.8 &&
+            MusicTextSimilarity(NormalizeMusicText(cue.Text), normalized) > 0.72);
+        if (existing is not null) return;
+
+        var cue = new LyricCue { Seconds = Math.Max(0, segment.StartSeconds), Text = segment.Text.Trim() };
+        _cues.Add(cue);
+        _cues.Sort((a, b) => a.Seconds.CompareTo(b.Seconds));
+        RefreshCueList(cue);
+        PersistCurrentCues();
+
+        var activeIndex = FindActiveCue(GetPlaybackSeconds());
+        if (!_manualProjectionMode && activeIndex >= 0)
+        {
+            _lastAutomaticCue = activeIndex;
+            PublishLyric(BuildProjectionCueBlock(activeIndex));
+        }
+        else
+        {
+            ProjectionPreviewText.Text = "Transcrição: " + cue.Text;
+            NextProjectionPreviewText.Text = "Reconhecida em " + TimeSpan.FromSeconds(cue.Seconds).ToString(@"mm\\:ss");
+        }
     }
 
     private async Task StopYoutubeCaptureAsync()
     {
         await _captureLock.WaitAsync();
-        try { await StopYoutubeCaptureCoreAsync(); }
-        finally { _captureLock.Release(); }
-    }
-
-    private async Task StopYoutubeCaptureCoreAsync()
-    {
-        var capture = _youtubeAudioCapture;
-        _youtubeAudioCapture = null;
-        if (capture is not null) await capture.DisposeAsync();
-        var cts = _youtubeAudioCts;
-        _youtubeAudioCts = null;
-        cts?.Cancel();
-        var buffer = _youtubeAudioBuffer;
-        _youtubeAudioBuffer = null;
-        buffer?.Complete();
-        if (_youtubeAudioDrainTask is not null)
+        try
         {
-            try { await _youtubeAudioDrainTask; } catch (OperationCanceledException) { }
-            _youtubeAudioDrainTask = null;
+            var capture = _youtubeAudioCapture;
+            _youtubeAudioCapture = null;
+            if (capture is not null) await capture.DisposeAsync();
         }
-        cts?.Dispose();
-        buffer?.Dispose();
+        finally { _captureLock.Release(); }
     }
 
     private async Task SendLyricToHolyricsAsync(string text)
