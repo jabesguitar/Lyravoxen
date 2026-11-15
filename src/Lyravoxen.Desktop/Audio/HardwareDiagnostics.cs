@@ -40,7 +40,7 @@ internal sealed record HardwareDiagnostics(
         var avx = System.Runtime.Intrinsics.X86.Avx.IsSupported;
         var sse2 = System.Runtime.Intrinsics.X86.Sse2.IsSupported;
         var logical = Math.Max(1, Environment.ProcessorCount);
-        var availableMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+        var availableMemory = GetAvailablePhysicalMemory();
 
         var tier = avx2 ? CompatibilityTier.Avx2 :
             avx ? CompatibilityTier.Avx : CompatibilityTier.LegacyX64;
@@ -75,7 +75,7 @@ internal sealed record HardwareDiagnostics(
             $"Architecture: {Architecture}",
             $"CPU: {CpuName}",
             $"Logical processors: {LogicalProcessors}",
-            $"Available memory (runtime estimate): {AvailableMemoryBytes / (1024 * 1024)} MB",
+            $"Available physical memory: {AvailableMemoryBytes / (1024 * 1024)} MB",
             $"SSE2: {YesNo(Sse2)}",
             $"AVX: {YesNo(Avx)}",
             $"AVX2: {YesNo(Avx2)}",
