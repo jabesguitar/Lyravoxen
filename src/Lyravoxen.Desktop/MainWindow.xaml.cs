@@ -499,7 +499,8 @@ public partial class MainWindow : Window
         {
             "harpacrista.digital", "ogospel.com.br", "agendapregador.com.br",
             "mbiblia.com.br", "gospelsonymusic.com.br", "hinarioevangelico.com",
-            "reformabrasil.com.br"
+            "reformabrasil.com.br", "hinoteca.com.br", "hinarioonline.com.br",
+            "hinarioccb.net", "hymnsforworship.app"
         }, "hinos evangélicos Harpa Cristã louvores");
     }
 
@@ -508,7 +509,7 @@ public partial class MainWindow : Window
         SearchAcrossLyricSites(new[]
         {
             "letras.mus.br", "cifraclub.com.br", "vagalume.com.br",
-            "letras.com", "musixmatch.com"
+            "letras.com", "musixmatch.com", "genius.com"
         }, "letra música louvor");
     }
 
