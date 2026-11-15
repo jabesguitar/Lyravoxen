@@ -89,7 +89,15 @@ public sealed class HolyricsClient
     public async Task TakeOverProjectionAsync(string firstText)
     {
         var settings = Load() ?? throw new InvalidOperationException("Configure primeiro a conexão com o Holyrics.");
-        await CheckPermissionAsync(settings, "CloseCurrentPresentation,ShowQuickPresentation,CloseCurrentQuickPresentation");
+        await CheckPermissionAsync(settings, "CloseCurrentPresentation,ShowQuickPresentation,CloseCurrentQuickPresentation,MediaPlayerAction");
+        // Stop the independent Holyrics media player before taking over the public screen.
+        using (var stopPlayer = await SendJsonAsync(BuildUrl(settings, "MediaPlayerAction"),
+            JsonSerializer.SerializeToUtf8Bytes(new { action = "stop" })))
+        {
+            var body = await stopPlayer.Content.ReadAsStringAsync();
+            if (!stopPlayer.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)stopPlayer.StatusCode} ao parar o player: {body}");
+            if (!string.IsNullOrWhiteSpace(body)) EnsureApiSuccess(body);
+        }
         using (var close = await SendJsonAsync(BuildUrl(settings, "CloseCurrentPresentation"), "{}"u8.ToArray()))
         {
             var body = await close.Content.ReadAsStringAsync();
