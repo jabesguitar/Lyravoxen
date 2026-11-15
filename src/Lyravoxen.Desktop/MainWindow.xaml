@@ -75,6 +75,7 @@
         <TextBlock Text="Para antecipar a projeção, marque cerca de 1,5 segundo antes de a frase começar. O horário registrado não será alterado automaticamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
         <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
         <Button Content="Importar música do Holyrics (playback)" Click="ImportHolyricsSong_Click" Margin="0,5,0,0" Background="#176E68"/>
+        <CheckBox x:Name="CaptureCueTimesCheckBox" Content="Gravar tempos ao avançar (playback instrumental)" IsChecked="False" Margin="5,5" ToolTip="Ao pressionar Próxima durante a música, registra o tempo atual para sincronizar esta sequência nas próximas reproduções."/>
        </StackPanel></ScrollViewer>
       </Grid>
      </TabItem>
