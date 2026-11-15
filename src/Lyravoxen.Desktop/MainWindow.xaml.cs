@@ -1055,7 +1055,9 @@ public partial class MainWindow : Window
         if (!_manualProjectionMode && activeIndex >= 0)
         {
             _lastAutomaticCue = activeIndex;
+            _lastAutomaticBlockStart = int.MinValue; // A nova transcrição altera o conteúdo do bloco atual.
             PublishLyric(BuildProjectionCueBlock(activeIndex));
+            _lastAutomaticBlockStart = GetProjectionBlockStart(activeIndex);
         }
         else
         {
