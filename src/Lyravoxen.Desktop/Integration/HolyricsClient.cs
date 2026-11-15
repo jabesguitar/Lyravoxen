@@ -40,6 +40,66 @@ public sealed class HolyricsClient
         await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
     }
 
+    public async Task<IReadOnlyList<HolyricsSong>> SearchSongsAsync(string query)
+    {
+        var settings = Load() ?? throw new InvalidOperationException("Configure primeiro a conexão com o Holyrics.");
+        await CheckPermissionAsync(settings, "SearchLyrics,GetLyrics");
+        var body = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            text = query,
+            title = true,
+            artist = true,
+            lyrics = false,
+            fields = "id,title,artist,author"
+        });
+        using var response = await SendJsonAsync(BuildUrl(settings, "SearchLyrics"), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        EnsureApiSuccess(responseBody);
+        using var json = JsonDocument.Parse(responseBody);
+        if (!json.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            return Array.Empty<HolyricsSong>();
+        return data.EnumerateArray().Select(item => new HolyricsSong(
+            item.TryGetProperty("id", out var id) ? id.ToString() : "",
+            item.TryGetProperty("title", out var title) ? title.GetString() ?? "" : "",
+            item.TryGetProperty("artist", out var artist) ? artist.GetString() ?? "" : "",
+            item.TryGetProperty("author", out var author) ? author.GetString() ?? "" : ""))
+            .Where(song => !string.IsNullOrWhiteSpace(song.Id))
+            .Take(30).ToArray();
+    }
+
+    public async Task<IReadOnlyList<string>> GetSongSlidesAsync(string songId)
+    {
+        var settings = Load() ?? throw new InvalidOperationException("Configure primeiro a conexão com o Holyrics.");
+        var body = JsonSerializer.SerializeToUtf8Bytes(new { id = songId });
+        using var response = await SendJsonAsync(BuildUrl(settings, "GetLyrics"), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        EnsureApiSuccess(responseBody);
+        using var json = JsonDocument.Parse(responseBody);
+        if (!json.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object ||
+            !data.TryGetProperty("slides", out var slides) || slides.ValueKind != JsonValueKind.Array)
+            return Array.Empty<string>();
+        return slides.EnumerateArray()
+            .Select(slide => slide.TryGetProperty("text", out var text) ? text.GetString() ?? "" : "")
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+    }
+
+    public async Task TakeOverProjectionAsync(string firstText)
+    {
+        var settings = Load() ?? throw new InvalidOperationException("Configure primeiro a conexão com o Holyrics.");
+        await CheckPermissionAsync(settings, "CloseCurrentPresentation,ShowQuickPresentation,CloseCurrentQuickPresentation");
+        using (var close = await SendJsonAsync(BuildUrl(settings, "CloseCurrentPresentation"), "{}"u8.ToArray()))
+        {
+            var body = await close.Content.ReadAsStringAsync();
+            if (!close.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)close.StatusCode}: {body}");
+            if (!string.IsNullOrWhiteSpace(body)) EnsureApiSuccess(body);
+        }
+        if (!string.IsNullOrWhiteSpace(firstText))
+            await ShowTextAsync(firstText);
+    }
+
     public async Task ShowTextAsync(string text)
     {
         var settings = Load();
@@ -140,3 +200,5 @@ public sealed class HolyricsClient
 
     private sealed record Settings(string Host, int Port, string Token);
 }
+
+public sealed record HolyricsSong(string Id, string Title, string Artist, string Author);
