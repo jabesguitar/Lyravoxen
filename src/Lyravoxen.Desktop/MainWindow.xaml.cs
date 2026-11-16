@@ -1600,6 +1600,7 @@ public partial class MainWindow : Window
     private void ProjectSelectedCue_Click(object sender, RoutedEventArgs e)
     {
         if (CueList.SelectedItem is not LyricCue cue) { StatusText.Text = "Selecione uma frase para projetar."; return; }
+        _projectionSuppressed = false;
         _manualProjectionMode = true;
         _manualCueIndex = _cues.IndexOf(cue);
         PublishLyric(cue.Text);
