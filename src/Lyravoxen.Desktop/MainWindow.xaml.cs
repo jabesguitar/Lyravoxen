@@ -223,6 +223,10 @@ public partial class MainWindow : Window
         {
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
+            _manualDraftActive = false;
+            _manualDraftLines.Clear();
+            _manualDraftIndex = 0;
+            ManualLyricsBox.Clear();
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
@@ -1706,6 +1710,10 @@ public partial class MainWindow : Window
             if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
             _audioTimer.Stop();
             _playbackEnded = false;
+            _manualDraftActive = false;
+            _manualDraftLines.Clear();
+            _manualDraftIndex = 0;
+            ManualLyricsBox.Clear();
             PublishProjectionOnly("");
             YoutubePlayer.Visibility = Visibility.Collapsed;
             LocalAudioPlayer.Visibility = Visibility.Visible;
