@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private Task _holyricsSendQueue = Task.CompletedTask;
     private readonly List<LyricCue> _cues = new();
     private List<string> _manualDraftLines = new();
+    private readonly List<LyricCue> _manualDraftCues = new();
     private int _manualDraftIndex;
     private bool _manualDraftActive;
     private readonly List<VideoHistoryItem> _history = new();
@@ -487,13 +488,19 @@ public partial class MainWindow : Window
         }
 
         _manualDraftIndex = 0;
+        _manualDraftCues.Clear();
         _manualDraftActive = true;
         _manualProjectionMode = false;
+        _manualCueIndex = -1;
+        _lastAutomaticCue = -1;
         LyricTextBox.Text = _manualDraftLines[0];
         SecondsBox.Text = "0.00";
-        ManualSyncProgressText.Text = "Sincronização ao vivo iniciada: frase 1 de " + _manualDraftLines.Count + ". Marque cada entrada enquanto a música toca.";
+        ProjectionPreviewText.Text = "Aguardando a primeira marcação desta nova sincronização...";
+        NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[0];
+        ManualSyncProgressText.Text = "Sincronização ao vivo iniciada: frase 1 de " + _manualDraftLines.Count + ". A projeção será atualizada somente com as frases desta nova letra.";
         ManualCurrentLineText.Text = _manualDraftLines[0];
-        StatusText.Text = "Sincronização ao vivo iniciada. A música continua tocando; use Marcar próxima frase no tempo atual.";
+        _ = ClearHolyricsForLiveDraftAsync();
+        StatusText.Text = "Nova sincronização iniciada. A projeção anterior foi separada desta letra; marque a primeira frase quando ela for cantada.";
     }
 
     private void MarkNextManualDraftLine_Click(object sender, RoutedEventArgs e)
@@ -1171,52 +1178,102 @@ public partial class MainWindow : Window
     private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
     {
         var lyric = LyricTextBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(lyric)) { if (CueList.SelectedItem is LyricCue selected) lyric = selected.Text; else { StatusText.Text = "Digite uma frase ou selecione uma linha antes de marcar."; return; } }
+        if (string.IsNullOrWhiteSpace(lyric))
+        {
+            StatusText.Text = "Digite uma frase ou selecione uma linha antes de marcar.";
+            return;
+        }
+
         try
         {
             double currentSeconds;
-            if (_isLocalAudioPlaying) currentSeconds = LocalAudioPlayer.Position.TotalSeconds;
-            else { var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("typeof player !== 'undefined' && player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : null"); if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0) { StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente."; return; } }
+            if (_isLocalAudioPlaying)
+                currentSeconds = LocalAudioPlayer.Position.TotalSeconds;
+            else
+            {
+                var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(
+                    "typeof player !== 'undefined' && player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : null");
+                if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0)
+                {
+                    StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente.";
+                    return;
+                }
+            }
+
             var cueSeconds = Math.Max(0, currentSeconds);
-            if (!_manualDraftActive)
-                _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
             var addedCue = new LyricCue { Seconds = cueSeconds, Text = lyric };
-            _cues.Add(addedCue);
-            _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
-            var markedCueIndex = _cues.IndexOf(addedCue);
-            _lastAutomaticCue = _manualDraftActive ? markedCueIndex : -1;
-            if (_manualDraftActive)
-                PublishCueBlock(markedCueIndex);
-            CueList.ItemsSource = null; CueList.ItemsSource = _cues;
-            PersistCurrentCues();
-            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
+
             if (_manualDraftActive)
             {
+                // A sincronização ao vivo trabalha numa linha do tempo isolada:
+                // nenhuma frase antiga da música anterior pode entrar no bloco enviado.
+                if (_manualDraftCues.Count > 0 && cueSeconds <= _manualDraftCues[^1].Seconds)
+                {
+                    StatusText.Text = "O tempo atual precisa ser posterior à última frase marcada. Retome a música e marque novamente.";
+                    return;
+                }
+
+                _manualDraftCues.Add(addedCue);
+                var draftBlock = CueTimeline.BuildProjectionBlock(_manualDraftCues, _manualDraftCues.Count - 1, _maxProjectionLines);
+                _currentProjectedLyric = draftBlock;
+                ProjectionPreviewText.Text = string.IsNullOrWhiteSpace(draftBlock) ? "Aguardando a próxima frase..." : draftBlock;
+                QueueHolyricsUpdate(draftBlock);
+
+                SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
                 _manualDraftIndex++;
                 if (_manualDraftIndex < _manualDraftLines.Count)
                 {
                     LyricTextBox.Text = _manualDraftLines[_manualDraftIndex];
                     ManualCurrentLineText.Text = _manualDraftLines[_manualDraftIndex];
+                    NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[_manualDraftIndex];
                     ManualSyncProgressText.Text = $"Sincronização ao vivo: frase {_manualDraftIndex + 1} de {_manualDraftLines.Count}. Última marcação: {cueSeconds:0.00}s.";
-                    StatusText.Text = $"Frase registrada em {cueSeconds:0.00}s. Próxima frase ({_manualDraftIndex + 1}/{_manualDraftLines.Count}) carregada.";
+                    StatusText.Text = $"Frase {_manualDraftIndex} marcada em {cueSeconds:0.00}s. Próxima frase pronta.";
                 }
                 else
                 {
                     _manualDraftActive = false;
+                    _cues.Clear();
+                    _cues.AddRange(CueTimeline.Normalize(_manualDraftCues));
+                    RefreshCueList();
+                    PersistCurrentCues();
+                    _lastAutomaticCue = -1;
                     LyricTextBox.Clear();
-                    ManualCurrentLineText.Text = "Sincronização concluída. A letra está salva na biblioteca local.";
-                    ManualSyncProgressText.Text = $"Concluído: {_manualDraftLines.Count} frases sincronizadas e salvas para {MusicTrackBox.Text}.";
-                    StatusText.Text = $"Letra concluída: {_manualDraftLines.Count} frases foram marcadas e associadas à música.";
+                    ManualCurrentLineText.Text = "Sincronização concluída. A nova letra foi salva na biblioteca local.";
+                    ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} frases sincronizadas e salvas para {MusicTrackBox.Text}.";
+                    NextProjectionPreviewText.Text = "Próxima: —";
+                    StatusText.Text = $"Letra concluída: {_manualDraftCues.Count} frases foram sincronizadas e salvas. A projeção utilizou somente esta nova letra.";
                 }
+                return;
             }
-            else
-            {
-                LyricTextBox.Clear();
-                StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s. Ela será projetada 1,5s antes de começar.";
-            }
+
+            _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
+            _cues.Add(addedCue);
+            _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
+            var markedCueIndex = _cues.IndexOf(addedCue);
+            _lastAutomaticCue = markedCueIndex;
+            PublishCueBlock(markedCueIndex);
+            RefreshCueList(addedCue);
+            PersistCurrentCues();
+            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
+            LyricTextBox.Clear();
+            StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s.";
         }
-        catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível marcar a frase: " + ex.Message;
+        }
     }
+
+    private async Task ClearHolyricsForLiveDraftAsync()
+    {
+        try { await QueueHolyricsCloseQuickAsync(); }
+        catch (Exception ex)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+                StatusText.Text = "Sincronização iniciada, mas não foi possível limpar a projeção anterior: " + ex.Message));
+        }
+    }
+
     private void AddCue_Click(object sender, RoutedEventArgs e)
     {
         if (!double.TryParse(SecondsBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) || seconds < 0 || string.IsNullOrWhiteSpace(LyricTextBox.Text))
