@@ -22,7 +22,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
     private static readonly string ModelPath = Path.Combine(ModelFolder, "ggml-base.bin");
 
     private readonly Func<double> _playbackSeconds;
-    private readonly ConcurrentQueue<short[]> _segments = new();
+    private readonly ConcurrentQueue<(short[] Samples, double Start)> _segments = new();
     private readonly SemaphoreSlim _segmentReady = new(0);
     private readonly CancellationTokenSource _stop = new();
     private readonly List<short> _pendingSamples = new();
@@ -105,7 +105,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
                 {
                     var segment = _pendingSamples.Take(SegmentSamples).ToArray();
                     _pendingSamples.RemoveRange(0, SegmentSamples);
-                    _segments.Enqueue(segment);
+                    _segments.Enqueue((segment, _segmentStart));
                     _segmentReady.Release();
                     _segmentStart += SegmentSeconds;
                 }
@@ -122,19 +122,20 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 
     private async Task ProcessSegmentsAsync(CancellationToken cancellationToken)
     {
-        while (await _segmentReady.WaitAsync(Timeout.Infinite, cancellationToken).ContinueWith(t => t.IsCompletedSuccessfully, cancellationToken))
+        while (true)
         {
-            if (!_segments.TryDequeue(out var samples)) continue;
+            await _segmentReady.WaitAsync(cancellationToken);
+            if (!_segments.TryDequeue(out var segment)) continue;
             try
             {
-                var wav = CreateWav16Khz(samples);
+                var wav = CreateWav16Khz(segment.Samples);
                 await using var stream = new MemoryStream(wav, writable: false);
                 var processor = _processor ?? throw new InvalidOperationException("Modelo local não inicializado.");
                 await foreach (var result in processor.ProcessAsync(stream))
                 {
                     var transcript = result.Text?.Trim();
                     if (string.IsNullOrWhiteSpace(transcript)) continue;
-                    var start = Math.Max(0, _playbackSeconds() - SegmentSeconds);
+                    var start = segment.Start;
                     TranscriptReceived?.Invoke(this, new LiveTranscriptEventArgs(
                         Guid.NewGuid().ToString("N"), transcript, start + result.Start.TotalSeconds, true));
                 }
@@ -228,7 +229,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
             {
                 if (_pendingSamples.Count > 0)
                 {
-                    _segments.Enqueue(_pendingSamples.ToArray());
+                    _segments.Enqueue((_pendingSamples.ToArray(), _segmentStart));
                     _segmentReady.Release();
                     _pendingSamples.Clear();
                 }
