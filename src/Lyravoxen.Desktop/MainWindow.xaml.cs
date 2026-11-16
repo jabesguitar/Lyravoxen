@@ -380,7 +380,7 @@ public partial class MainWindow : Window
             }
         }
 
-        WorkspaceTabs.SelectedIndex = 1;
+        WorkspaceTabs.SelectedIndex = 2;
         if (firstSourceTab is not null)
             BrowserTabs.SelectedItem = firstSourceTab;
         StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
@@ -396,7 +396,7 @@ public partial class MainWindow : Window
         }
 
         _manualDraftLines = ManualLyricsBox.Text
-            .Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Trim())
             .Where(line => !string.IsNullOrWhiteSpace(line))
             .ToList();
@@ -1177,7 +1177,8 @@ public partial class MainWindow : Window
             if (_isLocalAudioPlaying) currentSeconds = LocalAudioPlayer.Position.TotalSeconds;
             else { var encoded = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("typeof player !== 'undefined' && player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : null"); if (!double.TryParse(encoded, NumberStyles.Float, CultureInfo.InvariantCulture, out currentSeconds) || currentSeconds < 0) { StatusText.Text = "O player ainda não informou o tempo atual. Inicie a música e tente novamente."; return; } }
             var cueSeconds = Math.Max(0, currentSeconds);
-            _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
+            if (!_manualDraftActive)
+                _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
             _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             if (_currentVideo is not null) { _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline)) saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); SaveLibrary(); }
