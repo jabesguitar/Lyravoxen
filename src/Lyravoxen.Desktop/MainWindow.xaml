@@ -146,6 +146,12 @@
     <Button Content="Marcar próxima frase no tempo atual" Click="MarkNextManualDraftLine_Click" Margin="0,5,0,0" Height="38"/>
     <Button Content="Buscar versão sincronizada desta letra" Click="ManualSync_Click" Margin="0,5,0,0"/>
     <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra, inicie a música e depois inicie a sincronização ao vivo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="12" Margin="4,8,4,0"/>
+    <Border Background="#0D151D" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="12" Margin="4,8,4,0">
+     <StackPanel>
+      <TextBlock Text="PRÓXIMA FRASE A MARCAR" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold"/>
+      <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o início da sincronização ao vivo..." Foreground="#F2F6F8" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,0"/>
+     </StackPanel>
+    </Border>
     <TextBlock Text="Cada clique em Marcar registra a frase no segundo exato da música e carrega a próxima automaticamente. A reprodução não é reiniciada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
    </StackPanel>
   </Grid>
