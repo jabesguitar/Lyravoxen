@@ -261,6 +261,7 @@ public partial class MainWindow : Window
             // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
             MusicTrackBox.Text = "";
             MusicArtistBox.Clear();
+            MusicComposerBox.Clear();
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
@@ -316,9 +317,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        var searchTerms = string.IsNullOrWhiteSpace(artist)
-            ? "\"" + track + "\""
-            : "\"" + track + "\" \"" + artist + "\"";
+        var composer = MusicComposerBox.Text.Trim();
+        var searchTerms = string.Join(" ", new[]
+        {
+            "\"" + track + "\"",
+            string.IsNullOrWhiteSpace(artist) ? "" : "\"" + artist + "\"",
+            string.IsNullOrWhiteSpace(composer) ? "" : "\"" + composer + "\""
+        }.Where(term => !string.IsNullOrWhiteSpace(term)));
         var sources = new[]
         {
             (Name: "Cifra Club", Domain: "cifraclub.com.br"),
@@ -989,6 +994,19 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.Text = "A projeção local foi encerrada, mas houve falha ao fechar o Holyrics: " + ex.Message;
+        }
+    }
+
+    private async void ClearHolyricsProjection_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await _holyrics.CloseQuickPresentationAsync();
+            StatusText.Text = "Apresentação rápida do Holyrics limpa. A projeção local permanece aberta.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível limpar a apresentação rápida do Holyrics: " + ex.Message;
         }
     }
 
