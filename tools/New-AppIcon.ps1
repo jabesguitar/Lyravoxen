@@ -6,27 +6,27 @@ $artifactDir = Join-Path $PSScriptRoot "..\artifacts"
 New-Item -ItemType Directory -Force $projectAssets, $artifactDir | Out-Null
 
 $size = 256
-$bitmap = New-Object System.Drawing.Bitmap($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+$bitmap = [System.Drawing.Bitmap]::new($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 $graphics.Clear([System.Drawing.Color]::Transparent)
 
-$path = New-Object System.Drawing.Drawing2D.GraphicsPath
+$path = [System.Drawing.Drawing2D.GraphicsPath]::new()
 $path.AddArc(8, 8, 48, 48, 180, 90)
 $path.AddArc(200, 8, 48, 48, 270, 90)
 $path.AddArc(200, 200, 48, 48, 0, 90)
 $path.AddArc(8, 200, 48, 48, 90, 90)
 $path.CloseFigure()
-$background = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-  (New-Object System.Drawing.Rectangle(0,0,$size,$size)),
-  ([System.Drawing.Color]::FromArgb(13,24,36)),
-  ([System.Drawing.Color]::FromArgb(27,57,72)),
+$background = [System.Drawing.Drawing2D.LinearGradientBrush]::new(
+  [System.Drawing.Rectangle]::new(0,0,$size,$size),
+  [System.Drawing.Color]::FromArgb(13,24,36),
+  [System.Drawing.Color]::FromArgb(27,57,72),
   45
 )
 $graphics.FillPath($background, $path)
-$accent = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(57,214,197))
-$penStrong = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(190,239,248,250), 5)
-$penSoft = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(115,239,248,250), 5)
+$accent = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(57,214,197))
+$penStrong = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(190,239,248,250), 5)
+$penSoft = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(115,239,248,250), 5)
 $heights = @(42,78,112,142,108,72,48)
 for ($i=0; $i -lt $heights.Length; $i++) {
   $x = 49 + ($i * 23)
