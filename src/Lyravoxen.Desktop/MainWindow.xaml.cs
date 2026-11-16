@@ -294,6 +294,8 @@ public partial class MainWindow : Window
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
             ManualLyricsBox.Clear();
+            MusicTrackBox.Clear();
+            MusicArtistBox.Clear();
             StatusText.Text = "Preparando vídeo e procurando letra já cadastrada...";
             PublishProjectionOnly("");
             _audioTimer.Stop(); _isLocalAudioPlaying = false; LocalAudioPlayer.Stop(); LocalAudioPlayer.Visibility = Visibility.Collapsed; YoutubePlayer.Visibility = Visibility.Visible;
@@ -310,6 +312,8 @@ public partial class MainWindow : Window
                 Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube"
             };
             _currentVideo.Url = url;
+            MusicTrackBox.Text = _currentVideo.TrackName;
+            MusicArtistBox.Text = _currentVideo.Artist;
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
@@ -535,6 +539,43 @@ public partial class MainWindow : Window
     {
         try
         {
+            var normalizedTrack = NormalizeMusicText(trackName);
+            var normalizedArtist = NormalizeMusicText(artistName);
+            var localMatch = _library.SelectMany(folder => folder.Videos)
+                .Where(video => video.Cues.Count > 0 && !string.IsNullOrWhiteSpace(video.TrackName) && !string.IsNullOrWhiteSpace(video.Artist))
+                .FirstOrDefault(video =>
+                    NormalizeMusicText(video.TrackName) == normalizedTrack &&
+                    NormalizeMusicText(video.Artist) == normalizedArtist);
+
+            if (localMatch is not null)
+            {
+                var localPreview = string.Join(Environment.NewLine, localMatch.Cues.Take(8).Select(cue => cue.Text));
+                var localDetails = "Letra salva neste computador.\\nFaixa: " + localMatch.TrackName +
+                    "\\nAutor / intérprete: " + localMatch.Artist +
+                    "\\nFrases sincronizadas: " + localMatch.Cues.Count +
+                    "\\nVídeo original: " + localMatch.Title +
+                    "\\n\\nPrévia:\\n" + localPreview +
+                    "\\n\\nSim: reutilizar esta letra.\\nNão: procurar outra versão no catálogo online.\\nCriar: editar ou cadastrar outra letra.";
+                var localDialog = new MusicMatchDialog("Encontrei esta música na sua biblioteca", localDetails) { Owner = this };
+                localDialog.ShowDialog();
+                if (localDialog.Choice == MusicMatchChoice.Create)
+                {
+                    OpenManualLyricsEditor(expectedLyrics);
+                    return;
+                }
+                if (localDialog.Choice == MusicMatchChoice.Yes)
+                {
+                    _cues.Clear();
+                    _cues.AddRange(CueTimeline.Normalize(localMatch.Cues));
+                    CueList.ItemsSource = null;
+                    CueList.ItemsSource = _cues;
+                    _lastAutomaticCue = -1;
+                    PersistCurrentCues();
+                    StatusText.Text = "Letra recuperada da biblioteca local: " + localMatch.TrackName + " — " + localMatch.Artist;
+                    return;
+                }
+            }
+
             StatusText.Text = "Buscando letras e verificando correspondência: " + trackName + " — " + artistName;
             var query = Uri.EscapeDataString(trackName + " " + artistName);
             var endpoint = "https://lrclib.net/api/search?q=" + query;
@@ -668,6 +709,8 @@ public partial class MainWindow : Window
         if (_currentVideo?.VideoId == videoId)
         {
             _currentVideo.Title = displayTitle;
+            _currentVideo.TrackName = title;
+            _currentVideo.Artist = author;
             MusicTrackBox.Text = title;
             MusicArtistBox.Text = author;
         }
@@ -1560,6 +1603,8 @@ public partial class MainWindow : Window
     private void PersistCurrentCues()
     {
         if (_currentVideo is null) return;
+        _currentVideo.TrackName = MusicTrackBox.Text.Trim();
+        _currentVideo.Artist = MusicArtistBox.Text.Trim();
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
 
         var savedItems = _library.SelectMany(folder => folder.Videos)
@@ -1580,6 +1625,8 @@ public partial class MainWindow : Window
             {
                 VideoId = _currentVideo.VideoId,
                 Title = _currentVideo.Title,
+                TrackName = _currentVideo.TrackName,
+                Artist = _currentVideo.Artist,
                 Url = _currentVideo.Url,
                 IsOffline = _currentVideo.IsOffline,
                 LocalPath = _currentVideo.LocalPath,
@@ -1592,6 +1639,8 @@ public partial class MainWindow : Window
             foreach (var saved in savedItems)
             {
                 saved.Title = _currentVideo.Title;
+                saved.TrackName = _currentVideo.TrackName;
+                saved.Artist = _currentVideo.Artist;
                 saved.Url = _currentVideo.Url;
                 saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
             }
@@ -1737,12 +1786,14 @@ public partial class MainWindow : Window
         if (video is null)
             folder.Videos.Add(new LibraryVideo
             {
-                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, Url = _currentVideo.Url,
+                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         else
         {
             video.Title = _currentVideo.Title;
+            video.TrackName = MusicTrackBox.Text.Trim();
+            video.Artist = MusicArtistBox.Text.Trim();
             video.Url = _currentVideo.Url;
             video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         }
@@ -1814,6 +1865,8 @@ public partial class MainWindow : Window
             _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = 0;
             _audioTimer.Start();
             _currentVideo = video;
+            MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
+            MusicArtistBox.Text = video.Artist;
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(video.Cues));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
