@@ -136,6 +136,12 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
                 }
             }
         }
+
+        if (samplesInSegment > 0)
+        {
+            _pendingSegmentStarts.Enqueue(segmentStart);
+            await SendJsonAsync(new { type = "input_audio_buffer.commit" }, cancellationToken);
+        }
     }
 
     private async Task ReceiveLoopAsync(CancellationToken cancellationToken)
