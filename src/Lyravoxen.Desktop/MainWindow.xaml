@@ -46,7 +46,7 @@
      <TabItem Header="Sincronização">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
-       <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
+       <TextBlock Grid.Row="1" Text="O título e o canal do vídeo são preenchidos automaticamente. Confira e corrija o intérprete antes de buscar; letras criadas ficam salvas no catálogo local e poderão ser reutilizadas em outras gravações da mesma música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,4">
          <TextBlock Text="Título da música" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
@@ -140,7 +140,7 @@
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <StackPanel Grid.Row="0" Margin="0,0,0,14">
     <TextBlock Text="SINCRONIZAR LETRA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
-    <TextBlock Text="Cole a letra completa da música. O Lyravoxen procura uma versão com tempos sincronizados e confere o texto antes de aplicar. Carregue a música na aba Ao vivo e confirme o título e o autor/intérprete." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+    <TextBlock Text="Cole a letra completa. Confira ou corrija o título e o intérprete na aba Ao vivo. O Lyravoxen procura primeiro na sua biblioteca local e depois no catálogo online; letras criadas ficam cadastradas para buscas futuras." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
    </StackPanel>
    <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
    <StackPanel Grid.Row="2" Margin="0,12,0,0">
