@@ -19,7 +19,7 @@ O fluxo de compilação do GitHub Actions gera:
 
 Para obter o pacote, abra a execução mais recente em [GitHub Actions](https://github.com/jabesguitar/Lyravoxen/actions/workflows/windows-build.yml), entre em **Artifacts** e baixe o ZIP portátil. Extraia todo o conteúdo para uma pasta e execute `Lyravoxen.exe`. Não execute o EXE diretamente de dentro do ZIP.
 
-O pacote é publicado como self-contained para .NET 8; o WebView2 Runtime continua sendo um pré-requisito separado. Ainda não é um instalador tradicional com assistente, atalhos e desinstalador.
+O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runtime continua sendo um pré-requisito separado. Para instalação assistida, use o instalador Windows acima.
 
 ## Recursos atuais
 - Player oficial incorporado do YouTube; não baixa nem extrai áudio.
