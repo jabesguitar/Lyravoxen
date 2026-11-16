@@ -23,20 +23,20 @@ Check(CueTimeline.FindActiveIndex(normalized, double.NaN, 1.5) == -1, "tempo inv
 var tenLines = Enumerable.Range(1, 10)
     .Select(index => new LyricCue { Seconds = index * 2, Text = "linha " + index })
     .ToList();
-Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 4) == "linha 1\\nlinha 2\\nlinha 3\\nlinha 4", "primeiro bloco mostra quatro linhas");
-Check(CueTimeline.BuildProjectionBlock(tenLines, 3, 4) == "linha 1\\nlinha 2\\nlinha 3\\nlinha 4", "mantém o mesmo bloco até a quarta linha");
-Check(CueTimeline.BuildProjectionBlock(tenLines, 4, 4) == "linha 5\\nlinha 6\\nlinha 7\\nlinha 8", "troca para as quatro linhas seguintes");
-Check(CueTimeline.BuildProjectionBlock(tenLines, 8, 4) == "linha 9\\nlinha 10", "último bloco aceita menos linhas restantes");
-Check(CueTimeline.BuildProjectionBlock(tenLines, 2, 2) == "linha 3\\nlinha 4", "duas linhas formam blocos consecutivos");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 4) == "linha 1\nlinha 2\nlinha 3\nlinha 4", "primeiro bloco mostra quatro linhas");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 3, 4) == "linha 1\nlinha 2\nlinha 3\nlinha 4", "mantém o mesmo bloco até a quarta linha");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 4, 4) == "linha 5\nlinha 6\nlinha 7\nlinha 8", "troca para as quatro linhas seguintes");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 8, 4) == "linha 9\nlinha 10", "último bloco aceita menos linhas restantes");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 2, 2) == "linha 3\nlinha 4", "duas linhas formam blocos consecutivos");
 Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 1) == "linha 1", "uma linha por bloco");
-Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 20) == string.Join("\\n", tenLines.Select(cue => cue.Text)), "limite máximo de dez linhas");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 20) == string.Join("\n", tenLines.Select(cue => cue.Text)), "limite máximo de dez linhas");
 Check(CueTimeline.BuildProjectionBlock(tenLines, -1, 4) == string.Empty, "sem frase ativa mantém projeção vazia");
 var multiLine = new[]
 {
-    new LyricCue { Seconds = 1, Text = "primeira\\nsegunda" },
+    new LyricCue { Seconds = 1, Text = "primeira\nsegunda" },
     new LyricCue { Seconds = 2, Text = "terceira" },
     new LyricCue { Seconds = 3, Text = "quarta" },
     new LyricCue { Seconds = 4, Text = "quinta" }
 };
-Check(CueTimeline.BuildProjectionBlock(multiLine, 1, 3) == "primeira\\nsegunda\\nterceira", "bloco conta linhas visuais em frases multilinha");
+Check(CueTimeline.BuildProjectionBlock(multiLine, 1, 3) == "primeira\nsegunda\nterceira", "bloco conta linhas visuais em frases multilinha");
 Console.WriteLine("Todos os testes da linha do tempo e dos blocos de projeção passaram.");
