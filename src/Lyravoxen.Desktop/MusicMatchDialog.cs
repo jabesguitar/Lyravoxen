@@ -49,9 +49,9 @@ public sealed class MusicMatchDialog : Window
         };
         DockPanel.SetDock(buttons, Dock.Bottom);
 
-        buttons.Children.Add(CreateButton("Sim", MusicMatchChoice.Yes, "#176E68", true));
-        buttons.Children.Add(CreateButton("Não", MusicMatchChoice.No, "#354B5B"));
-        buttons.Children.Add(CreateButton("Criar", MusicMatchChoice.Create, "#315A83"));
+        buttons.Children.Add(CreateButton("Sim", MusicMatchChoice.Yes, true));
+        buttons.Children.Add(CreateButton("Não", MusicMatchChoice.No));
+        buttons.Children.Add(CreateButton("Criar", MusicMatchChoice.Create));
         panel.Children.Add(buttons);
 
         var detailText = new TextBox
@@ -71,7 +71,7 @@ public sealed class MusicMatchDialog : Window
         Content = panel;
     }
 
-    private Button CreateButton(string label, MusicMatchChoice choice, string background, bool isDefault = false)
+    private Button CreateButton(string label, MusicMatchChoice choice, bool isDefault = false)
     {
         var button = new Button
         {
@@ -81,7 +81,12 @@ public sealed class MusicMatchDialog : Window
             Margin = new Thickness(6, 0, 0, 0),
             FontSize = 13,
             FontWeight = FontWeights.SemiBold,
-            Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(background)),
+            Background = new SolidColorBrush(choice switch
+            {
+                MusicMatchChoice.Yes => Color.FromRgb(23, 110, 104),
+                MusicMatchChoice.No => Color.FromRgb(53, 75, 91),
+                _ => Color.FromRgb(49, 90, 131)
+            }),
             Foreground = Brushes.White,
             IsDefault = isDefault
         };
