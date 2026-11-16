@@ -27,14 +27,15 @@ O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runt
 - Área **Criar / editar letra**: cole a letra completa, prepare as frases e marque cada entrada durante a reprodução; as frases e seus tempos ficam associados à música atual.
 - Aba separada **Controles manuais** para navegar, editar, reordenar e projetar frases sem comprimir a prévia do telão.
 - Importação LRC/SRT e edição das frases; limite de projeção configurável de 1 a 10 linhas.
-- Projeção independente, temas, tela de espera e encerramento automático ao fim do áudio, com comando manual no aplicativo.
+- Prévia de projeção ampliada, seleção de monitor, temas com contraste reforçado e abertura automática da projeção quando a primeira frase é exibida; o comando Sair da projeção fecha a janela local e tenta encerrar a apresentação rápida e a apresentação convencional do Holyrics.
 - Seleção da tela de saída e recuperação após alterações de monitor.
-- Biblioteca, histórico e fila da próxima música.
+- Biblioteca local de letras sincronizadas pesquisável por título e intérprete corrigidos; letras criadas podem ser reutilizadas em outras gravações da mesma música.
+- Aba Próxima música com atalhos internos para YouTube, Google, Cifra Club, Vagalume, Letras.mus.br, Ouvir Música e pesquisa da Harpa Cristã; copiar link da página atual ou da música em reprodução.
 - Integração configurável com Holyrics, com ações independentes para limpar a apresentação rápida e encerrar a projeção local.
 
 ## Limites e validação
 - Alguns vídeos não permitem reprodução incorporada e podem ser recusados pelo próprio YouTube.
-- A integração Holyrics requer uma instalação compatível e configuração local.
+- A integração Holyrics requer uma instalação compatível, configuração local e permissões de API para ShowQuickPresentation, CloseCurrentQuickPresentation e CloseCurrentPresentation.
 - A busca automática depende de existir uma letra sincronizada compatível no catálogo; a opção Criar permite cadastrar a letra e marcar os tempos durante a reprodução, sem inventar timestamps.
 - O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
 - Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
