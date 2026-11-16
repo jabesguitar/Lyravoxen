@@ -27,8 +27,6 @@
     <Button x:Name="LoadYoutubeButton" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
     <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
-    <TextBlock Text="Tela:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-    <ComboBox x:Name="OutputDisplayBox" Width="165" VerticalContentAlignment="Center" ToolTip="Escolha o monitor onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
     <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a projeção local, a apresentação rápida e a apresentação atual do Holyrics"/>
     <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
    </WrapPanel>
@@ -49,12 +47,12 @@
        <TextBlock Grid.Row="1" Text="O título e o canal do vídeo são preenchidos automaticamente. Confira e corrija o intérprete antes de buscar; letras criadas ficam salvas no catálogo local e poderão ser reutilizadas em outras gravações da mesma música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,4">
-         <TextBlock Text="Título da música" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
-         <TextBox x:Name="MusicTrackBox" ToolTip="Título da música"/>
-        </StackPanel>
-        <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,4">
          <TextBlock Text="Autor / Intérprete" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
          <TextBox x:Name="MusicArtistBox" ToolTip="Nome do autor ou intérprete"/>
+        </StackPanel>
+        <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,4">
+         <TextBlock Text="Título da música" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
+         <TextBox x:Name="MusicTrackBox" ToolTip="Título da música"/>
         </StackPanel>
         <Button Grid.Row="1" Grid.ColumnSpan="2" Content="Buscar letra sincronizada" Click="SearchLyrics_Click" Background="#176E68" Margin="0,4,0,0"/>
         <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Pesquisar em outras fontes (hinos e louvores)" Click="OpenLyricsSourceSearches_Click" Margin="0,4,0,0" ToolTip="Abrir pesquisas independentes em Cifra Club, Vagalume, Letras e outros catálogos"/>
@@ -140,13 +138,15 @@
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <StackPanel Grid.Row="0" Margin="0,0,0,14">
     <TextBlock Text="SINCRONIZAR LETRA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
-    <TextBlock Text="Cole a letra completa. Confira ou corrija o título e o intérprete na aba Ao vivo. O Lyravoxen procura primeiro na sua biblioteca local e depois no catálogo online; letras criadas ficam cadastradas para buscas futuras." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+    <TextBlock Text="Com a música tocando na aba Ao vivo, cole a letra aqui. O Lyravoxen procura primeiro na biblioteca local e depois no catálogo de letras sincronizadas. Se não encontrar, inicie a sincronização ao vivo e marque cada frase sem parar a música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
    </StackPanel>
    <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
    <StackPanel Grid.Row="2" Margin="0,12,0,0">
-    <Button Content="Preparar frases para marcação manual" Click="PrepareManualLyrics_Click" Background="#176E68" Height="42" FontSize="14"/>
-    <Button Content="Buscar correspondência sincronizada no catálogo" Click="ManualSync_Click" Margin="0,5,0,0"/>
-    <TextBlock Text="Ao preparar, as frases serão carregadas uma a uma no editor. Reproduza a música e marque cada frase no tempo certo; cada marcação ficará associada a esta música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
+    <Button Content="Iniciar sincronização ao vivo (sem reiniciar a música)" Click="StartLiveManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
+    <Button Content="Marcar próxima frase no tempo atual" Click="MarkNextManualDraftLine_Click" Margin="0,5,0,0" Height="38"/>
+    <Button Content="Buscar versão sincronizada desta letra" Click="ManualSync_Click" Margin="0,5,0,0"/>
+    <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra, inicie a música e depois inicie a sincronização ao vivo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="12" Margin="4,8,4,0"/>
+    <TextBlock Text="Cada clique em Marcar registra a frase no segundo exato da música e carrega a próxima automaticamente. A reprodução não é reiniciada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
    </StackPanel>
   </Grid>
  </TabItem>
