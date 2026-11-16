@@ -660,7 +660,16 @@ public partial class MainWindow : Window
             {
                 if (expectedLyrics is not null)
                 {
-                    StatusText.Text = "Não encontrei uma versão temporizada que corresponda suficientemente à letra colada. A sincronização atual foi preservada; você pode criar os tempos manualmente.";
+                    var noTimedMatch = new MusicMatchDialog(
+                        "Não encontrei uma versão sincronizada compatível",
+                        "A letra foi recebida, mas não encontrei tempos que correspondam a ela.\n\nSim: abrir outras fontes para procurar uma versão temporizada.\nNão: manter a letra atual sem alterações.\nCriar: sincronizar esta letra ao vivo com a música que já está tocando.") { Owner = this };
+                    noTimedMatch.ShowDialog();
+                    if (noTimedMatch.Choice == MusicMatchChoice.Create)
+                        OpenManualLyricsEditor(expectedLyrics);
+                    else if (noTimedMatch.Choice == MusicMatchChoice.Yes)
+                        OpenLyricsSourceSearches_Click(this, new RoutedEventArgs());
+                    else
+                        StatusText.Text = "A sincronização atual foi preservada. Você pode iniciar a marcação ao vivo quando quiser.";
                     return;
                 }
 
@@ -1157,12 +1166,14 @@ public partial class MainWindow : Window
                 if (_manualDraftIndex < _manualDraftLines.Count)
                 {
                     LyricTextBox.Text = _manualDraftLines[_manualDraftIndex];
+                    ManualSyncProgressText.Text = $"Sincronização ao vivo: frase {_manualDraftIndex + 1} de {_manualDraftLines.Count}. Última marcação: {cueSeconds:0.00}s.";
                     StatusText.Text = $"Frase registrada em {cueSeconds:0.00}s. Próxima frase ({_manualDraftIndex + 1}/{_manualDraftLines.Count}) carregada.";
                 }
                 else
                 {
                     _manualDraftActive = false;
                     LyricTextBox.Clear();
+                    ManualSyncProgressText.Text = $"Concluído: {_manualDraftLines.Count} frases sincronizadas e salvas para {MusicTrackBox.Text}.";
                     StatusText.Text = $"Letra concluída: {_manualDraftLines.Count} frases foram marcadas e associadas à música.";
                 }
             }
