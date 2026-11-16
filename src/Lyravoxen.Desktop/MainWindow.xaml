@@ -44,7 +44,7 @@
      <TabItem Header="Sincronização">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
-       <TextBlock Grid.Row="1" Text="O título e o canal do vídeo são preenchidos automaticamente. Confira e corrija o intérprete antes de buscar; letras criadas ficam salvas no catálogo local e poderão ser reutilizadas em outras gravações da mesma música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
+       <TextBlock Grid.Row="1" Text="Informe autor/compositor, intérprete e título da música. Esses dados ficam salvos no histórico e vinculados ao vídeo do YouTube para reutilização posterior." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
          <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,4">
           <TextBlock Text="Autor / Compositor" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
@@ -146,8 +146,8 @@
    </StackPanel>
    <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
    <StackPanel Grid.Row="2" Margin="0,12,0,0">
-    <Button x:Name="AutoRecognitionButton" Content="Reconhecer automaticamente a letra pela voz" Click="ToggleAutoRecognition_Click" Background="#176E68" Height="42" FontSize="14"/>
-    <TextBlock Text="O Lyravoxen escuta o áudio que está saindo do computador, reconhece os versos e procura a próxima linha da letra." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,3,4,5"/>
+    <Button x:Name="AutoRecognitionButton" Content="Reconhecer automaticamente (gratuito e offline)" Click="ToggleAutoRecognition_Click" Background="#176E68" Height="42" FontSize="14"/>
+    <TextBlock Text="O Lyravoxen reconhece a voz localmente no computador. O primeiro uso baixa um modelo gratuito; depois funciona sem API, assinatura ou cobrança." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,3,4,5"/>
     <Button Content="Iniciar sincronização ao vivo (sem reiniciar a música)" Click="StartLiveManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
     <Button Content="Marcar próxima frase no tempo atual" Click="MarkNextManualDraftLine_Click" Margin="0,5,0,0" Height="38"/>
     <Button Content="Buscar versão sincronizada desta letra" Click="ManualSync_Click" Margin="0,5,0,0"/>
