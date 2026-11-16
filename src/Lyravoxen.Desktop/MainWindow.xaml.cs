@@ -522,9 +522,9 @@ public partial class MainWindow : Window
             StatusText.Text = "Carregue primeiro a música na aba Ao vivo.";
             return;
         }
-        if (string.IsNullOrWhiteSpace(track) || string.IsNullOrWhiteSpace(artist))
+        if (string.IsNullOrWhiteSpace(track))
         {
-            StatusText.Text = "Informe o título e o autor/intérprete na aba Ao vivo antes de sincronizar.";
+            StatusText.Text = "Informe o título da música na aba Ao vivo. O intérprete pode ficar em branco.";
             WorkspaceTabs.SelectedIndex = 0;
             MusicTrackBox.Focus();
             return;
