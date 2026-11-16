@@ -158,6 +158,71 @@ public partial class MainWindow : Window
         if (view?.CoreWebView2 is not null && view.CoreWebView2.CanGoForward) view.CoreWebView2.GoForward();
     }
 
+    private async void OpenQuickSite_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string site) return;
+        var target = site switch
+        {
+            "youtube" => "https://www.youtube.com/",
+            "google" => "https://www.google.com/",
+            "cifraclub" => "https://www.cifraclub.com.br/",
+            "vagalume" => "https://www.vagalume.com.br/",
+            "letras" => "https://www.letras.mus.br/",
+            "ouvir" => "https://www.ouvirmusica.com.br/",
+            "harpa" => "https://www.google.com/search?q=" + Uri.EscapeDataString("Harpa Cristã hinos letras"),
+            _ => "https://www.google.com/"
+        };
+        try
+        {
+            var header = site switch
+            {
+                "youtube" => "YouTube",
+                "google" => "Google",
+                "cifraclub" => "Cifra Club",
+                "vagalume" => "Vagalume",
+                "letras" => "Letras.mus.br",
+                "ouvir" => "Ouvir Música",
+                _ => "Harpa Cristã"
+            };
+            var tab = BrowserTabs.Items.OfType<TabItem>()
+                .FirstOrDefault(item => string.Equals(item.Header?.ToString(), header, StringComparison.Ordinal));
+            Microsoft.Web.WebView2.Wpf.WebView2 view;
+            if (tab?.Content is Microsoft.Web.WebView2.Wpf.WebView2 existing)
+            {
+                view = existing;
+                if (view.CoreWebView2 is null) await InitializeBrowserViewAsync(view);
+            }
+            else
+            {
+                view = new Microsoft.Web.WebView2.Wpf.WebView2();
+                tab = new TabItem { Header = header, Content = view, Tag = "quick-site" };
+                BrowserTabs.Items.Add(tab);
+                await InitializeBrowserViewAsync(view);
+            }
+            view.CoreWebView2.Navigate(target);
+            BrowserTabs.SelectedItem = tab;
+            StatusText.Text = header + " aberto dentro do Lyravoxen.";
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível abrir " + site + ": " + ex.Message; }
+    }
+
+    private void CopyBrowserLink_Click(object sender, RoutedEventArgs e)
+    {
+        var url = ActiveBrowserView?.Source?.ToString();
+        if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Nenhum endereço disponível nesta aba."; return; }
+        try { Clipboard.SetText(url); StatusText.Text = "Link copiado: " + url; }
+        catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
+    }
+
+    private void CopyCurrentVideoLink_Click(object sender, RoutedEventArgs e)
+    {
+        var url = _currentVideo?.Url;
+        if (string.IsNullOrWhiteSpace(url)) url = YoutubeUrlBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Carregue uma música antes de copiar o link."; return; }
+        try { Clipboard.SetText(url); StatusText.Text = "Link da música atual copiado."; }
+        catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
+    }
+
     private void YoutubeSearchRefresh_Click(object sender, RoutedEventArgs e)
     {
         var view = ActiveBrowserView;
@@ -266,8 +331,6 @@ public partial class MainWindow : Window
             if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
             // O título salvo no histórico pode conter também o nome do canal.
             // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
-            MusicTrackBox.Text = "";
-            MusicArtistBox.Clear();
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
@@ -604,6 +667,7 @@ public partial class MainWindow : Window
         {
             _currentVideo.Title = displayTitle;
             MusicTrackBox.Text = title;
+            MusicArtistBox.Text = author;
         }
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
@@ -1087,8 +1151,8 @@ public partial class MainWindow : Window
                 _projection.Close();
                 _projection = null;
             }
-            await _holyrics.CloseQuickPresentationAsync();
-            StatusText.Text = "Projeção encerrada. A segunda tela foi liberada e o Holyrics recebeu o comando de fechamento.";
+            await _holyrics.CloseProjectionAsync();
+            StatusText.Text = "Projeção encerrada. A janela local foi fechada e o Holyrics recebeu os comandos para fechar a apresentação rápida e a apresentação atual.";
         }
         catch (Exception ex)
         {
