@@ -27,8 +27,8 @@ public sealed class LiveRecognitionSettingsWindow : Window
             TextWrapping = TextWrapping.Wrap,
             Foreground = System.Windows.Media.Brushes.DimGray
         });
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
-        var save = new Button { Content = "Salvar chave", Padding = new Thickness(14, 7, 14, 7), IsDefault = true };
+        var buttons = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
+        var save = new System.Windows.Controls.Button { Content = "Salvar chave", Padding = new Thickness(14, 7, 14, 7), IsDefault = true };
         save.Click += (_, _) =>
         {
             try
@@ -41,7 +41,7 @@ public sealed class LiveRecognitionSettingsWindow : Window
                 _status.Text = ex.Message;
             }
         };
-        var cancel = new Button { Content = "Cancelar", Padding = new Thickness(14, 7, 14, 7), Margin = new Thickness(8, 0, 0, 0), IsCancel = true };
+        var cancel = new System.Windows.Controls.Button { Content = "Cancelar", Padding = new Thickness(14, 7, 14, 7), Margin = new Thickness(8, 0, 0, 0), IsCancel = true };
         buttons.Children.Add(save);
         buttons.Children.Add(cancel);
         panel.Children.Add(buttons);
