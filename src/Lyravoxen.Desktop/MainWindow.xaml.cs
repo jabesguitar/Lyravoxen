@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
     private bool _isLocalAudioPlaying;
     private bool _playbackEnded;
+    private bool _projectionSuppressed;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
     private bool _manualProjectionMode;
@@ -288,6 +289,7 @@ public partial class MainWindow : Window
         {
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
+            _projectionSuppressed = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
@@ -1143,6 +1145,7 @@ public partial class MainWindow : Window
 
     private async void ExitProjection_Click(object sender, RoutedEventArgs e)
     {
+        _projectionSuppressed = true;
         try
         {
             if (_projection is { IsVisible: true })
@@ -1226,6 +1229,8 @@ public partial class MainWindow : Window
 
     private void PublishLyric(string text)
     {
+        if (!string.IsNullOrWhiteSpace(text) && !_projectionSuppressed)
+            EnsureProjectionWindow();
         PublishProjectionOnly(text);
         // A API do Holyrics recebe apenas letras válidas; texto vazio é usado só para limpar o telão local.
         if (!string.IsNullOrWhiteSpace(text))
@@ -1793,6 +1798,7 @@ public partial class MainWindow : Window
             if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
             _audioTimer.Stop();
             _playbackEnded = false;
+            _projectionSuppressed = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
@@ -1845,6 +1851,7 @@ public partial class MainWindow : Window
             _projection.Close();
             _projection = null;
         }
+        _projectionSuppressed = true;
         StatusText.Text = status;
         _ = CloseHolyricsQuickPresentationAsync();
     }
