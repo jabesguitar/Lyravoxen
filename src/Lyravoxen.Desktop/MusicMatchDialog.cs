@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WpfButton = System.Windows.Controls.Button;
 
 namespace Lyravoxen;
 
@@ -71,9 +72,9 @@ public sealed class MusicMatchDialog : Window
         Content = panel;
     }
 
-    private Button CreateButton(string label, MusicMatchChoice choice, bool isDefault = false)
+    private WpfButton CreateButton(string label, MusicMatchChoice choice, bool isDefault = false)
     {
-        var button = new Button
+        var button = new WpfButton
         {
             Content = label,
             MinWidth = 92,
