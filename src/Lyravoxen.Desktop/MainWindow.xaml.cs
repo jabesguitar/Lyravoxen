@@ -306,6 +306,55 @@ public partial class MainWindow : Window
         await TryLoadAutomaticLyricsAsync(track, artist);
     }
 
+    private async void OpenLyricsSourceSearches_Click(object sender, RoutedEventArgs e)
+    {
+        var track = MusicTrackBox.Text.Trim();
+        var artist = MusicArtistBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(track))
+        {
+            System.Windows.MessageBox.Show("Informe ao menos o título da música. Para hinos, use Harpa Cristã como intérprete quando for o caso.", "Outras fontes de letras", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var searchTerms = string.IsNullOrWhiteSpace(artist)
+            ? "\"" + track + "\""
+            : "\"" + track + "\" \"" + artist + "\"";
+        var sources = new[]
+        {
+            (Name: "Cifra Club", Domain: "cifraclub.com.br"),
+            (Name: "Vagalume", Domain: "vagalume.com.br"),
+            (Name: "Letras.mus.br", Domain: "letras.mus.br"),
+            (Name: "Ouvir Música", Domain: "ouvirmusica.com.br"),
+            (Name: "Busca ampla", Domain: "")
+        };
+
+        StatusText.Text = "Abrindo fontes alternativas. Confira a autoria e a versão antes de usar qualquer letra.";
+        foreach (var source in sources)
+        {
+            try
+            {
+                var query = string.IsNullOrWhiteSpace(source.Domain)
+                    ? searchTerms + " letra música hino louvor"
+                    : "site:" + source.Domain + " " + searchTerms;
+                var url = "https://www.google.com/search?q=" + Uri.EscapeDataString(query);
+                var view = new Microsoft.Web.WebView2.Wpf.WebView2();
+                var tab = new TabItem { Header = source.Name, Content = view };
+                BrowserTabs.Items.Add(tab);
+                await InitializeBrowserViewAsync(view);
+                view.CoreWebView2.Navigate(url);
+                if (source == sources[0])
+                    BrowserTabs.SelectedItem = tab;
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = "Não foi possível abrir a fonte " + source.Name + ": " + ex.Message;
+            }
+        }
+
+        WorkspaceTabs.SelectedIndex = 1;
+        StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música e busca ampla. As fontes externas são referências: confira a letra e importe o LRC/SRT para sincronizar.";
+    }
+
     private async Task TryLoadAutomaticLyricsAsync(string trackName, string artistName)
     {
         try
