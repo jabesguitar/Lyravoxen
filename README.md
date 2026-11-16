@@ -23,16 +23,19 @@ O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runt
 
 ## Recursos atuais
 - Player oficial incorporado do YouTube; não baixa nem extrai áudio.
-- Sincronização manual e automática por timestamps.
-- Importação LRC/SRT e edição das frases.
+- Busca de letras sincronizadas com confirmação **Sim / Não / Criar** antes de substituir a letra atual.
+- Área **Criar / editar letra**: cole a letra completa, prepare as frases e marque cada entrada durante a reprodução; as frases e seus tempos ficam associados à música atual.
+- Aba separada **Controles manuais** para navegar, editar, reordenar e projetar frases sem comprimir a prévia do telão.
+- Importação LRC/SRT e edição das frases; limite de projeção configurável de 1 a 10 linhas.
 - Projeção independente, temas, tela de espera e encerramento automático ao fim do áudio, com comando manual no aplicativo.
 - Seleção da tela de saída e recuperação após alterações de monitor.
 - Biblioteca, histórico e fila da próxima música.
-- Integração configurável com Holyrics.
+- Integração configurável com Holyrics, com ações independentes para limpar a apresentação rápida e encerrar a projeção local.
 
 ## Limites e validação
 - Alguns vídeos não permitem reprodução incorporada e podem ser recusados pelo próprio YouTube.
 - A integração Holyrics requer uma instalação compatível e configuração local.
+- A busca automática depende de existir uma letra sincronizada compatível no catálogo; a opção Criar permite cadastrar a letra e marcar os tempos durante a reprodução, sem inventar timestamps.
 - O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
 - Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
 - APK Android exigiria um projeto separado.
