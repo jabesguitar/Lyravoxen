@@ -606,8 +606,15 @@ public partial class MainWindow : Window
                 var normTrack = NormalizeMusicText(foundTrack);
                 var normArtist = NormalizeMusicText(foundArtist);
 
-                // Não aceitar correspondência parcial: evitar letras de músicas homônimas ou intérpretes diferentes.
-                if (normTrack != wantedTrack || normArtist != wantedArtist)
+                // Aceita pequenas variações de título e créditos (ex.: "ao vivo", "feat."),
+                // mas sempre mostra a faixa encontrada para confirmação antes de aplicar.
+                var trackMatches = normTrack == wantedTrack ||
+                    ContainsMusicPhrase(normTrack, wantedTrack) ||
+                    ContainsMusicPhrase(wantedTrack, normTrack);
+                var artistMatches = normArtist == wantedArtist ||
+                    ContainsMusicPhrase(normArtist, wantedArtist) ||
+                    ContainsMusicPhrase(wantedArtist, normArtist);
+                if (!trackMatches || !artistMatches)
                     continue;
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String)
                     continue;
@@ -624,7 +631,7 @@ public partial class MainWindow : Window
 
                 var duration = item.TryGetProperty("duration", out var durationElement) &&
                     durationElement.ValueKind == JsonValueKind.Number ? durationElement.GetDouble() : 0;
-                var score = 100d;
+                var score = 100d - (normTrack == wantedTrack ? 0 : 12) - (normArtist == wantedArtist ? 0 : 18);
                 if (duration > 0 && _playerDurationSeconds > 0)
                 {
                     var difference = Math.Abs(duration - _playerDurationSeconds);
