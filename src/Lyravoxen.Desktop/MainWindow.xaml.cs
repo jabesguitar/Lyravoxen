@@ -1946,13 +1946,14 @@ public partial class MainWindow : Window
         if (video is null)
             folder.Videos.Add(new LibraryVideo
             {
-                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
+                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         else
         {
             video.Title = _currentVideo.Title;
             video.TrackName = MusicTrackBox.Text.Trim();
+            video.Composer = MusicComposerBox.Text.Trim();
             video.Artist = MusicArtistBox.Text.Trim();
             video.Url = _currentVideo.Url;
             video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
