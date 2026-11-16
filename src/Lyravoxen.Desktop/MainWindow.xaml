@@ -45,7 +45,7 @@
     </Grid>
    </Border>
    <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="8,0,0,0">
-    <TabControl Background="{StaticResource Panel}" BorderThickness="0">
+    <TabControl x:Name="SyncTabs" Background="{StaticResource Panel}" BorderThickness="0">
      <TabItem Header="Sincronização">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
@@ -72,7 +72,7 @@
        </Border>
       </Grid>
      </TabItem>
-     <TabItem Header="Controles manuais">
+     <TabItem x:Name="ManualControlsTab" Header="Controles manuais">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <ListBox x:Name="CueList" Grid.Row="0" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
        <UniformGrid Grid.Row="1" Columns="4" Margin="2,2,2,4">
@@ -147,8 +147,9 @@
    </StackPanel>
    <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
    <StackPanel Grid.Row="2" Margin="0,12,0,0">
-    <Button Content="Buscar letra sincronizada" Click="ManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
-    <TextBlock Text="A sincronização usa correspondência com letras temporizadas disponíveis no catálogo; não é reconhecimento direto do áudio. Se não houver uma versão compatível, a letra atual será preservada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
+    <Button Content="Preparar frases para marcação manual" Click="PrepareManualLyrics_Click" Background="#176E68" Height="42" FontSize="14"/>
+    <Button Content="Buscar correspondência sincronizada no catálogo" Click="ManualSync_Click" Margin="0,5,0,0"/>
+    <TextBlock Text="Ao preparar, as frases serão carregadas uma a uma no editor. Reproduza a música e marque cada frase no tempo certo; cada marcação ficará associada a esta música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
    </StackPanel>
   </Grid>
  </TabItem>
