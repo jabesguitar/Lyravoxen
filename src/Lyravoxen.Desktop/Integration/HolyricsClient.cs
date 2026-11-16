@@ -26,7 +26,7 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
         Save(settings);
     }
 
@@ -62,6 +62,29 @@ public sealed class HolyricsClient
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody))
+            EnsureApiSuccess(responseBody);
+    }
+
+    public async Task CloseProjectionAsync()
+    {
+        var settings = Load();
+        if (settings is null)
+            throw new InvalidOperationException("Holyrics ainda não foi configurado. Conecte o aplicativo antes de encerrar a projeção.");
+
+        // A API do Holyrics separa a apresentação rápida da apresentação convencional.
+        // Ao solicitar Sair da projeção, encerra as duas para evitar que uma tela permaneça ativa.
+        await CloseActionAsync(settings, "CloseCurrentQuickPresentation");
+        await CloseActionAsync(settings, "CloseCurrentPresentation");
+    }
+
+    private static async Task CloseActionAsync(Settings settings, string action)
+    {
+        var body = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string>());
+        using var response = await SendJsonAsync(BuildUrl(settings, action), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics ({action}) respondeu HTTP {(int)response.StatusCode}: {responseBody}");
         if (!string.IsNullOrWhiteSpace(responseBody))
             EnsureApiSuccess(responseBody);
     }
