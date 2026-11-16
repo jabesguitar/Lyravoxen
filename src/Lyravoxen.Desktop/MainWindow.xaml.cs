@@ -523,7 +523,7 @@ public partial class MainWindow : Window
         AutoRecognitionButton.IsEnabled = false;
         try
         {
-            await service.StartAsync(expectedLyrics: _manualDraftLines, trackTitle: MusicTrackBox.Text, artist: MusicArtistBox.Text);
+            await service.StartAsync();
             AutoRecognitionButton.Content = "Parar reconhecimento automático";
             StatusText.Text = "Reconhecimento ativo. O Lyravoxen está reconhecendo a música localmente, sem enviar áudio pela internet.";
         }
