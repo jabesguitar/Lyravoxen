@@ -16,6 +16,10 @@ namespace Lyravoxen;
 public partial class MainWindow : Window
 {
     private string _currentProjectedLyric = "";
+    private int _maxProjectionLines = 4;
+    private long _holyricsUpdateVersion;
+    private readonly object _holyricsQueueSync = new();
+    private Task _holyricsSendQueue = Task.CompletedTask;
     private readonly List<LyricCue> _cues = new();
     private List<string> _manualDraftLines = new();
     private int _manualDraftIndex;
@@ -58,13 +62,6 @@ public partial class MainWindow : Window
         LoadHistory();
         LoadLibrary();
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
-        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += System_DisplaySettingsChanged;
-        _displayChangeHandlerAttached = true;
-        Closed += (_, _) =>
-        {
-            if (_displayChangeHandlerAttached)
-                Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= System_DisplaySettingsChanged;
-        };
         Loaded += async (_, _) =>
         {
             try
@@ -294,7 +291,6 @@ public partial class MainWindow : Window
         {
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
-            _projectionSuppressed = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
@@ -975,18 +971,13 @@ public partial class MainWindow : Window
             _loadingPreferences = true;
             SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
             SelectComboItem(LineCountBox, (preferences.MaxLines ?? 4).ToString(CultureInfo.InvariantCulture));
-            _selectedOutputDeviceName = preferences.OutputDeviceName;
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
                 ? "https://www.youtube.com/watch?v=" + queuedId : null;
             PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
             NextTrackText.Text = _nextVideoUrl is null
                 ? "Pesquise e prepare a próxima música."
                 : "Próxima faixa recuperada da sessão anterior.";
-            PopulateOutputDisplays();
-            SelectOutputDisplay(preferences.OutputDeviceName);
             _loadingPreferences = false;
-            _projection?.SetTheme(preferences.Theme ?? "Noturno");
-            _projection?.SetMaxLines(preferences.MaxLines ?? 4);
         }
         catch
         {
@@ -1025,7 +1016,6 @@ public partial class MainWindow : Window
     {
         public string? Theme { get; set; } = "Noturno";
         public int? MaxLines { get; set; } = 4;
-        public string? OutputDeviceName { get; set; }
         public string? NextVideoUrl { get; set; }
     }
 
@@ -1219,7 +1209,6 @@ public partial class MainWindow : Window
 
     private async void ExitProjection_Click(object sender, RoutedEventArgs e)
     {
-        _projectionSuppressed = true;
         try
         {
             if (_projection is { IsVisible: true })
@@ -1607,7 +1596,6 @@ public partial class MainWindow : Window
     private void ProjectSelectedCue_Click(object sender, RoutedEventArgs e)
     {
         if (CueList.SelectedItem is not LyricCue cue) { StatusText.Text = "Selecione uma frase para projetar."; return; }
-        _projectionSuppressed = false;
         _manualProjectionMode = true;
         _manualCueIndex = _cues.IndexOf(cue);
         PublishLyric(cue.Text);
@@ -1884,7 +1872,6 @@ public partial class MainWindow : Window
             if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
             _audioTimer.Stop();
             _playbackEnded = false;
-            _projectionSuppressed = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
@@ -1939,7 +1926,6 @@ public partial class MainWindow : Window
             _projection.Close();
             _projection = null;
         }
-        _projectionSuppressed = true;
         StatusText.Text = status;
         _ = CloseHolyricsQuickPresentationAsync();
     }
