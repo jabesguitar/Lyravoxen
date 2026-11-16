@@ -317,10 +317,14 @@ public partial class MainWindow : Window
             {
                 VideoId = videoId,
                 Url = url,
-                Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube"
+                Title = _history.FirstOrDefault(v => v.VideoId == videoId)?.Title ?? "Vídeo do YouTube",
+                TrackName = _history.FirstOrDefault(v => v.VideoId == videoId)?.TrackName ?? "",
+                Composer = _history.FirstOrDefault(v => v.VideoId == videoId)?.Composer ?? "",
+                Artist = _history.FirstOrDefault(v => v.VideoId == videoId)?.Artist ?? ""
             };
             _currentVideo.Url = url;
             MusicTrackBox.Text = _currentVideo.TrackName;
+            MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
@@ -949,6 +953,7 @@ public partial class MainWindow : Window
             if (string.IsNullOrWhiteSpace(_currentVideo.Artist))
                 _currentVideo.Artist = author;
             MusicTrackBox.Text = _currentVideo.TrackName;
+            MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
         }
         if (!saveToHistory) return;
@@ -957,10 +962,13 @@ public partial class MainWindow : Window
         if (existing is not null)
         {
             existing.Title = displayTitle;
+            existing.TrackName = MusicTrackBox.Text.Trim();
+            existing.Composer = MusicComposerBox.Text.Trim();
+            existing.Artist = MusicArtistBox.Text.Trim();
             existing.Url = url;
             existing.LastUsed = DateTime.Now;
         }
-        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, Url = url, LastUsed = DateTime.Now });
+        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = url, LastUsed = DateTime.Now });
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
         SaveHistory();
         RefreshHistory();
@@ -1033,7 +1041,7 @@ public partial class MainWindow : Window
     {
         if (!IsInitialized) return;
         var search = HistorySearchBox?.Text?.Trim() ?? "";
-        var filtered = string.IsNullOrWhiteSpace(search) ? _history : _history.Where(item => item.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        var filtered = string.IsNullOrWhiteSpace(search) ? _history : _history.Where(item => item.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || item.TrackName.Contains(search, StringComparison.OrdinalIgnoreCase) || item.Composer.Contains(search, StringComparison.OrdinalIgnoreCase) || item.Artist.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
         _historySelectionChanging = true;
         HistoryList.ItemsSource = null;
         HistoryList.ItemsSource = filtered;
@@ -1711,11 +1719,56 @@ public partial class MainWindow : Window
         if (selected is not null) CueList.SelectedItem = selected;
     }
 
+    private void MusicMetadata_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (_currentVideo is null) return;
+        _currentVideo.TrackName = MusicTrackBox.Text.Trim();
+        _currentVideo.Composer = MusicComposerBox.Text.Trim();
+        _currentVideo.Artist = MusicArtistBox.Text.Trim();
+        UpdateCurrentHistoryMetadata();
+        SaveCurrentVideoMetadata();
+    }
+
+    private void UpdateCurrentHistoryMetadata()
+    {
+        if (_currentVideo is null) return;
+        var item = _history.FirstOrDefault(entry => entry.VideoId == _currentVideo.VideoId);
+        if (item is null) return;
+        item.TrackName = MusicTrackBox.Text.Trim();
+        item.Composer = MusicComposerBox.Text.Trim();
+        item.Artist = MusicArtistBox.Text.Trim();
+        item.LastUsed = DateTime.Now;
+        _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
+        SaveHistory();
+        RefreshHistory();
+    }
+
+    private void SaveCurrentVideoMetadata()
+    {
+        if (_currentVideo is null) return;
+        foreach (var saved in _library.SelectMany(folder => folder.Videos)
+            .Where(item => item.IsOffline == _currentVideo.IsOffline &&
+                (item.IsOffline
+                    ? string.Equals(item.LocalPath, _currentVideo.LocalPath, StringComparison.OrdinalIgnoreCase)
+                    : string.Equals(item.VideoId, _currentVideo.VideoId, StringComparison.Ordinal))))
+        {
+            saved.Title = _currentVideo.Title;
+            saved.TrackName = _currentVideo.TrackName;
+            saved.Composer = _currentVideo.Composer;
+            saved.Artist = _currentVideo.Artist;
+            saved.Url = _currentVideo.Url;
+        }
+        SaveLibrary();
+        RefreshLibrarySongs();
+    }
+
     private void PersistCurrentCues()
     {
         if (_currentVideo is null) return;
         _currentVideo.TrackName = MusicTrackBox.Text.Trim();
+        _currentVideo.Composer = MusicComposerBox.Text.Trim();
         _currentVideo.Artist = MusicArtistBox.Text.Trim();
+        UpdateCurrentHistoryMetadata();
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
 
         var savedItems = _library.SelectMany(folder => folder.Videos)
@@ -1740,6 +1793,7 @@ public partial class MainWindow : Window
                 VideoId = _currentVideo.VideoId,
                 Title = _currentVideo.Title,
                 TrackName = _currentVideo.TrackName,
+                Composer = _currentVideo.Composer,
                 Artist = _currentVideo.Artist,
                 Url = _currentVideo.Url,
                 IsOffline = _currentVideo.IsOffline,
@@ -1754,6 +1808,7 @@ public partial class MainWindow : Window
             {
                 saved.Title = _currentVideo.Title;
                 saved.TrackName = _currentVideo.TrackName;
+                saved.Composer = _currentVideo.Composer;
                 saved.Artist = _currentVideo.Artist;
                 saved.Url = _currentVideo.Url;
                 saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
@@ -1979,6 +2034,7 @@ public partial class MainWindow : Window
             _audioTimer.Start();
             _currentVideo = video;
             MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
+            MusicComposerBox.Text = video.Composer;
             MusicArtistBox.Text = video.Artist;
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(video.Cues));
@@ -2075,8 +2131,17 @@ public partial class MainWindow : Window
     {
         public string VideoId { get; set; } = "";
         public string Title { get; set; } = "";
+        public string TrackName { get; set; } = "";
+        public string Composer { get; set; } = "";
+        public string Artist { get; set; } = "";
         public string Url { get; set; } = "";
         public DateTime LastUsed { get; set; }
-        public override string ToString() => Title;
+        public override string ToString()
+        {
+            var song = string.IsNullOrWhiteSpace(TrackName) ? Title : TrackName;
+            var performer = string.IsNullOrWhiteSpace(Artist) ? "" : " — " + Artist;
+            var composer = string.IsNullOrWhiteSpace(Composer) ? "" : " | Autor: " + Composer;
+            return song + performer + composer;
+        }
     }
 }
