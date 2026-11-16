@@ -497,15 +497,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        var apiKey = LiveRecognitionSettings.GetApiKey();
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            var settings = new LiveRecognitionSettingsWindow { Owner = this };
-            if (settings.ShowDialog() != true) return;
-            apiKey = LiveRecognitionSettings.GetApiKey();
-        }
-        if (string.IsNullOrWhiteSpace(apiKey)) return;
-
         _manualDraftLines = lines;
         _manualDraftCues.Clear();
         _liveTranscriptBuffer.Clear();
@@ -528,9 +519,9 @@ public partial class MainWindow : Window
         AutoRecognitionButton.IsEnabled = false;
         try
         {
-            await service.StartAsync(apiKey, _manualDraftLines, MusicTrackBox.Text, MusicArtistBox.Text);
+            await service.StartAsync(expectedLyrics: _manualDraftLines, trackTitle: MusicTrackBox.Text, artist: MusicArtistBox.Text);
             AutoRecognitionButton.Content = "Parar reconhecimento automático";
-            StatusText.Text = "Reconhecimento ativo. O Lyravoxen está ouvindo a saída de áudio do Windows.";
+            StatusText.Text = "Reconhecimento ativo. O Lyravoxen está reconhecendo a música localmente, sem enviar áudio pela internet.";
         }
         catch (Exception ex)
         {
