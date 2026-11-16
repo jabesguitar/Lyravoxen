@@ -13,6 +13,8 @@ public sealed class LibraryVideo
 {
     public string VideoId { get; set; } = "";
     public string Title { get; set; } = "";
+    public string TrackName { get; set; } = "";
+    public string Artist { get; set; } = "";
     public string Url { get; set; } = "";
     public bool IsOffline { get; set; }
     public string? LocalPath { get; set; }
