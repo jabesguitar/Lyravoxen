@@ -335,7 +335,7 @@ public partial class MainWindow : Window
             try
             {
                 var query = source.Name == "Harpa Cristã"
-                    ? searchTerms + " \\"Harpa Cristã\\" hino letra"
+                    ? searchTerms + " \"Harpa Cristã\" hino letra"
                     : string.IsNullOrWhiteSpace(source.Domain)
                         ? searchTerms + " letra música hino louvor"
                         : "site:" + source.Domain + " " + searchTerms;
