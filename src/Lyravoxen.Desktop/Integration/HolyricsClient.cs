@@ -35,7 +35,7 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
     }
 
     public async Task ShowTextAsync(string text)
@@ -73,9 +73,17 @@ public sealed class HolyricsClient
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Conecte o aplicativo antes de encerrar a projeção.");
 
         // A API do Holyrics separa a apresentação rápida da apresentação convencional.
-        // Ao solicitar Sair da projeção, encerra as duas para evitar que uma tela permaneça ativa.
-        await CloseActionAsync(settings, "CloseCurrentQuickPresentation");
-        await CloseActionAsync(settings, "CloseCurrentPresentation");
+        // Tenta ambas mesmo que uma delas não esteja ativa ou não esteja disponível na versão instalada.
+        var errors = new List<Exception>();
+        foreach (var action in new[] { "CloseCurrentQuickPresentation", "CloseCurrentPresentation" })
+        {
+            try { await CloseActionAsync(settings, action); }
+            catch (Exception ex) { errors.Add(new InvalidOperationException(action + ": " + ex.Message, ex)); }
+        }
+        if (errors.Count == 2)
+            throw new AggregateException("O Holyrics não confirmou o encerramento de nenhuma apresentação.", errors);
+        if (errors.Count == 1 && errors[0].Message.StartsWith("CloseCurrentQuickPresentation:", StringComparison.Ordinal))
+            throw errors[0];
     }
 
     private static async Task CloseActionAsync(Settings settings, string action)
