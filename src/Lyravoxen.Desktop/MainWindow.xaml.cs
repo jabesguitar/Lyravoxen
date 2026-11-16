@@ -1541,6 +1541,11 @@ public partial class MainWindow : Window
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
         PublishProjectionOnly("");
+        if (_projection is { IsVisible: true })
+        {
+            _projection.Close();
+            _projection = null;
+        }
         StatusText.Text = status;
         _ = CloseHolyricsQuickPresentationAsync();
     }
