@@ -460,12 +460,17 @@ public partial class MainWindow : Window
         StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
     }
 
-    private void PrepareManualLyrics_Click(object sender, RoutedEventArgs e)
+    private void StartLiveManualSync_Click(object sender, RoutedEventArgs e)
     {
         if (_currentVideo is null)
         {
-            StatusText.Text = "Carregue primeiro a música que receberá a letra.";
+            StatusText.Text = "Carregue primeiro a música na aba Ao vivo e deixe a reprodução começar.";
             WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+        if (!_isLocalAudioPlaying && _lastPlayerState != 1)
+        {
+            StatusText.Text = "Inicie a reprodução da música antes de começar a marcação ao vivo. Não é necessário reiniciar o vídeo.";
             return;
         }
 
@@ -477,17 +482,27 @@ public partial class MainWindow : Window
 
         if (_manualDraftLines.Count == 0)
         {
-            StatusText.Text = "Cole a letra antes de preparar as frases.";
+            StatusText.Text = "Cole a letra, separando as frases por linha, antes de iniciar.";
             return;
         }
 
         _manualDraftIndex = 0;
         _manualDraftActive = true;
+        _manualProjectionMode = false;
         LyricTextBox.Text = _manualDraftLines[0];
         SecondsBox.Text = "0.00";
-        WorkspaceTabs.SelectedIndex = 0;
-        SyncTabs.SelectedItem = ManualControlsTab;
-        StatusText.Text = $"Letra preparada com {_manualDraftLines.Count} frases. Reproduza a música e pressione “Marcar frase no tempo atual” a cada entrada; o editor carregará a próxima frase automaticamente.";
+        ManualSyncProgressText.Text = "Sincronização ao vivo iniciada: frase 1 de " + _manualDraftLines.Count + ". Marque cada entrada enquanto a música toca.";
+        StatusText.Text = "Sincronização ao vivo iniciada. A música continua tocando; use Marcar próxima frase no tempo atual.";
+    }
+
+    private void MarkNextManualDraftLine_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_manualDraftActive)
+        {
+            StatusText.Text = "Primeiro clique em Iniciar sincronização ao vivo.";
+            return;
+        }
+        MarkCueAtCurrentTime_Click(sender, e);
     }
 
     private async void ManualSync_Click(object sender, RoutedEventArgs e)
