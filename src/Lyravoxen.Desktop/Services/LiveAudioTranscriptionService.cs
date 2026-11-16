@@ -29,7 +29,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 
     public LiveAudioTranscriptionService(Func<double> playbackSeconds) => _playbackSeconds = playbackSeconds;
 
-    public async Task StartAsync(string apiKey, CancellationToken cancellationToken = default)
+    public async Task StartAsync(string apiKey, IReadOnlyList<string>? expectedLyrics = null, string? trackTitle = null, string? artist = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(apiKey)) throw new ArgumentException("Configure uma chave da API antes de iniciar.");
         if (_socket is not null) throw new InvalidOperationException("O reconhecimento já está ativo.");
@@ -55,7 +55,8 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
                             model = "gpt-live-transcribe",
                             languages = new[] { "pt" },
                             delay = "low",
-                            prompt = "Portuguese singing voice in a Christian hymn or worship song. Transcribe the sung lyrics faithfully."
+                            prompt = BuildPrompt(expectedLyrics, trackTitle, artist),
+                            keywords = BuildKeywords(expectedLyrics, trackTitle, artist)
                         },
                         turn_detection = (object?)null
                     }
@@ -71,6 +72,31 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
         _capture.StartRecording();
         _sender = SendLoopAsync(_stop.Token);
         StatusChanged?.Invoke(this, "Capturando o áudio de saída do Windows e reconhecendo a letra em tempo real.");
+    }
+
+    private static string BuildPrompt(IReadOnlyList<string>? lyrics, string? title, string? artist)
+    {
+        var context = string.Join(" ", new[] { title, artist }.Where(value => !string.IsNullOrWhiteSpace(value)));
+        var sample = string.Join(" ", (lyrics ?? Array.Empty<string>()).Take(8));
+        var prompt = "Portuguese singing voice in a Christian hymn or worship song. Transcribe the sung lyrics faithfully.";
+        if (!string.IsNullOrWhiteSpace(context)) prompt += " Song: " + context + ".";
+        if (!string.IsNullOrWhiteSpace(sample)) prompt += " Expected lyric context: " + sample;
+        return prompt.Length <= 900 ? prompt : prompt[..900];
+    }
+
+    private static string[] BuildKeywords(IReadOnlyList<string>? lyrics, string? title, string? artist)
+    {
+        var values = new List<string>();
+        if (!string.IsNullOrWhiteSpace(title)) values.Add(title);
+        if (!string.IsNullOrWhiteSpace(artist)) values.Add(artist);
+        values.AddRange((lyrics ?? Array.Empty<string>())
+            .SelectMany(line => line.Split(new[] { ' ', ',', '.', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries))
+            .Where(word => word.Length >= 5));
+        return values.Select(value => value.Trim())
+            .Where(value => value.Length > 0 && !value.Contains('<') && !value.Contains('>'))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(50)
+            .ToArray();
     }
 
     private void Capture_DataAvailable(object? sender, WaveInEventArgs e)
