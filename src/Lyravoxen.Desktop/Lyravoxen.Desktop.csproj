@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Lyravoxen</AssemblyName>
+    <ApplicationIcon>Assets\Lyravoxen.ico</ApplicationIcon>
     <RootNamespace>Lyravoxen</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
