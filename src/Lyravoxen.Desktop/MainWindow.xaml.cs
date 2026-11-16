@@ -261,7 +261,6 @@ public partial class MainWindow : Window
             // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
             MusicTrackBox.Text = "";
             MusicArtistBox.Clear();
-            MusicComposerBox.Clear();
             StatusText.Text = _cues.Count > 0
                 ? $"Player preparado com {_cues.Count} frases. A letra acompanhará a reprodução."
                 : "Player preparado. Cadastre a letra e os tempos para sincronização automática.";
@@ -317,13 +316,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var composer = MusicComposerBox.Text.Trim();
-        var searchTerms = string.Join(" ", new[]
-        {
-            "\"" + track + "\"",
-            string.IsNullOrWhiteSpace(artist) ? "" : "\"" + artist + "\"",
-            string.IsNullOrWhiteSpace(composer) ? "" : "\"" + composer + "\""
-        }.Where(term => !string.IsNullOrWhiteSpace(term)));
+        var searchTerms = "\"" + track + "\" \"" + artist + "\"";
         var sources = new[]
         {
             (Name: "Cifra Club", Domain: "cifraclub.com.br"),
