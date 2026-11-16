@@ -7,6 +7,11 @@ Aplicativo WPF para reprodução oficial de vídeos do YouTube, sincronização 
 - WebView2 Runtime (normalmente já instalado no Windows 11; pode ser instalado no Windows 10)
 - Conexão com a internet para o player oficial do YouTube
 
+## Instalador Windows
+O workflow também gera `Lyravoxen-Setup-Windows-x64.exe` usando Inno Setup. O instalador instala no perfil do usuário, cria um atalho no Menu Iniciar e oferece um atalho opcional na área de trabalho. O aplicativo é publicado como self-contained para .NET 8; o WebView2 Runtime permanece necessário para o player e a pesquisa incorporados.
+
+Para obter o instalador, abra a execução mais recente em [GitHub Actions](https://github.com/jabesguitar/Lyravoxen/actions/workflows/windows-build.yml), entre em **Artifacts** e baixe `Lyravoxen-Installer-Windows-x64`.
+
 ## Pacote portátil
 O fluxo de compilação do GitHub Actions gera:
 - **Lyravoxen-Windows-x64**: arquivos publicados do aplicativo.
