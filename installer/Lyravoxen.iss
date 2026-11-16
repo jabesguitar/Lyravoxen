@@ -16,6 +16,7 @@ OutputBaseFilename=Lyravoxen-Setup-Windows-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\\artifacts\\Lyravoxen.ico
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 UninstallDisplayIcon={app}\Lyravoxen.exe
