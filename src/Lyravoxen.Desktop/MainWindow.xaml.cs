@@ -730,10 +730,13 @@ public partial class MainWindow : Window
         if (_currentVideo?.VideoId == videoId)
         {
             _currentVideo.Title = displayTitle;
-            _currentVideo.TrackName = title;
-            _currentVideo.Artist = author;
-            MusicTrackBox.Text = title;
-            MusicArtistBox.Text = author;
+            // Preserve metadata corrected by the user; use YouTube oEmbed only as a first suggestion.
+            if (string.IsNullOrWhiteSpace(_currentVideo.TrackName))
+                _currentVideo.TrackName = title;
+            if (string.IsNullOrWhiteSpace(_currentVideo.Artist))
+                _currentVideo.Artist = author;
+            MusicTrackBox.Text = _currentVideo.TrackName;
+            MusicArtistBox.Text = _currentVideo.Artist;
         }
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
@@ -1629,7 +1632,10 @@ public partial class MainWindow : Window
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
 
         var savedItems = _library.SelectMany(folder => folder.Videos)
-            .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline)
+            .Where(item => item.IsOffline == _currentVideo.IsOffline &&
+                (item.IsOffline
+                    ? string.Equals(item.LocalPath, _currentVideo.LocalPath, StringComparison.OrdinalIgnoreCase)
+                    : string.Equals(item.VideoId, _currentVideo.VideoId, StringComparison.Ordinal)))
             .ToList();
         if (savedItems.Count == 0)
         {
