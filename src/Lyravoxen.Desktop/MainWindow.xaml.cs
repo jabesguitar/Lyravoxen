@@ -220,7 +220,7 @@ public partial class MainWindow : Window
         var url = _currentVideo?.Url;
         if (string.IsNullOrWhiteSpace(url)) url = YoutubeUrlBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Carregue uma música antes de copiar o link."; return; }
-        try { Clipboard.SetText(url); StatusText.Text = "Link da música atual copiado."; }
+        try { System.Windows.Clipboard.SetText(url); StatusText.Text = "Link da música atual copiado."; }
         catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
     }
 
