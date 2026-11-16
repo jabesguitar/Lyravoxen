@@ -15,6 +15,7 @@ public sealed class LibraryVideo
     public string Title { get; set; } = "";
     public string TrackName { get; set; } = "";
     public string Artist { get; set; } = "";
+    public string Composer { get; set; } = "";
     public string Url { get; set; } = "";
     public bool IsOffline { get; set; }
     public string? LocalPath { get; set; }
