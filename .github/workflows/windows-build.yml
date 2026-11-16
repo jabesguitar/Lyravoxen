@@ -36,3 +36,16 @@ jobs:
         with:
           name: Lyravoxen-Windows-x64-portable
           path: artifacts/Lyravoxen-Windows-x64-portable.zip
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/installer | Out-Null
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer/Lyravoxen.iss
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyravoxen-Installer-Windows-x64
+          path: artifacts/installer/Lyravoxen-Setup-Windows-x64.exe
