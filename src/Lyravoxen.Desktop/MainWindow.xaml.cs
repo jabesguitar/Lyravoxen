@@ -374,7 +374,53 @@ public partial class MainWindow : Window
         StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
     }
 
-    private async Task TryLoadAutomaticLyricsAsync(string trackName, string artistName)
+    private async void ManualSync_Click(object sender, RoutedEventArgs e)
+    {
+        var pastedLyrics = ManualLyricsBox.Text.Trim();
+        var track = MusicTrackBox.Text.Trim();
+        var artist = MusicArtistBox.Text.Trim();
+
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Carregue primeiro a música na aba Ao vivo.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(track) || string.IsNullOrWhiteSpace(artist))
+        {
+            StatusText.Text = "Informe o título e o autor/intérprete na aba Ao vivo antes de sincronizar.";
+            WorkspaceTabs.SelectedIndex = 0;
+            MusicTrackBox.Focus();
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(pastedLyrics))
+        {
+            StatusText.Text = "Cole a letra completa no campo antes de sincronizar.";
+            return;
+        }
+
+        await TryLoadAutomaticLyricsAsync(track, artist, pastedLyrics);
+    }
+
+    private static double CalculateLyricMatch(string expectedLyrics, IEnumerable<LyricCue> timedCues)
+    {
+        static Dictionary<string, int> CountWords(string value) =>
+            Regex.Matches(NormalizeMusicText(value), @"[a-z0-9]+")
+                .Select(match => match.Value)
+                .Where(word => word.Length > 1)
+                .GroupBy(word => word)
+                .ToDictionary(group => group.Key, group => group.Count());
+
+        var expected = CountWords(expectedLyrics);
+        var actual = CountWords(string.Join(" ", timedCues.Select(cue => cue.Text)));
+        var total = expected.Values.Sum();
+        if (total == 0) return 0;
+
+        var matched = expected.Sum(pair =>
+            Math.Min(pair.Value, actual.TryGetValue(pair.Key, out var count) ? count : 0));
+        return matched / (double)total;
+    }
+
+    private async Task TryLoadAutomaticLyricsAsync(string trackName, string artistName, string? expectedLyrics = null)
     {
         try
         {
@@ -399,7 +445,7 @@ public partial class MainWindow : Window
 
             var wantedTrack = NormalizeMusicText(trackName);
             var wantedArtist = NormalizeMusicText(artistName);
-            var candidates = new List<(double Score, string Track, string Artist, string Album, List<LyricCue> Cues)>();
+            var candidates = new List<(double Score, double LyricMatch, string Track, string Artist, string Album, List<LyricCue> Cues)>();
             foreach (var item in json.RootElement.EnumerateArray())
             {
                 var foundTrack = item.TryGetProperty("trackName", out var tp) ? tp.GetString() ?? "" : "";
@@ -418,6 +464,12 @@ public partial class MainWindow : Window
                 var imported = ParseTimedLyrics(lrc, ".lrc").OrderBy(c => c.Seconds).ToList();
                 if (imported.Count < 2) continue;
 
+                var lyricMatch = expectedLyrics is null ? 1d : CalculateLyricMatch(expectedLyrics, imported);
+                // A letra colada precisa corresponder substancialmente à versão temporizada.
+                // Sem essa validação, não substituímos a sincronização atual.
+                if (expectedLyrics is not null && lyricMatch < 0.72d)
+                    continue;
+
                 var duration = item.TryGetProperty("duration", out var durationElement) &&
                     durationElement.ValueKind == JsonValueKind.Number ? durationElement.GetDouble() : 0;
                 var score = 100d;
@@ -426,25 +478,30 @@ public partial class MainWindow : Window
                     var difference = Math.Abs(duration - _playerDurationSeconds);
                     score -= Math.Min(35, difference / Math.Max(1, _playerDurationSeconds) * 100);
                 }
-                candidates.Add((score, foundTrack, foundArtist, foundAlbum, imported));
+                candidates.Add((score, lyricMatch, foundTrack, foundArtist, foundAlbum, imported));
             }
 
             if (candidates.Count == 0)
             {
-                StatusText.Text = "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Confira os dados ou importe um LRC/SRT.";
+                StatusText.Text = expectedLyrics is null
+                    ? "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Confira os dados ou importe um LRC/SRT."
+                    : "Não encontrei uma versão temporizada que corresponda suficientemente à letra colada. A sincronização atual foi preservada.";
                 return;
             }
 
-            var ordered = candidates.OrderByDescending(candidate => candidate.Score).ToList();
+            var ordered = expectedLyrics is null
+                ? candidates.OrderByDescending(candidate => candidate.Score).ToList()
+                : candidates.OrderByDescending(candidate => candidate.LyricMatch).ThenByDescending(candidate => candidate.Score).ToList();
             var selected = ordered[0];
             var preview = string.Join(Environment.NewLine, selected.Cues.Take(8).Select(c => c.Text));
             var durationNote = _playerDurationSeconds > 0
                 ? "\nDuração do vídeo: " + TimeSpan.FromSeconds(_playerDurationSeconds).ToString(@"mm\:ss")
                 : "";
             var albumNote = string.IsNullOrWhiteSpace(selected.Album) ? "" : "\nÁlbum: " + selected.Album;
+            var matchNote = expectedLyrics is null ? "" : "\nCorrespondência da letra colada: " + selected.LyricMatch.ToString("P0", CultureInfo.InvariantCulture);
             var confirmation = System.Windows.MessageBox.Show(
                 "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
-                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote +
+                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote + matchNote +
                 "\n\nPrévia:\n" + preview +
                 "\n\nEsta é exatamente a gravação/letra desejada?",
                 "Confirmar letra sincronizada", MessageBoxButton.YesNo, MessageBoxImage.Question);
