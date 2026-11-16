@@ -85,7 +85,7 @@ public partial class MainWindow : Window
                 LoadPreferences();
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
                 _searchWebViewReady = true;
-                StatusText.Text = "Player pronto. Use a aba Pesquisa YouTube para procurar a próxima música.";
+                StatusText.Text = "Player pronto. Use a aba Próxima música para pesquisar e preparar a próxima faixa.";
 
             }
             catch (Exception ex) { StatusText.Text = "Não foi possível iniciar o WebView2: " + ex.Message; }
@@ -334,7 +334,7 @@ public partial class MainWindow : Window
             await File.WriteAllTextAsync(Path.Combine(_playerFolder, "index.html"), html);
             YoutubePlayer.CoreWebView2.Navigate("https://lyravoxen.local/index.html");
             YoutubeUrlBox.Text = url;
-            if (addToHistory) await AddVideoToHistoryAsync(videoId, url);
+            await AddVideoToHistoryAsync(videoId, url, addToHistory);
             // O título salvo no histórico pode conter também o nome do canal.
             // A busca usa o título puro do vídeo; o intérprete é informado separadamente.
             StatusText.Text = _cues.Count > 0
@@ -707,7 +707,7 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex) { StatusText.Text = "Não foi possível interpretar os dados da letra: " + ex.Message; }
     }
 
-    private async Task AddVideoToHistoryAsync(string videoId, string url)
+    private async Task AddVideoToHistoryAsync(string videoId, string url, bool saveToHistory)
     {
         string title = "Vídeo do YouTube";
         string author = "";
@@ -738,6 +738,8 @@ public partial class MainWindow : Window
             MusicTrackBox.Text = _currentVideo.TrackName;
             MusicArtistBox.Text = _currentVideo.Artist;
         }
+        if (!saveToHistory) return;
+
         var existing = _history.FirstOrDefault(item => item.VideoId == videoId);
         if (existing is not null)
         {
