@@ -10,7 +10,7 @@ namespace Lyravoxen.Services;
 public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 {
     private const int TargetRate = 24000;
-    private const int SegmentSamples = TargetRate * 3;
+    private const int SegmentSamples = TargetRate * 2;
     private readonly Func<double> _playbackSeconds;
     private readonly Channel<byte[]> _audio = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
     private readonly ConcurrentQueue<double> _pendingSegmentStarts = new();
