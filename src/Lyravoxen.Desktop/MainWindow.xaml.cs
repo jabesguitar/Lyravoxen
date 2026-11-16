@@ -18,6 +18,9 @@ public partial class MainWindow : Window
     private ProjectionWindow? _projection;
     private string _currentProjectedLyric = "";
     private readonly List<LyricCue> _cues = new();
+    private List<string> _manualDraftLines = new();
+    private int _manualDraftIndex;
+    private bool _manualDraftActive;
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
@@ -381,6 +384,36 @@ public partial class MainWindow : Window
         if (firstSourceTab is not null)
             BrowserTabs.SelectedItem = firstSourceTab;
         StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
+    }
+
+    private void PrepareManualLyrics_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Carregue primeiro a música que receberá a letra.";
+            WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+
+        _manualDraftLines = ManualLyricsBox.Text
+            .Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .ToList();
+
+        if (_manualDraftLines.Count == 0)
+        {
+            StatusText.Text = "Cole a letra antes de preparar as frases.";
+            return;
+        }
+
+        _manualDraftIndex = 0;
+        _manualDraftActive = true;
+        LyricTextBox.Text = _manualDraftLines[0];
+        SecondsBox.Text = "0.00";
+        WorkspaceTabs.SelectedIndex = 0;
+        SyncTabs.SelectedItem = ManualControlsTab;
+        StatusText.Text = $"Letra preparada com {_manualDraftLines.Count} frases. Reproduza a música e pressione “Marcar frase no tempo atual” a cada entrada; o editor carregará a próxima frase automaticamente.";
     }
 
     private async void ManualSync_Click(object sender, RoutedEventArgs e)
@@ -1148,7 +1181,28 @@ public partial class MainWindow : Window
             _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             if (_currentVideo is not null) { _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline)) saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); SaveLibrary(); }
-            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture); LyricTextBox.Clear(); _lastAutomaticCue = -1;
+            SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
+            _lastAutomaticCue = -1;
+            if (_manualDraftActive)
+            {
+                _manualDraftIndex++;
+                if (_manualDraftIndex < _manualDraftLines.Count)
+                {
+                    LyricTextBox.Text = _manualDraftLines[_manualDraftIndex];
+                    StatusText.Text = $"Frase registrada em {cueSeconds:0.00}s. Próxima frase ({_manualDraftIndex + 1}/{_manualDraftLines.Count}) carregada.";
+                }
+                else
+                {
+                    _manualDraftActive = false;
+                    LyricTextBox.Clear();
+                    StatusText.Text = $"Letra concluída: {_manualDraftLines.Count} frases foram marcadas e associadas à música.";
+                }
+            }
+            else
+            {
+                LyricTextBox.Clear();
+                StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s.";
+            }
             StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s. Ela será projetada 1,5s antes de começar.";
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
