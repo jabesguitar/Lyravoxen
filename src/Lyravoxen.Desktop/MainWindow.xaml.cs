@@ -932,11 +932,30 @@ public partial class MainWindow : Window
         catch (InvalidOperationException) { }
     }
 
-    private async Task SendLyricToHolyricsAsync(string text)
+    private void QueueHolyricsUpdate(string text)
     {
-        try { await _holyrics.ShowTextAsync(text); }
-        catch (Exception ex) { Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message); }
+        var version = Interlocked.Increment(ref _holyricsUpdateVersion);
+        lock (_holyricsQueueSync)
+        {
+            _holyricsSendQueue = _holyricsSendQueue.ContinueWith(async _ =>
+            {
+                if (version != Interlocked.Read(ref _holyricsUpdateVersion)) return;
+                await _holyrics.ShowTextAsync(text);
+            }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap();
+            _ = ObserveHolyricsQueueAsync(_holyricsSendQueue);
+        }
     }
+
+    private async Task ObserveHolyricsQueueAsync(Task queuedSend)
+    {
+        try { await queuedSend; }
+        catch (Exception ex)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+                StatusText.Text = "Falha ao enviar a letra ao Holyrics: " + ex.Message));
+        }
+    }
+
 
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
     {
@@ -949,7 +968,6 @@ public partial class MainWindow : Window
     {
         if (ProjectionThemeBox?.SelectedItem is not ComboBoxItem item) return;
         var theme = item.Content?.ToString() ?? "Noturno";
-        _projection?.SetTheme(theme);
         if (!_loadingPreferences) SavePreferences(theme, null);
     }
 
@@ -957,8 +975,9 @@ public partial class MainWindow : Window
     {
         if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
             !int.TryParse(item.Content?.ToString(), out var count)) return;
-        _projection?.SetMaxLines(count);
+        _maxProjectionLines = Math.Clamp(count, 1, 10);
         if (!_loadingPreferences) SavePreferences(null, count);
+        RefreshCurrentProjectionBlock();
     }
 
     private void LoadPreferences()
@@ -970,7 +989,8 @@ public partial class MainWindow : Window
             if (preferences is null) return;
             _loadingPreferences = true;
             SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
-            SelectComboItem(LineCountBox, (preferences.MaxLines ?? 4).ToString(CultureInfo.InvariantCulture));
+            _maxProjectionLines = Math.Clamp(preferences.MaxLines ?? 4, 1, 10);
+            SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
                 ? "https://www.youtube.com/watch?v=" + queuedId : null;
             PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
@@ -1071,18 +1091,13 @@ public partial class MainWindow : Window
             NextProjectionPreviewText.Text = nextIndex >= 0 && nextIndex < _cues.Count
                 ? "Próxima: " + _cues[nextIndex].Text
                 : "Próxima: —";
-        if (_projection is { IsVisible: true })
-            _projection.ShowLyric(safeText);
     }
 
     private void PublishLyric(string text)
     {
-        if (!string.IsNullOrWhiteSpace(text) && !_projectionSuppressed)
-            EnsureProjectionWindow();
         PublishProjectionOnly(text);
-        // A API do Holyrics recebe apenas letras válidas; texto vazio é usado só para limpar o telão local.
         if (!string.IsNullOrWhiteSpace(text))
-            _ = SendLyricToHolyricsAsync(text);
+            QueueHolyricsUpdate(text);
     }
 
     private async void MarkCueAtCurrentTime_Click(object sender, RoutedEventArgs e)
@@ -1332,19 +1347,6 @@ public partial class MainWindow : Window
                 break;
             case System.Windows.Input.Key.F9:
                 ResumeAutomaticProjection_Click(this, new RoutedEventArgs());
-                e.Handled = true;
-                break;
-            case System.Windows.Input.Key.F10:
-                _projection?.RestoreDisplay();
-                StatusText.Text = "Projeção restaurada.";
-                e.Handled = true;
-                break;
-            case System.Windows.Input.Key.F11:
-                ProjectionStandby_Click(this, new RoutedEventArgs());
-                e.Handled = true;
-                break;
-            case System.Windows.Input.Key.F12:
-                ProjectionEnding_Click(this, new RoutedEventArgs());
                 e.Handled = true;
                 break;
         }
@@ -1706,11 +1708,6 @@ public partial class MainWindow : Window
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
         PublishProjectionOnly("");
-        if (_projection is { IsVisible: true })
-        {
-            _projection.Close();
-            _projection = null;
-        }
         StatusText.Text = status;
         _ = CloseHolyricsQuickPresentationAsync();
     }
