@@ -563,6 +563,9 @@ public partial class MainWindow : Window
                 return;
             }
 
+            _manualDraftActive = false;
+            _manualDraftLines.Clear();
+            _manualDraftIndex = 0;
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(selected.Cues));
             CueList.ItemsSource = null;
@@ -1259,6 +1262,9 @@ public partial class MainWindow : Window
             if (imported.Count == 0)
                 throw new InvalidDataException("Não encontrei marcações de tempo válidas. Use um arquivo LRC ou SRT.");
 
+            _manualDraftActive = false;
+            _manualDraftLines.Clear();
+            _manualDraftIndex = 0;
             _cues.Clear();
             _cues.AddRange(imported.OrderBy(cue => cue.Seconds));
             CueList.ItemsSource = null;
