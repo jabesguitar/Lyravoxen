@@ -294,6 +294,15 @@ public partial class MainWindow : Window
         return (" " + normalizedText + " ").Contains(" " + normalizedPhrase + " ", StringComparison.Ordinal);
     }
 
+    private void OpenManualLyricsEditor(string? lyricsToEdit = null)
+    {
+        if (lyricsToEdit is not null)
+            ManualLyricsBox.Text = lyricsToEdit;
+        WorkspaceTabs.SelectedItem = ManualSyncTab;
+        ManualLyricsBox.Focus();
+        StatusText.Text = "Modo Criar / editar letra aberto. Cole ou ajuste a letra; depois use Controles manuais para marcar os tempos e associar as frases à música atual.";
+    }
+
     private async void SearchLyrics_Click(object sender, RoutedEventArgs e)
     {
         var track = MusicTrackBox.Text.Trim();
@@ -484,8 +493,8 @@ public partial class MainWindow : Window
             if (candidates.Count == 0)
             {
                 StatusText.Text = expectedLyrics is null
-                    ? "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Confira os dados ou importe um LRC/SRT."
-                    : "Não encontrei uma versão temporizada que corresponda suficientemente à letra colada. A sincronização atual foi preservada.";
+                    ? "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Você pode criar a letra e marcar os tempos manualmente."
+                    : "Não encontrei uma versão temporizada que corresponda suficientemente à letra colada. A sincronização atual foi preservada; você pode criar os tempos manualmente.";
                 return;
             }
 
@@ -499,13 +508,19 @@ public partial class MainWindow : Window
                 : "";
             var albumNote = string.IsNullOrWhiteSpace(selected.Album) ? "" : "\nÁlbum: " + selected.Album;
             var matchNote = expectedLyrics is null ? "" : "\nCorrespondência da letra colada: " + selected.LyricMatch.ToString("P0", CultureInfo.InvariantCulture);
-            var confirmation = System.Windows.MessageBox.Show(
-                "Confira a correspondência antes de projetar.\n\nVídeo carregado: " + (_currentVideo?.Title ?? "") +
-                "\nFaixa encontrada: " + selected.Track + "\nIntérprete: " + selected.Artist + albumNote + durationNote + matchNote +
-                "\n\nPrévia:\n" + preview +
-                "\n\nEsta é exatamente a gravação/letra desejada?",
-                "Confirmar letra sincronizada", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (confirmation != MessageBoxResult.Yes)
+            var dialogDetails =
+                "Vídeo carregado: " + (_currentVideo?.Title ?? "") +
+                "\nFaixa encontrada: " + selected.Track + "\nAutor / intérprete: " + selected.Artist + albumNote + durationNote + matchNote +
+                "\n\nPrévia da letra sincronizada:\n" + preview +
+                "\n\nSim: usar esta letra e seus tempos.\nNão: manter a letra atual.\nCriar: inserir ou editar a letra para esta música.";
+            var matchDialog = new MusicMatchDialog("Esta é a música correta?", dialogDetails) { Owner = this };
+            matchDialog.ShowDialog();
+            if (matchDialog.Choice == MusicMatchChoice.Create)
+            {
+                OpenManualLyricsEditor(expectedLyrics);
+                return;
+            }
+            if (matchDialog.Choice != MusicMatchChoice.Yes)
             {
                 StatusText.Text = "Letra não aplicada. Nenhuma frase foi substituída.";
                 return;
