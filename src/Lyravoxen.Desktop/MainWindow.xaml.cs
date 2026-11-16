@@ -1045,7 +1045,6 @@ public partial class MainWindow : Window
                 ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
                 : new ProjectionPreferences();
             if (maxLines is not null) current.MaxLines = maxLines;
-            if (outputDeviceName is not null) current.OutputDeviceName = outputDeviceName;
             var directory = Path.GetDirectoryName(_preferencesFile)!;
             Directory.CreateDirectory(directory);
             var temp = _preferencesFile + ".tmp";
