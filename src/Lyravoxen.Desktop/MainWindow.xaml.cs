@@ -625,7 +625,7 @@ public partial class MainWindow : Window
 
         if (AutoRecognitionButton is not null)
         {
-            AutoRecognitionButton.Content = "Reconhecer automaticamente a letra pela voz";
+            AutoRecognitionButton.Content = "Reconhecer automaticamente (gratuito e offline)";
             AutoRecognitionButton.IsEnabled = true;
         }
     }
