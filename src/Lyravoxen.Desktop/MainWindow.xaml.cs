@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly List<LyricCue> _manualDraftCues = new();
     private LiveAudioTranscriptionService? _liveRecognition;
     private bool _automaticLyricsActive;
+    private readonly StringBuilder _liveTranscriptBuffer = new();
     private int _manualDraftIndex;
     private bool _manualDraftActive;
     private readonly List<VideoHistoryItem> _history = new();
@@ -503,6 +504,7 @@ public partial class MainWindow : Window
 
         _manualDraftLines = lines;
         _manualDraftCues.Clear();
+        _liveTranscriptBuffer.Clear();
         _manualDraftIndex = 0;
         _automaticLyricsActive = true;
         _manualDraftActive = false;
@@ -553,18 +555,25 @@ public partial class MainWindow : Window
             if (!_automaticLyricsActive || _manualDraftIndex >= _manualDraftLines.Count)
                 return;
 
+            if (!e.IsFinal) return;
+            if (_liveTranscriptBuffer.Length > 0) _liveTranscriptBuffer.Append(' ');
+            _liveTranscriptBuffer.Append(e.Transcript);
+
             var match = LiveLyricsMatcher.FindNextLine(
-                _manualDraftLines, _manualDraftIndex, e.Transcript,
-                out var confidence, e.IsFinal ? 0.78 : 0.92);
+                _manualDraftLines, _manualDraftIndex, _liveTranscriptBuffer.ToString(),
+                out var confidence, 0.78);
 
             // Só aceita a próxima linha em ordem. Nunca pula versos por uma transcrição ambígua.
             if (match != _manualDraftIndex)
             {
+                if (_liveTranscriptBuffer.Length > 600)
+                    _liveTranscriptBuffer.Remove(0, _liveTranscriptBuffer.Length - 400);
                 ManualSyncProgressText.Text = $"Ouvindo e comparando com a próxima frase... confiança {confidence:P0}.";
                 return;
             }
 
-            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 1.5);
+            _liveTranscriptBuffer.Clear();
+            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 1.0);
             if (_manualDraftCues.Count > 0)
                 estimatedSeconds = Math.Max(estimatedSeconds, _manualDraftCues[^1].Seconds + 0.05);
 
