@@ -563,11 +563,14 @@ public partial class MainWindow : Window
         {
             var normalizedTrack = NormalizeMusicText(trackName);
             var normalizedArtist = NormalizeMusicText(artistName);
-            var localMatch = expectedLyrics is null ? _library.SelectMany(folder => folder.Videos)
-                .Where(video => video.Cues.Count > 0 && !string.IsNullOrWhiteSpace(video.TrackName) && !string.IsNullOrWhiteSpace(video.Artist))
+            var localMatch = _library.SelectMany(folder => folder.Videos)
+                .Where(video => video.Cues.Count > 0 && !string.IsNullOrWhiteSpace(video.TrackName))
                 .FirstOrDefault(video =>
                     NormalizeMusicText(video.TrackName) == normalizedTrack &&
-                    (string.IsNullOrWhiteSpace(normalizedArtist) || NormalizeMusicText(video.Artist) == normalizedArtist)) : null;
+                    (string.IsNullOrWhiteSpace(normalizedArtist) ||
+                     NormalizeMusicText(video.Artist) == normalizedArtist ||
+                     (expectedLyrics is not null && CalculateLyricMatch(expectedLyrics, video.Cues) >= 0.72d)) &&
+                    (expectedLyrics is null || CalculateLyricMatch(expectedLyrics, video.Cues) >= 0.72d));
 
             if (localMatch is not null)
             {
