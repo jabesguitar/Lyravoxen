@@ -12,6 +12,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 {
     private const int TargetRate = 24000;
     private const int SegmentSamples = TargetRate * 2;
+    private static readonly Guid IeeeFloatSubFormat = new("00000003-0000-0010-8000-00AA00389B71");
     private readonly Func<double> _playbackSeconds;
     private readonly Channel<byte[]> _audio = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
     private readonly ConcurrentQueue<double> _pendingSegmentStarts = new();
@@ -205,6 +206,8 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
     {
         var bytesPerSample = format.BitsPerSample / 8;
         if (bytesPerSample is not (2 or 4) || format.Channels < 1) return Array.Empty<byte>();
+        var isFloat = format.Encoding == WaveFormatEncoding.IeeeFloat ||
+            (format is WaveFormatExtensible extensible && extensible.SubFormat == IeeeFloatSubFormat);
         var frameCount = length / (bytesPerSample * format.Channels);
         if (frameCount == 0 || format.SampleRate <= 0) return Array.Empty<byte>();
 
@@ -215,7 +218,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
             for (var channel = 0; channel < format.Channels; channel++)
             {
                 var offset = (frame * format.Channels + channel) * bytesPerSample;
-                float sample = format.Encoding == WaveFormatEncoding.IeeeFloat && bytesPerSample == 4
+                float sample = isFloat && bytesPerSample == 4
                     ? BitConverter.ToSingle(input, offset)
                     : bytesPerSample == 4
                         ? BitConverter.ToInt32(input, offset) / 2147483648f
