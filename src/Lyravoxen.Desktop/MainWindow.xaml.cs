@@ -926,7 +926,7 @@ public partial class MainWindow : Window
             var cueIndex = FindActiveCue(seconds);
             if (cueIndex == _lastAutomaticCue) return;
             _lastAutomaticCue = cueIndex;
-            PublishLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
+            PublishCueBlock(cueIndex);
         }
         catch (JsonException) { }
         catch (InvalidOperationException) { }
@@ -1093,6 +1093,21 @@ public partial class MainWindow : Window
                 : "Próxima: —";
     }
 
+    private void PublishCueBlock(int activeCueIndex)
+    {
+        var block = CueTimeline.BuildProjectionBlock(_cues, activeCueIndex, _maxProjectionLines);
+        PublishLyric(block);
+    }
+
+    private void RefreshCurrentProjectionBlock()
+    {
+        if (_cues.Count == 0) return;
+        var activeIndex = _manualProjectionMode ? _manualCueIndex : FindActiveCue(GetPlaybackSeconds());
+        if (activeIndex < 0) return;
+        _lastAutomaticCue = activeIndex;
+        PublishCueBlock(activeIndex);
+    }
+
     private void PublishLyric(string text)
     {
         PublishProjectionOnly(text);
@@ -1112,7 +1127,11 @@ public partial class MainWindow : Window
             var cueSeconds = Math.Max(0, currentSeconds);
             if (!_manualDraftActive)
                 _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
-            _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
+            var addedCue = new LyricCue { Seconds = cueSeconds, Text = lyric };
+            _cues.Add(addedCue);
+            _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
+            if (_manualDraftActive)
+                PublishCueBlock(_cues.IndexOf(addedCue));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             PersistCurrentCues();
             SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
@@ -1385,7 +1404,7 @@ public partial class MainWindow : Window
         if (CueList.SelectedItem is not LyricCue cue) { StatusText.Text = "Selecione uma frase para projetar."; return; }
         _manualProjectionMode = true;
         _manualCueIndex = _cues.IndexOf(cue);
-        PublishLyric(cue.Text);
+        PublishCueBlock(_manualCueIndex);
         StatusText.Text = $"Projeção manual: frase {_manualCueIndex + 1} de {_cues.Count}. A sincronização automática está pausada até retomar o modo automático.";
     }
 
@@ -1396,7 +1415,7 @@ public partial class MainWindow : Window
         _lastAutomaticCue = -1;
         var currentIndex = FindActiveCue(GetPlaybackSeconds());
         _lastAutomaticCue = currentIndex;
-        PublishProjectionOnly(currentIndex >= 0 ? _cues[currentIndex].Text : "");
+        PublishCueBlock(currentIndex);
         StatusText.Text = "Modo automático retomado. A projeção foi alinhada à posição atual da música.";
     }
 
@@ -1692,7 +1711,7 @@ public partial class MainWindow : Window
         var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
-        PublishLyric(cueIndex >= 0 ? _cues[cueIndex].Text : "");
+        PublishCueBlock(cueIndex);
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
