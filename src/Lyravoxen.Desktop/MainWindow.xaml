@@ -47,7 +47,7 @@
    <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10" Margin="8,0,0,0">
     <TabControl Background="{StaticResource Panel}" BorderThickness="0">
      <TabItem Header="Sincronização">
-      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
        <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
        <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -56,7 +56,7 @@
          <TextBox x:Name="MusicTrackBox" ToolTip="Título da música"/>
         </StackPanel>
         <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,4">
-         <TextBlock Text="Autor / Compositor / Intérprete" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
+         <TextBlock Text="Autor / Intérprete" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
          <TextBox x:Name="MusicArtistBox" ToolTip="Nome do autor ou intérprete"/>
         </StackPanel>
         <Button Grid.Row="1" Grid.ColumnSpan="2" Content="Buscar letra sincronizada" Click="SearchLyrics_Click" Background="#176E68" Margin="0,4,0,0"/>
@@ -70,20 +70,24 @@
          <TextBlock x:Name="NextProjectionPreviewText" Text="Próxima: —" Foreground="{StaticResource TextMuted}" FontSize="12" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"/>
         </StackPanel>
        </Border>
-       <ListBox x:Name="CueList" Grid.Row="5" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
-       <UniformGrid Grid.Row="6" Columns="4" Margin="2,2,2,4">
+      </Grid>
+     </TabItem>
+     <TabItem Header="Controles manuais">
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <ListBox x:Name="CueList" Grid.Row="0" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
+       <UniformGrid Grid.Row="1" Columns="4" Margin="2,2,2,4">
         <Button Content="◀ Anterior" Click="PreviousCue_Click"/>
         <Button Content="Próxima ▶" Click="NextCue_Click"/>
         <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#176E68"/>
         <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
        </UniformGrid>
-       <UniformGrid Grid.Row="7" Columns="4" Margin="2,2,2,4">
+       <UniformGrid Grid.Row="2" Columns="4" Margin="2,2,2,4">
         <Button Content="Editar selecionada" Click="EditCue_Click"/>
         <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
         <Button Content="Excluir frase" Click="DeleteCue_Click"/>
         <Button Content="↑ / ↓ Reordenar" Click="MoveCue_Click"/>
        </UniformGrid>
-       <StackPanel Grid.Row="8" Margin="0,8,0,0">
+       <StackPanel Grid.Row="3" Margin="0,8,0,0">
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBox x:Name="SecondsBox" Grid.Column="0" Text="0" ToolTip="Tempo em segundos"/>
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
@@ -134,16 +138,16 @@
   </Grid>
   <TextBlock Grid.Row="3" x:Name="StatusText" Text="Pronto. Cole um link do YouTube para começar." Foreground="{StaticResource TextMuted}" Margin="6,12,0,0"/>
  </Grid></TabItem>
- <TabItem Header="Sincronização manual">
+ <TabItem x:Name="ManualSyncTab" Header="Criar / editar letra">
   <Grid Margin="24">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <StackPanel Grid.Row="0" Margin="0,0,0,14">
     <TextBlock Text="SINCRONIZAR LETRA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
-    <TextBlock Text="Cole a letra completa da música. O Lyravoxen procura uma versão com tempos sincronizados e confere o texto antes de aplicar. A música deve estar carregada na aba Ao vivo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+    <TextBlock Text="Cole a letra completa da música. O Lyravoxen procura uma versão com tempos sincronizados e confere o texto antes de aplicar. Carregue a música na aba Ao vivo e confirme o título e o autor/intérprete." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
    </StackPanel>
    <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
    <StackPanel Grid.Row="2" Margin="0,12,0,0">
-    <Button Content="Sincronizar automaticamente" Click="ManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
+    <Button Content="Buscar letra sincronizada" Click="ManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
     <TextBlock Text="A sincronização usa correspondência com letras temporizadas disponíveis no catálogo; não é reconhecimento direto do áudio. Se não houver uma versão compatível, a letra atual será preservada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
    </StackPanel>
   </Grid>
