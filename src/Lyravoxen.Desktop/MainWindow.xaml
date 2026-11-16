@@ -27,11 +27,13 @@
     <Button x:Name="LoadYoutubeButton" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
     <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
+    <TextBlock Text="Tela:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+    <ComboBox x:Name="OutputDisplayBox" Width="165" VerticalContentAlignment="Center" ToolTip="Escolha o monitor onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
     <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a saída do segundo monitor e a apresentação rápida do Holyrics"/>
     <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
    </WrapPanel>
   </Border>
-  <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="0.85*"/></Grid.ColumnDefinitions>
+  <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
    <Border Grid.Column="0" Background="#080D12" CornerRadius="12" Padding="8" Margin="0,0,8,0">
     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <TextBlock Text="REPRODUÇÃO — PLAYER OFICIAL DO YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8"/>
@@ -61,7 +63,7 @@
        <Border Grid.Row="4" Background="#080D12" BorderBrush="#6B8798" BorderThickness="1.5" CornerRadius="10" Padding="18" Margin="4,2,4,6">
         <StackPanel>
          <TextBlock Text="PRÉVIA DO TELÃO" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
-         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="30" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="150" VerticalAlignment="Center"/>
+         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="34" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="150" VerticalAlignment="Center"/>
          <TextBlock x:Name="NextProjectionPreviewText" Text="Próxima: —" Foreground="#B8CAD5" FontSize="17" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,16,0,0"/>
         </StackPanel>
        </Border>
