@@ -325,6 +325,7 @@ public partial class MainWindow : Window
             (Name: "Vagalume", Domain: "vagalume.com.br"),
             (Name: "Letras.mus.br", Domain: "letras.mus.br"),
             (Name: "Ouvir Música", Domain: "ouvirmusica.com.br"),
+            (Name: "Harpa Cristã", Domain: ""),
             (Name: "Busca ampla", Domain: "")
         };
 
@@ -333,9 +334,11 @@ public partial class MainWindow : Window
         {
             try
             {
-                var query = string.IsNullOrWhiteSpace(source.Domain)
-                    ? searchTerms + " letra música hino louvor"
-                    : "site:" + source.Domain + " " + searchTerms;
+                var query = source.Name == "Harpa Cristã"
+                    ? searchTerms + " \\"Harpa Cristã\\" hino letra"
+                    : string.IsNullOrWhiteSpace(source.Domain)
+                        ? searchTerms + " letra música hino louvor"
+                        : "site:" + source.Domain + " " + searchTerms;
                 var url = "https://www.google.com/search?q=" + Uri.EscapeDataString(query);
                 var view = new Microsoft.Web.WebView2.Wpf.WebView2();
                 var tab = new TabItem { Header = source.Name, Content = view };
