@@ -15,7 +15,6 @@ namespace Lyravoxen;
 
 public partial class MainWindow : Window
 {
-    private ProjectionWindow? _projection;
     private string _currentProjectedLyric = "";
     private readonly List<LyricCue> _cues = new();
     private List<string> _manualDraftLines = new();
@@ -27,7 +26,6 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
     private bool _isLocalAudioPlaying;
     private bool _playbackEnded;
-    private bool _projectionSuppressed;
     private bool _librarySelectionChanging;
     private int _lastAutomaticCue = -1;
     private bool _manualProjectionMode;
@@ -52,8 +50,6 @@ public partial class MainWindow : Window
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
     private readonly string _preferencesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "preferences.json");
     private bool _loadingPreferences;
-    private string? _selectedOutputDeviceName;
-    private bool _displayChangeHandlerAttached;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     public MainWindow()
