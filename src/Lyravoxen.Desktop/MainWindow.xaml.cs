@@ -541,11 +541,11 @@ public partial class MainWindow : Window
         {
             var normalizedTrack = NormalizeMusicText(trackName);
             var normalizedArtist = NormalizeMusicText(artistName);
-            var localMatch = _library.SelectMany(folder => folder.Videos)
+            var localMatch = expectedLyrics is null ? _library.SelectMany(folder => folder.Videos)
                 .Where(video => video.Cues.Count > 0 && !string.IsNullOrWhiteSpace(video.TrackName) && !string.IsNullOrWhiteSpace(video.Artist))
                 .FirstOrDefault(video =>
                     NormalizeMusicText(video.TrackName) == normalizedTrack &&
-                    NormalizeMusicText(video.Artist) == normalizedArtist);
+                    NormalizeMusicText(video.Artist) == normalizedArtist) : null;
 
             if (localMatch is not null)
             {
@@ -635,9 +635,23 @@ public partial class MainWindow : Window
 
             if (candidates.Count == 0)
             {
-                StatusText.Text = expectedLyrics is null
-                    ? "Nenhuma letra sincronizada com título e intérprete exatamente correspondentes. Você pode criar a letra e marcar os tempos manualmente."
-                    : "Não encontrei uma versão temporizada que corresponda suficientemente à letra colada. A sincronização atual foi preservada; você pode criar os tempos manualmente.";
+                if (expectedLyrics is not null)
+                {
+                    StatusText.Text = "Não encontrei uma versão temporizada que corresponda suficientemente à letra colada. A sincronização atual foi preservada; você pode criar os tempos manualmente.";
+                    return;
+                }
+
+                var noMatchDialog = new MusicMatchDialog(
+                    "Não encontrei esta letra sincronizada",
+                    "Música: " + trackName + "\\nAutor / intérprete: " + artistName +
+                    "\\n\\nNão há uma versão temporizada compatível no catálogo online nem na biblioteca local.\\n\\nSim: abrir outras fontes de pesquisa.\\nNão: deixar para depois.\\nCriar: cadastrar a letra e marcar os tempos manualmente.") { Owner = this };
+                noMatchDialog.ShowDialog();
+                if (noMatchDialog.Choice == MusicMatchChoice.Create)
+                    OpenManualLyricsEditor();
+                else if (noMatchDialog.Choice == MusicMatchChoice.Yes)
+                    OpenLyricsSourceSearches_Click(this, new RoutedEventArgs());
+                else
+                    StatusText.Text = "Nenhuma letra foi alterada. Você pode pesquisar novamente ou criar a letra quando quiser.";
                 return;
             }
 
