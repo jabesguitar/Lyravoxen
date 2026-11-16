@@ -384,9 +384,9 @@ public partial class MainWindow : Window
     {
         var track = MusicTrackBox.Text.Trim();
         var artist = MusicArtistBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(track) || string.IsNullOrWhiteSpace(artist))
+        if (string.IsNullOrWhiteSpace(track))
         {
-            System.Windows.MessageBox.Show("Informe o título da música e o nome do intérprete para evitar carregar a letra de outra faixa.", "Buscar letra", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Informe o título da música. O intérprete pode ficar em branco; nesse caso a busca será feita pelo título e você confirmará a versão encontrada.", "Buscar letra", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         await TryLoadAutomaticLyricsAsync(track, artist);
@@ -567,7 +567,7 @@ public partial class MainWindow : Window
                 .Where(video => video.Cues.Count > 0 && !string.IsNullOrWhiteSpace(video.TrackName) && !string.IsNullOrWhiteSpace(video.Artist))
                 .FirstOrDefault(video =>
                     NormalizeMusicText(video.TrackName) == normalizedTrack &&
-                    NormalizeMusicText(video.Artist) == normalizedArtist) : null;
+                    (string.IsNullOrWhiteSpace(normalizedArtist) || NormalizeMusicText(video.Artist) == normalizedArtist)) : null;
 
             if (localMatch is not null)
             {
@@ -638,7 +638,7 @@ public partial class MainWindow : Window
                 var artistMatches = normArtist == wantedArtist ||
                     ContainsMusicPhrase(normArtist, wantedArtist) ||
                     ContainsMusicPhrase(wantedArtist, normArtist);
-                if (!trackMatches || !artistMatches)
+                if (!trackMatches)
                     continue;
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String)
                     continue;
@@ -655,7 +655,7 @@ public partial class MainWindow : Window
 
                 var duration = item.TryGetProperty("duration", out var durationElement) &&
                     durationElement.ValueKind == JsonValueKind.Number ? durationElement.GetDouble() : 0;
-                var score = 100d - (normTrack == wantedTrack ? 0 : 12) - (normArtist == wantedArtist ? 0 : 18);
+                var score = 100d - (normTrack == wantedTrack ? 0 : 12) - (artistMatches ? 0 : 35);
                 if (duration > 0 && _playerDurationSeconds > 0)
                 {
                     var difference = Math.Abs(duration - _playerDurationSeconds);
