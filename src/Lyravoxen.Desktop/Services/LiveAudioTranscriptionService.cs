@@ -32,7 +32,6 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
     private WhisperProcessor? _processor;
     private Task? _worker;
     private double _segmentStart;
-    private bool _modelReady;
     private int _disposed;
 
     public event EventHandler<LiveTranscriptEventArgs>? TranscriptReceived;
@@ -40,8 +39,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 
     public LiveAudioTranscriptionService(Func<double> playbackSeconds) => _playbackSeconds = playbackSeconds;
 
-    public async Task StartAsync(string? unusedKey = null, IReadOnlyList<string>? expectedLyrics = null,
-        string? trackTitle = null, string? artist = null, CancellationToken cancellationToken = default)
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         if (_capture is not null) throw new InvalidOperationException("O reconhecimento já está ativo.");
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
@@ -67,7 +65,6 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
     {
         if (File.Exists(ModelPath) && new FileInfo(ModelPath).Length > 10_000_000)
         {
-            _modelReady = true;
             return;
         }
 
@@ -79,7 +76,6 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
             await using (var output = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 await modelStream.CopyToAsync(output, cancellationToken);
             File.Move(temporaryPath, ModelPath, true);
-            _modelReady = true;
             StatusChanged?.Invoke(this, "Modelo gratuito instalado. Próximas utilizações não precisarão baixá-lo novamente.");
         }
         catch
