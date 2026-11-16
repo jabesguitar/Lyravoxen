@@ -27,7 +27,7 @@ Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 4) == string.Join(Environmen
 Check(CueTimeline.BuildProjectionBlock(tenLines, 3, 4) == string.Join(Environment.NewLine, new[] { "linha 1", "linha 2", "linha 3", "linha 4" }), "mantém o mesmo bloco até a quarta linha");
 Check(CueTimeline.BuildProjectionBlock(tenLines, 4, 4) == string.Join(Environment.NewLine, new[] { "linha 5", "linha 6", "linha 7", "linha 8" }), "troca para as quatro linhas seguintes");
 Check(CueTimeline.BuildProjectionBlock(tenLines, 8, 4) == string.Join(Environment.NewLine, new[] { "linha 9", "linha 10" }), "último bloco aceita menos linhas restantes");
-Check(CueTimeline.BuildProjectionBlock(tenLines, 2, 2) == "linha 3\nlinha 4", "duas linhas formam blocos consecutivos");
+Check(CueTimeline.BuildProjectionBlock(tenLines, 2, 2) == string.Join(Environment.NewLine, new[] { "linha 3", "linha 4" }), "duas linhas formam blocos consecutivos");
 Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 1) == "linha 1", "uma linha por bloco");
 Check(CueTimeline.BuildProjectionBlock(tenLines, 0, 20) == string.Join(Environment.NewLine, tenLines.Select(cue => cue.Text)), "limite máximo de dez linhas");
 Check(CueTimeline.BuildProjectionBlock(tenLines, -1, 4) == string.Empty, "sem frase ativa mantém projeção vazia");
