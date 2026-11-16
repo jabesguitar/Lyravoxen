@@ -330,6 +330,7 @@ public partial class MainWindow : Window
         };
 
         StatusText.Text = "Abrindo fontes alternativas. Confira a autoria e a versão antes de usar qualquer letra.";
+        TabItem? firstSourceTab = null;
         foreach (var source in sources)
         {
             try
@@ -340,13 +341,28 @@ public partial class MainWindow : Window
                         ? searchTerms + " letra música hino louvor"
                         : "site:" + source.Domain + " " + searchTerms;
                 var url = "https://www.google.com/search?q=" + Uri.EscapeDataString(query);
-                var view = new Microsoft.Web.WebView2.Wpf.WebView2();
-                var tab = new TabItem { Header = source.Name, Content = view };
-                BrowserTabs.Items.Add(tab);
-                await InitializeBrowserViewAsync(view);
+
+                // Reutiliza uma aba por fonte. Evita criar WebViews indefinidamente
+                // quando o usuário pesquisa várias músicas durante a apresentação.
+                var tab = BrowserTabs.Items.OfType<TabItem>()
+                    .FirstOrDefault(item => string.Equals(item.Header?.ToString(), source.Name, StringComparison.Ordinal));
+                Microsoft.Web.WebView2.Wpf.WebView2 view;
+                if (tab?.Content is Microsoft.Web.WebView2.Wpf.WebView2 existingView)
+                {
+                    view = existingView;
+                    if (view.CoreWebView2 is null)
+                        await InitializeBrowserViewAsync(view);
+                }
+                else
+                {
+                    view = new Microsoft.Web.WebView2.Wpf.WebView2();
+                    tab = new TabItem { Header = source.Name, Content = view, Tag = "lyrics-source" };
+                    BrowserTabs.Items.Add(tab);
+                    await InitializeBrowserViewAsync(view);
+                }
+
                 view.CoreWebView2.Navigate(url);
-                if (source == sources[0])
-                    BrowserTabs.SelectedItem = tab;
+                firstSourceTab ??= tab;
             }
             catch (Exception ex)
             {
@@ -355,7 +371,9 @@ public partial class MainWindow : Window
         }
 
         WorkspaceTabs.SelectedIndex = 1;
-        StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música e busca ampla. As fontes externas são referências: confira a letra e importe o LRC/SRT para sincronizar.";
+        if (firstSourceTab is not null)
+            BrowserTabs.SelectedItem = firstSourceTab;
+        StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
     }
 
     private async Task TryLoadAutomaticLyricsAsync(string trackName, string artistName)
