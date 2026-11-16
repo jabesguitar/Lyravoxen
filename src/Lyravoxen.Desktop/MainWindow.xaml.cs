@@ -978,6 +978,35 @@ public partial class MainWindow : Window
         }
     }
 
+    private Task QueueHolyricsCloseProjectionAsync()
+    {
+        var version = Interlocked.Increment(ref _holyricsUpdateVersion);
+        lock (_holyricsQueueSync)
+        {
+            _holyricsSendQueue = _holyricsSendQueue.ContinueWith(async _ =>
+            {
+                if (version != Interlocked.Read(ref _holyricsUpdateVersion)) return;
+                await _holyrics.CloseProjectionAsync();
+            }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap();
+            return _holyricsSendQueue;
+        }
+    }
+
+    private Task QueueHolyricsCloseQuickAsync()
+    {
+        var version = Interlocked.Increment(ref _holyricsUpdateVersion);
+        lock (_holyricsQueueSync)
+        {
+            _holyricsSendQueue = _holyricsSendQueue.ContinueWith(async _ =>
+            {
+                if (version != Interlocked.Read(ref _holyricsUpdateVersion)) return;
+                await _holyrics.CloseQuickPresentationAsync();
+            }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap();
+            _ = ObserveHolyricsQueueAsync(_holyricsSendQueue);
+            return _holyricsSendQueue;
+        }
+    }
+
     private async Task ObserveHolyricsQueueAsync(Task queuedSend)
     {
         try { await queuedSend; }
@@ -1084,7 +1113,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            await _holyrics.CloseProjectionAsync();
+            await QueueHolyricsCloseProjectionAsync();
             StatusText.Text = "Projeção do Holyrics encerrada. O Lyravoxen permanece aberto para a próxima música.";
         }
         catch (Exception ex)
@@ -1758,10 +1787,10 @@ public partial class MainWindow : Window
 
     private async Task CloseHolyricsQuickPresentationAsync()
     {
-        try { await _holyrics.CloseQuickPresentationAsync(); }
+        try { await QueueHolyricsCloseQuickAsync(); }
         catch (Exception ex)
         {
-            Dispatcher.Invoke(() => StatusText.Text += " Não foi possível fechar a apresentação rápida do Holyrics: " + ex.Message);
+            Dispatcher.BeginInvoke(new Action(() => StatusText.Text += " Não foi possível fechar a apresentação rápida do Holyrics: " + ex.Message));
         }
     }
 
