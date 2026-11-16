@@ -12,6 +12,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Generate application icon
+        shell: pwsh
+        run: ./tools/New-AppIcon.ps1
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
