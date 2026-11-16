@@ -643,8 +643,8 @@ public partial class MainWindow : Window
 
                 var noMatchDialog = new MusicMatchDialog(
                     "Não encontrei esta letra sincronizada",
-                    "Música: " + trackName + "\\nAutor / intérprete: " + artistName +
-                    "\\n\\nNão há uma versão temporizada compatível no catálogo online nem na biblioteca local.\\n\\nSim: abrir outras fontes de pesquisa.\\nNão: deixar para depois.\\nCriar: cadastrar a letra e marcar os tempos manualmente.") { Owner = this };
+                    "Música: " + trackName + "\nAutor / intérprete: " + artistName +
+                    "\n\nNão há uma versão temporizada compatível no catálogo online nem na biblioteca local.\n\nSim: abrir outras fontes de pesquisa.\nNão: deixar para depois.\nCriar: cadastrar a letra e marcar os tempos manualmente.") { Owner = this };
                 noMatchDialog.ShowDialog();
                 if (noMatchDialog.Choice == MusicMatchChoice.Create)
                     OpenManualLyricsEditor();
