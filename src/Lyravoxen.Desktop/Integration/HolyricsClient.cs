@@ -80,10 +80,8 @@ public sealed class HolyricsClient
             try { await CloseActionAsync(settings, action); }
             catch (Exception ex) { errors.Add(new InvalidOperationException(action + ": " + ex.Message, ex)); }
         }
-        if (errors.Count == 2)
-            throw new AggregateException("O Holyrics não confirmou o encerramento de nenhuma apresentação.", errors);
-        if (errors.Count == 1 && errors[0].Message.StartsWith("CloseCurrentQuickPresentation:", StringComparison.Ordinal))
-            throw errors[0];
+        if (errors.Count > 0)
+            throw new AggregateException("O Holyrics não confirmou o encerramento de todas as apresentações. Verifique as permissões do token e a versão do Holyrics.", errors);
     }
 
     private static async Task CloseActionAsync(Settings settings, string action)
