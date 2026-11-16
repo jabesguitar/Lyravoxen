@@ -1180,12 +1180,13 @@ public partial class MainWindow : Window
             var addedCue = new LyricCue { Seconds = cueSeconds, Text = lyric };
             _cues.Add(addedCue);
             _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
+            var markedCueIndex = _cues.IndexOf(addedCue);
+            _lastAutomaticCue = _manualDraftActive ? markedCueIndex : -1;
             if (_manualDraftActive)
-                PublishCueBlock(_cues.IndexOf(addedCue));
+                PublishCueBlock(markedCueIndex);
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
             PersistCurrentCues();
             SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
-            _lastAutomaticCue = -1;
             if (_manualDraftActive)
             {
                 _manualDraftIndex++;
