@@ -524,7 +524,7 @@ public partial class MainWindow : Window
         AutoRecognitionButton.IsEnabled = false;
         try
         {
-            await service.StartAsync(apiKey);
+            await service.StartAsync(apiKey, _manualDraftLines, MusicTrackBox.Text, MusicArtistBox.Text);
             AutoRecognitionButton.Content = "Parar reconhecimento automático";
             StatusText.Text = "Reconhecimento ativo. O Lyravoxen está ouvindo a saída de áudio do Windows.";
         }
