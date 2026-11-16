@@ -50,21 +50,17 @@
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
        <TextBlock Grid.Row="1" Text="Informe o título e o intérprete. O nome do canal do YouTube não é necessariamente o artista. A letra só será carregada após sua confirmação." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,0,4,8"/>
-       <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <Grid Grid.Row="2" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,4">
          <TextBlock Text="Título da música" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
          <TextBox x:Name="MusicTrackBox" ToolTip="Título da música"/>
         </StackPanel>
         <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,4">
-         <TextBlock Text="Autor / Intérprete" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
+         <TextBlock Text="Autor / Compositor / Intérprete" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
          <TextBox x:Name="MusicArtistBox" ToolTip="Nome do autor ou intérprete"/>
         </StackPanel>
-        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,2">
-         <TextBlock Text="Compositor (opcional)" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,2"/>
-         <TextBox x:Name="MusicComposerBox" ToolTip="Nome do compositor, quando conhecido"/>
-        </StackPanel>
-        <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Buscar letra sincronizada" Click="SearchLyrics_Click" Background="#176E68" Margin="0,4,0,0"/>
-        <Button Grid.Row="3" Grid.ColumnSpan="2" Content="Pesquisar em outras fontes (hinos e louvores)" Click="OpenLyricsSourceSearches_Click" Margin="0,4,0,0" ToolTip="Abrir pesquisas independentes em Cifra Club, Vagalume, Letras e outros catálogos"/>
+        <Button Grid.Row="1" Grid.ColumnSpan="2" Content="Buscar letra sincronizada" Click="SearchLyrics_Click" Background="#176E68" Margin="0,4,0,0"/>
+        <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Pesquisar em outras fontes (hinos e louvores)" Click="OpenLyricsSourceSearches_Click" Margin="0,4,0,0" ToolTip="Abrir pesquisas independentes em Cifra Club, Vagalume, Letras e outros catálogos"/>
        </Grid>
        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,6"><TextBlock Text="Linhas:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="58" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="Tema:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,5,0"/><ComboBox x:Name="ProjectionThemeBox" Width="125" SelectedIndex="0" SelectionChanged="ProjectionTheme_SelectionChanged"><ComboBoxItem Content="Noturno"/><ComboBoxItem Content="Clássico"/><ComboBoxItem Content="Âmbar"/></ComboBox></StackPanel>
        <Border Grid.Row="4" Background="#0D151D" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="10" Margin="4,2,4,6">
@@ -138,6 +134,21 @@
   </Grid>
   <TextBlock Grid.Row="3" x:Name="StatusText" Text="Pronto. Cole um link do YouTube para começar." Foreground="{StaticResource TextMuted}" Margin="6,12,0,0"/>
  </Grid></TabItem>
+  </TabItem>
+ <TabItem Header="Sincronização manual">
+  <Grid Margin="24">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <StackPanel Grid.Row="0" Margin="0,0,0,14">
+    <TextBlock Text="SINCRONIZAR LETRA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
+    <TextBlock Text="Cole a letra completa da música. O Lyravoxen procura uma versão com tempos sincronizados e confere o texto antes de aplicar. A música deve estar carregada na aba Ao vivo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+   </StackPanel>
+   <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
+   <StackPanel Grid.Row="2" Margin="0,12,0,0">
+    <Button Content="Sincronizar automaticamente" Click="ManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
+    <TextBlock Text="A sincronização usa correspondência com letras temporizadas disponíveis no catálogo; não é reconhecimento direto do áudio. Se não houver uma versão compatível, a letra atual será preservada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
+   </StackPanel>
+  </Grid>
+ </TabItem>
  <TabItem Header="＋ Próxima música">
   <Grid Margin="14"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <Border Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,0,0,10">
