@@ -988,19 +988,12 @@ public partial class MainWindow : Window
         if (dialog.Saved) StatusText.Text = "Configuração do Holyrics salva. A conexão foi testada.";
     }
 
-    private void ProjectionTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ProjectionThemeBox?.SelectedItem is not ComboBoxItem item) return;
-        var theme = item.Content?.ToString() ?? "Noturno";
-        if (!_loadingPreferences) SavePreferences(theme, null);
-    }
-
     private void LineCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
             !int.TryParse(item.Content?.ToString(), out var count)) return;
         _maxProjectionLines = Math.Clamp(count, 1, 10);
-        if (!_loadingPreferences) SavePreferences(null, count);
+        if (!_loadingPreferences) SavePreferences(count);
         RefreshCurrentProjectionBlock();
     }
 
@@ -1012,7 +1005,6 @@ public partial class MainWindow : Window
             var preferences = JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile));
             if (preferences is null) return;
             _loadingPreferences = true;
-            SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
             _maxProjectionLines = Math.Clamp(preferences.MaxLines ?? 4, 1, 10);
             SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
@@ -1037,14 +1029,13 @@ public partial class MainWindow : Window
             { combo.SelectedItem = candidate; return; }
     }
 
-    private void SavePreferences(string? theme, int? maxLines, string? outputDeviceName = null)
+    private void SavePreferences(int? maxLines)
     {
         try
         {
             var current = File.Exists(_preferencesFile)
                 ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
                 : new ProjectionPreferences();
-            if (theme is not null) current.Theme = theme;
             if (maxLines is not null) current.MaxLines = maxLines;
             if (outputDeviceName is not null) current.OutputDeviceName = outputDeviceName;
             var directory = Path.GetDirectoryName(_preferencesFile)!;
@@ -1058,7 +1049,6 @@ public partial class MainWindow : Window
 
     private sealed class ProjectionPreferences
     {
-        public string? Theme { get; set; } = "Noturno";
         public int? MaxLines { get; set; } = 4;
         public string? NextVideoUrl { get; set; }
     }
