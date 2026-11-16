@@ -39,4 +39,25 @@ var multiLine = new[]
     new LyricCue { Seconds = 4, Text = "quinta" }
 };
 Check(CueTimeline.BuildProjectionBlock(multiLine, 1, 3) == string.Join(Environment.NewLine, new[] { "primeira", "segunda", "terceira" }), "bloco conta linhas visuais em frases multilinha");
+
+var expectedLiveLyrics = new[]
+{
+    "No vigésimo ano do mês de Quisleu",
+    "Eu, Neemias, estando em Susã",
+    "E os muros, comecei a levantar",
+    "E os meus planos comecei a detalhar"
+};
+var liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 0,
+    "No vigésimo ano do mês de Quisleu", out var liveConfidence);
+Check(liveMatch == 0 && liveConfidence >= 0.78, "reconhece frase completa com acentos");
+liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 1,
+    "Eu Neemias estando em Susa", out liveConfidence);
+Check(liveMatch == 1 && liveConfidence >= 0.78, "reconhece frase sem acentos");
+liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 1,
+    "No vigesimo ano do mes de Quisleu", out liveConfidence);
+Check(liveMatch == -1, "não volta para frase anterior já reconhecida");
+liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 0,
+    "uma conversa qualquer sem relação", out liveConfidence);
+Check(liveMatch == -1, "rejeita transcrição sem correspondência");
+
 Console.WriteLine("Todos os testes da linha do tempo e dos blocos de projeção passaram.");
