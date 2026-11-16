@@ -1,6 +1,6 @@
 # Lyravoxen — Aplicativo Windows
 
-Aplicativo WPF para reprodução oficial de vídeos do YouTube, sincronização de letras e projeção em monitor independente.
+Aplicativo WPF para reprodução oficial de vídeos do YouTube, sincronização de letras e envio da projeção ao Holyrics.
 
 ## Requisitos
 - Windows 10 (1809 ou superior) ou Windows 11, 64 bits
@@ -24,19 +24,18 @@ O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runt
 ## Recursos atuais
 - Player oficial incorporado do YouTube; não baixa nem extrai áudio.
 - Busca de letras sincronizadas com confirmação **Sim / Não / Criar** antes de substituir a letra atual.
-- Área **Criar / editar letra**: cole a letra completa, prepare as frases e marque cada entrada durante a reprodução; as frases e seus tempos ficam associados à música atual.
+- Área **Criar / editar letra**: cole a letra completa e inicie a sincronização ao vivo sem reiniciar a música. O operador marca cada entrada no tempo atual; a próxima frase aparece automaticamente e cada marcação é salva na biblioteca local.
 - Aba separada **Controles manuais** para navegar, editar, reordenar e projetar frases sem comprimir a prévia do telão.
-- Importação LRC/SRT e edição das frases; limite de projeção configurável de 1 a 10 linhas.
-- Prévia de projeção ampliada, seleção de monitor, temas com contraste reforçado e abertura automática da projeção quando a primeira frase é exibida; o comando Sair da projeção fecha a janela local e tenta encerrar a apresentação rápida e a apresentação convencional do Holyrics.
-- Seleção da tela de saída e recuperação após alterações de monitor.
+- Importação LRC/SRT e edição das frases; seleção de 1 a 10 linhas exibidas em blocos consecutivos. Por exemplo, quatro linhas permanecem juntas até a quarta frase e então são substituídas pelas quatro seguintes.
+- Prévia ampliada dentro do aplicativo. Não existe janela de projeção local: o Holyrics é o único responsável por exibir as letras, evitando que o Lyravoxen cubra a tela principal.
 - Biblioteca local de letras sincronizadas pesquisável por título e intérprete corrigidos; letras criadas podem ser reutilizadas em outras gravações da mesma música.
 - Aba Próxima música com atalhos internos para YouTube, Google, Cifra Club, Vagalume, Letras.mus.br, Ouvir Música e pesquisa da Harpa Cristã; copiar link da página atual ou da música em reprodução.
-- Integração configurável com Holyrics, com ações independentes para limpar a apresentação rápida e encerrar a projeção local.
+- Integração configurável com Holyrics: envia cada bloco de letras, mantém a ordem das atualizações e permite encerrar a apresentação rápida e a apresentação convencional pelo botão Sair da projeção.
 
 ## Limites e validação
 - Alguns vídeos não permitem reprodução incorporada e podem ser recusados pelo próprio YouTube.
 - A integração Holyrics requer uma instalação compatível, configuração local e permissões de API para ShowQuickPresentation, CloseCurrentQuickPresentation e CloseCurrentPresentation.
-- A busca automática depende de existir uma letra sincronizada compatível no catálogo; a opção Criar permite cadastrar a letra e marcar os tempos durante a reprodução, sem inventar timestamps.
+- A busca automática consulta a biblioteca local e o LRCLIB por título e intérprete, com nova tentativa pelo título isolado. Quando não há letra temporizada, a opção Criar permite marcar cada frase ao vivo no áudio que já está tocando. A sincronização automática por reconhecimento de voz ainda não está implementada.
 - O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
 - Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
 - APK Android exigiria um projeto separado.
