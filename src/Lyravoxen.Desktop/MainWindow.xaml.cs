@@ -323,6 +323,10 @@ public partial class MainWindow : Window
                 Artist = _history.FirstOrDefault(v => v.VideoId == videoId)?.Artist ?? ""
             };
             _currentVideo.Url = url;
+            var historyMetadata = _history.FirstOrDefault(v => v.VideoId == videoId);
+            if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = historyMetadata?.TrackName ?? "";
+            if (string.IsNullOrWhiteSpace(_currentVideo.Composer)) _currentVideo.Composer = historyMetadata?.Composer ?? "";
+            if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = historyMetadata?.Artist ?? "";
             MusicTrackBox.Text = _currentVideo.TrackName;
             MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
