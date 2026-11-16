@@ -599,28 +599,30 @@ public partial class MainWindow : Window
             }
 
             StatusText.Text = "Buscando letras e verificando correspondência: " + trackName + " — " + artistName;
-            var query = Uri.EscapeDataString(trackName + " " + artistName);
-            var endpoint = "https://lrclib.net/api/search?q=" + query;
-            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-            request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
-            using var response = await MetadataHttp.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
+            var searchItems = new List<JsonElement>();
+            var searchQueries = new[] { trackName + " " + artistName, trackName }
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            foreach (var searchTerm in searchQueries)
             {
-                StatusText.Text = "Catálogo de letras indisponível (HTTP " + (int)response.StatusCode + ").";
-                return;
+                var endpoint = "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(searchTerm);
+                using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
+                using var response = await MetadataHttp.SendAsync(request);
+                if (!response.IsSuccessStatusCode) continue;
+                using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                if (json.RootElement.ValueKind != JsonValueKind.Array) continue;
+                searchItems.AddRange(json.RootElement.EnumerateArray().Select(item => item.Clone()));
             }
-
-            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            if (json.RootElement.ValueKind != JsonValueKind.Array)
+            if (searchItems.Count == 0)
             {
-                StatusText.Text = "O catálogo não retornou uma lista de músicas.";
+                StatusText.Text = "O catálogo de letras não retornou resultados. Você pode abrir as outras fontes ou criar a sincronização ao vivo.";
                 return;
             }
 
             var wantedTrack = NormalizeMusicText(trackName);
             var wantedArtist = NormalizeMusicText(artistName);
             var candidates = new List<(double Score, double LyricMatch, string Track, string Artist, string Album, List<LyricCue> Cues)>();
-            foreach (var item in json.RootElement.EnumerateArray())
+            foreach (var item in searchItems)
             {
                 var foundTrack = item.TryGetProperty("trackName", out var tp) ? tp.GetString() ?? "" : "";
                 var foundArtist = item.TryGetProperty("artistName", out var ap) ? ap.GetString() ?? "" : "";
