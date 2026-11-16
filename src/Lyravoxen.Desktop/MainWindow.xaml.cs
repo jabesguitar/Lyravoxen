@@ -550,12 +550,12 @@ public partial class MainWindow : Window
             if (localMatch is not null)
             {
                 var localPreview = string.Join(Environment.NewLine, localMatch.Cues.Take(8).Select(cue => cue.Text));
-                var localDetails = "Letra salva neste computador.\\nFaixa: " + localMatch.TrackName +
-                    "\\nAutor / intérprete: " + localMatch.Artist +
-                    "\\nFrases sincronizadas: " + localMatch.Cues.Count +
-                    "\\nVídeo original: " + localMatch.Title +
-                    "\\n\\nPrévia:\\n" + localPreview +
-                    "\\n\\nSim: reutilizar esta letra.\\nNão: procurar outra versão no catálogo online.\\nCriar: editar ou cadastrar outra letra.";
+                var localDetails = "Letra salva neste computador.\nFaixa: " + localMatch.TrackName +
+                    "\nAutor / intérprete: " + localMatch.Artist +
+                    "\nFrases sincronizadas: " + localMatch.Cues.Count +
+                    "\nVídeo original: " + localMatch.Title +
+                    "\n\nPrévia:\n" + localPreview +
+                    "\n\nSim: reutilizar esta letra.\nNão: procurar outra versão no catálogo online.\nCriar: editar ou cadastrar outra letra.";
                 var localDialog = new MusicMatchDialog("Encontrei esta música na sua biblioteca", localDetails) { Owner = this };
                 localDialog.ShowDialog();
                 if (localDialog.Choice == MusicMatchChoice.Create)
