@@ -1,8 +1,3 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using WpfButton = System.Windows.Controls.Button;
-
 namespace Lyravoxen;
 
 public enum MusicMatchChoice
@@ -13,7 +8,7 @@ public enum MusicMatchChoice
     Create
 }
 
-public sealed class MusicMatchDialog : Window
+public sealed class MusicMatchDialog : System.Windows.Window
 {
     public MusicMatchChoice Choice { get; private set; }
 
@@ -24,71 +19,70 @@ public sealed class MusicMatchDialog : Window
         Height = 470;
         MinWidth = 480;
         MinHeight = 400;
-        ResizeMode = ResizeMode.CanResize;
-        WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.FromRgb(16, 29, 40));
-        Foreground = new SolidColorBrush(Color.FromRgb(238, 245, 248));
+        ResizeMode = System.Windows.ResizeMode.CanResize;
+        WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+        Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 29, 40));
+        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 245, 248));
 
-        var panel = new DockPanel { Margin = new Thickness(22) };
-        var headingText = new TextBlock
+        var panel = new System.Windows.Controls.DockPanel { Margin = new System.Windows.Thickness(22) };
+        var headingText = new System.Windows.Controls.TextBlock
         {
             Text = heading,
             FontSize = 20,
-            FontWeight = FontWeights.Bold,
-            Foreground = new SolidColorBrush(Color.FromRgb(38, 198, 184)),
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 14)
+            FontWeight = System.Windows.FontWeights.Bold,
+            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(38, 198, 184)),
+            TextWrapping = System.Windows.TextWrapping.Wrap,
+            Margin = new System.Windows.Thickness(0, 0, 0, 14)
         };
-        DockPanel.SetDock(headingText, Dock.Top);
+        System.Windows.Controls.DockPanel.SetDock(headingText, System.Windows.Controls.Dock.Top);
         panel.Children.Add(headingText);
 
-        var buttons = new StackPanel
+        var buttons = new System.Windows.Controls.StackPanel
         {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(0, 16, 0, 0)
+            Orientation = System.Windows.Controls.Orientation.Horizontal,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+            Margin = new System.Windows.Thickness(0, 16, 0, 0)
         };
-        DockPanel.SetDock(buttons, Dock.Bottom);
-
+        System.Windows.Controls.DockPanel.SetDock(buttons, System.Windows.Controls.Dock.Bottom);
         buttons.Children.Add(CreateButton("Sim", MusicMatchChoice.Yes, true));
         buttons.Children.Add(CreateButton("Não", MusicMatchChoice.No));
         buttons.Children.Add(CreateButton("Criar", MusicMatchChoice.Create));
         panel.Children.Add(buttons);
 
-        var detailText = new TextBox
+        var detailText = new System.Windows.Controls.TextBox
         {
             Text = details,
             IsReadOnly = true,
-            TextWrapping = TextWrapping.Wrap,
+            TextWrapping = System.Windows.TextWrapping.Wrap,
             AcceptsReturn = true,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Background = new SolidColorBrush(Color.FromRgb(10, 19, 27)),
-            Foreground = new SolidColorBrush(Color.FromRgb(226, 236, 241)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(53, 80, 100)),
-            Padding = new Thickness(12),
+            VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(10, 19, 27)),
+            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(226, 236, 241)),
+            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(53, 80, 100)),
+            Padding = new System.Windows.Thickness(12),
             FontSize = 13
         };
         panel.Children.Add(detailText);
         Content = panel;
     }
 
-    private WpfButton CreateButton(string label, MusicMatchChoice choice, bool isDefault = false)
+    private System.Windows.Controls.Button CreateButton(string label, MusicMatchChoice choice, bool isDefault = false)
     {
-        var button = new WpfButton
+        var button = new System.Windows.Controls.Button
         {
             Content = label,
             MinWidth = 92,
-            Padding = new Thickness(18, 9, 18, 9),
-            Margin = new Thickness(6, 0, 0, 0),
+            Padding = new System.Windows.Thickness(18, 9, 18, 9),
+            Margin = new System.Windows.Thickness(6, 0, 0, 0),
             FontSize = 13,
-            FontWeight = FontWeights.SemiBold,
-            Background = new SolidColorBrush(choice switch
+            FontWeight = System.Windows.FontWeights.SemiBold,
+            Background = new System.Windows.Media.SolidColorBrush(choice switch
             {
-                MusicMatchChoice.Yes => Color.FromRgb(23, 110, 104),
-                MusicMatchChoice.No => Color.FromRgb(53, 75, 91),
-                _ => Color.FromRgb(49, 90, 131)
+                MusicMatchChoice.Yes => System.Windows.Media.Color.FromRgb(23, 110, 104),
+                MusicMatchChoice.No => System.Windows.Media.Color.FromRgb(53, 75, 91),
+                _ => System.Windows.Media.Color.FromRgb(49, 90, 131)
             }),
-            Foreground = Brushes.White,
+            Foreground = System.Windows.Media.Brushes.White,
             IsDefault = isDefault
         };
         button.Click += (_, _) =>
