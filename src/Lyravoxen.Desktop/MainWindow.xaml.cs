@@ -161,7 +161,7 @@ public partial class MainWindow : Window
 
     private async void OpenQuickSite_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button button || button.Tag is not string site) return;
+        if (sender is not System.Windows.Controls.Button button || button.Tag is not string site) return;
         var target = site switch
         {
             "youtube" => "https://www.youtube.com/",
@@ -211,7 +211,7 @@ public partial class MainWindow : Window
     {
         var url = ActiveBrowserView?.Source?.ToString();
         if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Nenhum endereço disponível nesta aba."; return; }
-        try { Clipboard.SetText(url); StatusText.Text = "Link copiado: " + url; }
+        try { System.Windows.Clipboard.SetText(url); StatusText.Text = "Link copiado: " + url; }
         catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
     }
 
