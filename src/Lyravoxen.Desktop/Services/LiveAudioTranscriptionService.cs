@@ -1,28 +1,38 @@
 using System.Collections.Concurrent;
 using System.IO;
-using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Channels;
 using NAudio.Wave;
+using Whisper.net;
+using Whisper.net.Ggml;
 
 namespace Lyravoxen.Services;
 
+/// <summary>
+/// Captures the Windows playback mix and transcribes it locally with Whisper.net.
+/// No audio is uploaded and no API key or paid service is used.
+/// </summary>
 public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 {
-    private const int TargetRate = 24000;
-    private const int SegmentSamples = TargetRate * 2;
-    private static readonly Guid IeeeFloatSubFormat = new("00000003-0000-0010-8000-00AA00389B71");
+    private const int CaptureRate = 24000;
+    private const int ModelRate = 16000;
+    private const int SegmentSeconds = 5;
+    private const int SegmentSamples = CaptureRate * SegmentSeconds;
+    private static readonly string ModelFolder = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Lyravoxen", "Models");
+    private static readonly string ModelPath = Path.Combine(ModelFolder, "ggml-base.bin");
+
     private readonly Func<double> _playbackSeconds;
-    private readonly Channel<byte[]> _audio = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-    private readonly ConcurrentQueue<double> _pendingSegmentStarts = new();
-    private readonly ConcurrentDictionary<string, double> _segmentStarts = new();
-    private readonly ConcurrentDictionary<string, StringBuilder> _partialTranscripts = new();
+    private readonly ConcurrentQueue<short[]> _segments = new();
+    private readonly SemaphoreSlim _segmentReady = new(0);
     private readonly CancellationTokenSource _stop = new();
-    private ClientWebSocket? _socket;
+    private readonly List<short> _pendingSamples = new();
+    private readonly object _captureSync = new();
     private WasapiLoopbackCapture? _capture;
-    private Task? _sender;
-    private Task? _receiver;
+    private WhisperFactory? _factory;
+    private WhisperProcessor? _processor;
+    private Task? _worker;
+    private double _segmentStart;
+    private bool _modelReady;
     private int _disposed;
 
     public event EventHandler<LiveTranscriptEventArgs>? TranscriptReceived;
@@ -30,74 +40,53 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
 
     public LiveAudioTranscriptionService(Func<double> playbackSeconds) => _playbackSeconds = playbackSeconds;
 
-    public async Task StartAsync(string apiKey, IReadOnlyList<string>? expectedLyrics = null, string? trackTitle = null, string? artist = null, CancellationToken cancellationToken = default)
+    public async Task StartAsync(string? unusedKey = null, IReadOnlyList<string>? expectedLyrics = null,
+        string? trackTitle = null, string? artist = null, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(apiKey)) throw new ArgumentException("Configure uma chave da API antes de iniciar.");
-        if (_socket is not null) throw new InvalidOperationException("O reconhecimento já está ativo.");
-
+        if (_capture is not null) throw new InvalidOperationException("O reconhecimento já está ativo.");
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
-        _socket = new ClientWebSocket();
-        _socket.Options.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
-        await _socket.ConnectAsync(new Uri("wss://api.openai.com/v1/realtime?intent=transcription"), linked.Token);
 
-        var session = new
-        {
-            type = "session.update",
-            session = new
-            {
-                type = "transcription",
-                audio = new
-                {
-                    input = new
-                    {
-                        format = new { type = "audio/pcm", rate = TargetRate },
-                        transcription = new
-                        {
-                            model = "gpt-live-transcribe",
-                            languages = new[] { "pt" },
-                            delay = "low",
-                            prompt = BuildPrompt(expectedLyrics, trackTitle, artist),
-                            keywords = BuildKeywords(expectedLyrics, trackTitle, artist)
-                        },
-                        turn_detection = (object?)null
-                    }
-                }
-            }
-        };
-        await SendJsonAsync(session, linked.Token);
+        StatusChanged?.Invoke(this, "Verificando o modelo gratuito de reconhecimento local...");
+        await EnsureModelAsync(linked.Token);
 
-        _receiver = ReceiveLoopAsync(_stop.Token);
+        _factory = WhisperFactory.FromPath(ModelPath);
+        _processor = _factory.CreateBuilder()
+            .WithLanguage("pt")
+            .Build();
+
         _capture = new WasapiLoopbackCapture();
         _capture.DataAvailable += Capture_DataAvailable;
         _capture.RecordingStopped += Capture_RecordingStopped;
+        _segmentStart = _playbackSeconds();
+        _worker = ProcessSegmentsAsync(_stop.Token);
         _capture.StartRecording();
-        _sender = SendLoopAsync(_stop.Token);
-        StatusChanged?.Invoke(this, "Capturando o áudio de saída do Windows e reconhecendo a letra em tempo real.");
+        StatusChanged?.Invoke(this, "Reconhecimento local ativo. O áudio permanece neste computador; não há API paga.");
     }
 
-    private static string BuildPrompt(IReadOnlyList<string>? lyrics, string? title, string? artist)
+    private async Task EnsureModelAsync(CancellationToken cancellationToken)
     {
-        var context = string.Join(" ", new[] { title, artist }.Where(value => !string.IsNullOrWhiteSpace(value)));
-        var sample = string.Join(" ", (lyrics ?? Array.Empty<string>()).Take(8));
-        var prompt = "Portuguese singing voice in a Christian hymn or worship song. Transcribe the sung lyrics faithfully.";
-        if (!string.IsNullOrWhiteSpace(context)) prompt += " Song: " + context + ".";
-        if (!string.IsNullOrWhiteSpace(sample)) prompt += " Expected lyric context: " + sample;
-        return prompt.Length <= 900 ? prompt : prompt[..900];
-    }
+        if (File.Exists(ModelPath) && new FileInfo(ModelPath).Length > 10_000_000)
+        {
+            _modelReady = true;
+            return;
+        }
 
-    private static string[] BuildKeywords(IReadOnlyList<string>? lyrics, string? title, string? artist)
-    {
-        var values = new List<string>();
-        if (!string.IsNullOrWhiteSpace(title)) values.Add(title);
-        if (!string.IsNullOrWhiteSpace(artist)) values.Add(artist);
-        values.AddRange((lyrics ?? Array.Empty<string>())
-            .SelectMany(line => line.Split(new[] { ' ', ',', '.', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries))
-            .Where(word => word.Length >= 5));
-        return values.Select(value => value.Trim())
-            .Where(value => value.Length > 0 && !value.Contains('<') && !value.Contains('>'))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(50)
-            .ToArray();
+        Directory.CreateDirectory(ModelFolder);
+        var temporaryPath = ModelPath + ".download";
+        try
+        {
+            using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(GgmlType.Base);
+            await using (var output = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                await modelStream.CopyToAsync(output, cancellationToken);
+            File.Move(temporaryPath, ModelPath, true);
+            _modelReady = true;
+            StatusChanged?.Invoke(this, "Modelo gratuito instalado. Próximas utilizações não precisarão baixá-lo novamente.");
+        }
+        catch
+        {
+            try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+            throw;
+        }
     }
 
     private void Capture_DataAvailable(object? sender, WaveInEventArgs e)
@@ -105,10 +94,24 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
         try
         {
             if (_capture is null || e.BytesRecorded <= 0) return;
-            var pcm = ConvertToPcm16Mono24k(e.Buffer, e.BytesRecorded, _capture.WaveFormat);
-            if (pcm.Length > 0) _audio.Writer.TryWrite(pcm);
+            var format = _capture.WaveFormat;
+            var pcm = ConvertToPcm16Mono24k(e.Buffer, e.BytesRecorded, format);
+            if (pcm.Length == 0) return;
+
+            lock (_captureSync)
+            {
+                _pendingSamples.AddRange(pcm);
+                while (_pendingSamples.Count >= SegmentSamples)
+                {
+                    var segment = _pendingSamples.Take(SegmentSamples).ToArray();
+                    _pendingSamples.RemoveRange(0, SegmentSamples);
+                    _segments.Enqueue(segment);
+                    _segmentReady.Release();
+                    _segmentStart += SegmentSeconds;
+                }
+            }
         }
-        catch (Exception ex) { StatusChanged?.Invoke(this, "Falha ao processar áudio do sistema: " + ex.Message); }
+        catch (Exception ex) { StatusChanged?.Invoke(this, "Falha na captura de áudio: " + ex.Message); }
     }
 
     private void Capture_RecordingStopped(object? sender, StoppedEventArgs e)
@@ -117,114 +120,79 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
             StatusChanged?.Invoke(this, "A captura de áudio foi interrompida: " + e.Exception.Message);
     }
 
-    private async Task SendLoopAsync(CancellationToken cancellationToken)
+    private async Task ProcessSegmentsAsync(CancellationToken cancellationToken)
     {
-        var samplesInSegment = 0;
-        var segmentStart = _playbackSeconds();
-        while (await _audio.Reader.WaitToReadAsync(cancellationToken))
+        while (await _segmentReady.WaitAsync(Timeout.Infinite, cancellationToken).ContinueWith(t => t.IsCompletedSuccessfully, cancellationToken))
         {
-            while (_audio.Reader.TryRead(out var pcm))
+            if (!_segments.TryDequeue(out var samples)) continue;
+            try
             {
-                await SendJsonAsync(new { type = "input_audio_buffer.append", audio = Convert.ToBase64String(pcm) }, cancellationToken);
-                samplesInSegment += pcm.Length / 2;
-                if (samplesInSegment >= SegmentSamples)
+                var wav = CreateWav16Khz(samples);
+                await using var stream = new MemoryStream(wav, writable: false);
+                var processor = _processor ?? throw new InvalidOperationException("Modelo local não inicializado.");
+                await foreach (var result in processor.ProcessAsync(stream))
                 {
-                    _pendingSegmentStarts.Enqueue(segmentStart);
-                    await SendJsonAsync(new { type = "input_audio_buffer.commit" }, cancellationToken);
-                    samplesInSegment = 0;
-                    segmentStart = _playbackSeconds();
+                    var transcript = result.Text?.Trim();
+                    if (string.IsNullOrWhiteSpace(transcript)) continue;
+                    var start = Math.Max(0, _playbackSeconds() - SegmentSeconds);
+                    TranscriptReceived?.Invoke(this, new LiveTranscriptEventArgs(
+                        Guid.NewGuid().ToString("N"), transcript, start + result.Start.TotalSeconds, true));
                 }
             }
-        }
-
-        if (samplesInSegment > 0)
-        {
-            _pendingSegmentStarts.Enqueue(segmentStart);
-            await SendJsonAsync(new { type = "input_audio_buffer.commit" }, cancellationToken);
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }
+            catch (Exception ex) { StatusChanged?.Invoke(this, "Falha na transcrição local: " + ex.Message); }
         }
     }
 
-    private async Task ReceiveLoopAsync(CancellationToken cancellationToken)
+    private static byte[] CreateWav16Khz(short[] source)
     {
-        var socket = _socket ?? throw new InvalidOperationException("WebSocket não conectado.");
-        var buffer = new byte[16 * 1024];
-        while (socket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
+        var outputSamples = new short[(int)Math.Round(source.Length * (double)ModelRate / CaptureRate)];
+        for (var i = 0; i < outputSamples.Length; i++)
         {
-            using var message = new MemoryStream();
-            WebSocketReceiveResult result;
-            do
-            {
-                result = await socket.ReceiveAsync(buffer, cancellationToken);
-                if (result.MessageType == WebSocketMessageType.Close) return;
-                message.Write(buffer, 0, result.Count);
-            } while (!result.EndOfMessage);
-
-            using var json = JsonDocument.Parse(message.ToArray());
-            var root = json.RootElement;
-            var type = root.TryGetProperty("type", out var typeValue) ? typeValue.GetString() : null;
-            if (type == "input_audio_buffer.committed" && root.TryGetProperty("item_id", out var committedId))
-            {
-                if (_pendingSegmentStarts.TryDequeue(out var start))
-                    _segmentStarts[committedId.GetString() ?? ""] = start;
-            }
-            else if (type == "conversation.item.input_audio_transcription.delta" &&
-                     root.TryGetProperty("item_id", out var deltaId) &&
-                     root.TryGetProperty("delta", out var delta))
-            {
-                var id = deltaId.GetString() ?? "";
-                var builder = _partialTranscripts.GetOrAdd(id, _ => new StringBuilder());
-                lock (builder) builder.Append(delta.GetString());
-                if (_segmentStarts.TryGetValue(id, out var start))
-                {
-                    string text;
-                    lock (builder) text = builder.ToString();
-                    TranscriptReceived?.Invoke(this, new LiveTranscriptEventArgs(id, text, start, false));
-                }
-            }
-            else if (type == "conversation.item.input_audio_transcription.completed" &&
-                     root.TryGetProperty("item_id", out var completedId) &&
-                     root.TryGetProperty("transcript", out var transcript))
-            {
-                var id = completedId.GetString() ?? "";
-                var text = transcript.GetString() ?? "";
-                if (_segmentStarts.TryGetValue(id, out var start))
-                    TranscriptReceived?.Invoke(this, new LiveTranscriptEventArgs(id, text, start, true));
-                _segmentStarts.TryRemove(id, out _);
-                _partialTranscripts.TryRemove(id, out _);
-            }
-            else if (type == "error")
-            {
-                var detail = root.TryGetProperty("error", out var error) && error.TryGetProperty("message", out var messageValue)
-                    ? messageValue.GetString() : "Erro desconhecido na API de transcrição.";
-                StatusChanged?.Invoke(this, detail ?? "Erro na API de transcrição.");
-            }
+            var position = i * (double)CaptureRate / ModelRate;
+            var left = Math.Min((int)position, source.Length - 1);
+            var right = Math.Min(left + 1, source.Length - 1);
+            var fraction = position - left;
+            outputSamples[i] = (short)Math.Clamp(
+                (int)Math.Round(source[left] + (source[right] - source[left]) * fraction),
+                short.MinValue, short.MaxValue);
         }
+
+        using var stream = new MemoryStream(44 + outputSamples.Length * 2);
+        using var writer = new BinaryWriter(stream);
+        writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+        writer.Write(36 + outputSamples.Length * 2);
+        writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"));
+        writer.Write(System.Text.Encoding.ASCII.GetBytes("fmt "));
+        writer.Write(16);
+        writer.Write((short)1);
+        writer.Write((short)1);
+        writer.Write(ModelRate);
+        writer.Write(ModelRate * 2);
+        writer.Write((short)2);
+        writer.Write((short)16);
+        writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+        writer.Write(outputSamples.Length * 2);
+        foreach (var sample in outputSamples) writer.Write(sample);
+        return stream.ToArray();
     }
 
-    private async Task SendJsonAsync(object value, CancellationToken cancellationToken)
-    {
-        var socket = _socket ?? throw new InvalidOperationException("WebSocket não conectado.");
-        var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value));
-        await socket.SendAsync(bytes, WebSocketMessageType.Text, true, cancellationToken);
-    }
-
-    private static byte[] ConvertToPcm16Mono24k(byte[] input, int length, WaveFormat format)
+    private static short[] ConvertToPcm16Mono24k(byte[] input, int length, WaveFormat format)
     {
         var bytesPerSample = format.BitsPerSample / 8;
-        if (bytesPerSample is not (2 or 4) || format.Channels < 1) return Array.Empty<byte>();
+        if (bytesPerSample is not (2 or 4) || format.Channels < 1) return Array.Empty<short>();
         var isFloat = format.Encoding == WaveFormatEncoding.IeeeFloat ||
-            (format is WaveFormatExtensible extensible && extensible.SubFormat == IeeeFloatSubFormat);
-        var frameCount = length / (bytesPerSample * format.Channels);
-        if (frameCount == 0 || format.SampleRate <= 0) return Array.Empty<byte>();
-
-        var mono = new float[frameCount];
-        for (var frame = 0; frame < frameCount; frame++)
+            (format is WaveFormatExtensible ext && ext.SubFormat == new Guid("00000003-0000-0010-8000-00AA00389B71"));
+        var frames = length / (bytesPerSample * format.Channels);
+        if (frames == 0) return Array.Empty<short>();
+        var mono = new float[frames];
+        for (var frame = 0; frame < frames; frame++)
         {
             var sum = 0f;
             for (var channel = 0; channel < format.Channels; channel++)
             {
                 var offset = (frame * format.Channels + channel) * bytesPerSample;
-                float sample = isFloat && bytesPerSample == 4
+                var sample = isFloat && bytesPerSample == 4
                     ? BitConverter.ToSingle(input, offset)
                     : bytesPerSample == 4
                         ? BitConverter.ToInt32(input, offset) / 2147483648f
@@ -234,19 +202,19 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
             mono[frame] = Math.Clamp(sum / format.Channels, -1f, 1f);
         }
 
-        var outputFrames = Math.Max(1, (int)Math.Round(frameCount * (double)TargetRate / format.SampleRate));
-        var output = new byte[outputFrames * 2];
-        for (var i = 0; i < outputFrames; i++)
+        var count = Math.Max(1, (int)Math.Round(frames * (double)CaptureRate / format.SampleRate));
+        var result = new short[count];
+        for (var i = 0; i < count; i++)
         {
-            var sourcePosition = i * (double)format.SampleRate / TargetRate;
-            var left = Math.Min((int)sourcePosition, frameCount - 1);
-            var right = Math.Min(left + 1, frameCount - 1);
-            var fraction = (float)(sourcePosition - left);
-            var sample = mono[left] + (mono[right] - mono[left]) * fraction;
-            var pcm = (short)Math.Clamp((int)Math.Round(sample * short.MaxValue), short.MinValue, short.MaxValue);
-            BitConverter.GetBytes(pcm).CopyTo(output, i * 2);
+            var position = i * (double)format.SampleRate / CaptureRate;
+            var left = Math.Min((int)position, frames - 1);
+            var right = Math.Min(left + 1, frames - 1);
+            var fraction = position - left;
+            result[i] = (short)Math.Clamp((int)Math.Round(
+                (mono[left] + (mono[right] - mono[left]) * fraction) * short.MaxValue),
+                short.MinValue, short.MaxValue);
         }
-        return output;
+        return result;
     }
 
     public async Task StopAsync()
@@ -256,20 +224,28 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
             _capture.DataAvailable -= Capture_DataAvailable;
             _capture.RecordingStopped -= Capture_RecordingStopped;
             try { _capture.StopRecording(); } catch { }
+            lock (_captureSync)
+            {
+                if (_pendingSamples.Count > 0)
+                {
+                    _segments.Enqueue(_pendingSamples.ToArray());
+                    _segmentReady.Release();
+                    _pendingSamples.Clear();
+                }
+            }
             _capture.Dispose();
             _capture = null;
         }
-        _audio.Writer.TryComplete();
-        try { if (_sender is not null) await _sender.WaitAsync(TimeSpan.FromSeconds(2)); } catch { }
+
+        _segmentReady.Release();
         _stop.Cancel();
-        if (_socket is { State: WebSocketState.Open } socket)
-        {
-            try { await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Lyravoxen stopped", CancellationToken.None); } catch { }
-        }
-        try { if (_receiver is not null) await _receiver.WaitAsync(TimeSpan.FromSeconds(2)); } catch { }
-        _socket?.Dispose();
-        _socket = null;
-        StatusChanged?.Invoke(this, "Reconhecimento automático interrompido.");
+        try { if (_worker is not null) await _worker.WaitAsync(TimeSpan.FromSeconds(3)); } catch { }
+        _processor?.Dispose();
+        _processor = null;
+        _factory?.Dispose();
+        _factory = null;
+        while (_segments.TryDequeue(out _)) { }
+        StatusChanged?.Invoke(this, "Reconhecimento local interrompido.");
     }
 
     public async ValueTask DisposeAsync()
@@ -277,6 +253,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         await StopAsync();
         _stop.Dispose();
+        _segmentReady.Dispose();
     }
 }
 
