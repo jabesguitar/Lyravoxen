@@ -7,6 +7,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Lyravoxen</AssemblyName>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>Lyravoxen</Product>
+    <Company>Lyravoxen</Company>
+    <Description>Estúdio de letras, sincronização musical e projeção</Description>
     <ApplicationIcon>Assets\Lyravoxen.ico</ApplicationIcon>
     <RootNamespace>Lyravoxen</RootNamespace>
   </PropertyGroup>
