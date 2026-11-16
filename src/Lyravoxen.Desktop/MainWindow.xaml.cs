@@ -162,10 +162,14 @@ public partial class MainWindow : Window
     private async void OpenQuickSite_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not System.Windows.Controls.Button button || button.Tag is not string site) return;
+        var songQuery = string.Join(" ", new[] { MusicTrackBox.Text.Trim(), MusicArtistBox.Text.Trim() }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
         var target = site switch
         {
-            "youtube" => "https://www.youtube.com/",
-            "google" => "https://www.google.com/",
+            "youtube" => string.IsNullOrWhiteSpace(songQuery) ? "https://www.youtube.com/" :
+                "https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(songQuery),
+            "google" => string.IsNullOrWhiteSpace(songQuery) ? "https://www.google.com/" :
+                "https://www.google.com/search?q=" + Uri.EscapeDataString(songQuery + " letra"),
             "cifraclub" => "https://www.cifraclub.com.br/",
             "vagalume" => "https://www.vagalume.com.br/",
             "letras" => "https://www.letras.mus.br/",
@@ -217,6 +221,11 @@ public partial class MainWindow : Window
 
     private void CopyCurrentVideoLink_Click(object sender, RoutedEventArgs e)
     {
+        if (_currentVideo?.IsOffline == true)
+        {
+            StatusText.Text = "A música atual é um arquivo offline e não possui link do YouTube.";
+            return;
+        }
         var url = _currentVideo?.Url;
         if (string.IsNullOrWhiteSpace(url)) url = YoutubeUrlBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Carregue uma música antes de copiar o link."; return; }
