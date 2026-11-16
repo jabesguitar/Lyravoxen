@@ -332,7 +332,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var searchTerms = "\"" + track + "\" \"" + artist + "\"";
+        var searchTerms = string.IsNullOrWhiteSpace(artist) ? "\"" + track + "\"" : "\"" + track + "\" \"" + artist + "\"";
         var sources = new[]
         {
             (Name: "Cifra Club", Domain: "cifraclub.com.br"),
