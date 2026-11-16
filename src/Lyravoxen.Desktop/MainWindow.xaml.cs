@@ -571,13 +571,7 @@ public partial class MainWindow : Window
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
-            if (_currentVideo is not null)
-            {
-                _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline))
-                    saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList();
-                SaveLibrary();
-            }
+            PersistCurrentCues();
             StatusText.Text = "Letra sincronizada confirmada: " + selected.Track + " — " + selected.Artist + ". Confira a sincronia com a gravação.";
         }
         catch (TaskCanceledException) { StatusText.Text = "A busca de letras excedeu o tempo limite."; }
@@ -1188,7 +1182,7 @@ public partial class MainWindow : Window
                 _cues.RemoveAll(c => string.Equals(c.Text, lyric, StringComparison.OrdinalIgnoreCase));
             _cues.Add(new LyricCue { Seconds = cueSeconds, Text = lyric }); _cues.Sort((a,b) => a.Seconds.CompareTo(b.Seconds));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
-            if (_currentVideo is not null) { _currentVideo.Cues = _cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); foreach (var saved in _library.SelectMany(f => f.Videos).Where(v => v.VideoId == _currentVideo.VideoId && v.IsOffline == _currentVideo.IsOffline)) saved.Cues = _currentVideo.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(); SaveLibrary(); }
+            PersistCurrentCues();
             SecondsBox.Text = cueSeconds.ToString("0.00", CultureInfo.InvariantCulture);
             _lastAutomaticCue = -1;
             if (_manualDraftActive)
@@ -1209,9 +1203,8 @@ public partial class MainWindow : Window
             else
             {
                 LyricTextBox.Clear();
-                StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s.";
+                StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s. Ela será projetada 1,5s antes de começar.";
             }
-            StatusText.Text = "Frase registrada em " + cueSeconds.ToString("0.00", CultureInfo.InvariantCulture) + "s. Ela será projetada 1,5s antes de começar.";
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível ler o tempo atual: " + ex.Message; }
     }
@@ -1228,14 +1221,7 @@ public partial class MainWindow : Window
         CueList.ItemsSource = _cues;
         LyricTextBox.Clear();
         _lastAutomaticCue = -1;
-        if (_currentVideo is not null)
-        {
-            _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-            foreach (var saved in _library.SelectMany(folder => folder.Videos)
-                         .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
-                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-            SaveLibrary();
-        }
+        PersistCurrentCues();
         StatusText.Text = $"Frase adicionada em {seconds:0.0}s. Total: {_cues.Count}.";
     }
 
@@ -1270,13 +1256,7 @@ public partial class MainWindow : Window
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
             _lastAutomaticCue = -1;
-            _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-
-            foreach (var saved in _library.SelectMany(folder => folder.Videos)
-                         .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
-                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-
-            SaveLibrary();
+            PersistCurrentCues();
             StatusText.Text = $"Letra importada e preparada: {_cues.Count} frases sincronizadas.";
         }
         catch (Exception ex)
@@ -1512,10 +1492,43 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
-        foreach (var saved in _library.SelectMany(folder => folder.Videos)
-                     .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline))
-            saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+
+        var savedItems = _library.SelectMany(folder => folder.Videos)
+            .Where(item => item.VideoId == _currentVideo.VideoId && item.IsOffline == _currentVideo.IsOffline)
+            .ToList();
+        if (savedItems.Count == 0)
+        {
+            var folder = _library.FirstOrDefault(item =>
+                string.Equals(item.Name, "Músicas sincronizadas", StringComparison.OrdinalIgnoreCase));
+            if (folder is null)
+            {
+                folder = new LibraryFolder { Name = "Músicas sincronizadas" };
+                _library.Add(folder);
+                RefreshFolders(folder.Id);
+            }
+
+            folder.Videos.Add(new LibraryVideo
+            {
+                VideoId = _currentVideo.VideoId,
+                Title = _currentVideo.Title,
+                Url = _currentVideo.Url,
+                IsOffline = _currentVideo.IsOffline,
+                LocalPath = _currentVideo.LocalPath,
+                Format = _currentVideo.Format,
+                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
+            });
+        }
+        else
+        {
+            foreach (var saved in savedItems)
+            {
+                saved.Title = _currentVideo.Title;
+                saved.Url = _currentVideo.Url;
+                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            }
+        }
         SaveLibrary();
+        RefreshLibrarySongs();
     }
 
 
