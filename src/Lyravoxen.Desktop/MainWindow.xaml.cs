@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using Lyravoxen.Integration;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
+using Lyravoxen.Services;
 
 namespace Lyravoxen;
 
@@ -23,6 +24,8 @@ public partial class MainWindow : Window
     private readonly List<LyricCue> _cues = new();
     private List<string> _manualDraftLines = new();
     private readonly List<LyricCue> _manualDraftCues = new();
+    private LiveAudioTranscriptionService? _liveRecognition;
+    private bool _automaticLyricsActive;
     private int _manualDraftIndex;
     private bool _manualDraftActive;
     private readonly List<VideoHistoryItem> _history = new();
@@ -459,6 +462,162 @@ public partial class MainWindow : Window
         if (firstSourceTab is not null)
             BrowserTabs.SelectedItem = firstSourceTab;
         StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
+    }
+
+    private async void ToggleAutoRecognition_Click(object sender, RoutedEventArgs e)
+    {
+        if (_liveRecognition is not null)
+        {
+            await StopAutoRecognitionAsync(savePartial: true);
+            return;
+        }
+
+        if (_currentVideo is null || (!_isLocalAudioPlaying && _lastPlayerState != 1))
+        {
+            StatusText.Text = "Carregue e inicie a música na aba Ao vivo antes de ativar o reconhecimento automático.";
+            WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+
+        var lines = ManualLyricsBox.Text
+            .Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToList();
+        if (lines.Count == 0)
+        {
+            StatusText.Text = "Cole a letra completa, separando cada frase por linha, antes de iniciar o reconhecimento automático.";
+            return;
+        }
+
+        var apiKey = LiveRecognitionSettings.GetApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            var settings = new LiveRecognitionSettingsWindow { Owner = this };
+            if (settings.ShowDialog() != true) return;
+            apiKey = LiveRecognitionSettings.GetApiKey();
+        }
+        if (string.IsNullOrWhiteSpace(apiKey)) return;
+
+        _manualDraftLines = lines;
+        _manualDraftCues.Clear();
+        _manualDraftIndex = 0;
+        _automaticLyricsActive = true;
+        _manualDraftActive = false;
+        _manualProjectionMode = false;
+        _manualCueIndex = -1;
+        _lastAutomaticCue = -1;
+        ManualCurrentLineText.Text = _manualDraftLines[0];
+        ManualSyncProgressText.Text = "Reconhecimento automático preparado: aguardando a voz cantar a primeira frase.";
+        ProjectionPreviewText.Text = "Aguardando reconhecimento da primeira frase...";
+        NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[0];
+        _ = ClearHolyricsForLiveDraftAsync();
+
+        var service = new LiveAudioTranscriptionService(GetPlaybackSeconds);
+        service.TranscriptReceived += LiveRecognition_TranscriptReceived;
+        service.StatusChanged += LiveRecognition_StatusChanged;
+        _liveRecognition = service;
+        AutoRecognitionButton.IsEnabled = false;
+        try
+        {
+            await service.StartAsync(apiKey);
+            AutoRecognitionButton.Content = "Parar reconhecimento automático";
+            StatusText.Text = "Reconhecimento ativo. O Lyravoxen está ouvindo a saída de áudio do Windows.";
+        }
+        catch (Exception ex)
+        {
+            await StopAutoRecognitionAsync(savePartial: false);
+            StatusText.Text = "Não foi possível iniciar o reconhecimento automático: " + ex.Message;
+        }
+        finally
+        {
+            AutoRecognitionButton.IsEnabled = true;
+        }
+    }
+
+    private void LiveRecognition_StatusChanged(object? sender, string message)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (_automaticLyricsActive)
+                StatusText.Text = message;
+        }));
+    }
+
+    private void LiveRecognition_TranscriptReceived(object? sender, LiveTranscriptEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!_automaticLyricsActive || _manualDraftIndex >= _manualDraftLines.Count)
+                return;
+
+            var match = LiveLyricsMatcher.FindNextLine(
+                _manualDraftLines, _manualDraftIndex, e.Transcript,
+                out var confidence, e.IsFinal ? 0.78 : 0.92);
+
+            // Só aceita a próxima linha em ordem. Nunca pula versos por uma transcrição ambígua.
+            if (match != _manualDraftIndex)
+            {
+                ManualSyncProgressText.Text = $"Ouvindo e comparando com a próxima frase... confiança {confidence:P0}.";
+                return;
+            }
+
+            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 1.5);
+            if (_manualDraftCues.Count > 0)
+                estimatedSeconds = Math.Max(estimatedSeconds, _manualDraftCues[^1].Seconds + 0.05);
+
+            var cue = new LyricCue { Seconds = estimatedSeconds, Text = _manualDraftLines[_manualDraftIndex] };
+            _manualDraftCues.Add(cue);
+            _manualDraftIndex++;
+
+            var block = CueTimeline.BuildProjectionBlock(_manualDraftCues, _manualDraftCues.Count - 1, _maxProjectionLines);
+            _currentProjectedLyric = block;
+            ProjectionPreviewText.Text = block;
+            QueueHolyricsUpdate(block);
+
+            SecondsBox.Text = estimatedSeconds.ToString("0.00", CultureInfo.InvariantCulture);
+            if (_manualDraftIndex < _manualDraftLines.Count)
+            {
+                ManualCurrentLineText.Text = _manualDraftLines[_manualDraftIndex];
+                NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[_manualDraftIndex];
+                ManualSyncProgressText.Text = $"Reconhecidas {_manualDraftIndex} de {_manualDraftLines.Count} frases. Última: {confidence:P0} de confiança.";
+                StatusText.Text = "Frase reconhecida e enviada ao Holyrics: " + cue.Text;
+            }
+            else
+            {
+                ManualCurrentLineText.Text = "Todas as frases foram reconhecidas. Sincronização concluída.";
+                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} frases reconhecidas e sincronizadas.";
+                _ = StopAutoRecognitionAsync(savePartial: true);
+            }
+        }));
+    }
+
+    private async Task StopAutoRecognitionAsync(bool savePartial)
+    {
+        _automaticLyricsActive = false;
+        var service = _liveRecognition;
+        _liveRecognition = null;
+        if (service is not null)
+        {
+            service.TranscriptReceived -= LiveRecognition_TranscriptReceived;
+            service.StatusChanged -= LiveRecognition_StatusChanged;
+            await service.DisposeAsync();
+        }
+
+        if (savePartial && _manualDraftCues.Count > 0)
+        {
+            _cues.Clear();
+            _cues.AddRange(CueTimeline.Normalize(_manualDraftCues));
+            RefreshCueList();
+            PersistCurrentCues();
+            _lastAutomaticCue = -1;
+        }
+
+        if (AutoRecognitionButton is not null)
+        {
+            AutoRecognitionButton.Content = "Reconhecer automaticamente a letra pela voz";
+            AutoRecognitionButton.IsEnabled = true;
+        }
     }
 
     private void StartLiveManualSync_Click(object sender, RoutedEventArgs e)
@@ -1838,6 +1997,7 @@ public partial class MainWindow : Window
         _playbackEnded = true;
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
+        if (_liveRecognition is not null) _ = StopAutoRecognitionAsync(savePartial: true);
         _manualProjectionMode = false;
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
