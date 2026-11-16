@@ -29,7 +29,7 @@
     <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
     <TextBlock Text="Tela:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
     <ComboBox x:Name="OutputDisplayBox" Width="165" VerticalContentAlignment="Center" ToolTip="Escolha o monitor onde as letras serão projetadas" SelectionChanged="OutputDisplay_SelectionChanged"/>
-    <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a saída do segundo monitor e a apresentação rápida do Holyrics"/>
+    <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a projeção local, a apresentação rápida e a apresentação atual do Holyrics"/>
     <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
    </WrapPanel>
   </Border>
