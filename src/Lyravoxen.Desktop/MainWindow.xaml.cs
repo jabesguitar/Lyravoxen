@@ -903,6 +903,25 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Não foi possível exibir a tela de espera: " + ex.Message; }
     }
 
+    private async void ExitProjection_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_projection is { IsVisible: true })
+            {
+                _projection.ClearDisplay();
+                _projection.Close();
+                _projection = null;
+            }
+            await _holyrics.CloseQuickPresentationAsync();
+            StatusText.Text = "Projeção encerrada. A segunda tela foi liberada e o Holyrics recebeu o comando de fechamento.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "A projeção local foi encerrada, mas houve falha ao fechar o Holyrics: " + ex.Message;
+        }
+    }
+
     private void ProjectionEnding_Click(object sender, RoutedEventArgs e)
     {
         try
