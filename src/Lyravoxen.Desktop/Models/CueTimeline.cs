@@ -24,8 +24,7 @@ public static class CueTimeline
         }
         return low - 1;
     }
-    // Build a rolling projection page from consecutive lyric lines.
-    // The active cue determines which fixed-size block is visible: 1-4, 5-8, etc.
+    // Build a rolling page from consecutive visual lyric lines.
     public static string BuildProjectionBlock(IReadOnlyList<LyricCue> cues, int activeCueIndex, int lineCount)
     {
         if (cues.Count == 0 || activeCueIndex < 0 || activeCueIndex >= cues.Count)
@@ -33,24 +32,18 @@ public static class CueTimeline
 
         var maxLines = Math.Clamp(lineCount, 1, 10);
         static string[] Lines(string? text) => (text ?? string.Empty)
-            .Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Trim())
             .Where(line => line.Length > 0)
             .ToArray();
 
-        var linesBefore = 0;
+        var allLines = cues.SelectMany(cue => Lines(cue.Text)).ToArray();
+        var linesBeforeActiveCue = 0;
         for (var i = 0; i < activeCueIndex; i++)
-            linesBefore += Lines(cues[i].Text).Length;
+            linesBeforeActiveCue += Lines(cues[i].Text).Length;
 
-        var blockStart = (linesBefore / maxLines) * maxLines;
-        return cues.SelectMany(cue => Lines(cue.Text))
-            .Skip(blockStart)
-            .Take(maxLines)
-            .Aggregate(new List<string>(), (result, line) => { result.Add(line); return result; })
-            .Count == 0
-                ? string.Empty
-                : string.Join(Environment.NewLine, cues.SelectMany(cue => Lines(cue.Text)).Skip(blockStart).Take(maxLines));
+        var blockStart = (linesBeforeActiveCue / maxLines) * maxLines;
+        return string.Join(Environment.NewLine, allLines.Skip(blockStart).Take(maxLines));
     }
-
 
 }
