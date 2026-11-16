@@ -293,6 +293,8 @@ public partial class MainWindow : Window
         PlayNextButton.IsEnabled = false;
         try
         {
+            if (_liveRecognition is not null)
+                await StopAutoRecognitionAsync(savePartial: true);
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
             _manualDraftActive = false;
@@ -480,7 +482,7 @@ public partial class MainWindow : Window
         }
 
         var lines = ManualLyricsBox.Text
-            .Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Trim())
             .Where(line => line.Length > 0)
             .ToList();
@@ -1123,7 +1125,7 @@ public partial class MainWindow : Window
                 else if (state == 0) Dispatcher.Invoke(() =>
                     EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente."));
             }
-            if (state != 1 || _cues.Count == 0 || _manualProjectionMode) return;
+            if (state != 1 || _cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
             var cueIndex = FindActiveCue(seconds);
             if (cueIndex == _lastAutomaticCue) return;
             _lastAutomaticCue = cueIndex;
@@ -1979,7 +1981,7 @@ public partial class MainWindow : Window
 
     private void ProcessAudioCue()
     {
-        if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode) return;
+        if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
         _lastKnownPlaybackSeconds = seconds;
         var cueIndex = FindActiveCue(seconds);
