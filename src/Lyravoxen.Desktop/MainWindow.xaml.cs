@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
+    private bool _holyricsEnabled = true;
     private readonly SemaphoreSlim _holyricsSendLock = new(1, 1);
     private long _holyricsSendVersion;
     private long _lyricsSearchVersion;
@@ -701,8 +702,8 @@ public partial class MainWindow : Window
 
     private async Task SendLyricToHolyricsAsync(string text)
     {
-        // Não anunciar entrega ao Holyrics se o usuário ainda não configurou a integração.
-        if (!_holyrics.IsConfigured) return;
+        // A integração pode ser desligada sem encerrar o processo Holyrics.
+        if (!_holyricsEnabled || !_holyrics.IsConfigured) return;
 
         // Mantém a ordem da apresentação: uma resposta lenta não pode sobrescrever uma frase mais nova.
         var requestVersion = Interlocked.Increment(ref _holyricsSendVersion);
@@ -728,6 +729,39 @@ public partial class MainWindow : Window
             if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
                 Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message);
         }
+    }
+
+    private async void HolyricsEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (HolyricsEnabledBox is null) return;
+        var enabled = HolyricsEnabledBox.IsChecked == true;
+        if (enabled == _holyricsEnabled) return;
+
+        if (!enabled)
+        {
+            // Invalida envios antigos e aguarda qualquer requisição em andamento antes de limpar a projeção rápida.
+            Interlocked.Increment(ref _holyricsSendVersion);
+            try
+            {
+                await _holyricsSendLock.WaitAsync();
+                try
+                {
+                    if (_holyrics.IsConfigured)
+                        await _holyrics.ShowTextAsync("");
+                }
+                finally { _holyricsSendLock.Release(); }
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = "Integração desligada, mas não foi possível confirmar a limpeza no Holyrics: " + ex.Message;
+            }
+        }
+
+        _holyricsEnabled = enabled;
+        if (enabled)
+            StatusText.Text = "Integração Holyrics ativada. O programa permanece sob controle próprio.";
+        else
+            StatusText.Text = "Integração Holyrics desativada. A apresentação rápida foi solicitada para fechamento; o Holyrics continua aberto.";
     }
 
     private async void TestHolyrics_Click(object sender, RoutedEventArgs e)
