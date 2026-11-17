@@ -72,6 +72,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         LoadHistory();
         LoadLibrary();
+        Closing += async (_, _) =>
+        {
+            await StopBibleMicrophoneAsync();
+            if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
+        };
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
         Loaded += async (_, _) =>
         {
