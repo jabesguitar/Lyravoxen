@@ -163,3 +163,30 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
   - `Lyravoxen-Installer-Windows-x64`, ID `14360673385`, SHA256 `b778c0d87fbd505de5ee036e2350eb9d4f375d5756ca1b73e5f6586a89e95a6f`.
 - O CI valida compilação e testes automatizados existentes, mas não substitui teste real de reprodução, reconhecimento de voz, sincronização e projeção Holyrics.
 - Próxima etapa: usuário instalar/abrir esta compilação nova e testar letra completa salva, reconhecimento automático e projeção. Registrar capturas/erros antes de qualquer merge. PR #9 permanece draft e sem merge.
+
+
+### Ajuste focado — recuperação de letras ausentes sem alterar o que funciona (2026-11-17)
+- Nova orientação expressa do usuário: preservar pesquisa do YouTube, reprodução, sincronização com letras já encontradas e controles aprovados; o problema principal é encontrar letras de músicas que não aparecem no catálogo automático. Retirar apenas botões repetidos/sem utilidade após inspecionar as ações reais.
+- Inspeção da interface e código:
+  - A busca principal consulta LRCLIB e tenta reutilizar letras sincronizadas da biblioteca.
+  - Havia uma ação separada “Pesquisar em outras fontes (hinos e louvores)” que repetia o fluxo de busca, e só era necessária quando a busca principal não encontrava resultado.
+  - “Controles manuais” não são duplicados: anterior/próxima/projetar/modo automático, editar/atualizar/excluir/reordenar, adicionar por tempo, marcar no tempo atual e importar LRC/SRT têm funções distintas; foram preservados.
+  - Ações do YouTube (carregar, copiar link, próxima música, pesquisar, voltar/avançar/atualizar, abas) também têm funções diferentes e foram preservadas.
+  - Botão de buscar letra e botão separado de busca alternativa foram consolidados: o botão principal agora aciona automaticamente as fontes alternativas quando LRCLIB não retorna resultados.
+- Alterações de interface:
+  1. Rótulo “Buscar letra sincronizada” simplificado para “Buscar letra”.
+  2. Removido apenas o botão separado “Pesquisar em outras fontes (hinos e louvores)”; o fallback passou a ocorrer automaticamente quando a busca primária não encontra letra.
+  3. Aba “Criar / editar letra” renomeada “Cadastrar letra”; cabeçalho e instrução explicam que é o cadastro da letra ausente para a música atual.
+  4. Não foram removidos os controles manuais úteis nem alteradas as abas de Bíblia, microfone, player ou pesquisa YouTube.
+- Fontes de busca adicionais verificadas por pesquisa pública em 17/11/2026:
+  - O Gospel — Harpa Cristã (ogospel.com.br/harpa-crista): catálogo declarado de 640 hinos, busca por número/título/tema/trecho.
+  - mBíblia — Harpa (mbiblia.com.br/harpa): índice de 640 hinos com busca por número ou nome.
+  - Hinos da Harpa (hinosdaharpa.com.br): catálogo dos 640 hinos.
+  - Hinoteca (hinoteca.com.br): acervo declara incluir Harpa Cristã e outros hinários.
+  - Letra Sonora (letrasonora.com.br): letrário declara incluir Harpa Cristã, Cantor Cristão e HCC.
+  - Glow Bible — Hinário (glowbible.org/hinario): pesquisa por número, título ou letra e versão Harpa Cristã.
+  - Mantidas também as fontes gerais Cifra Club, Vagalume, Letras.mus.br, Ouvir Música e Letras.com.
+- As fontes são abertas como pesquisas internas no navegador incorporado; o programa não raspa nem redistribui automaticamente letras protegidas. O usuário confere autoria/versão e cola o texto no cadastro, salvando para uso local.
+- Commits desta rodada: XAML `83c59d1beae78cf4e5b38d8a1bfa03f429b58ba5`; lógica de fallback `a8e96f321da70cd0d642f11c5de05d4bdf1e4a7d`; catálogo verificado `cc7e3c2c3a9ead2b5466ba3a0780cde5736bb8ee`.
+- Estado: PR #9 continua draft e sem merge. Build/CI destas alterações ainda precisa ser conferido; não entregar novo instalador até CI ficar verde.
+- Próxima ação: validar referências XAML/C# e o build completo; corrigir eventuais falhas, documentar e gerar artefato novo. Teste manual posterior: carregar música, buscar letra não encontrada, confirmar abertura das fontes no browser interno, copiar letra, salvar, iniciar reconhecimento com reprodução ativa e confirmar envio ao Holyrics. Também testar que letras previamente encontradas continuam a ser aplicadas como antes.
