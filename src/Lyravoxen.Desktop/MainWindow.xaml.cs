@@ -57,6 +57,7 @@ public partial class MainWindow : Window
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
+    private bool _holyricsEnabled = true;
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
@@ -1266,6 +1267,7 @@ public partial class MainWindow : Window
 
     private void QueueHolyricsUpdate(string text)
     {
+        if (!_holyricsEnabled) return;
         var version = Interlocked.Increment(ref _holyricsUpdateVersion);
         lock (_holyricsQueueSync)
         {
@@ -1318,6 +1320,51 @@ public partial class MainWindow : Window
     }
 
 
+    private async void HolyricsEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingPreferences || HolyricsEnabledBox is null) return;
+        var enabled = HolyricsEnabledBox.IsChecked == true;
+        if (_holyricsEnabled == enabled) return;
+        _holyricsEnabled = enabled;
+        Interlocked.Increment(ref _holyricsUpdateVersion);
+        SaveHolyricsEnabledPreference(enabled);
+
+        if (!enabled)
+        {
+            try
+            {
+                if (_holyrics.IsConfigured)
+                    await QueueHolyricsCloseQuickAsync();
+                StatusText.Text = "Integração Holyrics desativada. A apresentação rápida foi fechada; o programa Holyrics continua aberto.";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = "Integração desativada, mas o fechamento não foi confirmado: " + ex.Message;
+            }
+            return;
+        }
+
+        StatusText.Text = "Integração Holyrics ativada.";
+        if (!string.IsNullOrWhiteSpace(_currentProjectedLyric))
+            QueueHolyricsUpdate(_currentProjectedLyric);
+    }
+
+    private void SaveHolyricsEnabledPreference(bool enabled)
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            current.HolyricsEnabled = enabled;
+            Directory.CreateDirectory(Path.GetDirectoryName(_preferencesFile)!);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível salvar o estado do Holyrics: " + ex.Message; }
+    }
+
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new HolyricsSettingsWindow(_holyrics) { Owner = this };
@@ -1342,6 +1389,8 @@ public partial class MainWindow : Window
             var preferences = JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile));
             if (preferences is null) return;
             _loadingPreferences = true;
+            _holyricsEnabled = preferences.HolyricsEnabled ?? true;
+            HolyricsEnabledBox.IsChecked = _holyricsEnabled;
             _maxProjectionLines = Math.Clamp(preferences.MaxLines ?? 4, 1, 10);
             SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
@@ -1386,6 +1435,7 @@ public partial class MainWindow : Window
     private sealed class ProjectionPreferences
     {
         public int? MaxLines { get; set; } = 4;
+        public bool? HolyricsEnabled { get; set; } = true;
         public string? NextVideoUrl { get; set; }
     }
 
