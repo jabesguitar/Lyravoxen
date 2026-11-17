@@ -2547,6 +2547,7 @@ public partial class MainWindow : Window
             folder.Videos.Add(new LibraryVideo
             {
                 VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
+                FullLyrics = _currentVideo.FullLyrics,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         else
@@ -2556,6 +2557,7 @@ public partial class MainWindow : Window
             video.Composer = MusicComposerBox.Text.Trim();
             video.Artist = MusicArtistBox.Text.Trim();
             video.Url = _currentVideo.Url;
+            video.FullLyrics = _currentVideo.FullLyrics;
             video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         }
         SaveLibrary();
