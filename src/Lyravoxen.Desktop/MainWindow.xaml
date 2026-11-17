@@ -302,7 +302,7 @@
          <StackPanel Margin="2,0,5,2"><TextBlock Text="2. Livro" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleBookReaderBox" Width="205" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Selecione o livro bíblico">
           <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
          </ComboBox></StackPanel>
-         <StackPanel Margin="2,0,5,2"><TextBlock Text="3. Capítulo" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleChapterReaderBox" Width="90" ToolTip="Selecione o capítulo"/></StackPanel>
+         <StackPanel Margin="2,0,5,2"><TextBlock Text="3. Capítulo" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleChapterReaderBox" Width="90" SelectionChanged="BibleChapterReader_SelectionChanged" ToolTip="Selecione o capítulo"/></StackPanel>
          <StackPanel Margin="2,0,5,2"><TextBlock Text="4. Versículo" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleVerseReaderBox" Width="110" SelectionChanged="BibleVerseReader_SelectionChanged" ToolTip="Selecione o versículo para projetar">
           <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
          </ComboBox></StackPanel>
