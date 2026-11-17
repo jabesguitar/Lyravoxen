@@ -52,3 +52,14 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - Branch de integração: `feature/integrated-bible-microphone-holyrics`
 - Base temporária: `fix/holyrics-connect-and-exit-projection` (PR #7)
 - PR desta branch será aberta como PR empilhada, sem alterar main até validação.
+
+
+### Atualização — ARC SBB 2009 e fidelidade textual (2026-11-17)
+- Solicitação do usuário: incluir João Ferreira de Almeida — Almeida Revista e Corrigida, a versão usada nos cultos, sem interferências artificiais, reescrita, paráfrase ou correção automática.
+- Pesquisa confirmou que a SBB identifica ARC 2009 como a versão usada pela Assembleia de Deus; a SBB também disponibiliza ARC69 (1969) como uma edição distinta.
+- O Holyrics informa parceria com a SBB para Almeida Revista e Corrigida © 2009. O catálogo de versões da Bíblia no app oficial SBB+ também lista ARC 2009 e ARC69 separadamente.
+- Decisão técnica: não copiar nem redistribuir o texto protegido. Integrar a ARC por meio da instalação licenciada do Holyrics, consultando `GetBibleVersionsV2` e projetando referências com `ShowVerse`, após autorização de permissões do token.
+- Implementado nesta branch: métodos para consultar versões do Holyrics e solicitar projeção de uma referência na versão escolhida; UI para listar versões cujo título contenha exatamente “Almeida Revista e Corrigida”, exigir seleção manual e projetar sem transformar o texto.
+- O leitor Midvash local continua separado. Almeida 1911 é identificada explicitamente como edição histórica distinta, não como ARC SBB 2009.
+- Limitação: a API pública documentada do Holyrics lista versões e permite projetar referências, mas não oferece endpoint documentado para extrair o texto completo da Bíblia para o leitor próprio. A projeção ARC original é feita pelo Holyrics. Para exibição independente/offline no telão próprio, será necessária uma licença/arquivo autorizado pela SBB e um formato de importação compatível.
+- Validação pendente: configurar o Holyrics no computador de teste, verificar que a lista retorna ARC 2009, conferir referências, testar permissões e confirmar visualmente que o texto projetado é o original.
