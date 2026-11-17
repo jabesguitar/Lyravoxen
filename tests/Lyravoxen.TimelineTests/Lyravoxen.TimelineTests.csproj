@@ -9,5 +9,6 @@
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LyricCue.cs" Link="LyricCue.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Models/CueTimeline.cs" Link="CueTimeline.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LiveLyricsMatcher.cs" Link="LiveLyricsMatcher.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/BibleReferenceParser.cs" Link="BibleReferenceParser.cs" />
   </ItemGroup>
 </Project>
