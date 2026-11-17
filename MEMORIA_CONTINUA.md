@@ -97,3 +97,34 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - O CI confirma compilação, testes automatizados já existentes e geração dos pacotes. Não comprova ainda funcionamento físico do microfone, precisão da interpretação em ambiente de culto, resposta da API Holyrics/token, fidelidade visual em projetor, nem desempenho em Xeon/i5 antigo.
 - Estado: build de teste atualizado pronto para validação manual do usuário. PR #9 continua em draft, sem merge na main.
 - Próxima etapa: usuário instalar o artefato do run #465, validar os novos seletores, leitura multi-capítulo, fala/transcrição, prévia e projeção; reportar qualquer falha com captura de tela. Corrigir regressões antes de solicitar aprovação para merge.
+
+
+### Correções após teste visual do usuário — 2026-11-17
+- Solicitação do usuário, baseada na captura do aplicativo:
+  - O controle de ativação do microfone não mostrava claramente se estava marcado/ativo; o usuário não conseguia confirmar se havia captação.
+  - A atualização/seleção de microfone não dava retorno claro.
+  - A lista de versículos tinha texto quase invisível por baixo contraste.
+  - Os seletores da biblioteca não comunicavam a sequência desejada: Bíblia/versão, livro, capítulo e versículo.
+  - O comando de projetar capítulo/versículo não entregava uma saída clara.
+  - O cabeçalho da ARC do Holyrics tinha texto explicativo desnecessário (“sem alteração do texto”).
+  - A prévia de letras ao vivo precisava de readequação para uma área 16:9 maior e mais legível.
+- Correções implementadas:
+  1. **Microfone:** redesenhado o checkbox com caixa maior e marca de seleção de alto contraste; estado textual explícito DESLIGADO / INICIANDO / PREPARANDO / OUVINDO / VERIFICAR / ERRO / SEM DISPOSITIVO.
+  2. **Nível de áudio:** o serviço de microfone calcula o nível RMS de cada bloco de áudio e a interface mostra uma barra de sinal em tempo real (“Sem sinal”, “Sinal baixo”, “Áudio captado”, “Sinal forte”). Isso distingue microfone selecionado de microfone que realmente recebe áudio.
+  3. **Primeiro uso:** o estado informa que o modelo Whisper gratuito precisa ser baixado antes da captação; não declara “ouvindo” até a captura iniciar. Erros de enumeração e início informam verificar Configurações > Sistema > Som > Entrada e permissões do Windows.
+  4. **Biblioteca:** sequência numerada e explícita de seleção: 1. Bíblia/versão, 2. Livro, 3. Capítulo, 4. Versículo. O seletor de versículo acompanha a lista e a lista acompanha o seletor; ao trocar livro/capítulo, seleção antiga é limpa.
+  5. **Contraste:** ItemTemplate explícito para texto dos versículos e dos combos, com foreground escuro e fundo claro; nome da edição histórica Almeida 1911 encurtado para caber no seletor, mantendo licença/identificação separada da ARC SBB 2009.
+  6. **Projeção bíblica:** adicionada saída específica com referência em cabeçalho separado do texto do versículo; a janela de projeção é trazida para frente e o estado informa qual monitor recebeu a projeção. A projeção da biblioteca livre segue pela janela própria; a ARC SBB 2009 continua usando o Holyrics e seu ID pt_arc.
+  7. **Parser de fala:** extraído para Models/BibleReferenceParser.cs, ampliado para livros do cânon e números falados/digitados, incluindo “João capítulo três, versículo dezesseis”, “João capítulo 3 versículo 16”, “primeiro Samuel capítulo dois versículo quatro” e números compostos como “vinte e três”. O parser sugere a referência; não projeta sem confirmação.
+  8. **Prévia musical:** mantida a proporção 16:9 e removido o limite de altura muito restritivo; a prévia agora pode ocupar mais da área disponível.
+  9. **Holyrics:** o cabeçalho não inclui mais a frase redundante “sem alteração do texto”; mensagens de busca, versão não encontrada e envio passaram a aparecer na própria área bíblica.
+- Durante a primeira compilação desta rodada, o CI apontou erro XAML: um Border recebeu múltiplos filhos. A estrutura foi corrigida envolvendo checkbox, estado e medidor em um StackPanel horizontal. Não ocultar esse erro do histórico.
+- Testes automatizados acrescentados ao projeto tests/Lyravoxen.TimelineTests para referências numéricas, fala por extenso, números mistos, livros com ordinal, números compostos, rejeição de fala sem referência e capítulo inválido.
+- Validação final do código no commit a7331eb4e7977a2c8035b4b8e940133797f92bc9: GitHub Actions run #513, ID 44151904422, conclusão **success**. Restore, Build Windows x64, testes da linha do tempo + parser bíblico, pacote portátil, upload, Inno Setup, build do instalador e upload do instalador concluídos.
+- Artefatos do run #513:
+  - Lyravoxen-Windows-x64-portable, ID 14360310405, SHA256 42db12577ba546820696c32fd1dfdc0e217673020dbbc263aec2d5d2b5a11c54.
+  - Lyravoxen-Installer-Windows-x64, ID 14360150730, SHA256 34b1fe43373f6eb528f962e22f6d8a8304d03fa740d5dee2898b0c86dc671f6b.
+  - Lyravoxen-Windows-x64, ID 14360075798, SHA256 40e1604d29279e10f0303c9419c03c228d904bab035f773c41a6a28e8e9ab4f9.
+- Limite de validação: CI e testes automatizados aprovados não provam que o Windows do usuário permite acesso ao microfone, que o modelo será baixado em sua rede, que o áudio terá nível suficiente, nem que a tela de saída está corretamente configurada. Esses pontos exigem o próximo teste físico.
+- Estado atual: versão atualizada pronta para novo teste no computador do usuário. PR #9 continua draft e sem merge na main.
+- Próxima ação: baixar os artefatos do run #513; testar primeiro o microfone observando barra de nível e estado OUVINDO; depois reconhecer João 3:16; carregar e selecionar um versículo; projetar na tela externa; verificar a prévia ao vivo. Registrar qualquer falha com nova captura.
