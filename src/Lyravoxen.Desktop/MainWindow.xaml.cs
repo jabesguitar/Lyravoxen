@@ -27,6 +27,8 @@ public partial class MainWindow : Window
     private readonly List<LyricCue> _manualDraftCues = new();
     private LiveAudioTranscriptionService? _liveRecognition;
     private MicrophoneTranscriptionService? _bibleMicrophoneRecognition;
+    private readonly BibleReaderService _bibleReader = new();
+    private BibleChapter? _loadedBibleChapter;
     private bool _loadingMicrophoneDevices;
     private bool _automaticLyricsActive;
     private readonly StringBuilder _liveTranscriptBuffer = new();
@@ -86,6 +88,7 @@ public partial class MainWindow : Window
                 await InitializeBrowserViewAsync(YoutubeSearchView);
                 LoadPreferences();
                 RefreshMicrophoneDevices();
+                await LoadBibleCatalogAsync();
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
                 _searchWebViewReady = true;
                 StatusText.Text = "Player pronto. Use a aba Próxima música para pesquisar e preparar a próxima faixa.";
@@ -93,6 +96,80 @@ public partial class MainWindow : Window
             }
             catch (Exception ex) { StatusText.Text = "Não foi possível iniciar o WebView2: " + ex.Message; }
         };
+    }
+
+    private async Task LoadBibleCatalogAsync()
+    {
+        BibleVersionReaderBox.ItemsSource = BibleReaderService.FreePortugueseVersions;
+        BibleVersionReaderBox.SelectedIndex = 0;
+        try
+        {
+            var books = await _bibleReader.GetBooksAsync();
+            BibleBookReaderBox.ItemsSource = books;
+            if (books.Count > 0) BibleBookReaderBox.SelectedIndex = 0;
+            BibleCopyrightText.Text = "Versões livres disponíveis. Cada capítulo consultado é guardado localmente para leitura offline; confira a licença exibida.";
+        }
+        catch (Exception ex)
+        {
+            BibleCopyrightText.Text = "Catálogo de livros indisponível sem conexão inicial: " + ex.Message;
+        }
+    }
+
+    private void BibleBookReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (BibleBookReaderBox.SelectedItem is not BibleBook book) return;
+        BibleChapterReaderBox.ItemsSource = Enumerable.Range(1, book.Chapters).ToList();
+        BibleChapterReaderBox.SelectedIndex = 0;
+    }
+
+    private async void LoadBibleChapter_Click(object sender, RoutedEventArgs e)
+    {
+        if (BibleVersionReaderBox.SelectedItem is not BibleVersion version ||
+            BibleBookReaderBox.SelectedItem is not BibleBook book ||
+            BibleChapterReaderBox.SelectedItem is not int chapter)
+        {
+            BibleCopyrightText.Text = "Selecione uma versão, um livro e um capítulo.";
+            return;
+        }
+
+        try
+        {
+            BibleCopyrightText.Text = "Carregando " + book.Name + " " + chapter + "...";
+            var result = await _bibleReader.GetChapterAsync(version.Slug, book, chapter);
+            _loadedBibleChapter = result;
+            BibleVersesList.ItemsSource = result.Verses.Select((text, index) =>
+                new BibleVerseItem(index + 1, text)).ToList();
+            var cacheStatus = result.FromCache ? " — carregado do cache offline" : " — salvo para uso offline";
+            BibleCopyrightText.Text = version.Name + " | " + book.Name + " " + chapter + cacheStatus +
+                (string.IsNullOrWhiteSpace(result.Copyright) ? "" : Environment.NewLine + result.Copyright);
+        }
+        catch (Exception ex)
+        {
+            BibleCopyrightText.Text = "Não foi possível carregar este capítulo: " + ex.Message;
+        }
+    }
+
+    private void BibleVerse_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => ProjectBibleVerse_Click(sender, e);
+
+    private void ProjectBibleVerse_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loadedBibleChapter is null || BibleVersesList.SelectedItem is not BibleVerseItem verse ||
+            BibleBookReaderBox.SelectedItem is not BibleBook book)
+        {
+            BibleCopyrightText.Text = "Carregue um capítulo e selecione um versículo antes de projetar.";
+            return;
+        }
+
+        var reference = $"{book.Name} {_loadedBibleChapter.Chapter}:{verse.Number}";
+        EnsureProjectionWindow();
+        _projection!.ShowLyric(reference + Environment.NewLine + verse.Text);
+        StatusText.Text = "Versículo enviado à projeção: " + reference;
+    }
+
+    private sealed record BibleVerseItem(int Number, string Text)
+    {
+        public string Display => $"{Number}. {Text}";
     }
 
     private void RefreshMicrophones_Click(object sender, RoutedEventArgs e) => RefreshMicrophoneDevices();
