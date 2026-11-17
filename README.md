@@ -43,3 +43,15 @@ O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runt
 - O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
 - Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
 - APK Android exigiria um projeto separado.
+
+
+## Bíblia e microfone (em validação)
+- Aba **Bíblia** com versões portuguesas de domínio público ou licença aberta, consulta por livro/capítulo e projeção de versículo.
+- Os capítulos consultados são armazenados localmente para consulta posterior sem internet.
+- Aba **Bíblia e microfone** com seleção de dispositivo de entrada e interruptor próprio. O áudio do microfone é transcrito localmente com Whisper; a interpretação da referência usa o parser gratuito Midvash quando há internet.
+- Referências identificadas são apenas sugestões: o operador deve conferir o texto e iniciar a projeção manualmente.
+- Versões livres iniciais: Almeida 1911, Bíblia Livre (CC BY), Bíblia Portuguesa Mundial e Bíblia Livre Para Todos (CC BY-SA 4.0). O crédito/licença é exibido junto do texto.
+- Não empacotamos NVI, ARA, NAA, NVT ou outras traduções protegidas sem licença expressa. A lista de versões parceiras do Holyrics não concede ao Lyravoxen direito de redistribuição.
+- O microfone bíblico é independente da captura do áudio musical e começa desligado. Desligar interrompe a captação.
+
+Documentação e estado cronológico: [MEMORIA_CONTINUA.md](MEMORIA_CONTINUA.md) e [docs/BIBLE_VOICE_AND_VISUAL_DESIGN.md](docs/BIBLE_VOICE_AND_VISUAL_DESIGN.md).
