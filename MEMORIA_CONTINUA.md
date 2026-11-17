@@ -195,3 +195,11 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - Correção adicional após inspeção dos caminhos de fallback: quando LRCLIB retorna itens sem letra temporizada compatível, o app agora abre as fontes alternativas automaticamente, sem pedir um segundo clique. A escolha de cadastrar letra quando uma letra colada não corresponde a uma versão temporizada continua preservada.
 - Verificação estática das referências XAML/C#: todos os handlers Click declarados no XAML possuem método correspondente; não há referência restante ao antigo handler do botão removido.
 - Commit de correção do fallback: `429175a49bdca3c4c6c23d951f07e82fcacb2c45`. O CI do HEAD atualizado ainda precisa concluir.
+
+
+- Validação posterior da rodada de busca de letras: workflow #546 (run ID `44171255504`) concluído com sucesso em 17/11/2026. Restore, Build, Test cue timeline, ZIP portátil, upload build, upload portable, instalação Inno Setup, Build Windows installer e upload installer concluíram com sucesso.
+- Artefatos do commit `789e4597fb4bc8116ff44b1a18fbcc8afe237200`:
+  - Portable `Lyravoxen-Windows-x64-portable`, artifact ID `14368266439`, SHA256 `c3677d06d1cd4930c6bd975d2b544db888e08f24f80d508bc2dcf752f87ad344`.
+  - Pacote Windows `Lyravoxen-Windows-x64`, artifact ID `14366499122`.
+  - Instalador `Lyravoxen-Installer-Windows-x64`, artifact ID `14366479301`, SHA256 `697100dcffac0f118e0257aaf0a46f2b8029de799017b139bbe3d1bd2e34c682`.
+- CI confirma compilação, testes automatizados do timeline e geração dos pacotes; não confirma testes manuais da busca de letras, player, reprodução, sincronismo com letras já encontradas, microfone ou Holyrics real. Próxima etapa: usuário baixar o instalador ou pacote portátil e validar comportamento funcional antes de merge.
