@@ -75,6 +75,9 @@ public partial class ProjectionWindow : Window
             : System.Windows.Media.Colors.White;
         Background = new System.Windows.Media.SolidColorBrush(background);
         LyricDisplay.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
+        BibleVerseDisplay.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
+        BibleReferenceDisplay.Foreground = new System.Windows.Media.SolidColorBrush(
+            theme == "Âmbar" ? System.Windows.Media.Color.FromRgb(255, 184, 77) : System.Windows.Media.Color.FromRgb(38, 198, 184));
         OverlayTitle.Foreground = new System.Windows.Media.SolidColorBrush(
             theme == "Âmbar" ? System.Windows.Media.Color.FromRgb(255, 184, 77) : System.Windows.Media.Color.FromRgb(38, 198, 184));
         OverlaySubtitle.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
