@@ -30,8 +30,6 @@ public partial class ProjectionWindow : Window
         return output?.DeviceName;
     }
 
-    private const double BaseFontSize = 48;
-
     public void SetBackgroundImage(string? path)
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
