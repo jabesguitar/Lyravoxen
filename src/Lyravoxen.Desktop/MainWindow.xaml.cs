@@ -44,6 +44,7 @@ public partial class MainWindow : Window
     private readonly HolyricsClient _holyrics = new();
     private readonly SemaphoreSlim _holyricsSendLock = new(1, 1);
     private long _holyricsSendVersion;
+    private bool _holyricsEnabled = true;
     private long _lyricsSearchVersion;
     private bool _pauseOnPlayerReady;
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
@@ -702,7 +703,7 @@ public partial class MainWindow : Window
     private async Task SendLyricToHolyricsAsync(string text)
     {
         // Não anunciar entrega ao Holyrics se o usuário ainda não configurou a integração.
-        if (!_holyrics.IsConfigured) return;
+        if (!_holyricsEnabled || !_holyrics.IsConfigured) return;
 
         // Mantém a ordem da apresentação: uma resposta lenta não pode sobrescrever uma frase mais nova.
         var requestVersion = Interlocked.Increment(ref _holyricsSendVersion);
@@ -728,6 +729,56 @@ public partial class MainWindow : Window
             if (requestVersion == Interlocked.Read(ref _holyricsSendVersion))
                 Dispatcher.Invoke(() => StatusText.Text = "Falha ao enviar ao Holyrics: " + ex.Message);
         }
+    }
+
+    private async void HolyricsEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingPreferences || HolyricsEnabledBox is null) return;
+        var enabled = HolyricsEnabledBox.IsChecked == true;
+        if (_holyricsEnabled == enabled) return;
+        _holyricsEnabled = enabled;
+        Interlocked.Increment(ref _holyricsSendVersion);
+        SaveHolyricsEnabledPreference(enabled);
+
+        if (!enabled)
+        {
+            if (_holyrics.IsConfigured)
+            {
+                try
+                {
+                    await _holyricsSendLock.WaitAsync();
+                    try { await _holyrics.ShowTextAsync(""); }
+                    finally { _holyricsSendLock.Release(); }
+                    StatusText.Text = "Integração Holyrics desativada. A projeção rápida foi fechada; o programa Holyrics continua aberto.";
+                }
+                catch (Exception ex)
+                {
+                    StatusText.Text = "Integração desativada, mas não foi possível confirmar o fechamento no Holyrics: " + ex.Message;
+                }
+            }
+            else StatusText.Text = "Integração Holyrics desativada. O programa Holyrics permanece aberto.";
+            return;
+        }
+
+        StatusText.Text = "Integração Holyrics ativada.";
+        if (!string.IsNullOrWhiteSpace(_currentProjectedLyric))
+            _ = SendLyricToHolyricsAsync(_currentProjectedLyric);
+    }
+
+    private void SaveHolyricsEnabledPreference(bool enabled)
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            current.HolyricsEnabled = enabled;
+            Directory.CreateDirectory(Path.GetDirectoryName(_preferencesFile)!);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível salvar o estado do Holyrics: " + ex.Message; }
     }
 
     private async void TestHolyrics_Click(object sender, RoutedEventArgs e)
@@ -780,6 +831,8 @@ public partial class MainWindow : Window
             var preferences = JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile));
             if (preferences is null) return;
             _loadingPreferences = true;
+            _holyricsEnabled = preferences.HolyricsEnabled ?? true;
+            HolyricsEnabledBox.IsChecked = _holyricsEnabled;
             SelectComboItem(ProjectionThemeBox, preferences.Theme ?? "Noturno");
             SelectComboItem(LineCountBox, (preferences.MaxLines ?? 4).ToString(CultureInfo.InvariantCulture));
             _selectedOutputDeviceName = preferences.OutputDeviceName;
@@ -834,6 +887,7 @@ public partial class MainWindow : Window
         public int? MaxLines { get; set; } = 4;
         public string? OutputDeviceName { get; set; }
         public string? NextVideoUrl { get; set; }
+        public bool? HolyricsEnabled { get; set; } = true;
     }
 
     private void SaveNextVideoPreference()
