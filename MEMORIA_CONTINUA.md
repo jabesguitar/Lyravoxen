@@ -190,3 +190,8 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - Commits desta rodada: XAML `83c59d1beae78cf4e5b38d8a1bfa03f429b58ba5`; lógica de fallback `a8e96f321da70cd0d642f11c5de05d4bdf1e4a7d`; catálogo verificado `cc7e3c2c3a9ead2b5466ba3a0780cde5736bb8ee`.
 - Estado: PR #9 continua draft e sem merge. Build/CI destas alterações ainda precisa ser conferido; não entregar novo instalador até CI ficar verde.
 - Próxima ação: validar referências XAML/C# e o build completo; corrigir eventuais falhas, documentar e gerar artefato novo. Teste manual posterior: carregar música, buscar letra não encontrada, confirmar abertura das fontes no browser interno, copiar letra, salvar, iniciar reconhecimento com reprodução ativa e confirmar envio ao Holyrics. Também testar que letras previamente encontradas continuam a ser aplicadas como antes.
+
+
+- Correção adicional após inspeção dos caminhos de fallback: quando LRCLIB retorna itens sem letra temporizada compatível, o app agora abre as fontes alternativas automaticamente, sem pedir um segundo clique. A escolha de cadastrar letra quando uma letra colada não corresponde a uma versão temporizada continua preservada.
+- Verificação estática das referências XAML/C#: todos os handlers Click declarados no XAML possuem método correspondente; não há referência restante ao antigo handler do botão removido.
+- Commit de correção do fallback: `429175a49bdca3c4c6c23d951f07e82fcacb2c45`. O CI do HEAD atualizado ainda precisa concluir.
