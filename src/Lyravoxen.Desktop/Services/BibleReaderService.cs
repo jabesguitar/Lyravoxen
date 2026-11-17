@@ -70,6 +70,25 @@ public sealed class BibleReaderService
         }
     }
 
+    public async Task<string?> ParseReferenceAsync(string spokenText, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(spokenText)) return null;
+        var url = "https://api.midvash.com/v1/parse?q=" + Uri.EscapeDataString(spokenText);
+        using var response = await Http.GetAsync(url, cancellationToken);
+        if (!response.IsSuccessStatusCode) return null;
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        if (!json.RootElement.TryGetProperty("data", out var data)) return null;
+        var bookSlug = data.TryGetProperty("book_slug", out var book) ? book.GetString() : null;
+        var chapter = data.TryGetProperty("chapter", out var ch) ? ch.GetInt32() : 0;
+        if (string.IsNullOrWhiteSpace(bookSlug) || chapter < 1) return null;
+        var start = data.TryGetProperty("verse_start", out var vs) && vs.ValueKind == JsonValueKind.Number ? vs.GetInt32() : (int?)null;
+        var end = data.TryGetProperty("verse_end", out var ve) && ve.ValueKind == JsonValueKind.Number ? ve.GetInt32() : (int?)null;
+        var bookName = bookSlug.Replace('-', ' ');
+        var reference = bookName + " " + chapter;
+        if (start.HasValue) reference += ":" + start.Value + (end.HasValue && end.Value != start.Value ? "-" + end.Value : "");
+        return reference;
+    }
+
     private static BibleChapter ParseChapter(string body, string requestedVersion, BibleBook book, int chapter, bool fromCache)
     {
         using var json = JsonDocument.Parse(body);
