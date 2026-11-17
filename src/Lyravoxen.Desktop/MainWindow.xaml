@@ -209,26 +209,20 @@
  <TabItem x:Name="ManualSyncTab" Header="Criar / editar letra">
   <Grid Margin="24">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-   <StackPanel Grid.Row="0" Margin="0,0,0,14">
-    <TextBlock Text="SINCRONIZAR LETRA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
-    <TextBlock Text="Com a música tocando na aba Ao vivo, cole a letra aqui. O Lyravoxen procura primeiro na biblioteca local e depois no catálogo de letras sincronizadas. Se não encontrar, inicie a sincronização ao vivo e marque cada frase sem parar a música." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+   <StackPanel Grid.Row="0" Margin="0,0,0,12">
+    <TextBlock Text="LETRA COMPLETA E SINCRONIZAÇÃO AUTOMÁTICA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
+    <TextBlock Text="Cole ou edite a letra inteira, mantendo uma frase por linha. Salve uma vez. Quando a música tocar, o Lyravoxen compara o áudio com a letra salva, identifica o trecho cantado e envia a frase correspondente ao Holyrics." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
    </StackPanel>
-   <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Cole aqui a letra completa, preservando as estrofes e refrões"/>
-   <StackPanel Grid.Row="2" Margin="0,12,0,0">
-    <Button x:Name="AutoRecognitionButton" Content="Reconhecer automaticamente (gratuito e offline)" Click="ToggleAutoRecognition_Click" Background="#176E68" Height="42" FontSize="14"/>
-    <TextBlock Text="O Lyravoxen reconhece a voz localmente no computador. O primeiro uso baixa um modelo gratuito; depois funciona sem API, assinatura ou cobrança." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,3,4,5"/>
-    <Button Content="Iniciar sincronização ao vivo (sem reiniciar a música)" Click="StartLiveManualSync_Click" Background="#176E68" Height="42" FontSize="14"/>
-    <Button Content="Marcar próxima frase no tempo atual" Click="MarkNextManualDraftLine_Click" Margin="0,5,0,0" Height="38"/>
-    <Button Content="Buscar versão sincronizada desta letra" Click="ManualSync_Click" Margin="0,5,0,0"/>
-    <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra, inicie a música e depois inicie a sincronização ao vivo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="12" Margin="4,8,4,0"/>
-    <Border Background="#0D151D" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="12" Margin="4,8,4,0">
-     <StackPanel>
-      <TextBlock Text="PRÓXIMA FRASE A MARCAR" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold"/>
-      <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o início da sincronização ao vivo..." Foreground="#F2F6F8" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,0"/>
-     </StackPanel>
-    </Border>
-    <TextBlock Text="Modo manual de reserva: cada clique marca a frase no tempo atual. A reprodução não é reiniciada." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="4,6,4,0"/>
-   </StackPanel>
+   <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Letra completa: mantenha cada frase em uma linha. As estrofes em branco podem separar partes da música."/>
+   <Grid Grid.Row="2" Margin="0,10,0,0">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <Button Grid.Column="0" Content="Salvar letra completa" Click="SaveFullLyrics_Click" Background="#176E68" Height="42" FontSize="14" Padding="18,8"/>
+    <Button x:Name="AutoRecognitionButton" Grid.Column="1" Content="Iniciar reconhecimento automático" Click="ToggleAutoRecognition_Click" Background="#176E68" Height="42" FontSize="14" Padding="18,8"/>
+    <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
+     <TextBlock x:Name="ManualSyncProgressText" Text="Salve a letra completa. Ao iniciar a música, ative o reconhecimento automático." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="12"/>
+     <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o reconhecimento da música..." Foreground="#F2F6F8" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold" Margin="0,3,0,0"/>
+    </StackPanel>
+   </Grid>
   </Grid>
  </TabItem>
  <TabItem Header="＋ Próxima música">
