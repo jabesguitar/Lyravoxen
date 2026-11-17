@@ -48,3 +48,14 @@ Fontes:
 - Holyrics, parcerias e versões: https://holyrics.com.br/about.php
 - Holyrics API Server: https://github.com/holyrics/API-Server
 - SBB+, lista ARC69 e ARC 2009: https://play.google.com/store/apps/details?id=org.bb.app
+
+
+## Ajustes de usabilidade — 17/11/2026
+- A Bíblia fica em uma aba principal exclusiva, separada do fluxo musical. Dentro dela, microfone e biblioteca possuem subabas próprias.
+- Seletores de dispositivo e versão usam texto escuro sobre superfície clara; opções da lista têm contraste e realce visíveis.
+- O seletor de microfone mostra o nome do dispositivo, informa qual está selecionado e fica bloqueado enquanto a captação está ativa.
+- A transcrição de fala permanece visível mesmo quando a interpretação online falha. O app tenta interpretar referências bíblicas comuns localmente antes de consultar o parser gratuito online. A referência identificada é uma sugestão e exige conferência antes da projeção.
+- O leitor livre pode carregar de 1 a 6 capítulos consecutivos, com identificação explícita de capítulo e versículo, fundo claro e rolagem.
+- A prévia de letras recebeu mais espaço horizontal e vertical, tipografia maior e contraste reforçado.
+- A ARC SBB 2009 continua separada das versões livres: a interface não troca silenciosamente uma tradução pela outra.
+- O reconhecimento local e a consulta online não substituem a validação do operador; microfone, ambiente acústico, conexão e versão licenciada instalada no Holyrics ainda exigem teste no computador de destino.
