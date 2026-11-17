@@ -151,3 +151,15 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - CI desta nova etapa ainda pendente. Consultar o HEAD atual e o workflow mais recente antes de entregar novo pacote.
 - Estado: código atualizado na branch feature/integrated-bible-microphone-holyrics; PR #9 segue draft e sem merge. A versão anterior run #513 continua sendo a compilação que o usuário está testando; esta nova funcionalidade só deve ser testada depois do novo CI e novo artefato.
 - Próxima ação: validar o build e testes, corrigir erros de compilação/regressões, atualizar PR e documentação; depois fornecer um pacote novo claramente identificado como contendo letra completa salva e reconhecimento automático.
+
+
+### Validação CI da etapa de letra completa (2026-11-17)
+- Commit validado: `4b243ad858c4d824d83a64eee4220499c23979b6`.
+- GitHub Actions run `44156072620`: concluído com sucesso. Restore, Build, Test cue timeline, pacote portátil, upload, instalação do Inno Setup, compilação do instalador e upload do instalador concluídos com sucesso.
+- Run duplicado `44156062780`: também concluído com sucesso.
+- Artefatos gerados no run principal:
+  - `Lyravoxen-Windows-x64-portable`, ID `14361705947`, SHA256 `9446597e202ac345e6581e43cc83cb1ee47d1a54417db4b5be836d589074c517`.
+  - `Lyravoxen-Windows-x64`, ID `14361591233`, SHA256 `8e135c94acd7aa16eedfab57bea37b3918df98c9c9612f055c6c140ebea4d24d`.
+  - `Lyravoxen-Installer-Windows-x64`, ID `14360673385`, SHA256 `b778c0d87fbd505de5ee036e2350eb9d4f375d5756ca1b73e5f6586a89e95a6f`.
+- O CI valida compilação e testes automatizados existentes, mas não substitui teste real de reprodução, reconhecimento de voz, sincronização e projeção Holyrics.
+- Próxima etapa: usuário instalar/abrir esta compilação nova e testar letra completa salva, reconhecimento automático e projeção. Registrar capturas/erros antes de qualquer merge. PR #9 permanece draft e sem merge.
