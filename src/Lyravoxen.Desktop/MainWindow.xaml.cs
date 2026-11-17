@@ -256,7 +256,7 @@ public partial class MainWindow : Window
 
     private void BibleMicrophone_TranscriptReceived(object? sender, LiveTranscriptEventArgs e)
     {
-        Dispatcher.BeginInvoke(new Action(() =>
+        Dispatcher.BeginInvoke(new Action(async () =>
         {
             if (BibleMicrophoneEnabledBox.IsChecked != true) return;
             var line = e.Transcript.Trim();
@@ -264,10 +264,16 @@ public partial class MainWindow : Window
             BibleTranscriptBox.AppendText((BibleTranscriptBox.Text.Length == 0 ? "" : Environment.NewLine) + line);
             BibleTranscriptBox.ScrollToEnd();
 
-            var reference = Regex.Match(line,
-                @"(?i)\b(gn|gênesis|genesis|êxodo|exodo|ex|sl|salmos?|pv|provérbios|proverbios|is|isaías|isaias|mt|mateus|mc|marcos|lc|lucas|jo|joão|joao|atos|rm|romanos|1\s*coríntios|2\s*coríntios|gl|gálatas|galatas|ef|efésios|efesios|fp|filipenses|cl|colossenses|1\s*tessalonicenses|2\s*tessalonicenses|1\s*timóteo|2\s*timóteo|hb|hebreus|tg|tiago|1\s*pedro|2\s*pedro|ap|apocalipse)\s+(\d{1,3})\s*[:.,]\s*(\d{1,3})\b");
-            if (reference.Success)
-                BibleMicrophoneStatusText.Text = "Possível referência identificada: " + reference.Value + ". Confirme o texto na Bíblia antes de projetar.";
+            if (Regex.IsMatch(line, @"(?i)\b(gn|gênesis|genesis|êxodo|exodo|salmo|salmos|provérbios|proverbios|isaías|isaias|mateus|marcos|lucas|joão|joao|atos|romanos|coríntios|gálatas|galatas|efésios|efesios|filipenses|colossenses|tessalonicenses|timóteo|timoteo|hebreus|tiago|pedro|apocalipse)\b"))
+            {
+                try
+                {
+                    var possibleReference = await _bibleReader.ParseReferenceAsync(line);
+                    if (!string.IsNullOrWhiteSpace(possibleReference))
+                        BibleMicrophoneStatusText.Text = "Possível referência identificada: " + possibleReference + ". Confira o texto e confirme antes de projetar.";
+                }
+                catch { /* A transcrição continua disponível mesmo sem internet para interpretar a referência. */ }
+            }
         }));
     }
 
