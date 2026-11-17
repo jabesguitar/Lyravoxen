@@ -53,7 +53,7 @@ public sealed class MicrophoneTranscriptionService : IAsyncDisposable
             .WithLanguage("pt")
             .Build();
 
-        _capture = new WaveInEvent { DeviceNumber = _deviceNumber, WaveFormat = new WaveFormat(CaptureRate, 16, 1), BufferMilliseconds = 250 };
+        _capture = new WaveInEvent { DeviceNumber = _deviceNumber, WaveFormat = new WaveFormat(44100, 16, 1), BufferMilliseconds = 250 };
         _capture.DataAvailable += Capture_DataAvailable;
         _capture.RecordingStopped += Capture_RecordingStopped;
         _segmentStart = 0;
