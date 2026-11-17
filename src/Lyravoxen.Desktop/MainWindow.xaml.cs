@@ -17,6 +17,7 @@ namespace Lyravoxen;
 
 public partial class MainWindow : Window
 {
+    private ProjectionWindow? _projection;
     private string _currentProjectedLyric = "";
     private string? _selectedProjectionBackgroundPath;
     private int _maxProjectionLines = 4;
@@ -1466,6 +1467,7 @@ public partial class MainWindow : Window
         if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
             !int.TryParse(item.Content?.ToString(), out var count)) return;
         _maxProjectionLines = Math.Clamp(count, 1, 10);
+        _projection?.SetMaxLines(_maxProjectionLines);
         if (!_loadingPreferences) SavePreferences(count);
         RefreshCurrentProjectionBlock();
     }
@@ -1555,6 +1557,7 @@ public partial class MainWindow : Window
         try
         {
             await QueueHolyricsCloseProjectionAsync();
+            _projection?.Close();
             StatusText.Text = "Projeção do Holyrics encerrada. O Lyravoxen permanece aberto para a próxima música.";
         }
         catch (Exception ex)
