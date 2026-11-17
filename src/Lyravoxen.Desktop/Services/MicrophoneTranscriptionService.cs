@@ -254,11 +254,3 @@ public sealed class MicrophoneTranscriptionService : IAsyncDisposable
         _segmentReady.Dispose();
     }
 }
-
-public sealed class LiveTranscriptEventArgs(string itemId, string transcript, double audioStartSeconds, bool isFinal) : EventArgs
-{
-    public string ItemId { get; } = itemId;
-    public string Transcript { get; } = transcript;
-    public double AudioStartSeconds { get; } = audioStartSeconds;
-    public bool IsFinal { get; } = isFinal;
-}
