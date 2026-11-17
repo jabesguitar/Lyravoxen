@@ -850,10 +850,12 @@ public partial class MainWindow : Window
             (Name: "Letras.mus.br", Domain: "letras.mus.br"),
             (Name: "Ouvir Música", Domain: "ouvirmusica.com.br"),
             (Name: "Letras.com", Domain: "letras.com"),
-            (Name: "Harpa Cristã — Músicas.mus.br", Domain: "harpa-crista.musicas.mus.br"),
             (Name: "Harpa Cristã — O Gospel", Domain: "ogospel.com.br/harpa-crista"),
-            (Name: "Hinário Online", Domain: "hinarioonline.com.br"),
-            (Name: "Hinos da Harpa", Domain: "hinosdaharpa.app"),
+            (Name: "Harpa Cristã — mBíblia", Domain: "mbiblia.com.br/harpa"),
+            (Name: "Harpa Cristã — Hinos da Harpa", Domain: "hinosdaharpa.com.br"),
+            (Name: "Hinoteca", Domain: "hinoteca.com.br"),
+            (Name: "Letra Sonora", Domain: "letrasonora.com.br"),
+            (Name: "Glow Bible — Hinário", Domain: "glowbible.org/hinario"),
             (Name: "Busca ampla", Domain: "")
         };
 
@@ -903,7 +905,7 @@ public partial class MainWindow : Window
         WorkspaceTabs.SelectedIndex = 2;
         if (firstSourceTab is not null)
             BrowserTabs.SelectedItem = firstSourceTab;
-        StatusText.Text = "Não encontrei uma letra sincronizada no catálogo. Abri pesquisas internas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Letras.com e fontes de hinos. Copie a letra encontrada e use a aba Cadastrar letra para salvar e sincronizar automaticamente.";
+        StatusText.Text = "Não encontrei uma letra sincronizada no catálogo. Abri pesquisas internas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Letras.com e catálogos de hinos. Copie a letra encontrada e use Cadastrar letra para salvar e sincronizar.";
     }
 
     private void SaveFullLyrics_Click(object sender, RoutedEventArgs e)
