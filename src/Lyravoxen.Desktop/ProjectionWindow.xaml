@@ -4,6 +4,7 @@
  Title="Lyravoxen — Projeção" Width="1280" Height="720"
  WindowStartupLocation="Manual" WindowStyle="None" Background="#080D12">
  <Grid>
+  <Image x:Name="BackgroundImage" Stretch="UniformToFill" Visibility="Collapsed" IsHitTestVisible="False"/>
   <StackPanel x:Name="OverlayPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
    <TextBlock x:Name="OverlayTitle" Text="LYRAVOXEN" Foreground="#26C6B8" FontSize="48" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center"/>
    <TextBlock x:Name="OverlaySubtitle" Text="" Foreground="#F2F6F8" FontSize="24" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,18,0,0"/>
