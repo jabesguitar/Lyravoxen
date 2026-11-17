@@ -401,6 +401,7 @@ public partial class MainWindow : Window
             var service = new MicrophoneTranscriptionService(deviceNumber);
             service.TranscriptReceived += BibleMicrophone_TranscriptReceived;
             service.StatusChanged += BibleMicrophone_StatusChanged;
+            service.AudioLevelChanged += BibleMicrophone_AudioLevelChanged;
             _bibleMicrophoneRecognition = service;
             await service.StartAsync();
             BibleMicrophoneBox.IsEnabled = false;
@@ -420,6 +421,18 @@ public partial class MainWindow : Window
             BibleMicrophoneStatusText.Text = "Não foi possível iniciar o microfone: " + ex.Message;
         }
         finally { BibleMicrophoneEnabledBox.IsEnabled = true; }
+    }
+
+    private void BibleMicrophone_AudioLevelChanged(double level)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            BibleMicrophoneLevelBar.Value = level;
+            BibleMicrophoneLevelText.Text = level < 3 ? "Sem sinal de áudio" : level < 18 ? "Sinal baixo" : level < 70 ? "Áudio captado" : "Sinal forte";
+            BibleMicrophoneLevelText.Foreground = level < 3
+                ? System.Windows.Media.Brushes.Orange
+                : System.Windows.Media.Brushes.LightGreen;
+        }));
     }
 
     private void BibleMicrophone_StatusChanged(object? sender, string message)
@@ -484,6 +497,7 @@ public partial class MainWindow : Window
         {
             service.TranscriptReceived -= BibleMicrophone_TranscriptReceived;
             service.StatusChanged -= BibleMicrophone_StatusChanged;
+            service.AudioLevelChanged -= BibleMicrophone_AudioLevelChanged;
             await service.DisposeAsync();
         }
         if (BibleMicrophoneBox is not null) BibleMicrophoneBox.IsEnabled = true;
@@ -494,6 +508,8 @@ public partial class MainWindow : Window
             BibleMicrophoneEnabledBox.IsChecked = false;
             _updatingBibleMicrophoneToggle = false;
         }
+        if (BibleMicrophoneLevelBar is not null) BibleMicrophoneLevelBar.Value = 0;
+        if (BibleMicrophoneLevelText is not null) BibleMicrophoneLevelText.Text = "Sem sinal de áudio";
         if (BibleMicrophoneToggleStateText is not null)
         {
             BibleMicrophoneToggleStateText.Text = "DESLIGADO";
