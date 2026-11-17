@@ -37,6 +37,7 @@ public sealed class MicrophoneTranscriptionService : IAsyncDisposable
 
     public event EventHandler<LiveTranscriptEventArgs>? TranscriptReceived;
     public event EventHandler<string>? StatusChanged;
+    public event Action<double>? AudioLevelChanged;
 
     public MicrophoneTranscriptionService(int deviceNumber) { _deviceNumber = deviceNumber; _playbackSeconds = () => 0; }
 
@@ -95,6 +96,8 @@ public sealed class MicrophoneTranscriptionService : IAsyncDisposable
             var format = _capture.WaveFormat;
             var pcm = ConvertToPcm16Mono24k(e.Buffer, e.BytesRecorded, format);
             if (pcm.Length == 0) return;
+            var rms = Math.Sqrt(pcm.Average(sample => (double)sample * sample));
+            AudioLevelChanged?.Invoke(Math.Clamp(rms / 12000d * 100d, 0d, 100d));
 
             lock (_captureSync)
             {
