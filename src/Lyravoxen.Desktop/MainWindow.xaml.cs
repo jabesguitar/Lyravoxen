@@ -867,11 +867,9 @@ public partial class MainWindow : Window
             {
                 var query = source.Name.StartsWith("Harpa Cristã", StringComparison.Ordinal)
                     ? "site:" + source.Domain + " " + searchTerms + " letra hino"
-                    : source.Name == "Hinário Online" || source.Name == "Hinos da Harpa"
-                        ? "site:" + source.Domain + " " + searchTerms + " hino letra"
-                        : string.IsNullOrWhiteSpace(source.Domain)
-                            ? searchTerms + " letra música hino louvor"
-                            : "site:" + source.Domain + " " + searchTerms;
+                    : string.IsNullOrWhiteSpace(source.Domain)
+                        ? searchTerms + " letra música hino louvor"
+                        : "site:" + source.Domain + " " + searchTerms;
                 var url = "https://www.google.com/search?q=" + Uri.EscapeDataString(query);
 
                 // Reutiliza uma aba por fonte. Evita criar WebViews indefinidamente
@@ -1331,17 +1329,8 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                var noMatchDialog = new MusicMatchDialog(
-                    "Não encontrei esta letra sincronizada",
-                    "Música: " + trackName + "\nAutor / intérprete: " + artistName +
-                    "\n\nNão há uma versão temporizada compatível no catálogo online nem na biblioteca local.\n\nSim: abrir outras fontes de pesquisa.\nNão: deixar para depois.\nCriar: cadastrar a letra e marcar os tempos manualmente.") { Owner = this };
-                noMatchDialog.ShowDialog();
-                if (noMatchDialog.Choice == MusicMatchChoice.Create)
-                    OpenManualLyricsEditor();
-                else if (noMatchDialog.Choice == MusicMatchChoice.Yes)
-                    OpenLyricsSourceSearches_Click(this, new RoutedEventArgs());
-                else
-                    StatusText.Text = "Nenhuma letra foi alterada. Você pode pesquisar novamente ou criar a letra quando quiser.";
+                StatusText.Text = "Não encontrei uma letra sincronizada para esta música. Abrindo automaticamente os catálogos alternativos...";
+                await OpenLyricsSourceSearchesAsync(trackName, artistName);
                 return;
             }
 
