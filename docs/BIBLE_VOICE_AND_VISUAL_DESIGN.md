@@ -59,3 +59,17 @@ Fontes:
 - A prévia de letras recebeu mais espaço horizontal e vertical, tipografia maior e contraste reforçado.
 - A ARC SBB 2009 continua separada das versões livres: a interface não troca silenciosamente uma tradução pela outra.
 - O reconhecimento local e a consulta online não substituem a validação do operador; microfone, ambiente acústico, conexão e versão licenciada instalada no Holyrics ainda exigem teste no computador de destino.
+
+
+## Ajustes após validação visual — 17/11/2026
+- O controle de microfone passou a mostrar caixa marcada com alto contraste e estado textual: DESLIGADO, INICIANDO, PREPARANDO, OUVINDO, VERIFICAR, ERRO ou SEM DISPOSITIVO.
+- O primeiro uso informa explicitamente o download do modelo Whisper gratuito. A indicação OUVINDO só é apresentada depois que o serviço inicia a captura.
+- Medidor de nível de áudio RMS em tempo real distingue dispositivo selecionado de entrada que realmente recebe sinal.
+- Se nenhum dispositivo for encontrado, a interface informa a necessidade de verificar a entrada e as permissões do Windows.
+- A navegação bíblica segue a ordem solicitada: Bíblia/versão → livro → capítulo → versículo. O seletor de versículo e a lista ficam sincronizados; trocar livro/capítulo limpa a seleção antiga.
+- Os textos de versículos e itens de seleção usam templates com contraste explícito para evitar texto claro sobre fundo claro.
+- A projeção própria agora apresenta referência bíblica separada do texto do versículo, abre a janela de saída em primeiro plano e informa o monitor de destino. O caminho da ARC SBB 2009 continua separado e usa o Holyrics com a versão pt_arc.
+- O parser de fala foi extraído para componente testável e cobre referências numéricas, números por extenso, números mistos e livros com ordinal. A referência é sempre sugerida para conferência; nunca projetada automaticamente.
+- A prévia musical mantém 16:9 e pode ocupar mais altura disponível.
+- Validação CI: run #513 (ID 44151904422), commit a7331eb4e7977a2c8035b4b8e940133797f92bc9 — build Windows x64, testes de linha do tempo e parser bíblico, pacote portátil e instalador aprovados.
+- Ainda exigem teste no computador do usuário: permissões e dispositivo de áudio, download do modelo, nível de sinal real, precisão do reconhecimento no ambiente, tela externa e comunicação efetiva com Holyrics.
