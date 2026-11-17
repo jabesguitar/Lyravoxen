@@ -268,6 +268,7 @@
         <Border Background="#243E50" BorderBrush="#527184" BorderThickness="1" CornerRadius="9" Padding="10,6" Margin="4,14,2,2" VerticalAlignment="Bottom">
          <CheckBox x:Name="BibleMicrophoneEnabledBox" Content="MICROFONE ATIVO" Foreground="#FFFFFF" VerticalAlignment="Center" Checked="BibleMicrophoneEnabled_Changed" Unchecked="BibleMicrophoneEnabled_Changed" IsThreeState="False" MinWidth="180" ToolTip="Marque para iniciar o reconhecimento de referências bíblicas"/>
          <TextBlock x:Name="BibleMicrophoneToggleStateText" Text="DESLIGADO" Foreground="#FFD28A" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,2,0"/>
+         <StackPanel VerticalAlignment="Bottom" Margin="8,0,4,3"><TextBlock Text="NÍVEL DE ÁUDIO" Foreground="{StaticResource TextMuted}" FontSize="9"/><ProgressBar x:Name="BibleMicrophoneLevelBar" Width="150" Height="12" Minimum="0" Maximum="100" Value="0" Background="#0D151D" Foreground="#24B89E"/><TextBlock x:Name="BibleMicrophoneLevelText" Text="Sem sinal de áudio" Foreground="{StaticResource TextMuted}" FontSize="9"/></StackPanel>
         </Border>
        </WrapPanel>
        <Border Grid.Row="2" Background="#132533" BorderBrush="#355064" BorderThickness="1" CornerRadius="8" Padding="10" Margin="4,5">
