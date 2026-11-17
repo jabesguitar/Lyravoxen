@@ -84,6 +84,15 @@ public static class BibleReferenceParser
                 verse = spokenVerse;
         }
 
+        if (!verse.HasValue)
+        {
+            var trailingWords = Regex.Matches(tail, @"[a-z]+").Select(m => m.Value).ToList();
+            var spokenVerseMarker = trailingWords.FindIndex(w => w is "versiculo" or "versiculos");
+            if (spokenVerseMarker >= 0 &&
+                TryParsePortugueseNumber(trailingWords, spokenVerseMarker + 1, out var trailingVerse, out _))
+                verse = trailingVerse;
+        }
+
         if (chapter < 1 || chapter > 150 || verse is < 1 or > 176) return null;
         return verse.HasValue ? $"{book.Canonical} {chapter}:{verse.Value}" : $"{book.Canonical} {chapter}";
     }
