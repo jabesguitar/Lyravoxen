@@ -179,6 +179,70 @@ public partial class MainWindow : Window
         public string Display => $"{Number}. {Text}";
     }
 
+    private void OpenLocalProjection_Click(object sender, RoutedEventArgs e)
+    {
+        EnsureProjectionWindow();
+        StatusText.Text = "Projeção própria aberta. Ela funciona independentemente do Holyrics.";
+    }
+
+    private void EnsureProjectionWindow()
+    {
+        if (_projection is null || !_projection.IsVisible)
+            _projection = new ProjectionWindow();
+        _projection.ShowOnOutputDisplay();
+        _projection.SetMaxLines(_maxProjectionLines);
+        _projection.SetBackgroundImage(_selectedProjectionBackgroundPath);
+        _projection.ShowLyric(_currentProjectedLyric);
+    }
+
+    private void SelectProjectionBackground_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Escolha um fundo de projeção",
+            Filter = "Imagens (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            var extension = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            if (extension is not ".jpg" and not ".jpeg" and not ".png")
+                throw new InvalidDataException("Use uma imagem JPG ou PNG.");
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Lyravoxen", "ProjectionBackgrounds");
+            Directory.CreateDirectory(folder);
+            var target = Path.Combine(folder, "background-" + Guid.NewGuid().ToString("N") + extension);
+            File.Copy(dialog.FileName, target, false);
+            _selectedProjectionBackgroundPath = target;
+            EnsureProjectionWindow();
+            _projection!.SetBackgroundImage(target);
+            SaveProjectionBackgroundPreference(target);
+            StatusText.Text = "Fundo personalizado aplicado à projeção.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível aplicar o fundo: " + ex.Message;
+            System.Windows.MessageBox.Show(this, ex.Message, "Fundo de projeção", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void SaveProjectionBackgroundPreference(string path)
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            current.ProjectionBackgroundPath = path;
+            Directory.CreateDirectory(Path.GetDirectoryName(_preferencesFile)!);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex) { StatusText.Text = "Fundo aplicado, mas a preferência não pôde ser salva: " + ex.Message; }
+    }
+
     private void RefreshMicrophones_Click(object sender, RoutedEventArgs e) => RefreshMicrophoneDevices();
 
     private void RefreshMicrophoneDevices()
