@@ -759,6 +759,10 @@ public partial class MainWindow : Window
             MusicTrackBox.Text = _currentVideo.TrackName;
             MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
+            ManualLyricsBox.Text = _currentVideo.FullLyrics ?? "";
+            ManualSyncProgressText.Text = string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)
+                ? "Esta música ainda não tem letra completa salva."
+                : "Letra completa carregada da biblioteca. Edite se necessário e salve para atualizar.";
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
@@ -904,6 +908,39 @@ public partial class MainWindow : Window
         StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
     }
 
+    private void SaveFullLyrics_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Carregue primeiro a música na aba Ao vivo para vincular e salvar esta letra.";
+            WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+        var fullLyrics = ManualLyricsBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(fullLyrics))
+        {
+            StatusText.Text = "Cole ou digite a letra completa antes de salvar.";
+            return;
+        }
+        _currentVideo.FullLyrics = fullLyrics;
+        SaveCurrentFullLyrics();
+        ManualSyncProgressText.Text = "Letra completa salva e vinculada a esta música. Você poderá reutilizá-la nas próximas reproduções.";
+        StatusText.Text = "Letra completa salva na biblioteca local para: " + MusicTrackBox.Text;
+    }
+
+    private void SaveCurrentFullLyrics()
+    {
+        if (_currentVideo is null) return;
+        _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+        foreach (var saved in _library.SelectMany(folder => folder.Videos)
+            .Where(item => item.IsOffline == _currentVideo.IsOffline &&
+                (item.IsOffline
+                    ? string.Equals(item.LocalPath, _currentVideo.LocalPath, StringComparison.OrdinalIgnoreCase)
+                    : string.Equals(item.VideoId, _currentVideo.VideoId, StringComparison.Ordinal))))
+            saved.FullLyrics = _currentVideo.FullLyrics;
+        SaveLibrary();
+    }
+
     private async void ToggleAutoRecognition_Click(object sender, RoutedEventArgs e)
     {
         if (_liveRecognition is not null)
@@ -930,6 +967,8 @@ public partial class MainWindow : Window
             return;
         }
 
+        _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+        SaveCurrentFullLyrics();
         _manualDraftLines = lines;
         _manualDraftCues.Clear();
         _liveTranscriptBuffer.Clear();
@@ -940,7 +979,7 @@ public partial class MainWindow : Window
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
         ManualCurrentLineText.Text = _manualDraftLines[0];
-        ManualSyncProgressText.Text = "Reconhecimento automático preparado: aguardando a voz cantar a primeira frase.";
+        ManualSyncProgressText.Text = "Letra salva. Reconhecimento preparado: aguardando o áudio cantar a primeira frase.";
         ProjectionPreviewText.Text = "Aguardando reconhecimento da primeira frase...";
         NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[0];
         _ = ClearHolyricsForLiveDraftAsync();
@@ -991,23 +1030,25 @@ public partial class MainWindow : Window
                 _manualDraftLines, _manualDraftIndex, _liveTranscriptBuffer.ToString(),
                 out var confidence, 0.78);
 
-            // Só aceita a próxima linha em ordem. Nunca pula versos por uma transcrição ambígua.
-            if (match != _manualDraftIndex)
+            // Aceita a próxima frase ou uma das duas seguintes quando a transcrição vier agrupada.
+            // O avanço é sempre para frente; nunca volta a projetar uma frase anterior.
+            if (match < _manualDraftIndex)
             {
                 if (_liveTranscriptBuffer.Length > 600)
                     _liveTranscriptBuffer.Remove(0, _liveTranscriptBuffer.Length - 400);
-                ManualSyncProgressText.Text = $"Ouvindo e comparando com a próxima frase... confiança {confidence:P0}.";
+                ManualSyncProgressText.Text = $"Comparando o áudio com a letra salva... confiança {confidence:P0}.";
                 return;
             }
 
             _liveTranscriptBuffer.Clear();
-            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 1.0);
+            var matchedIndex = match;
+            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 0.5);
             if (_manualDraftCues.Count > 0)
                 estimatedSeconds = Math.Max(estimatedSeconds, _manualDraftCues[^1].Seconds + 0.05);
 
-            var cue = new LyricCue { Seconds = estimatedSeconds, Text = _manualDraftLines[_manualDraftIndex] };
+            var cue = new LyricCue { Seconds = estimatedSeconds, Text = _manualDraftLines[matchedIndex] };
             _manualDraftCues.Add(cue);
-            _manualDraftIndex++;
+            _manualDraftIndex = matchedIndex + 1;
 
             var block = CueTimeline.BuildProjectionBlock(_manualDraftCues, _manualDraftCues.Count - 1, _maxProjectionLines);
             _currentProjectedLyric = block;
@@ -1025,7 +1066,7 @@ public partial class MainWindow : Window
             else
             {
                 ManualCurrentLineText.Text = "Todas as frases foram reconhecidas. Sincronização concluída.";
-                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} frases reconhecidas e sincronizadas.";
+                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} trechos identificados e sincronizados. Letra e tempos salvos na biblioteca.";
                 _ = StopAutoRecognitionAsync(savePartial: true);
             }
         }));
@@ -1049,6 +1090,11 @@ public partial class MainWindow : Window
             _cues.AddRange(CueTimeline.Normalize(_manualDraftCues));
             RefreshCueList();
             PersistCurrentCues();
+            if (_currentVideo is not null)
+            {
+                _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+                SaveCurrentFullLyrics();
+            }
             _lastAutomaticCue = -1;
         }
 
@@ -2304,6 +2350,7 @@ public partial class MainWindow : Window
             saved.Composer = _currentVideo.Composer;
             saved.Artist = _currentVideo.Artist;
             saved.Url = _currentVideo.Url;
+            saved.FullLyrics = _currentVideo.FullLyrics;
         }
         SaveLibrary();
         RefreshLibrarySongs();
@@ -2346,6 +2393,7 @@ public partial class MainWindow : Window
                 IsOffline = _currentVideo.IsOffline,
                 LocalPath = _currentVideo.LocalPath,
                 Format = _currentVideo.Format,
+                FullLyrics = _currentVideo.FullLyrics,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         }
@@ -2358,6 +2406,7 @@ public partial class MainWindow : Window
                 saved.Composer = _currentVideo.Composer;
                 saved.Artist = _currentVideo.Artist;
                 saved.Url = _currentVideo.Url;
+                saved.FullLyrics = _currentVideo.FullLyrics;
                 saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
             }
         }
@@ -2584,6 +2633,10 @@ public partial class MainWindow : Window
             MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
             MusicComposerBox.Text = video.Composer;
             MusicArtistBox.Text = video.Artist;
+            ManualLyricsBox.Text = video.FullLyrics ?? "";
+            ManualSyncProgressText.Text = string.IsNullOrWhiteSpace(video.FullLyrics)
+                ? "Esta música ainda não tem letra completa salva."
+                : "Letra completa carregada da biblioteca.";
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(video.Cues));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
