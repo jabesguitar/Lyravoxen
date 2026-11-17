@@ -75,3 +75,25 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - O pacote está estruturado para teste manual no Windows x64. O CI não testa microfone físico, API Holyrics conectada ao equipamento do usuário, projeção em telão, nem desempenho real em Intel i5/Xeon.
 - PR #9 continua aberta em draft, sem mesclar na main até a validação funcional.
 - Próxima etapa: usuário instala o pacote, configura token Holyrics com permissões `GetBibleVersionsV2` e `ShowVerse`, confirma que a lista retorna `pt_arc`, testa João 3:16 e realiza os testes de microfone/projeção. Registrar erros e corrigir antes de liberar a versão.
+
+
+### Atualização de interface e usabilidade — 2026-11-17
+- Solicitação do usuário após instalar a versão portátil: corrigir seleção/legibilidade do dispositivo de microfone e das versões bíblicas; tornar a leitura de capítulos ampla e legível; separar Bíblia em uma aba exclusiva; ampliar a prévia principal do telão; redesenhar abas e botões; manter o interruptor Holyrics aprovado.
+- Decisão aprovada: manter o controle liga/desliga Holyrics sem alteração funcional e preservar os fluxos musicais já existentes.
+- Implementado:
+  - Bíblia movida para uma aba principal exclusiva chamada **✦ Bíblia**, com subáreas próprias para microfone e biblioteca bíblica.
+  - ComboBoxes receberam cores contrastantes, texto escuro legível no campo fechado e lista clara com estados de seleção/realce visíveis.
+  - Lista de microfones ampliada para mostrar melhor o nome do fabricante/modelo; dispositivo e botão de atualização ficam bloqueados durante a captação, evitando troca acidental de entrada.
+  - Status de seleção e de reconhecimento informa claramente dispositivo escolhido, transcrição, referência sugerida e falhas de interpretação.
+  - Reconhecimento bíblico tenta primeiro interpretar referências comuns localmente (livro/capítulo/versículo, inclusive formas faladas como “João capítulo três, versículo dezesseis”) e só então usa o parser online gratuito; transcrição continua aparecendo mesmo se a internet falhar. A sugestão preenche o campo de referência, mas não projeta automaticamente.
+  - Leitor bíblico permite selecionar de 1 a 6 capítulos consecutivos; a lista mostra capítulo e versículo em cada linha, com fundo claro, contraste alto e rolagem.
+  - A prévia de letras ganhou mais espaço horizontal, altura mínima maior e fonte ampliada.
+  - Abas receberam estilo arredondado e estados visuais selecionado/hover; botões duplicados de seleção de fundo foram reduzidos a um único botão.
+- Validação CI no commit `89741b39af651de4ccd7203f7de69b67ae352973`, workflow run #465 (ID `44144443153`): restore, build, testes da linha do tempo, pacote portátil, upload do build, upload do pacote portátil, instalação do Inno Setup, compilação do instalador e upload do instalador concluídos com sucesso.
+- Artefatos do run #465:
+  - `Lyravoxen-Windows-x64-portable`, ID `14354999057`, SHA256 `132bef15ef7b2c588e95911b59ef5d1dbd59041b16fef9805e13e76c43a7e204`.
+  - `Lyravoxen-Installer-Windows-x64`, ID `14355433245`, SHA256 `dad8eb47f280b672f0a0abd98e77195b99558ef19684311fa8b5d93baf145051`.
+  - `Lyravoxen-Windows-x64`, ID `14355847175`, SHA256 `0cca5932e64f1649f8df4bf9c68c2382f293c06b544eefb7b7933b26198c94c4`.
+- O CI confirma compilação, testes automatizados já existentes e geração dos pacotes. Não comprova ainda funcionamento físico do microfone, precisão da interpretação em ambiente de culto, resposta da API Holyrics/token, fidelidade visual em projetor, nem desempenho em Xeon/i5 antigo.
+- Estado: build de teste atualizado pronto para validação manual do usuário. PR #9 continua em draft, sem merge na main.
+- Próxima etapa: usuário instalar o artefato do run #465, validar os novos seletores, leitura multi-capítulo, fala/transcrição, prévia e projeção; reportar qualquer falha com captura de tela. Corrigir regressões antes de solicitar aprovação para merge.
