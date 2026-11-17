@@ -55,3 +55,15 @@ O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runt
 - O microfone bíblico é independente da captura do áudio musical e começa desligado. Desligar interrompe a captação.
 
 Documentação e estado cronológico: [MEMORIA_CONTINUA.md](MEMORIA_CONTINUA.md) e [docs/BIBLE_VOICE_AND_VISUAL_DESIGN.md](docs/BIBLE_VOICE_AND_VISUAL_DESIGN.md).
+
+
+### Almeida Revista e Corrigida (ARC) — edição original da SBB
+O Lyravoxen agora possui um caminho separado para utilizar a **Almeida Revista e Corrigida © 2009, da Sociedade Bíblica do Brasil**, por meio da instalação licenciada do Holyrics:
+1. Configure a conexão Holyrics com permissões `GetBibleVersionsV2` e `ShowVerse`.
+2. Na aba Bíblia, clique em **Buscar versões no Holyrics**.
+3. Escolha a versão cujo título seja exatamente Almeida Revista e Corrigida e confira a edição/ano retornado.
+4. Digite a referência e use **Projetar texto ARC original**.
+
+O texto do versículo é fornecido pela própria instalação do Holyrics. O Lyravoxen não reescreve, corrige, resume, parafraseia ou altera a pontuação do texto. A API documentada do Holyrics lista versões instaladas e permite solicitar a projeção de uma referência com a versão escolhida; ela não oferece, nessa API, uma operação para baixar o texto integral da Bíblia ao Lyravoxen. Portanto, a ARC licenciada não é copiada nem distribuída pelo Lyravoxen.
+
+A edição 1911 disponível no catálogo público é histórica e de domínio público; **não deve ser apresentada como equivalente à ARC SBB 2009**. As versões livres do leitor local são alternativas separadas, não substitutos da ARC usada no culto.
