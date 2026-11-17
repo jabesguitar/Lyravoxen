@@ -18,4 +18,5 @@ public sealed class LibraryVideo
     public string? LocalPath { get; set; }
     public string? Format { get; set; }
     public List<LyricCue> Cues { get; set; } = new();
+    public string LyricsText { get; set; } = "";
 }

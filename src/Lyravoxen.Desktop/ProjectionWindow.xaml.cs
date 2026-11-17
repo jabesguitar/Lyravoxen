@@ -169,8 +169,9 @@ public partial class ProjectionWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
-            ClearDisplay();
+            Close();
             e.Handled = true;
+            return;
         }
         base.OnKeyDown(e);
     }
