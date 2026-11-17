@@ -1530,15 +1530,18 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Consultando as traduções instaladas no Holyrics...";
             var versions = await _holyrics.GetBibleVersionsAsync();
+            // O ID pt_arc identifica a ARC brasileira da SBB; pt_rc69 é outra edição e não deve ser confundida.
+            // Não selecionamos por semelhança textual do título nem fazemos fallback para ACF/ARA/1911.
             var arcVersions = versions
-                .Where(v => v.Title.Contains("Almeida Revista e Corrigida", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(v => v.Title, StringComparer.CurrentCultureIgnoreCase)
+                .Where(v => string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase))
+                .Select(v => new HolyricsClient.BibleVersionInfo(
+                    v.Version, "Almeida Revista e Corrigida © 2009 (SBB)", v.Language))
                 .ToList();
             BibleHolyricsArcVersionBox.ItemsSource = arcVersions;
             BibleHolyricsArcVersionBox.DisplayMemberPath = "Title";
             if (arcVersions.Count == 0)
             {
-                StatusText.Text = "O Holyrics não informou uma versão com o nome exato Almeida Revista e Corrigida. Nenhuma versão parecida será escolhida automaticamente.";
+                StatusText.Text = "O Holyrics não informou o identificador pt_arc. A ARC SBB 2009 não está disponível nessa instalação; nenhuma versão parecida será escolhida automaticamente.";
                 return;
             }
             BibleHolyricsArcVersionBox.SelectedIndex = 0;
