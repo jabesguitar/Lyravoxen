@@ -141,18 +141,31 @@ public partial class MainWindow : Window
 
         try
         {
-            BibleCopyrightText.Text = "Carregando " + book.Name + " " + chapter + "...";
-            var result = await _bibleReader.GetChapterAsync(version.Slug, book, chapter);
-            _loadedBibleChapter = result;
-            BibleVersesList.ItemsSource = result.Verses.Select((text, index) =>
-                new BibleVerseItem(index + 1, text)).ToList();
-            var cacheStatus = result.FromCache ? " — carregado do cache offline" : " — salvo para uso offline";
-            BibleCopyrightText.Text = version.Name + " | " + book.Name + " " + chapter + cacheStatus +
-                (string.IsNullOrWhiteSpace(result.Copyright) ? "" : Environment.NewLine + result.Copyright);
+            var requestedCount = Math.Clamp(BibleChapterCountBox.SelectedIndex + 1, 1, 6);
+            var actualCount = Math.Min(requestedCount, book.Chapters - chapter + 1);
+            BibleCopyrightText.Text = "Carregando " + actualCount + (actualCount == 1 ? " capítulo..." : " capítulos consecutivos...");
+            var loaded = new List<BibleVerseItem>();
+            var cacheStates = new List<string>();
+            string copyright = "";
+            for (var offset = 0; offset < actualCount; offset++)
+            {
+                var chapterNumber = chapter + offset;
+                var result = await _bibleReader.GetChapterAsync(version.Slug, book, chapterNumber);
+                if (offset == 0) _loadedBibleChapter = result;
+                if (string.IsNullOrWhiteSpace(copyright)) copyright = result.Copyright;
+                cacheStates.Add(result.FromCache ? "cache offline" : "salvo offline");
+                loaded.AddRange(result.Verses.Select((text, index) =>
+                    new BibleVerseItem(chapterNumber, index + 1, text)));
+            }
+            BibleVersesList.ItemsSource = loaded;
+            var cacheStatus = cacheStates.Distinct().Count() == 1 ? cacheStates[0] : "capítulos carregados e armazenados localmente";
+            BibleCopyrightText.Text = version.Name + " | " + book.Name + " " + chapter +
+                (actualCount > 1 ? "–" + (chapter + actualCount - 1) : "") + " | " + cacheStatus +
+                (string.IsNullOrWhiteSpace(copyright) ? "" : Environment.NewLine + copyright);
         }
         catch (Exception ex)
         {
-            BibleCopyrightText.Text = "Não foi possível carregar este capítulo: " + ex.Message;
+            BibleCopyrightText.Text = "Não foi possível carregar os capítulos: " + ex.Message;
         }
     }
 
@@ -168,15 +181,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        var reference = $"{book.Name} {_loadedBibleChapter.Chapter}:{verse.Number}";
+        var reference = $"{book.Name} {verse.Chapter}:{verse.Number}";
         EnsureProjectionWindow();
         _projection!.ShowLyric(reference + Environment.NewLine + verse.Text);
         StatusText.Text = "Versículo enviado à projeção: " + reference;
     }
 
-    private sealed record BibleVerseItem(int Number, string Text)
+    private sealed record BibleVerseItem(int Chapter, int Number, string Text)
     {
-        public string Display => $"{Number}. {Text}";
+        public string Display => $"{Chapter}:{Number}  {Text}";
     }
 
     private void OpenLocalProjection_Click(object sender, RoutedEventArgs e)
@@ -335,17 +348,81 @@ public partial class MainWindow : Window
             BibleTranscriptBox.AppendText((BibleTranscriptBox.Text.Length == 0 ? "" : Environment.NewLine) + line);
             BibleTranscriptBox.ScrollToEnd();
 
-            if (Regex.IsMatch(line, @"(?i)\b(gn|gênesis|genesis|êxodo|exodo|salmo|salmos|provérbios|proverbios|isaías|isaias|mateus|marcos|lucas|joão|joao|atos|romanos|coríntios|gálatas|galatas|efésios|efesios|filipenses|colossenses|tessalonicenses|timóteo|timoteo|hebreus|tiago|pedro|apocalipse)\b"))
+            var possibleReference = TryParseBibleReferenceLocally(line);
+            if (string.IsNullOrWhiteSpace(possibleReference))
             {
-                try
+                try { possibleReference = await _bibleReader.ParseReferenceAsync(line); }
+                catch (Exception ex)
                 {
-                    var possibleReference = await _bibleReader.ParseReferenceAsync(line);
-                    if (!string.IsNullOrWhiteSpace(possibleReference))
-                        BibleMicrophoneStatusText.Text = "Possível referência identificada: " + possibleReference + ". Confira o texto e confirme antes de projetar.";
+                    BibleMicrophoneStatusText.Text = "Transcrição recebida. A interpretação online está indisponível (" + ex.Message + "); confira a referência manualmente.";
                 }
-                catch { /* A transcrição continua disponível mesmo sem internet para interpretar a referência. */ }
             }
+            if (!string.IsNullOrWhiteSpace(possibleReference))
+            {
+                BibleHolyricsReferenceBox.Text = possibleReference;
+                BibleMicrophoneStatusText.Text = "Referência sugerida: " + possibleReference + ". Confira a tradução e confirme antes de projetar.";
+            }
+            else if (BibleMicrophoneStatusText.Text.StartsWith("Microfone ativo", StringComparison.OrdinalIgnoreCase))
+                BibleMicrophoneStatusText.Text = "Voz transcrita. Não consegui identificar uma referência bíblica; fale o nome do livro, capítulo e versículo com clareza.";
         }));
+    }
+
+    private static string? TryParseBibleReferenceLocally(string spokenText)
+    {
+        if (string.IsNullOrWhiteSpace(spokenText)) return null;
+        var normalized = spokenText.ToLowerInvariant().Normalize(NormalizationForm.FormD);
+        normalized = Regex.Replace(normalized, @"\p{Mn}", "");
+        var books = new (string[] Names, string Canonical)[]
+        {
+            (new[]{"genesis","gn"}, "Gênesis"), (new[]{"exodo","ex"}, "Êxodo"),
+            (new[]{"levitico","lv"}, "Levítico"), (new[]{"numeros","nm"}, "Números"),
+            (new[]{"deuteronomio","dt"}, "Deuteronômio"), (new[]{"josue","js"}, "Josué"),
+            (new[]{"juizes","jz"}, "Juízes"), (new[]{"rute","rt"}, "Rute"),
+            (new[]{"salmos","salmo","sl"}, "Salmos"), (new[]{"proverbios","pv"}, "Provérbios"),
+            (new[]{"isaias","is"}, "Isaías"), (new[]{"mateus","mt"}, "Mateus"),
+            (new[]{"marcos","mc"}, "Marcos"), (new[]{"lucas","lc"}, "Lucas"),
+            (new[]{"joao","jo"}, "João"), (new[]{"atos","at"}, "Atos"),
+            (new[]{"romanos","rm"}, "Romanos"), (new[]{"galatas","gl"}, "Gálatas"),
+            (new[]{"efesios","ef"}, "Efésios"), (new[]{"filipenses","fp"}, "Filipenses"),
+            (new[]{"colossenses","cl"}, "Colossenses"), (new[]{"hebreus","hb"}, "Hebreus"),
+            (new[]{"tiago","tg"}, "Tiago"), (new[]{"apocalipse","ap"}, "Apocalipse")
+        };
+        var book = books.FirstOrDefault(item => item.Names.Any(name =>
+            Regex.IsMatch(normalized, @"(?<![a-z])" + Regex.Escape(name) + @"(?![a-z])")));
+        if (string.IsNullOrWhiteSpace(book.Canonical)) return null;
+        var numbers = new Dictionary<string, int>
+        {
+            ["um"]=1,["uma"]=1,["dois"]=2,["duas"]=2,["tres"]=3,["quatro"]=4,["cinco"]=5,
+            ["seis"]=6,["sete"]=7,["oito"]=8,["nove"]=9,["dez"]=10,["onze"]=11,["doze"]=12,
+            ["treze"]=13,["quatorze"]=14,["catorze"]=14,["quinze"]=15,["dezesseis"]=16,
+            ["dezessete"]=17,["dezoito"]=18,["dezenove"]=19,["vinte"]=20,["trinta"]=30,
+            ["quarenta"]=40,["cinquenta"]=50,["sessenta"]=60,["setenta"]=70,["oitenta"]=80,
+            ["noventa"]=90,["cem"]=100
+        };
+        var tail = normalized;
+        foreach (var name in book.Names.OrderByDescending(n => n.Length))
+        {
+            var match = Regex.Match(normalized, @"(?<![a-z])" + Regex.Escape(name) + @"(?![a-z])");
+            if (match.Success) { tail = normalized[(match.Index + match.Length)..]; break; }
+        }
+        var numeric = Regex.Match(tail, @"\b(?<chapter>\d{1,3})(?:\s*[:.,]\s*(?<verse>\d{1,3}))?\b");
+        int chapter;
+        int? verse = null;
+        if (numeric.Success)
+        {
+            if (!int.TryParse(numeric.Groups["chapter"].Value, out chapter)) return null;
+            if (numeric.Groups["verse"].Success && int.TryParse(numeric.Groups["verse"].Value, out var numericVerse)) verse = numericVerse;
+        }
+        else
+        {
+            var words = Regex.Matches(tail, @"[a-z]+").Select(m => m.Value).ToList();
+            var chapterIndex = words.FindIndex(w => w is "capitulo" or "cap");
+            var chapterWord = chapterIndex >= 0 && chapterIndex + 1 < words.Count ? words[chapterIndex + 1] : words.FirstOrDefault(numbers.ContainsKey);
+            if (chapterWord is null || !numbers.TryGetValue(chapterWord, out chapter)) return null;
+            var verseIndex = words.FindIndex(w => w is "versiculo" or "versiculos");
+            if (verseIndex >= 0 && verseIndex + 1 < words.Count && numbers.TryGetValue(words[verseIndex + 1], out var spokenVerse)) verse = spokenVerse;
+        }
+        return verse.HasValue ? $"{book.Canonical} {chapter}:{verse.Value}" : $"{book.Canonical} {chapter}";
     }
 
     private async Task StopBibleMicrophoneAsync()
