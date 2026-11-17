@@ -24,4 +24,26 @@ public static class CueTimeline
         }
         return low - 1;
     }
+    // Build a rolling page from consecutive visual lyric lines.
+    public static string BuildProjectionBlock(IReadOnlyList<LyricCue> cues, int activeCueIndex, int lineCount)
+    {
+        if (cues.Count == 0 || activeCueIndex < 0 || activeCueIndex >= cues.Count)
+            return string.Empty;
+
+        var maxLines = Math.Clamp(lineCount, 1, 10);
+        static string[] Lines(string? text) => (text ?? string.Empty)
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToArray();
+
+        var allLines = cues.SelectMany(cue => Lines(cue.Text)).ToArray();
+        var linesBeforeActiveCue = 0;
+        for (var i = 0; i < activeCueIndex; i++)
+            linesBeforeActiveCue += Lines(cues[i].Text).Length;
+
+        var blockStart = (linesBeforeActiveCue / maxLines) * maxLines;
+        return string.Join(Environment.NewLine, allLines.Skip(blockStart).Take(maxLines));
+    }
+
 }

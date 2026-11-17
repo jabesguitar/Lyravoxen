@@ -26,7 +26,7 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
         Save(settings);
     }
 
@@ -35,7 +35,7 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
     }
 
     public async Task ShowTextAsync(string text)
@@ -62,6 +62,35 @@ public sealed class HolyricsClient
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody))
+            EnsureApiSuccess(responseBody);
+    }
+
+    public async Task CloseProjectionAsync()
+    {
+        var settings = Load();
+        if (settings is null)
+            throw new InvalidOperationException("Holyrics ainda não foi configurado. Conecte o aplicativo antes de encerrar a projeção.");
+
+        // A API do Holyrics separa a apresentação rápida da apresentação convencional.
+        // Tenta ambas mesmo que uma delas não esteja ativa ou não esteja disponível na versão instalada.
+        var errors = new List<Exception>();
+        foreach (var action in new[] { "CloseCurrentQuickPresentation", "CloseCurrentPresentation" })
+        {
+            try { await CloseActionAsync(settings, action); }
+            catch (Exception ex) { errors.Add(new InvalidOperationException(action + ": " + ex.Message, ex)); }
+        }
+        if (errors.Count > 0)
+            throw new AggregateException("O Holyrics não confirmou o encerramento de todas as apresentações. Verifique as permissões do token e a versão do Holyrics.", errors);
+    }
+
+    private static async Task CloseActionAsync(Settings settings, string action)
+    {
+        var body = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string>());
+        using var response = await SendJsonAsync(BuildUrl(settings, action), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Holyrics ({action}) respondeu HTTP {(int)response.StatusCode}: {responseBody}");
         if (!string.IsNullOrWhiteSpace(responseBody))
             EnsureApiSuccess(responseBody);
     }
