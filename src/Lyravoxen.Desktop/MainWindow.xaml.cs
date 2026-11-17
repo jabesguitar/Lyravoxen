@@ -1519,6 +1519,66 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Não foi possível salvar o estado do Holyrics: " + ex.Message; }
     }
 
+    private async void RefreshHolyricsBibleVersions_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_holyrics.IsConfigured)
+        {
+            StatusText.Text = "Configure primeiro o Holyrics em Conectar Holyrics. O Lyravoxen não baixa nem substitui a tradução original.";
+            return;
+        }
+        try
+        {
+            StatusText.Text = "Consultando as traduções instaladas no Holyrics...";
+            var versions = await _holyrics.GetBibleVersionsAsync();
+            var arcVersions = versions
+                .Where(v => v.Title.Contains("Almeida Revista e Corrigida", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(v => v.Title, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+            BibleHolyricsArcVersionBox.ItemsSource = arcVersions;
+            BibleHolyricsArcVersionBox.DisplayMemberPath = "Title";
+            if (arcVersions.Count == 0)
+            {
+                StatusText.Text = "O Holyrics não informou uma versão com o nome exato Almeida Revista e Corrigida. Nenhuma versão parecida será escolhida automaticamente.";
+                return;
+            }
+            BibleHolyricsArcVersionBox.SelectedIndex = 0;
+            StatusText.Text = $"{arcVersions.Count} versão(ões) Almeida Revista e Corrigida encontrada(s) no Holyrics. Confira o ano/edição exibido antes de projetar.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível consultar as Bíblias do Holyrics: " + ex.Message;
+        }
+    }
+
+    private async void ProjectHolyricsBibleReference_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_holyricsEnabled)
+        {
+            StatusText.Text = "Ative a integração Holyrics antes de projetar a ARC original.";
+            return;
+        }
+        if (BibleHolyricsArcVersionBox.SelectedItem is not HolyricsClient.BibleVersionInfo version)
+        {
+            StatusText.Text = "Busque e selecione uma versão Almeida Revista e Corrigida instalada no Holyrics.";
+            return;
+        }
+        var reference = BibleHolyricsReferenceBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(reference))
+        {
+            StatusText.Text = "Informe uma referência bíblica, por exemplo João 3:16.";
+            return;
+        }
+        try
+        {
+            await _holyrics.ShowBibleVerseAsync(reference, version.Version);
+            StatusText.Text = $"Solicitação enviada ao Holyrics: {version.Title} — {reference}. O texto é fornecido pela própria instalação do Holyrics, sem reescrita pelo Lyravoxen.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível projetar a referência ARC: " + ex.Message;
+        }
+    }
+
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new HolyricsSettingsWindow(_holyrics) { Owner = this };
