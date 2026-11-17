@@ -23,7 +23,10 @@ O pacote é publicado como self-contained para .NET 8; o WebView2 Runtime contin
 - Projeção independente, temas, tela de espera e encerramento.
 - Seleção da tela de saída e recuperação após alterações de monitor.
 - Biblioteca, histórico e fila da próxima música.
-- Integração configurável com Holyrics.
+- Integração configurável com Holyrics, com interruptor persistente para desativar o envio e fechar a apresentação rápida sem encerrar o programa Holyrics.
+- Especificação documentada para o módulo bíblico, reconhecimento por microfone, licenças de traduções e identidade visual em `docs/BIBLE_VOICE_AND_VISUAL_DESIGN.md`.
+
+O controle de integração Holyrics pode ser desligado na barra principal. A captação de microfone e o reconhecimento bíblico ainda não estão implementados nesta compilação; o aplicativo não captura microfone silenciosamente.
 
 ## Configuração da integração com Holyrics
 1. No Holyrics, ative o **API Server Local** e confira o endereço e a porta configurados.
