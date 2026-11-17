@@ -60,4 +60,13 @@ liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 0,
     "uma conversa qualquer sem relação", out liveConfidence);
 Check(liveMatch == -1, "rejeita transcrição sem correspondência");
 
-Console.WriteLine("Todos os testes da linha do tempo e dos blocos de projeção passaram.");
+
+Check(BibleReferenceParser.TryParse("João 3:16") == "João 3:16", "referência numérica João 3:16");
+Check(BibleReferenceParser.TryParse("João capítulo três, versículo dezesseis") == "João 3:16", "referência falada por extenso");
+Check(BibleReferenceParser.TryParse("João capítulo 3 versículo 16") == "João 3:16", "referência falada com números");
+Check(BibleReferenceParser.TryParse("primeiro Samuel capítulo dois versículo quatro") == "1 Samuel 2:4", "livro com ordinal falado");
+Check(BibleReferenceParser.TryParse("Salmos vinte e três") == "Salmos 23", "capítulo com número composto");
+Check(BibleReferenceParser.TryParse("uma conversa sem referência") is null, "rejeita fala sem livro bíblico");
+Check(BibleReferenceParser.TryParse("João 0:16") is null, "rejeita capítulo inválido");
+
+Console.WriteLine("Todos os testes da linha do tempo, projeção e referências bíblicas passaram.");
