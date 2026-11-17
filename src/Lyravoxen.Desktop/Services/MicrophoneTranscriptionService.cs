@@ -73,6 +73,7 @@ public sealed class MicrophoneTranscriptionService : IAsyncDisposable
         var temporaryPath = ModelPath + ".download";
         try
         {
+            StatusChanged?.Invoke(this, "Baixando o modelo gratuito de reconhecimento de voz (primeiro uso). Aguarde; o microfone começará a captar depois da instalação.");
             using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(GgmlType.Base);
             await using (var output = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 await modelStream.CopyToAsync(output, cancellationToken);
