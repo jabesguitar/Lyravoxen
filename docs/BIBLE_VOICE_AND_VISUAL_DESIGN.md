@@ -83,3 +83,12 @@ Fontes:
 - A correspondência pode avançar até duas linhas à frente quando a transcrição agrupa frases; a sequência não retrocede. Cada trecho aceito gera cue de tempo, atualiza a prévia e é enviado ao Holyrics se a integração estiver ativa.
 - Não confundir com o microfone da Bíblia: são serviços separados. O reconhecimento de música captura o áudio de saída do computador, não o microfone bíblico.
 - O desempenho real depende do sinal reproduzido, voz, mixagem, reverberação, playback instrumental, blocos de transcrição e similaridade textual. A sincronização precisa ser testada com músicas reais antes de ser considerada pronta.
+
+
+## Busca de letras ausentes — 17/11/2026
+- Preservar a pesquisa e reprodução do YouTube e a busca/sincronização LRCLIB já existente.
+- Quando a busca primária não encontrar uma letra temporizada, o Lyravoxen abre automaticamente pesquisas nas fontes gerais e nos catálogos de hinos: Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Letras.com, O Gospel/Harpa Cristã, mBíblia/Harpa, Hinos da Harpa, Hinoteca, Letra Sonora e Glow Bible/Hinário.
+- As abas das fontes são reutilizadas por nome para evitar acumular WebViews a cada pesquisa.
+- A letra não é extraída nem redistribuída automaticamente de páginas de terceiros. O operador confere a versão/autoria, copia o texto para “Cadastrar letra” e salva na biblioteca local. O reconhecimento de áudio e a integração de projeção existentes permanecem o caminho para sincronizar.
+- Botão separado de busca alternativa removido porque sua função agora é acionada automaticamente pelo botão “Buscar letra”. Os controles manuais de linha do tempo foram mantidos porque suas ações não são duplicadas.
+- Nenhuma mudança intencional no player do YouTube, pesquisa do YouTube, reprodução ou aplicação de letras já encontradas.
