@@ -57,6 +57,12 @@ liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 1,
     "No vigesimo ano do mes de Quisleu", out liveConfidence);
 Check(liveMatch == -1, "não volta para frase anterior já reconhecida");
 liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 0,
+    "Eu Neemias estando em Susa", out liveConfidence);
+Check(liveMatch == 1, "aceita a próxima frase quando a transcrição avança uma linha");
+liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 0,
+    "E os muros comecei a levantar", out liveConfidence);
+Check(liveMatch == 2, "aceita transcrição agrupada que corresponde a até duas linhas adiante");
+liveMatch = LiveLyricsMatcher.FindNextLine(expectedLiveLyrics, 0,
     "uma conversa qualquer sem relação", out liveConfidence);
 Check(liveMatch == -1, "rejeita transcrição sem correspondência");
 
