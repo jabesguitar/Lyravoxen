@@ -28,7 +28,7 @@ public sealed class HolyricsClient
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
+        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation,GetBibleVersionsV2,ShowVerse");
         Save(settings);
     }
 
@@ -39,6 +39,47 @@ public sealed class HolyricsClient
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
         await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
     }
+
+    public async Task<IReadOnlyList<BibleVersionInfo>> GetBibleVersionsAsync()
+    {
+        var settings = Load();
+        if (settings is null) throw new InvalidOperationException("Holyrics ainda não foi configurado.");
+        using var response = await SendJsonAsync(BuildUrl(settings, "GetBibleVersionsV2"), JsonSerializer.SerializeToUtf8Bytes(new { }));
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
+        EnsureApiSuccess(body);
+        using var json = JsonDocument.Parse(body);
+        var result = new List<BibleVersionInfo>();
+        foreach (var item in json.RootElement.GetProperty("data").EnumerateArray())
+        {
+            var version = item.TryGetProperty("version", out var v) ? v.GetString() : null;
+            var title = item.TryGetProperty("title", out var t) ? t.GetString() : null;
+            var language = item.TryGetProperty("language", out var l) && l.TryGetProperty("iso", out var iso) ? iso.GetString() : null;
+            if (!string.IsNullOrWhiteSpace(version) && !string.IsNullOrWhiteSpace(title))
+                result.Add(new BibleVersionInfo(version, title, language ?? ""));
+        }
+        return result;
+    }
+
+    public async Task ShowBibleVerseAsync(string reference, string version)
+    {
+        if (string.IsNullOrWhiteSpace(reference)) throw new ArgumentException("Informe uma referência bíblica.");
+        if (string.IsNullOrWhiteSpace(version)) throw new ArgumentException("Selecione uma versão bíblica.");
+        var settings = Load();
+        if (settings is null) throw new InvalidOperationException("Holyrics ainda não foi configurado.");
+        var body = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            references = reference.Trim(),
+            version = version.Trim(),
+            quick_presentation = true
+        });
+        using var response = await SendJsonAsync(BuildUrl(settings, "ShowVerse"), body);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!string.IsNullOrWhiteSpace(responseBody)) EnsureApiSuccess(responseBody);
+    }
+
+    public sealed record BibleVersionInfo(string Version, string Title, string Language);
 
     public async Task ShowTextAsync(string text)
     {
