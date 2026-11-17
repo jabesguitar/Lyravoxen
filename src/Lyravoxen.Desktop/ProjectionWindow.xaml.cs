@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media.Imaging;
 using Forms = System.Windows.Forms;
 using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 
@@ -27,6 +28,26 @@ public partial class ProjectionWindow : Window
         Show();
         WindowState = WindowState.Maximized;
         return output?.DeviceName;
+    }
+
+    private const double BaseFontSize = 48;
+
+    public void SetBackgroundImage(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            BackgroundImage.Source = null;
+            BackgroundImage.Visibility = Visibility.Collapsed;
+            return;
+        }
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.UriSource = new Uri(path, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
+        BackgroundImage.Source = bitmap;
+        BackgroundImage.Visibility = Visibility.Visible;
     }
 
     private const double BaseFontSize = 48;
