@@ -825,7 +825,7 @@ public partial class MainWindow : Window
             ManualLyricsBox.Text = lyricsToEdit;
         WorkspaceTabs.SelectedItem = ManualSyncTab;
         ManualLyricsBox.Focus();
-        StatusText.Text = "Modo Criar / editar letra aberto. Cole ou ajuste a letra; depois use Controles manuais para marcar os tempos e associar as frases à música atual.";
+        StatusText.Text = "Cadastro de letra aberto. Cole a letra completa, salve e inicie o reconhecimento automático com a música tocando.";
     }
 
     private async void SearchLyrics_Click(object sender, RoutedEventArgs e)
@@ -840,16 +840,8 @@ public partial class MainWindow : Window
         await TryLoadAutomaticLyricsAsync(track, artist);
     }
 
-    private async void OpenLyricsSourceSearches_Click(object sender, RoutedEventArgs e)
+    private async Task OpenLyricsSourceSearchesAsync(string track, string artist)
     {
-        var track = MusicTrackBox.Text.Trim();
-        var artist = MusicArtistBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(track))
-        {
-            System.Windows.MessageBox.Show("Informe ao menos o título da música. Para hinos, use Harpa Cristã como intérprete quando for o caso.", "Outras fontes de letras", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
         var searchTerms = string.IsNullOrWhiteSpace(artist) ? "\"" + track + "\"" : "\"" + track + "\" \"" + artist + "\"";
         var sources = new[]
         {
@@ -857,7 +849,11 @@ public partial class MainWindow : Window
             (Name: "Vagalume", Domain: "vagalume.com.br"),
             (Name: "Letras.mus.br", Domain: "letras.mus.br"),
             (Name: "Ouvir Música", Domain: "ouvirmusica.com.br"),
-            (Name: "Harpa Cristã", Domain: ""),
+            (Name: "Letras.com", Domain: "letras.com"),
+            (Name: "Harpa Cristã — Músicas.mus.br", Domain: "harpa-crista.musicas.mus.br"),
+            (Name: "Harpa Cristã — O Gospel", Domain: "ogospel.com.br/harpa-crista"),
+            (Name: "Hinário Online", Domain: "hinarioonline.com.br"),
+            (Name: "Hinos da Harpa", Domain: "hinosdaharpa.app"),
             (Name: "Busca ampla", Domain: "")
         };
 
@@ -867,11 +863,13 @@ public partial class MainWindow : Window
         {
             try
             {
-                var query = source.Name == "Harpa Cristã"
-                    ? searchTerms + " \"Harpa Cristã\" hino letra"
-                    : string.IsNullOrWhiteSpace(source.Domain)
-                        ? searchTerms + " letra música hino louvor"
-                        : "site:" + source.Domain + " " + searchTerms;
+                var query = source.Name.StartsWith("Harpa Cristã", StringComparison.Ordinal)
+                    ? "site:" + source.Domain + " " + searchTerms + " letra hino"
+                    : source.Name == "Hinário Online" || source.Name == "Hinos da Harpa"
+                        ? "site:" + source.Domain + " " + searchTerms + " hino letra"
+                        : string.IsNullOrWhiteSpace(source.Domain)
+                            ? searchTerms + " letra música hino louvor"
+                            : "site:" + source.Domain + " " + searchTerms;
                 var url = "https://www.google.com/search?q=" + Uri.EscapeDataString(query);
 
                 // Reutiliza uma aba por fonte. Evita criar WebViews indefinidamente
@@ -905,7 +903,7 @@ public partial class MainWindow : Window
         WorkspaceTabs.SelectedIndex = 2;
         if (firstSourceTab is not null)
             BrowserTabs.SelectedItem = firstSourceTab;
-        StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
+        StatusText.Text = "Não encontrei uma letra sincronizada no catálogo. Abri pesquisas internas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Letras.com e fontes de hinos. Copie a letra encontrada e use a aba Cadastrar letra para salvar e sincronizar automaticamente.";
     }
 
     private void SaveFullLyrics_Click(object sender, RoutedEventArgs e)
@@ -1264,7 +1262,8 @@ public partial class MainWindow : Window
             }
             if (searchItems.Count == 0)
             {
-                StatusText.Text = "O catálogo de letras não retornou resultados. Você pode abrir as outras fontes ou criar a sincronização ao vivo.";
+                StatusText.Text = "O catálogo automático não encontrou a letra. Abrindo outras fontes de pesquisa...";
+                await OpenLyricsSourceSearchesAsync(trackName, artistName);
                 return;
             }
 
@@ -1324,7 +1323,7 @@ public partial class MainWindow : Window
                     if (noTimedMatch.Choice == MusicMatchChoice.Create)
                         OpenManualLyricsEditor(expectedLyrics);
                     else if (noTimedMatch.Choice == MusicMatchChoice.Yes)
-                        OpenLyricsSourceSearches_Click(this, new RoutedEventArgs());
+                        await OpenLyricsSourceSearchesAsync(trackName, artistName);
                     else
                         StatusText.Text = "A sincronização atual foi preservada. Você pode iniciar a marcação ao vivo quando quiser.";
                     return;
