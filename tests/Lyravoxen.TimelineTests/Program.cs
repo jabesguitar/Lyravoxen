@@ -64,6 +64,7 @@ Check(liveMatch == -1, "rejeita transcrição sem correspondência");
 Check(BibleReferenceParser.TryParse("João 3:16") == "João 3:16", "referência numérica João 3:16");
 Check(BibleReferenceParser.TryParse("João capítulo três, versículo dezesseis") == "João 3:16", "referência falada por extenso");
 Check(BibleReferenceParser.TryParse("João capítulo 3 versículo 16") == "João 3:16", "referência falada com números");
+Check(BibleReferenceParser.TryParse("João capítulo 3 versículo dezesseis") == "João 3:16", "capítulo numérico e versículo falado");
 Check(BibleReferenceParser.TryParse("primeiro Samuel capítulo dois versículo quatro") == "1 Samuel 2:4", "livro com ordinal falado");
 Check(BibleReferenceParser.TryParse("Salmos vinte e três") == "Salmos 23", "capítulo com número composto");
 Check(BibleReferenceParser.TryParse("uma conversa sem referência") is null, "rejeita fala sem livro bíblico");
