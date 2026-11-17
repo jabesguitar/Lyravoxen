@@ -63,3 +63,15 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - O leitor Midvash local continua separado. Almeida 1911 é identificada explicitamente como edição histórica distinta, não como ARC SBB 2009.
 - Limitação: a API pública documentada do Holyrics lista versões e permite projetar referências, mas não oferece endpoint documentado para extrair o texto completo da Bíblia para o leitor próprio. A projeção ARC original é feita pelo Holyrics. Para exibição independente/offline no telão próprio, será necessária uma licença/arquivo autorizado pela SBB e um formato de importação compatível.
 - Validação pendente: configurar o Holyrics no computador de teste, verificar que a lista retorna ARC 2009, conferir referências, testar permissões e confirmar visualmente que o texto projetado é o original.
+
+
+### Marco de validação — pacote Windows de teste (2026-11-17)
+- CI Windows aprovado no commit `4b4f66bfb9ea3634e0faca730f58d072d2340179` (workflow run #451, job build).
+- Etapas aprovadas: restore, dotnet publish/build, testes de linha do tempo, pacote portátil ZIP, upload do build, instalação do Inno Setup, compilação do instalador e upload do instalador.
+- Artefatos GitHub Actions do run #451:
+  - Installer ZIP artifact ID: `14349994648` (contém o instalador `Lyravoxen-Setup-Windows-x64.exe`).
+  - Portable ZIP artifact ID: `14349859844`.
+  - Build raw artifact ID: `14351112328`.
+- O pacote está estruturado para teste manual no Windows x64. O CI não testa microfone físico, API Holyrics conectada ao equipamento do usuário, projeção em telão, nem desempenho real em Intel i5/Xeon.
+- PR #9 continua aberta em draft, sem mesclar na main até a validação funcional.
+- Próxima etapa: usuário instala o pacote, configura token Holyrics com permissões `GetBibleVersionsV2` e `ShowVerse`, confirma que a lista retorna `pt_arc`, testa João 3:16 e realiza os testes de microfone/projeção. Registrar erros e corrigir antes de liberar a versão.
