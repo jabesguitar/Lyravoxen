@@ -256,6 +256,14 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Fundo aplicado, mas a preferência não pôde ser salva: " + ex.Message; }
     }
 
+    private void BibleMicrophone_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingMicrophoneDevices || BibleMicrophoneBox.SelectedItem is not string selected) return;
+        BibleMicrophoneStatusText.Text = selected.StartsWith("Nenhum", StringComparison.OrdinalIgnoreCase)
+            ? "O Windows não disponibilizou um dispositivo de entrada."
+            : "Dispositivo selecionado: " + selected + ". Ative o microfone bíblico para iniciar a escuta.";
+    }
+
     private void RefreshMicrophones_Click(object sender, RoutedEventArgs e) => RefreshMicrophoneDevices();
 
     private void RefreshMicrophoneDevices()
@@ -320,6 +328,8 @@ public partial class MainWindow : Window
             service.StatusChanged += BibleMicrophone_StatusChanged;
             _bibleMicrophoneRecognition = service;
             await service.StartAsync();
+            BibleMicrophoneBox.IsEnabled = false;
+            RefreshMicrophonesButton.IsEnabled = false;
             BibleMicrophoneStatusText.Text = "Microfone ativo. Fale uma referência, por exemplo: João capítulo três, versículo dezesseis.";
         }
         catch (Exception ex)
@@ -435,6 +445,8 @@ public partial class MainWindow : Window
             service.StatusChanged -= BibleMicrophone_StatusChanged;
             await service.DisposeAsync();
         }
+        if (BibleMicrophoneBox is not null) BibleMicrophoneBox.IsEnabled = true;
+        if (RefreshMicrophonesButton is not null) RefreshMicrophonesButton.IsEnabled = true;
         if (BibleMicrophoneStatusText is not null)
             BibleMicrophoneStatusText.Text = "Microfone desligado. Nenhuma captação está ativa.";
     }
