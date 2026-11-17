@@ -226,11 +226,13 @@ public partial class MainWindow : Window
         var reference = $"{book.Name} {verse.Chapter}:{verse.Number}";
         try
         {
-            EnsureProjectionWindow();
+            var outputDevice = EnsureProjectionWindow();
             _projection!.ShowBibleVerse(reference, verse.Text);
             _projection.Activate();
-            BibleCopyrightText.Text = "Enviado para a tela de projeção: " + reference;
-            StatusText.Text = "Versículo enviado à projeção própria: " + reference;
+            BibleCopyrightText.Text = "Enviado para a tela de projeção: " + reference +
+                (string.IsNullOrWhiteSpace(outputDevice) ? "" : " | Monitor: " + outputDevice);
+            StatusText.Text = "Versículo enviado à projeção própria: " + reference +
+                (string.IsNullOrWhiteSpace(outputDevice) ? "" : " — " + outputDevice);
         }
         catch (Exception ex)
         {
@@ -256,14 +258,15 @@ public partial class MainWindow : Window
         StatusText.Text = "Projeção própria aberta. Ela funciona independentemente do Holyrics.";
     }
 
-    private void EnsureProjectionWindow()
+    private string? EnsureProjectionWindow()
     {
         if (_projection is null || !_projection.IsVisible)
             _projection = new ProjectionWindow();
-        _projection.ShowOnOutputDisplay();
+        var outputDevice = _projection.ShowOnOutputDisplay();
         _projection.SetMaxLines(_maxProjectionLines);
         _projection.SetBackgroundImage(_selectedProjectionBackgroundPath);
         _projection.ShowLyric(_currentProjectedLyric);
+        return outputDevice;
     }
 
     private void SelectProjectionBackground_Click(object sender, RoutedEventArgs e)
@@ -1661,7 +1664,8 @@ public partial class MainWindow : Window
     {
         if (!_holyrics.IsConfigured)
         {
-            StatusText.Text = "Configure primeiro o Holyrics em Conectar Holyrics. O Lyravoxen não baixa nem substitui a tradução original.";
+            BibleHolyricsVersionStatusText.Text = "Conecte o Holyrics em Ao vivo > Conectar Holyrics antes de buscar a ARC.";
+            StatusText.Text = BibleHolyricsVersionStatusText.Text;
             return;
         }
         try
@@ -1679,15 +1683,18 @@ public partial class MainWindow : Window
             BibleHolyricsArcVersionBox.DisplayMemberPath = "Title";
             if (arcVersions.Count == 0)
             {
-                StatusText.Text = "O Holyrics não informou o identificador pt_arc. A ARC SBB 2009 não está disponível nessa instalação; nenhuma versão parecida será escolhida automaticamente.";
+                BibleHolyricsVersionStatusText.Text = "A instalação do Holyrics não disponibilizou a versão ARC identificada como pt_arc. Nenhuma tradução semelhante foi selecionada.";
+                StatusText.Text = BibleHolyricsVersionStatusText.Text;
                 return;
             }
             BibleHolyricsArcVersionBox.SelectedIndex = 0;
-            StatusText.Text = $"{arcVersions.Count} versão(ões) Almeida Revista e Corrigida encontrada(s) no Holyrics. Confira o ano/edição exibido antes de projetar.";
+            BibleHolyricsVersionStatusText.Text = $"{arcVersions.Count} versão ARC encontrada no Holyrics. Selecione-a e informe livro, capítulo e versículo para projetar.";
+            StatusText.Text = BibleHolyricsVersionStatusText.Text;
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Não foi possível consultar as Bíblias do Holyrics: " + ex.Message;
+            BibleHolyricsVersionStatusText.Text = "Falha ao consultar as Bíblias do Holyrics: " + ex.Message;
+            StatusText.Text = BibleHolyricsVersionStatusText.Text;
         }
     }
 
@@ -1712,11 +1719,13 @@ public partial class MainWindow : Window
         try
         {
             await _holyrics.ShowBibleVerseAsync(reference, version.Version);
-            StatusText.Text = $"Solicitação enviada ao Holyrics: {version.Title} — {reference}. O texto é fornecido pela própria instalação do Holyrics, sem reescrita pelo Lyravoxen.";
+            BibleHolyricsVersionStatusText.Text = $"Solicitação enviada ao Holyrics: {version.Title} — {reference}.";
+            StatusText.Text = BibleHolyricsVersionStatusText.Text;
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Não foi possível projetar a referência ARC: " + ex.Message;
+            BibleHolyricsVersionStatusText.Text = "Não foi possível projetar a referência ARC: " + ex.Message;
+            StatusText.Text = BibleHolyricsVersionStatusText.Text;
         }
     }
 
