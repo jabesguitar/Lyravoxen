@@ -32,3 +32,19 @@ Fontes:
 
 ## Fundos
 O usuário forneceu referências visuais com azul-marinho, iluminação azul, detalhes dourados, oliveira, rocha texturizada, coroa de espinhos e tecido vinho. Foram criados quatro fundos 16:9 e quatro adaptações 4:3, com espaço central limpo. Ainda precisam ser incorporados ao seletor de fundos do projetor próprio.
+
+
+## Almeida Revista e Corrigida — SBB 2009
+A prioridade para cultos é a edição **Almeida Revista e Corrigida © 2009 (ARC)** da Sociedade Bíblica do Brasil, não a Almeida 1911 histórica, não a Almeida Corrigida Fiel (ACF), e não a Almeida Revista e Atualizada (ARA).
+
+A ARC SBB 2009 é protegida por direitos autorais. O Holyrics declara parceria com a SBB para essa tradução. O Lyravoxen não deve baixar, embutir, copiar ou redistribuir o texto sem autorização. Em vez disso, a integração consulta as traduções instaladas no Holyrics (`GetBibleVersionsV2`) e solicita a projeção da referência na versão selecionada (`ShowVerse`). Isso preserva o texto oficial fornecido pelo próprio Holyrics, sem paráfrases, correção automática, revisão ortográfica, normalização ou alteração artificial pelo Lyravoxen.
+
+A edição de 1969 (ARC69) é outra edição e deve aparecer separadamente se instalada. A edição 1911 de domínio público também é separada e nunca será rotulada como ARC SBB 2009.
+
+A API documentada do Holyrics permite listar versões e projetar referências, mas não expõe uma função documentada para descarregar o texto integral da Bíblia ao Lyravoxen. Por isso, a leitura ARC no app independente depende de autorização/licença e fornecimento de um arquivo oficial pela SBB.
+
+Fontes:
+- SBB, Almeida Revista e Corrigida: https://www.sbb.org.br/almeida-revista-e-corrigida
+- Holyrics, parcerias e versões: https://holyrics.com.br/about.php
+- Holyrics API Server: https://github.com/holyrics/API-Server
+- SBB+, lista ARC69 e ARC 2009: https://play.google.com/store/apps/details?id=org.bb.app
