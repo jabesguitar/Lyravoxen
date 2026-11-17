@@ -73,3 +73,13 @@ Fontes:
 - A prévia musical mantém 16:9 e pode ocupar mais altura disponível.
 - Validação CI: run #513 (ID 44151904422), commit a7331eb4e7977a2c8035b4b8e940133797f92bc9 — build Windows x64, testes de linha do tempo e parser bíblico, pacote portátil e instalador aprovados.
 - Ainda exigem teste no computador do usuário: permissões e dispositivo de áudio, download do modelo, nível de sinal real, precisão do reconhecimento no ambiente, tela externa e comunicação efetiva com Holyrics.
+
+
+## Letra completa e sincronização automática — 17/11/2026
+- A letra integral é armazenada em LibraryVideo.FullLyrics, separada da linha do tempo de marcações (Cues).
+- A aba de edição concentra o fluxo em um campo de letra completa, ação de salvar e ação de reconhecimento automático. Os controles de marcação frase a frase deixam de ser o caminho principal.
+- A letra é vinculada ao item atual e recuperada quando o vídeo/áudio é carregado novamente; também acompanha cópias do item para pastas da biblioteca.
+- Ao ativar o reconhecimento, o texto é salvo antes da captação. WASAPI loopback captura o áudio que o Windows está reproduzindo, Whisper transcreve localmente e LiveLyricsMatcher compara a transcrição com a próxima parte da letra.
+- A correspondência pode avançar até duas linhas à frente quando a transcrição agrupa frases; a sequência não retrocede. Cada trecho aceito gera cue de tempo, atualiza a prévia e é enviado ao Holyrics se a integração estiver ativa.
+- Não confundir com o microfone da Bíblia: são serviços separados. O reconhecimento de música captura o áudio de saída do computador, não o microfone bíblico.
+- O desempenho real depende do sinal reproduzido, voz, mixagem, reverberação, playback instrumental, blocos de transcrição e similaridade textual. A sincronização precisa ser testada com músicas reais antes de ser considerada pronta.
