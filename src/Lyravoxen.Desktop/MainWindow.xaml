@@ -285,7 +285,9 @@
        <StackPanel Grid.Row="1" Margin="2">
         <TextBlock Text="ALMEIDA REVISTA E CORRIGIDA — SBB 2009" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="2,4"/>
         <WrapPanel>
-         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="320" IsEditable="False" DisplayMemberPath="Title" ToolTip="Versões ARC instaladas no Holyrics"/>
+         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="320" IsEditable="False" DisplayMemberPath="Title" ToolTip="Versões ARC instaladas no Holyrics">
+          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Title}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
+         </ComboBox>
          <Button Content="Buscar versões no Holyrics" Click="RefreshHolyricsBibleVersions_Click"/>
          <TextBox x:Name="BibleHolyricsReferenceBox" Width="160" Text="João 3:16" ToolTip="Digite uma referência, por exemplo João 3:16 ou Salmos 23:1"/>
          <Button Content="Projetar referência ARC" Click="ProjectHolyricsBibleReference_Click" Background="#176E68"/>
@@ -294,10 +296,16 @@
         <TextBlock Text="A Bíblia precisa estar instalada e licenciada no Holyrics." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,4,3,8"/>
         <TextBlock Text="CONSULTA BÍBLICA LOCAL" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="11" Margin="2,4"/>
         <WrapPanel VerticalAlignment="Center">
-         <StackPanel Margin="2,0,5,2"><TextBlock Text="1. Bíblia / versão" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleVersionReaderBox" Width="350" ToolTip="Selecione a versão bíblica"/></StackPanel>
-         <StackPanel Margin="2,0,5,2"><TextBlock Text="2. Livro" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleBookReaderBox" Width="205" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Selecione o livro bíblico"/></StackPanel>
+         <StackPanel Margin="2,0,5,2"><TextBlock Text="1. Bíblia / versão" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleVersionReaderBox" Width="350" ToolTip="Selecione a versão bíblica">
+          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
+         </ComboBox></StackPanel>
+         <StackPanel Margin="2,0,5,2"><TextBlock Text="2. Livro" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleBookReaderBox" Width="205" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Selecione o livro bíblico">
+          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
+         </ComboBox></StackPanel>
          <StackPanel Margin="2,0,5,2"><TextBlock Text="3. Capítulo" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleChapterReaderBox" Width="90" ToolTip="Selecione o capítulo"/></StackPanel>
-         <StackPanel Margin="2,0,5,2"><TextBlock Text="4. Versículo" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleVerseReaderBox" Width="110" SelectionChanged="BibleVerseReader_SelectionChanged" ToolTip="Selecione o versículo para projetar"/></StackPanel>
+         <StackPanel Margin="2,0,5,2"><TextBlock Text="4. Versículo" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleVerseReaderBox" Width="110" SelectionChanged="BibleVerseReader_SelectionChanged" ToolTip="Selecione o versículo para projetar">
+          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
+         </ComboBox></StackPanel>
          <StackPanel Margin="2,0,5,2"><TextBlock Text="Leitura" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="3,0,0,1"/><ComboBox x:Name="BibleChapterCountBox" Width="105" SelectedIndex="0" ToolTip="Quantidade de capítulos consecutivos"><ComboBoxItem Content="1 capítulo"/><ComboBoxItem Content="2 capítulos"/><ComboBoxItem Content="3 capítulos"/><ComboBoxItem Content="4 capítulos"/><ComboBoxItem Content="5 capítulos"/><ComboBoxItem Content="6 capítulos"/></ComboBox></StackPanel>
          <StackPanel VerticalAlignment="Bottom" Margin="2,0,2,2"><TextBlock Text=" " FontSize="10"/><Button Content="Carregar leitura" Click="LoadBibleChapter_Click" Background="#176E68" MinHeight="38"/></StackPanel>
         </WrapPanel>
@@ -307,6 +315,7 @@
          <Setter Property="Foreground" Value="#142B39"/><Setter Property="Background" Value="Transparent"/><Setter Property="Padding" Value="9,8"/><Setter Property="Margin" Value="1"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
          <Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#176E68"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#D8E8EE"/></Trigger></Style.Triggers>
         </Style></ListBox.ItemContainerStyle>
+        <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Display}" Foreground="#142B39" FontSize="15" TextWrapping="Wrap" Padding="2"/></DataTemplate></ListBox.ItemTemplate>
        </ListBox>
        <StackPanel Grid.Row="3">
         <TextBlock x:Name="BibleCopyrightText" Text="As traduções disponíveis exibem sua licença e atribuição. Capítulos consultados ficam armazenados para uso offline." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5"/>
