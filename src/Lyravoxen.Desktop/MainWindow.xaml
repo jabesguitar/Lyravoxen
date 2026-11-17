@@ -285,7 +285,7 @@
        <StackPanel Grid.Row="1" Margin="2">
         <TextBlock Text="ALMEIDA REVISTA E CORRIGIDA — SBB 2009" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="2,4"/>
         <WrapPanel>
-         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="320" IsEditable="False" DisplayMemberPath="Title" ToolTip="Versões ARC instaladas no Holyrics">
+         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="320" IsEditable="False" ToolTip="Versões ARC instaladas no Holyrics">
           <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Title}" Foreground="#142330" FontSize="13"/></DataTemplate></ComboBox.ItemTemplate>
          </ComboBox>
          <Button Content="Buscar versões no Holyrics" Click="RefreshHolyricsBibleVersions_Click"/>
