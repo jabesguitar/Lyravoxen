@@ -18,6 +18,7 @@ namespace Lyravoxen;
 public partial class MainWindow : Window
 {
     private string _currentProjectedLyric = "";
+    private string? _selectedProjectionBackgroundPath;
     private int _maxProjectionLines = 4;
     private long _holyricsUpdateVersion;
     private readonly object _holyricsQueueSync = new();
@@ -1478,6 +1479,7 @@ public partial class MainWindow : Window
             if (preferences is null) return;
             _loadingPreferences = true;
             _holyricsEnabled = preferences.HolyricsEnabled ?? true;
+            _selectedProjectionBackgroundPath = preferences.ProjectionBackgroundPath;
             HolyricsEnabledBox.IsChecked = _holyricsEnabled;
             _maxProjectionLines = Math.Clamp(preferences.MaxLines ?? 4, 1, 10);
             SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
@@ -1524,6 +1526,7 @@ public partial class MainWindow : Window
     {
         public int? MaxLines { get; set; } = 4;
         public bool? HolyricsEnabled { get; set; } = true;
+        public string? ProjectionBackgroundPath { get; set; }
         public string? NextVideoUrl { get; set; }
     }
 
