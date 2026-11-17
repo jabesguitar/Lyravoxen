@@ -25,7 +25,7 @@ public sealed class BibleReaderService
 
     public static IReadOnlyList<BibleVersion> FreePortugueseVersions { get; } = new[]
     {
-        new BibleVersion("Almeida 1911 — domínio público", "alm1911", "Domínio público"),
+        new BibleVersion("Almeida 1911 histórica — domínio público (não é a ARC SBB 2009)", "alm1911", "Domínio público; edição histórica distinta da ARC SBB 2009"),
         new BibleVersion("Bíblia Livre — Almeida 1819 (CC BY)", "almeida-livre", "CC BY — exibir atribuição"),
         new BibleVersion("Bíblia Portuguesa Mundial (domínio público)", "bpm", "Domínio público"),
         new BibleVersion("Bíblia Livre Para Todos (CC BY-SA 4.0)", "blpt", "CC BY-SA 4.0 — atribuição e mesma licença")
