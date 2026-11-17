@@ -164,13 +164,13 @@
         </WrapPanel>
         <TextBlock Text="O Lyravoxen solicita ao próprio Holyrics o texto da tradução selecionada. É necessário ter essa Bíblia instalada e licenciada no Holyrics." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,4,3,8"/>
         <TextBlock Text="VERSÕES LIVRES PARA CONSULTA LOCAL (NÃO SÃO A ARC DA SBB)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="11" Margin="2,4"/>
+        <WrapPanel>
+         <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
+         <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
+         <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
+         <Button Content="Carregar capítulo" Click="LoadBibleChapter_Click" Background="#176E68"/>
+        </WrapPanel>
        </StackPanel>
-       <WrapPanel Grid.Row="1" Margin="2" Visibility="Collapsed">
-        <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
-        <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
-        <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
-        <Button Content="Carregar capítulo" Click="LoadBibleChapter_Click" Background="#176E68"/>
-       </WrapPanel>
        <ListBox x:Name="BibleVersesList" Grid.Row="2" Margin="4" MouseDoubleClick="BibleVerse_DoubleClick" DisplayMemberPath="Display"/>
        <StackPanel Grid.Row="3">
         <TextBlock x:Name="BibleCopyrightText" Text="As traduções disponíveis exibem sua licença e atribuição. Capítulos consultados ficam armazenados para uso offline." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5"/>
