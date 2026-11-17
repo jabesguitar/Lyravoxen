@@ -127,8 +127,19 @@ public partial class MainWindow : Window
     private void BibleBookReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (BibleBookReaderBox.SelectedItem is not BibleBook book) return;
+        _loadedBibleChapter = null;
+        BibleVersesList.ItemsSource = null;
+        BibleVerseReaderBox.ItemsSource = null;
         BibleChapterReaderBox.ItemsSource = Enumerable.Range(1, book.Chapters).ToList();
         BibleChapterReaderBox.SelectedIndex = 0;
+    }
+
+    private void BibleChapterReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingBibleVerseSelection) return;
+        _loadedBibleChapter = null;
+        BibleVersesList.ItemsSource = null;
+        BibleVerseReaderBox.ItemsSource = null;
     }
 
     private async void LoadBibleChapter_Click(object sender, RoutedEventArgs e)
@@ -230,7 +241,8 @@ public partial class MainWindow : Window
 
     private sealed record BibleVerseChoice(int Chapter, int Number)
     {
-        public override string ToString() => $"{Chapter}:{Number}";
+        public string Display => $"{Chapter}:{Number}";
+        public override string ToString() => Display;
     }
 
     private sealed record BibleVerseItem(int Chapter, int Number, string Text)
