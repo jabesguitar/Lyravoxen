@@ -19,6 +19,8 @@ public sealed class HolyricsClient
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Lyravoxen", "holyrics.dat");
 
+    public bool IsConfigured => File.Exists(_settingsPath);
+
     public async Task ConfigureAndTestAsync(string host, int port, string token)
     {
         if (string.IsNullOrWhiteSpace(host)) throw new ArgumentException("Informe o endereço do Holyrics.");
