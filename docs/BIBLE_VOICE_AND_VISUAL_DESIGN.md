@@ -92,3 +92,6 @@ Fontes:
 - A letra não é extraída nem redistribuída automaticamente de páginas de terceiros. O operador confere a versão/autoria, copia o texto para “Cadastrar letra” e salva na biblioteca local. O reconhecimento de áudio e a integração de projeção existentes permanecem o caminho para sincronizar.
 - Botão separado de busca alternativa removido porque sua função agora é acionada automaticamente pelo botão “Buscar letra”. Os controles manuais de linha do tempo foram mantidos porque suas ações não são duplicadas.
 - Nenhuma mudança intencional no player do YouTube, pesquisa do YouTube, reprodução ou aplicação de letras já encontradas.
+
+- Se o catálogo LRCLIB retornar metadados sem letra sincronizada compatível, o fallback para as pesquisas alternativas ocorre automaticamente, sem uma segunda confirmação.
+- A ação de busca alternativa separada foi removida; não há referência XAML pendente ao handler antigo. Verificação estática encontrou todos os handlers de clique declarados no XAML.
