@@ -783,6 +783,11 @@ public partial class MainWindow : Window
 
     private async void TestHolyrics_Click(object sender, RoutedEventArgs e)
     {
+        if (!_holyricsEnabled)
+        {
+            StatusText.Text = "Ative a integração Holyrics antes de executar o teste.";
+            return;
+        }
         try
         {
             StatusText.Text = "Verificando conexão e permissões do Holyrics...";
@@ -1017,7 +1022,11 @@ public partial class MainWindow : Window
         lines.Add((projectionOpen ? "✓" : "○") + (projectionOpen ? " Janela de projeção aberta" : " Janela de projeção ainda não aberta"));
         if (!projectionOpen) warnings.Add("Abra a projeção e confira se ela aparece na tela correta.");
 
-        try
+        if (!_holyricsEnabled)
+        {
+            lines.Add("○ Integração Holyrics desativada pelo usuário");
+        }
+        else try
         {
             await _holyrics.TestConnectionAsync();
             lines.Add("✓ Holyrics respondeu e autorizou ShowQuickPresentation e CloseCurrentQuickPresentation");
