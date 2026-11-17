@@ -11,6 +11,7 @@ using Lyravoxen.Integration;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
 using Lyravoxen.Services;
+using NAudio.Wave;
 
 namespace Lyravoxen;
 
@@ -25,6 +26,8 @@ public partial class MainWindow : Window
     private List<string> _manualDraftLines = new();
     private readonly List<LyricCue> _manualDraftCues = new();
     private LiveAudioTranscriptionService? _liveRecognition;
+    private MicrophoneTranscriptionService? _bibleMicrophoneRecognition;
+    private bool _loadingMicrophoneDevices;
     private bool _automaticLyricsActive;
     private readonly StringBuilder _liveTranscriptBuffer = new();
     private int _manualDraftIndex;
@@ -81,6 +84,7 @@ public partial class MainWindow : Window
                 }
                 await InitializeBrowserViewAsync(YoutubeSearchView);
                 LoadPreferences();
+                RefreshMicrophoneDevices();
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
                 _searchWebViewReady = true;
                 StatusText.Text = "Player pronto. Use a aba Próxima música para pesquisar e preparar a próxima faixa.";
@@ -88,6 +92,119 @@ public partial class MainWindow : Window
             }
             catch (Exception ex) { StatusText.Text = "Não foi possível iniciar o WebView2: " + ex.Message; }
         };
+    }
+
+    private void RefreshMicrophones_Click(object sender, RoutedEventArgs e) => RefreshMicrophoneDevices();
+
+    private void RefreshMicrophoneDevices()
+    {
+        if (BibleMicrophoneBox is null) return;
+        _loadingMicrophoneDevices = true;
+        var previous = (BibleMicrophoneBox.SelectedItem as string);
+        BibleMicrophoneBox.Items.Clear();
+        try
+        {
+            for (var i = 0; i < WaveIn.DeviceCount; i++)
+            {
+                var capabilities = WaveIn.GetCapabilities(i);
+                BibleMicrophoneBox.Items.Add($"{i}: {capabilities.ProductName}");
+            }
+            if (BibleMicrophoneBox.Items.Count == 0)
+            {
+                BibleMicrophoneBox.Items.Add("Nenhum microfone detectado");
+                BibleMicrophoneBox.SelectedIndex = 0;
+                BibleMicrophoneEnabledBox.IsEnabled = false;
+                BibleMicrophoneStatusText.Text = "Nenhum microfone de entrada foi detectado pelo Windows.";
+            }
+            else
+            {
+                var selected = previous is null ? -1 : BibleMicrophoneBox.Items.IndexOf(previous);
+                BibleMicrophoneBox.SelectedIndex = selected >= 0 ? selected : 0;
+                BibleMicrophoneEnabledBox.IsEnabled = true;
+                BibleMicrophoneStatusText.Text = "Selecione o microfone e ative a chave para iniciar o reconhecimento local.";
+            }
+        }
+        catch (Exception ex)
+        {
+            BibleMicrophoneEnabledBox.IsEnabled = false;
+            BibleMicrophoneStatusText.Text = "Não foi possível listar os microfones: " + ex.Message;
+        }
+        finally { _loadingMicrophoneDevices = false; }
+    }
+
+    private async void BibleMicrophoneEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingMicrophoneDevices || BibleMicrophoneEnabledBox is null) return;
+        if (BibleMicrophoneEnabledBox.IsChecked != true)
+        {
+            await StopBibleMicrophoneAsync();
+            return;
+        }
+
+        if (BibleMicrophoneBox.SelectedIndex < 0 ||
+            BibleMicrophoneBox.SelectedItem?.ToString() is not string selected ||
+            !int.TryParse(selected.Split(':', 2)[0], out var deviceNumber))
+        {
+            BibleMicrophoneEnabledBox.IsChecked = false;
+            BibleMicrophoneStatusText.Text = "Escolha um microfone válido antes de ativar.";
+            return;
+        }
+
+        BibleMicrophoneEnabledBox.IsEnabled = false;
+        try
+        {
+            var service = new MicrophoneTranscriptionService(deviceNumber);
+            service.TranscriptReceived += BibleMicrophone_TranscriptReceived;
+            service.StatusChanged += BibleMicrophone_StatusChanged;
+            _bibleMicrophoneRecognition = service;
+            await service.StartAsync();
+            BibleMicrophoneStatusText.Text = "Microfone ativo. Fale uma referência, por exemplo: João capítulo três, versículo dezesseis.";
+        }
+        catch (Exception ex)
+        {
+            await StopBibleMicrophoneAsync();
+            _loadingMicrophoneDevices = true;
+            BibleMicrophoneEnabledBox.IsChecked = false;
+            _loadingMicrophoneDevices = false;
+            BibleMicrophoneStatusText.Text = "Não foi possível iniciar o microfone: " + ex.Message;
+        }
+        finally { BibleMicrophoneEnabledBox.IsEnabled = true; }
+    }
+
+    private void BibleMicrophone_StatusChanged(object? sender, string message)
+    {
+        Dispatcher.BeginInvoke(new Action(() => BibleMicrophoneStatusText.Text = message));
+    }
+
+    private void BibleMicrophone_TranscriptReceived(object? sender, LiveTranscriptEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (BibleMicrophoneEnabledBox.IsChecked != true) return;
+            var line = e.Transcript.Trim();
+            if (string.IsNullOrWhiteSpace(line)) return;
+            BibleTranscriptBox.AppendText((BibleTranscriptBox.Text.Length == 0 ? "" : Environment.NewLine) + line);
+            BibleTranscriptBox.ScrollToEnd();
+
+            var reference = Regex.Match(line,
+                @"(?i)\b(gn|gênesis|genesis|êxodo|exodo|ex|sl|salmos?|pv|provérbios|proverbios|is|isaías|isaias|mt|mateus|mc|marcos|lc|lucas|jo|joão|joao|atos|rm|romanos|1\s*coríntios|2\s*coríntios|gl|gálatas|galatas|ef|efésios|efesios|fp|filipenses|cl|colossenses|1\s*tessalonicenses|2\s*tessalonicenses|1\s*timóteo|2\s*timóteo|hb|hebreus|tg|tiago|1\s*pedro|2\s*pedro|ap|apocalipse)\s+(\d{1,3})\s*[:.,]\s*(\d{1,3})\b");
+            if (reference.Success)
+                BibleMicrophoneStatusText.Text = "Possível referência identificada: " + reference.Value + ". Confirme o texto na Bíblia antes de projetar.";
+        }));
+    }
+
+    private async Task StopBibleMicrophoneAsync()
+    {
+        var service = _bibleMicrophoneRecognition;
+        _bibleMicrophoneRecognition = null;
+        if (service is not null)
+        {
+            service.TranscriptReceived -= BibleMicrophone_TranscriptReceived;
+            service.StatusChanged -= BibleMicrophone_StatusChanged;
+            await service.DisposeAsync();
+        }
+        if (BibleMicrophoneStatusText is not null)
+            BibleMicrophoneStatusText.Text = "Microfone desligado. Nenhuma captação está ativa.";
     }
 
     private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
