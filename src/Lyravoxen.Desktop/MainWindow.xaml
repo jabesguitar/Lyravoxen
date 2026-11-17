@@ -7,14 +7,42 @@
  <Window.Resources>
   <Style TargetType="{x:Type Button}"><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="Background" Value="#243E50"/><Setter Property="BorderBrush" Value="#36566A"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="10,6"/><Setter Property="Margin" Value="2"/><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type Button}"><Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#31566A"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#176E68"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.42"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
   <Style TargetType="{x:Type TextBox}"><Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#0D151D"/><Setter Property="BorderBrush" Value="#355064"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="3"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TextBox}"><Border x:Name="T" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7"><ScrollViewer x:Name="PART_ContentHost" Margin="1"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="T" Property="BorderBrush" Value="#26C6B8"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-  <Style TargetType="{x:Type ComboBox}"><Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="2"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="Background" Value="#142330"/><Setter Property="BorderBrush" Value="#6B8798"/><Setter Property="BorderThickness" Value="1.5"/><Setter Property="FontSize" Value="14"/><Setter Property="MinHeight" Value="36"/></Style>
-  <Style TargetType="{x:Type ComboBoxItem}"><Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#142330"/><Setter Property="Padding" Value="9,7"/><Setter Property="FontSize" Value="13"/><Style.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#245466"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#176E68"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger></Style.Triggers></Style>
+  <Style TargetType="{x:Type ComboBox}">
+   <Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="3"/>
+   <Setter Property="Foreground" Value="#142330"/><Setter Property="Background" Value="#EAF1F5"/>
+   <Setter Property="BorderBrush" Value="#527184"/><Setter Property="BorderThickness" Value="1.2"/>
+   <Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="38"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/>
+  </Style>
+  <Style TargetType="{x:Type ComboBoxItem}">
+   <Setter Property="Foreground" Value="#142330"/><Setter Property="Background" Value="#F4F7F9"/>
+   <Setter Property="Padding" Value="10,8"/><Setter Property="FontSize" Value="13"/>
+   <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+   <Style.Triggers>
+    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#D8E8EE"/><Setter Property="Foreground" Value="#102A38"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#176E68"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
+   </Style.Triggers>
+  </Style>
   <Style TargetType="{x:Type ListBox}"><Setter Property="Background" Value="#0D151D"/><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="BorderBrush" Value="#2B4557"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="4"/></Style>
   <Style TargetType="{x:Type ListBoxItem}"><Setter Property="Padding" Value="8,6"/><Setter Property="Margin" Value="1"/><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="Background" Value="Transparent"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#1B4652"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#203746"/></Trigger></Style.Triggers></Style>
  </Window.Resources>
  <Grid Margin="8,10,8,8">
  <TabControl x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
-  <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}"><Setter Property="MinHeight" Value="36"/><Setter Property="Padding" Value="14,7"/><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="{StaticResource TextMuted}"/><Setter Property="Background" Value="{StaticResource Panel}"/></Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo"><Grid Margin="14">
+  <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}">
+  <Setter Property="MinHeight" Value="40"/><Setter Property="Padding" Value="16,8"/><Setter Property="Margin" Value="3,2,3,5"/>
+  <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
+  <Setter Property="Foreground" Value="{StaticResource TextMuted}"/><Setter Property="Background" Value="#1A2B38"/>
+  <Setter Property="BorderBrush" Value="#304B5C"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
+   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="9" Padding="{TemplateBinding Padding}">
+    <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+   </Border>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#176E68"/><Setter TargetName="TabBorder" Property="BorderBrush" Value="#2BC7B5"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
+    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#29495A"/></Trigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo"><Grid Margin="14">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Grid.Row="0" Margin="4,0,4,10">
    <StackPanel><TextBlock Text="LYRAVOXEN" Foreground="{StaticResource Accent}" FontSize="24" FontWeight="Bold"/><TextBlock Text="Música em sintonia com palavras." Foreground="{StaticResource TextMuted}" FontSize="12"/></StackPanel>
@@ -35,7 +63,7 @@
     <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
    </WrapPanel>
   </Border>
-  <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+  <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="0.92*"/><ColumnDefinition Width="1.08*"/></Grid.ColumnDefinitions>
    <Border Grid.Column="0" Background="#080D12" CornerRadius="12" Padding="8" Margin="0,0,8,0">
     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <TextBlock Text="REPRODUÇÃO — PLAYER OFICIAL DO YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8"/>
@@ -66,11 +94,11 @@
          <Button Grid.Row="3" Grid.ColumnSpan="2" Content="Pesquisar em outras fontes (hinos e louvores)" Click="OpenLyricsSourceSearches_Click" Margin="0,4,0,0" ToolTip="Abrir pesquisas independentes em Cifra Club, Vagalume, Letras e outros catálogos"/>
         </Grid>
        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,8"><TextBlock Text="Linhas:" Foreground="#F2F6F8" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="64" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,5,0"/></StackPanel>
-       <Border Grid.Row="4" Background="#080D12" BorderBrush="#6B8798" BorderThickness="1.5" CornerRadius="10" Padding="18" Margin="4,2,4,6">
+       <Border Grid.Row="4" Background="#132533" BorderBrush="#3D657A" BorderThickness="1.5" CornerRadius="10" Padding="22" Margin="4,2,4,6">
         <StackPanel>
          <TextBlock Text="PRÉVIA DO TELÃO" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
-         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="34" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="150" VerticalAlignment="Center"/>
-         <TextBlock x:Name="NextProjectionPreviewText" Text="Próxima: —" Foreground="#B8CAD5" FontSize="17" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,16,0,0"/>
+         <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="42" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="250" VerticalAlignment="Center"/>
+         <TextBlock x:Name="NextProjectionPreviewText" Text="Próxima: —" Foreground="#B8CAD5" FontSize="19" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,16,0,0"/>
         </StackPanel>
        </Border>
       </Grid>
@@ -136,48 +164,6 @@
        </Grid>
       </Grid>
      </TabItem>
-         <TabItem Header="Bíblia e microfone">
-      <Grid Margin="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-       <TextBlock Text="RECONHECIMENTO DE FALA PARA REFERÊNCIAS BÍBLICAS" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,10"/>
-       <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4">
-        <ComboBox x:Name="BibleMicrophoneBox" Width="260" ToolTip="Selecione o microfone que será usado"/>
-        <Button x:Name="RefreshMicrophonesButton" Content="Atualizar microfones" Click="RefreshMicrophones_Click"/>
-        <CheckBox x:Name="BibleMicrophoneEnabledBox" Content="Microfone bíblico ativo" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="12,0,4,0" Checked="BibleMicrophoneEnabled_Changed" Unchecked="BibleMicrophoneEnabled_Changed"/>
-       </StackPanel>
-       <TextBlock x:Name="BibleMicrophoneStatusText" Grid.Row="2" Text="Microfone desligado. A captação só começa quando você ativar." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,8"/>
-       <Grid Grid.Row="3"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <TextBlock Text="TRANSCRIÇÃO RECONHECIDA — CONFIRA A REFERÊNCIA ANTES DE PROJETAR" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="4"/>
-        <TextBox x:Name="BibleTranscriptBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="16" Padding="10" ToolTip="A transcrição de voz aparecerá aqui. A projeção de versículos exige confirmação do operador."/>
-       </Grid>
-      </Grid>
-     </TabItem>
-     <TabItem Header="Bíblia">
-      <Grid Margin="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-       <TextBlock Text="BIBLIOTECA BÍBLICA — CONSULTA E PROJEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,8"/>
-       <StackPanel Grid.Row="1" Margin="2">
-        <TextBlock Text="ARC ORIGINAL DO HOLYRICS (SEM ALTERAÇÃO DO TEXTO)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="2,4"/>
-        <WrapPanel>
-         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="290" ToolTip="Versões instaladas no Holyrics; escolha Almeida Revista e Corrigida"/>
-         <Button Content="Buscar versões no Holyrics" Click="RefreshHolyricsBibleVersions_Click"/>
-         <TextBox x:Name="BibleHolyricsReferenceBox" Width="160" Text="João 3:16" ToolTip="Digite uma referência, por exemplo João 3:16 ou Salmos 23:1"/>
-         <Button Content="Projetar texto ARC original" Click="ProjectHolyricsBibleReference_Click" Background="#176E68"/>
-        </WrapPanel>
-        <TextBlock Text="O Lyravoxen solicita ao próprio Holyrics o texto da tradução selecionada. É necessário ter essa Bíblia instalada e licenciada no Holyrics." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,4,3,8"/>
-        <TextBlock Text="VERSÕES LIVRES PARA CONSULTA LOCAL (NÃO SÃO A ARC DA SBB)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="11" Margin="2,4"/>
-        <WrapPanel>
-         <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
-         <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
-         <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
-         <Button Content="Carregar capítulo" Click="LoadBibleChapter_Click" Background="#176E68"/>
-        </WrapPanel>
-       </StackPanel>
-       <ListBox x:Name="BibleVersesList" Grid.Row="2" Margin="4" MouseDoubleClick="BibleVerse_DoubleClick" DisplayMemberPath="Display"/>
-       <StackPanel Grid.Row="3">
-        <TextBlock x:Name="BibleCopyrightText" Text="As traduções disponíveis exibem sua licença e atribuição. Capítulos consultados ficam armazenados para uso offline." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5"/>
-        <Button Content="Projetar versículo selecionado" Click="ProjectBibleVerse_Click" Background="#176E68"/>
-       </StackPanel>
-      </Grid>
-     </TabItem>
 </TabControl>
    </Border>
   </Grid>
@@ -228,6 +214,60 @@
     </Grid>
    </Border>
   </Grid>
- </TabItem></TabControl>
+ </TabItem> <TabItem Header="✦ Bíblia" x:Name="BibleWorkspaceTab">
+  <Grid Margin="18">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+   <StackPanel Grid.Row="0" Margin="4,0,4,12">
+    <TextBlock Text="CENTRAL BÍBLICA" Foreground="{StaticResource Accent}" FontSize="23" FontWeight="Bold"/>
+    <TextBlock Text="Consulta, leitura, reconhecimento por microfone e projeção — em uma área exclusiva." Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,3,0,0"/>
+   </StackPanel>
+   <TabControl Grid.Row="1" Background="{StaticResource Panel}" BorderThickness="0">
+         <TabItem Header="Bíblia e microfone">
+      <Grid Margin="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="RECONHECIMENTO DE FALA PARA REFERÊNCIAS BÍBLICAS" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,10"/>
+       <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4">
+        <ComboBox x:Name="BibleMicrophoneBox" Width="260" ToolTip="Selecione o microfone que será usado"/>
+        <Button x:Name="RefreshMicrophonesButton" Content="Atualizar microfones" Click="RefreshMicrophones_Click"/>
+        <CheckBox x:Name="BibleMicrophoneEnabledBox" Content="Microfone bíblico ativo" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="12,0,4,0" Checked="BibleMicrophoneEnabled_Changed" Unchecked="BibleMicrophoneEnabled_Changed"/>
+       </StackPanel>
+       <TextBlock x:Name="BibleMicrophoneStatusText" Grid.Row="2" Text="Microfone desligado. A captação só começa quando você ativar." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,8"/>
+       <Grid Grid.Row="3"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <TextBlock Text="TRANSCRIÇÃO RECONHECIDA — CONFIRA A REFERÊNCIA ANTES DE PROJETAR" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="4"/>
+        <TextBox x:Name="BibleTranscriptBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="16" Padding="10" ToolTip="A transcrição de voz aparecerá aqui. A projeção de versículos exige confirmação do operador."/>
+       </Grid>
+      </Grid>
+     </TabItem>
+     <TabItem Header="Bíblia">
+      <Grid Margin="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="BIBLIOTECA BÍBLICA — CONSULTA E PROJEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,8"/>
+       <StackPanel Grid.Row="1" Margin="2">
+        <TextBlock Text="ARC ORIGINAL DO HOLYRICS (SEM ALTERAÇÃO DO TEXTO)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="2,4"/>
+        <WrapPanel>
+         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="290" ToolTip="Versões instaladas no Holyrics; escolha Almeida Revista e Corrigida"/>
+         <Button Content="Buscar versões no Holyrics" Click="RefreshHolyricsBibleVersions_Click"/>
+         <TextBox x:Name="BibleHolyricsReferenceBox" Width="160" Text="João 3:16" ToolTip="Digite uma referência, por exemplo João 3:16 ou Salmos 23:1"/>
+         <Button Content="Projetar texto ARC original" Click="ProjectHolyricsBibleReference_Click" Background="#176E68"/>
+        </WrapPanel>
+        <TextBlock Text="O Lyravoxen solicita ao próprio Holyrics o texto da tradução selecionada. É necessário ter essa Bíblia instalada e licenciada no Holyrics." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,4,3,8"/>
+        <TextBlock Text="VERSÕES LIVRES PARA CONSULTA LOCAL (NÃO SÃO A ARC DA SBB)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="11" Margin="2,4"/>
+        <WrapPanel>
+         <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
+         <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
+         <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
+         <Button Content="Carregar capítulo" Click="LoadBibleChapter_Click" Background="#176E68"/>
+        </WrapPanel>
+       </StackPanel>
+       <ListBox x:Name="BibleVersesList" Grid.Row="2" Margin="4" MouseDoubleClick="BibleVerse_DoubleClick" DisplayMemberPath="Display"/>
+       <StackPanel Grid.Row="3">
+        <TextBlock x:Name="BibleCopyrightText" Text="As traduções disponíveis exibem sua licença e atribuição. Capítulos consultados ficam armazenados para uso offline." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5"/>
+        <Button Content="Projetar versículo selecionado" Click="ProjectBibleVerse_Click" Background="#176E68"/>
+       </StackPanel>
+      </Grid>
+     </TabItem>
+
+   </TabControl>
+  </Grid>
+ </TabItem>
+</TabControl>
  </Grid>
 </Window>
