@@ -154,7 +154,18 @@
      <TabItem Header="Bíblia">
       <Grid Margin="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <TextBlock Text="BIBLIOTECA BÍBLICA — CONSULTA E PROJEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,8"/>
-       <WrapPanel Grid.Row="1" Margin="2">
+       <StackPanel Grid.Row="1" Margin="2">
+        <TextBlock Text="ARC ORIGINAL DO HOLYRICS (SEM ALTERAÇÃO DO TEXTO)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="2,4"/>
+        <WrapPanel>
+         <ComboBox x:Name="BibleHolyricsArcVersionBox" Width="290" ToolTip="Versões instaladas no Holyrics; escolha Almeida Revista e Corrigida"/>
+         <Button Content="Buscar versões no Holyrics" Click="RefreshHolyricsBibleVersions_Click"/>
+         <TextBox x:Name="BibleHolyricsReferenceBox" Width="160" Text="João 3:16" ToolTip="Digite uma referência, por exemplo João 3:16 ou Salmos 23:1"/>
+         <Button Content="Projetar texto ARC original" Click="ProjectHolyricsBibleReference_Click" Background="#176E68"/>
+        </WrapPanel>
+        <TextBlock Text="O Lyravoxen solicita ao próprio Holyrics o texto da tradução selecionada. É necessário ter essa Bíblia instalada e licenciada no Holyrics." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,4,3,8"/>
+        <TextBlock Text="VERSÕES LIVRES PARA CONSULTA LOCAL (NÃO SÃO A ARC DA SBB)" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="11" Margin="2,4"/>
+       </StackPanel>
+       <WrapPanel Grid.Row="1" Margin="2" Visibility="Collapsed">
         <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
         <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
         <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
