@@ -932,13 +932,8 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
-        foreach (var saved in _library.SelectMany(folder => folder.Videos)
-            .Where(item => item.IsOffline == _currentVideo.IsOffline &&
-                (item.IsOffline
-                    ? string.Equals(item.LocalPath, _currentVideo.LocalPath, StringComparison.OrdinalIgnoreCase)
-                    : string.Equals(item.VideoId, _currentVideo.VideoId, StringComparison.Ordinal))))
-            saved.FullLyrics = _currentVideo.FullLyrics;
-        SaveLibrary();
+        // PersistCurrentCues also creates the synchronized-library entry when this is the first save.
+        PersistCurrentCues();
     }
 
     private async void ToggleAutoRecognition_Click(object sender, RoutedEventArgs e)
