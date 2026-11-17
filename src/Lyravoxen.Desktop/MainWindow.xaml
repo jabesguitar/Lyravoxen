@@ -63,7 +63,7 @@
     <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
    </WrapPanel>
   </Border>
-  <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="0.92*"/><ColumnDefinition Width="1.08*"/></Grid.ColumnDefinitions>
+  <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="0.78*"/><ColumnDefinition Width="1.22*"/></Grid.ColumnDefinitions>
    <Border Grid.Column="0" Background="#080D12" CornerRadius="12" Padding="8" Margin="0,0,8,0">
     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <TextBlock Text="REPRODUÇÃO — PLAYER OFICIAL DO YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8"/>
@@ -233,7 +233,7 @@
        <TextBlock x:Name="BibleMicrophoneStatusText" Grid.Row="2" Text="Microfone desligado. A captação só começa quando você ativar." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,8"/>
        <Grid Grid.Row="3"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <TextBlock Text="TRANSCRIÇÃO RECONHECIDA — CONFIRA A REFERÊNCIA ANTES DE PROJETAR" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="4"/>
-        <TextBox x:Name="BibleTranscriptBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="16" Padding="10" ToolTip="A transcrição de voz aparecerá aqui. A projeção de versículos exige confirmação do operador."/>
+        <TextBox x:Name="BibleTranscriptBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="16" Padding="10" Background="#F3F7FA" Foreground="#142B39" BorderBrush="#54788C" BorderThickness="1.5" ToolTip="A transcrição de voz aparecerá aqui. A projeção de versículos exige confirmação do operador."/>
        </Grid>
       </Grid>
      </TabItem>
@@ -253,11 +253,11 @@
         <WrapPanel>
          <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
          <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
-         <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
+         <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/><ComboBox x:Name="BibleChapterCountBox" Width="78" SelectedIndex="0" ToolTip="Quantidade de capítulos consecutivos para exibir"><ComboBoxItem Content="1 cap."/><ComboBoxItem Content="2 caps."/><ComboBoxItem Content="3 caps."/><ComboBoxItem Content="4 caps."/><ComboBoxItem Content="5 caps."/><ComboBoxItem Content="6 caps."/></ComboBox>
          <Button Content="Carregar capítulo" Click="LoadBibleChapter_Click" Background="#176E68"/>
         </WrapPanel>
        </StackPanel>
-       <ListBox x:Name="BibleVersesList" Grid.Row="2" Margin="4" MouseDoubleClick="BibleVerse_DoubleClick" DisplayMemberPath="Display"/>
+       <ListBox x:Name="BibleVersesList" Grid.Row="2" Margin="4" MinHeight="280" Background="#F3F7FA" Foreground="#142B39" BorderBrush="#54788C" BorderThickness="1.5" FontSize="15" Padding="8" ScrollViewer.VerticalScrollBarVisibility="Auto" MouseDoubleClick="BibleVerse_DoubleClick" DisplayMemberPath="Display"/>
        <StackPanel Grid.Row="3">
         <TextBlock x:Name="BibleCopyrightText" Text="As traduções disponíveis exibem sua licença e atribuição. Capítulos consultados ficam armazenados para uso offline." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5"/>
         <Button Content="Projetar versículo selecionado" Click="ProjectBibleVerse_Click" Background="#176E68"/>
