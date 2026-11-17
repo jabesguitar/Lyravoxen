@@ -32,6 +32,8 @@ public partial class MainWindow : Window
     private readonly BibleReaderService _bibleReader = new();
     private BibleChapter? _loadedBibleChapter;
     private bool _loadingMicrophoneDevices;
+    private bool _syncingBibleVerseSelection;
+    private bool _updatingBibleMicrophoneToggle;
     private bool _automaticLyricsActive;
     private readonly StringBuilder _liveTranscriptBuffer = new();
     private int _manualDraftIndex;
@@ -157,7 +159,15 @@ public partial class MainWindow : Window
                 loaded.AddRange(result.Verses.Select((text, index) =>
                     new BibleVerseItem(chapterNumber, index + 1, text)));
             }
+            _syncingBibleVerseSelection = true;
             BibleVersesList.ItemsSource = loaded;
+            BibleVerseReaderBox.ItemsSource = loaded.Select(v => new BibleVerseChoice(v.Chapter, v.Number)).ToList();
+            if (loaded.Count > 0)
+            {
+                BibleVersesList.SelectedIndex = 0;
+                BibleVerseReaderBox.SelectedIndex = 0;
+            }
+            _syncingBibleVerseSelection = false;
             var cacheStatus = cacheStates.Distinct().Count() == 1 ? cacheStates[0] : "capítulos carregados e armazenados localmente";
             BibleCopyrightText.Text = version.Name + " | " + book.Name + " " + chapter +
                 (actualCount > 1 ? "–" + (chapter + actualCount - 1) : "") + " | " + cacheStatus +
@@ -172,19 +182,55 @@ public partial class MainWindow : Window
     private void BibleVerse_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         => ProjectBibleVerse_Click(sender, e);
 
+    private void BibleVerseReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingBibleVerseSelection || BibleVerseReaderBox.SelectedItem is not BibleVerseChoice choice) return;
+        _syncingBibleVerseSelection = true;
+        BibleVersesList.SelectedItem = (BibleVersesList.ItemsSource as IEnumerable<BibleVerseItem>)?
+            .FirstOrDefault(v => v.Chapter == choice.Chapter && v.Number == choice.Number);
+        BibleVersesList.ScrollIntoView(BibleVersesList.SelectedItem);
+        _syncingBibleVerseSelection = false;
+    }
+
+    private void BibleVersesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingBibleVerseSelection || BibleVersesList.SelectedItem is not BibleVerseItem verse) return;
+        _syncingBibleVerseSelection = true;
+        BibleVerseReaderBox.SelectedItem = new BibleVerseChoice(verse.Chapter, verse.Number);
+        _syncingBibleVerseSelection = false;
+    }
+
     private void ProjectBibleVerse_Click(object sender, RoutedEventArgs e)
     {
-        if (_loadedBibleChapter is null || BibleVersesList.SelectedItem is not BibleVerseItem verse ||
-            BibleBookReaderBox.SelectedItem is not BibleBook book)
+        var verse = BibleVersesList.SelectedItem as BibleVerseItem;
+        if (verse is null && BibleVerseReaderBox.SelectedItem is BibleVerseChoice choice)
+            verse = (BibleVersesList.ItemsSource as IEnumerable<BibleVerseItem>)?
+                .FirstOrDefault(v => v.Chapter == choice.Chapter && v.Number == choice.Number);
+        if (_loadedBibleChapter is null || verse is null || BibleBookReaderBox.SelectedItem is not BibleBook book)
         {
-            BibleCopyrightText.Text = "Carregue um capítulo e selecione um versículo antes de projetar.";
+            BibleCopyrightText.Text = "Carregue a leitura, escolha o livro, capítulo e versículo e tente novamente.";
             return;
         }
 
         var reference = $"{book.Name} {verse.Chapter}:{verse.Number}";
-        EnsureProjectionWindow();
-        _projection!.ShowLyric(reference + Environment.NewLine + verse.Text);
-        StatusText.Text = "Versículo enviado à projeção: " + reference;
+        try
+        {
+            EnsureProjectionWindow();
+            _projection!.ShowBibleVerse(reference, verse.Text);
+            _projection.Activate();
+            BibleCopyrightText.Text = "Enviado para a tela de projeção: " + reference;
+            StatusText.Text = "Versículo enviado à projeção própria: " + reference;
+        }
+        catch (Exception ex)
+        {
+            BibleCopyrightText.Text = "Não foi possível abrir a tela de projeção: " + ex.Message;
+            StatusText.Text = BibleCopyrightText.Text;
+        }
+    }
+
+    private sealed record BibleVerseChoice(int Chapter, int Number)
+    {
+        public override string ToString() => $"{Chapter}:{Number}";
     }
 
     private sealed record BibleVerseItem(int Chapter, int Number, string Text)
@@ -269,6 +315,11 @@ public partial class MainWindow : Window
     private void RefreshMicrophoneDevices()
     {
         if (BibleMicrophoneBox is null) return;
+        if (_bibleMicrophoneRecognition is not null)
+        {
+            BibleMicrophoneStatusText.Text = "Pare o microfone antes de atualizar a lista de dispositivos.";
+            return;
+        }
         _loadingMicrophoneDevices = true;
         var previous = (BibleMicrophoneBox.SelectedItem as string);
         BibleMicrophoneBox.Items.Clear();
@@ -284,19 +335,25 @@ public partial class MainWindow : Window
                 BibleMicrophoneBox.Items.Add("Nenhum microfone detectado");
                 BibleMicrophoneBox.SelectedIndex = 0;
                 BibleMicrophoneEnabledBox.IsEnabled = false;
-                BibleMicrophoneStatusText.Text = "Nenhum microfone de entrada foi detectado pelo Windows.";
+                BibleMicrophoneToggleStateText.Text = "SEM DISPOSITIVO";
+                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Orange;
+                BibleMicrophoneStatusText.Text = "O Windows não disponibilizou nenhuma entrada de microfone. Verifique Configurações > Sistema > Som > Entrada e a permissão de microfone do Windows.";
             }
             else
             {
                 var selected = previous is null ? -1 : BibleMicrophoneBox.Items.IndexOf(previous);
                 BibleMicrophoneBox.SelectedIndex = selected >= 0 ? selected : 0;
                 BibleMicrophoneEnabledBox.IsEnabled = true;
-                BibleMicrophoneStatusText.Text = "Selecione o microfone e ative a chave para iniciar o reconhecimento local.";
+                BibleMicrophoneToggleStateText.Text = "DESLIGADO";
+                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
+                BibleMicrophoneStatusText.Text = $"{BibleMicrophoneBox.Items.Count} dispositivo(s) de entrada detectado(s). Selecione um e ative o microfone.";
             }
         }
         catch (Exception ex)
         {
             BibleMicrophoneEnabledBox.IsEnabled = false;
+            BibleMicrophoneToggleStateText.Text = "ERRO";
+            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.OrangeRed;
             BibleMicrophoneStatusText.Text = "Não foi possível listar os microfones: " + ex.Message;
         }
         finally { _loadingMicrophoneDevices = false; }
@@ -304,7 +361,7 @@ public partial class MainWindow : Window
 
     private async void BibleMicrophoneEnabled_Changed(object sender, RoutedEventArgs e)
     {
-        if (_loadingMicrophoneDevices || BibleMicrophoneEnabledBox is null) return;
+        if (_loadingMicrophoneDevices || _updatingBibleMicrophoneToggle || BibleMicrophoneEnabledBox is null) return;
         if (BibleMicrophoneEnabledBox.IsChecked != true)
         {
             await StopBibleMicrophoneAsync();
@@ -321,6 +378,9 @@ public partial class MainWindow : Window
         }
 
         BibleMicrophoneEnabledBox.IsEnabled = false;
+        BibleMicrophoneToggleStateText.Text = "INICIANDO";
+        BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
+        BibleMicrophoneStatusText.Text = "Preparando o reconhecimento. No primeiro uso, o modelo gratuito de voz será baixado; aguarde até aparecer OUVINDO.";
         try
         {
             var service = new MicrophoneTranscriptionService(deviceNumber);
@@ -330,7 +390,9 @@ public partial class MainWindow : Window
             await service.StartAsync();
             BibleMicrophoneBox.IsEnabled = false;
             RefreshMicrophonesButton.IsEnabled = false;
-            BibleMicrophoneStatusText.Text = "Microfone ativo. Fale uma referência, por exemplo: João capítulo três, versículo dezesseis.";
+            BibleMicrophoneToggleStateText.Text = "OUVINDO";
+            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.LightGreen;
+            BibleMicrophoneStatusText.Text = "Microfone ativo e captando. Fale uma referência, por exemplo: João capítulo três, versículo dezesseis.";
         }
         catch (Exception ex)
         {
@@ -338,6 +400,8 @@ public partial class MainWindow : Window
             _loadingMicrophoneDevices = true;
             BibleMicrophoneEnabledBox.IsChecked = false;
             _loadingMicrophoneDevices = false;
+            BibleMicrophoneToggleStateText.Text = "ERRO";
+            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.OrangeRed;
             BibleMicrophoneStatusText.Text = "Não foi possível iniciar o microfone: " + ex.Message;
         }
         finally { BibleMicrophoneEnabledBox.IsEnabled = true; }
@@ -345,7 +409,27 @@ public partial class MainWindow : Window
 
     private void BibleMicrophone_StatusChanged(object? sender, string message)
     {
-        Dispatcher.BeginInvoke(new Action(() => BibleMicrophoneStatusText.Text = message));
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            BibleMicrophoneStatusText.Text = message;
+            if (message.Contains("ativo", StringComparison.OrdinalIgnoreCase))
+            {
+                BibleMicrophoneToggleStateText.Text = "OUVINDO";
+                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.LightGreen;
+            }
+            else if (message.Contains("falha", StringComparison.OrdinalIgnoreCase) ||
+                     message.Contains("interromp", StringComparison.OrdinalIgnoreCase))
+            {
+                BibleMicrophoneToggleStateText.Text = "VERIFICAR";
+                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Orange;
+            }
+            else if (message.Contains("modelo", StringComparison.OrdinalIgnoreCase) ||
+                     message.Contains("baix", StringComparison.OrdinalIgnoreCase))
+            {
+                BibleMicrophoneToggleStateText.Text = "PREPARANDO";
+                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
+            }
+        }));
     }
 
     private void BibleMicrophone_TranscriptReceived(object? sender, LiveTranscriptEventArgs e)
@@ -447,6 +531,17 @@ public partial class MainWindow : Window
         }
         if (BibleMicrophoneBox is not null) BibleMicrophoneBox.IsEnabled = true;
         if (RefreshMicrophonesButton is not null) RefreshMicrophonesButton.IsEnabled = true;
+        if (BibleMicrophoneEnabledBox is not null && BibleMicrophoneEnabledBox.IsChecked == true)
+        {
+            _updatingBibleMicrophoneToggle = true;
+            BibleMicrophoneEnabledBox.IsChecked = false;
+            _updatingBibleMicrophoneToggle = false;
+        }
+        if (BibleMicrophoneToggleStateText is not null)
+        {
+            BibleMicrophoneToggleStateText.Text = "DESLIGADO";
+            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
+        }
         if (BibleMicrophoneStatusText is not null)
             BibleMicrophoneStatusText.Text = "Microfone desligado. Nenhuma captação está ativa.";
     }
