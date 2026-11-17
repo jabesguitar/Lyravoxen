@@ -128,3 +128,26 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 - Limite de validação: CI e testes automatizados aprovados não provam que o Windows do usuário permite acesso ao microfone, que o modelo será baixado em sua rede, que o áudio terá nível suficiente, nem que a tela de saída está corretamente configurada. Esses pontos exigem o próximo teste físico.
 - Estado atual: versão atualizada pronta para novo teste no computador do usuário. PR #9 continua draft e sem merge na main.
 - Próxima ação: baixar os artefatos do run #513; testar primeiro o microfone observando barra de nível e estado OUVINDO; depois reconhecer João 3:16; carregar e selecionar um versículo; projetar na tela externa; verificar a prévia ao vivo. Registrar qualquer falha com nova captura.
+
+
+### Nova etapa — letra completa salva e sincronização automática por reconhecimento (2026-11-17)
+- Solicitação do usuário:
+  - A aba de sincronização ainda não está funcional para o fluxo esperado.
+  - O controle “Próxima frase a marcar” não permite realizar a marcação como desejado.
+  - Em vez de marcar cada linha manualmente, o usuário quer colar/editar a letra inteira, salvá-la e deixar o programa reconhecer o trecho cantado, sincronizar e projetar automaticamente pelo Holyrics.
+  - O usuário observou estes pontos na versão anterior enquanto ainda está testando o pacote mais recente; esse teste manual permanece pendente.
+- Decisão de produto desta etapa: letra completa é o conteúdo-fonte editável e reutilizável; as marcações de tempo são geradas automaticamente a partir da comparação entre áudio e letra. Não obrigar o operador a clicar frase por frase.
+- Implementado nesta branch:
+  1. Modelo LibraryVideo ganhou propriedade FullLyrics, separada dos tempos Cues, preservando compatibilidade com JSON existente (campo novo opcional).
+  2. Aba “Criar / editar letra” reorganizada: campo grande de letra completa, botão “Salvar letra completa”, botão único de reconhecimento automático e mensagens de progresso/trecho reconhecido.
+  3. Removidos da interface os botões “Iniciar sincronização ao vivo”, “Marcar próxima frase no tempo atual” e “Buscar versão sincronizada desta letra”, além do cartão “Próxima frase a marcar” e explicação de marcação manual. Métodos antigos permanecem no código por ora, mas não são expostos na interface; remoção definitiva só após validação para evitar regressão.
+  4. Salvar a letra associa o texto ao vídeo/áudio atual e grava na biblioteca local. Persistência cria a entrada na pasta “Músicas sincronizadas” quando for o primeiro salvamento.
+  5. Ao carregar novamente uma música da biblioteca, o campo de letra completa é preenchido com o conteúdo salvo. A propriedade é copiada ao adicionar/atualizar músicas em pastas e ao salvar metadados.
+  6. Ao iniciar reconhecimento automático, o texto atual é salvo antes da captura. O áudio é capturado por WASAPI loopback no próprio computador, transcrito localmente pelo Whisper e comparado com as frases da letra em sequência. Quando uma frase é reconhecida, a linha do tempo é construída e a frase é enviada para a prévia e para o Holyrics, se a integração estiver ligada.
+  7. Corrigido um erro lógico no avanço: o matcher já podia retornar uma frase até duas posições à frente, mas o chamador rejeitava qualquer resultado que não fosse exatamente a próxima linha. Agora aceita a correspondência adiante e avança o cursor para depois da frase reconhecida, sem voltar a trechos anteriores.
+  8. Acrescentados testes para transcrição que corresponde à próxima frase e para transcrição agrupada que corresponde a até duas linhas adiante.
+- Distinção importante: o reconhecimento usa o áudio de saída do computador (WASAPI loopback), não o microfone bíblico. A faixa reproduzida precisa estar audível na saída capturada do Windows. A transcrição é local e gratuita, sem serviço pago/API.
+- Limitação atual a validar: o reconhecimento ainda depende de transcrição em blocos de áudio e correspondência textual; ruído, playback instrumental, coral, voz baixa, eco, letras com variações e trechos repetidos podem exigir ajuste. Não declarar sincronização perfeita antes de testes com faixas reais.
+- CI desta nova etapa ainda pendente. Consultar o HEAD atual e o workflow mais recente antes de entregar novo pacote.
+- Estado: código atualizado na branch feature/integrated-bible-microphone-holyrics; PR #9 segue draft e sem merge. A versão anterior run #513 continua sendo a compilação que o usuário está testando; esta nova funcionalidade só deve ser testada depois do novo CI e novo artefato.
+- Próxima ação: validar o build e testes, corrigir erros de compilação/regressões, atualizar PR e documentação; depois fornecer um pacote novo claramente identificado como contendo letra completa salva e reconhecimento automático.
