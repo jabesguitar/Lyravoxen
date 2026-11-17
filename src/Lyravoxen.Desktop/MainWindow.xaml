@@ -148,6 +148,22 @@
        </Grid>
       </Grid>
      </TabItem>
+     <TabItem Header="Bíblia">
+      <Grid Margin="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="BIBLIOTECA BÍBLICA — CONSULTA E PROJEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,8"/>
+       <WrapPanel Grid.Row="1" Margin="2">
+        <ComboBox x:Name="BibleVersionReaderBox" Width="250" ToolTip="Versão bíblica livre ou com licença aberta"/>
+        <ComboBox x:Name="BibleBookReaderBox" Width="190" SelectionChanged="BibleBookReader_SelectionChanged" ToolTip="Livro bíblico"/>
+        <ComboBox x:Name="BibleChapterReaderBox" Width="80" ToolTip="Capítulo"/>
+        <Button Content="Carregar capítulo" Click="LoadBibleChapter_Click" Background="#176E68"/>
+       </WrapPanel>
+       <ListBox x:Name="BibleVersesList" Grid.Row="2" Margin="4" MouseDoubleClick="BibleVerse_DoubleClick" DisplayMemberPath="Display"/>
+       <StackPanel Grid.Row="3">
+        <TextBlock x:Name="BibleCopyrightText" Text="As traduções disponíveis exibem sua licença e atribuição. Capítulos consultados ficam armazenados para uso offline." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5"/>
+        <Button Content="Projetar versículo selecionado" Click="ProjectBibleVerse_Click" Background="#176E68"/>
+       </StackPanel>
+      </Grid>
+     </TabItem>
 </TabControl>
    </Border>
   </Grid>
