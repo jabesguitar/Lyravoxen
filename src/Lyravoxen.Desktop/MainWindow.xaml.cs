@@ -84,6 +84,8 @@ public partial class MainWindow : Window
         Closing += async (_, _) =>
         {
             if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
+            _micService?.Dispose();
+            _micService = null;
         };
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
         Loaded += async (_, _) =>
@@ -1535,6 +1537,8 @@ public partial class MainWindow : Window
             var wantedTrack = NormalizeMusicText(trackName);
             var wantedArtist = NormalizeMusicText(artistName);
             var candidates = new List<(double Score, double LyricMatch, string Track, string Artist, string Album, List<LyricCue> Cues)>();
+            // Letras do catálogo que existem só como texto, sem tempos (usadas se não houver versão sincronizada).
+            var plainCandidates = new List<(double Score, string Track, string Artist, string Album, string Text)>();
             foreach (var item in searchItems)
             {
                 var foundTrack = item.TryGetProperty("trackName", out var tp) ? tp.GetString() ?? "" : "";
@@ -1553,6 +1557,15 @@ public partial class MainWindow : Window
                     ContainsMusicPhrase(wantedArtist, normArtist);
                 if (!trackMatches)
                     continue;
+                if (expectedLyrics is null &&
+                    item.TryGetProperty("plainLyrics", out var plainElement) && plainElement.ValueKind == JsonValueKind.String &&
+                    !string.IsNullOrWhiteSpace(plainElement.GetString()))
+                {
+                    var plainText = plainElement.GetString()!.Replace("\r\n", "\n").Trim();
+                    if (plainText.Count(ch => ch == '\n') >= 3)
+                        plainCandidates.Add((100d - (normTrack == wantedTrack ? 0 : 12) - (artistMatches ? 0 : 35),
+                            foundTrack, foundArtist, foundAlbum, plainText));
+                }
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String)
                     continue;
                 var lrc = synced.GetString();
@@ -1591,6 +1604,34 @@ public partial class MainWindow : Window
                         await OpenLyricsSourceSearchesAsync(trackName, artistName);
                     else
                         StatusText.Text = "A sincronização atual foi preservada. Você pode iniciar a marcação ao vivo quando quiser.";
+                    return;
+                }
+
+                if (plainCandidates.Count > 0)
+                {
+                    var plain = plainCandidates.OrderByDescending(candidate => candidate.Score).First();
+                    var plainPreview = string.Join(Environment.NewLine, plain.Text.Split('\n').Take(10));
+                    var plainAlbum = string.IsNullOrWhiteSpace(plain.Album) ? "" : "\nÁlbum: " + plain.Album;
+                    var plainDialog = new MusicMatchDialog(
+                        "Encontrei a letra, mas sem tempos",
+                        "Vídeo carregado: " + (_currentVideo?.Title ?? "") +
+                        "\nFaixa encontrada: " + plain.Track + "\nAutor / intérprete: " + plain.Artist + plainAlbum +
+                        "\n\nPrévia da letra:\n" + plainPreview +
+                        "\n\nSim: colocar esta letra na caixa, salvar e sincronizar com a música.\nNão: não usar.\nCriar: só colocar a letra na caixa para eu revisar antes.") { Owner = this };
+                    plainDialog.ShowDialog();
+                    if (plainDialog.Choice == MusicMatchChoice.Yes)
+                    {
+                        OpenManualLyricsEditor(plain.Text);
+                        SaveFullLyrics_Click(this, new RoutedEventArgs());
+                    }
+                    else if (plainDialog.Choice == MusicMatchChoice.Create)
+                    {
+                        OpenManualLyricsEditor(plain.Text);
+                    }
+                    else
+                    {
+                        StatusText.Text = "Letra do catálogo não aplicada.";
+                    }
                     return;
                 }
 
@@ -2421,6 +2462,9 @@ public partial class MainWindow : Window
 
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        // Voz (F4), confirmação da Bíblia e marcação por toque têm prioridade sobre os demais atalhos.
+        if (HandleVoiceAndTapKeys(e)) return;
+
         // Não interceptar atalhos enquanto o operador digita ou navega no navegador incorporado.
         if (e.OriginalSource is System.Windows.Controls.TextBox or
             System.Windows.Controls.ComboBox or

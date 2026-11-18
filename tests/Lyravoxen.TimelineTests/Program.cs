@@ -133,4 +133,33 @@ Check(bookOnly is not null && bookOnly.Chapter == 1 && bookOnly.VerseStart is nu
 Check(BibleReferenceParser.TryParseReference("Gênesis") is null, "sem permissão, livro sem capítulo não é referência");
 Check(BibleReferenceParser.Books.Count == 66 && BibleReferenceParser.Books.Sum(b => b.Chapters) == 1189, "66 livros e 1189 capítulos");
 
-Console.WriteLine("Todos os testes da linha do tempo, projeção e referências bíblicas passaram.");
+// Referências bíblicas ditas ao microfone (números por extenso).
+Check(VoiceBibleReferenceParser.TryParse("João três dezesseis")?.ToString() == "João 3:16", "voz: João três dezesseis");
+Check(VoiceBibleReferenceParser.TryParse("Abra em Salmos vinte e três")?.ToString() == "Salmos 23", "voz: Salmos vinte e três (só capítulo)");
+Check(VoiceBibleReferenceParser.TryParse("Romanos oito vinte e oito")?.ToString() == "Romanos 8:28", "voz: Romanos oito vinte e oito");
+Check(VoiceBibleReferenceParser.TryParse("Gênesis um um")?.ToString() == "Gênesis 1:1", "voz: Gênesis um um");
+Check(VoiceBibleReferenceParser.TryParse("1 Coríntios 13 versículo 4 ao 7")?.ToString() == "1 Coríntios 13:4-7", "voz: intervalo com versículo");
+Check(VoiceBibleReferenceParser.TryParse("João 3:16.")?.ToString() == "João 3:16", "voz: texto já em dígitos com ponto final");
+Check(VoiceBibleReferenceParser.TryParse("Salmos cento e dezenove cento e cinco")?.ToString() == "Salmos 119:105", "voz: cento e dezenove / cento e cinco");
+Check(VoiceBibleReferenceParser.TryParse("Obrigado por assistir") is null, "voz: frase sem livro é recusada");
+Check(VoiceBibleReferenceParser.TryParse("   ") is null, "voz: silêncio é recusado");
+Check(VoiceBibleReferenceParser.ConvertNumberWords("vinte e um") == "21", "números por extenso: vinte e um");
+
+// Marcação manual por toque (uma marca por estrofe).
+var stanzas = TapSyncPlanner.SplitStanzas("a1\na2\n\nb1\nb2\nb3\n\n\nc1");
+Check(stanzas.Count == 3 && stanzas[0].Count == 2 && stanzas[1].Count == 3 && stanzas[2].Count == 1, "estrofes separadas por linha em branco");
+var noBlank = TapSyncPlanner.SplitStanzas(string.Join("\n", Enumerable.Range(1, 9).Select(i => "linha " + i)));
+Check(noBlank.Count == 3 && noBlank[0].Count == 4 && noBlank[2].Count == 1, "sem linha em branco: grupos de 4 linhas");
+Check(TapSyncPlanner.SplitStanzas("  \n ").Count == 0, "letra vazia não gera estrofes");
+
+var tapCues = TapSyncPlanner.BuildCues(stanzas, new[] { 10d, 20d, 40d });
+Check(tapCues.Count == 6, "uma frase por linha da letra");
+Check(tapCues[0].Seconds == 10d && tapCues[2].Seconds == 20d && tapCues[5].Seconds == 40d, "primeira linha de cada estrofe usa o instante do toque");
+Check(tapCues.Zip(tapCues.Skip(1), (x, y) => y.Seconds > x.Seconds).All(ok => ok), "tempos estritamente crescentes");
+Check(tapCues[1].Seconds > 10d && tapCues[1].Seconds < 20d, "linha interna fica entre dois toques");
+var partialTap = TapSyncPlanner.BuildCues(stanzas, new[] { 5d, 15d });
+Check(partialTap.Count == 5 && partialTap[^1].Text == "b3", "estrofes sem toque ficam de fora");
+Check(TapSyncPlanner.LinesBefore(stanzas, 2) == 5, "linhas antes da estrofe 3");
+Check(CueTimeline.BuildProjectionBlock(tapCues, TapSyncPlanner.LinesBefore(stanzas, 1), 4) == string.Join(Environment.NewLine, new[] { "a1", "a2", "b1", "b2" }), "projeção da estrofe usa o bloco rolante já existente");
+
+Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

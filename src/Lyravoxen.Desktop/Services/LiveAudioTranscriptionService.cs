@@ -19,7 +19,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
     private static readonly string ModelFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Lyravoxen", "Models");
-    private static readonly string ModelPath = Path.Combine(ModelFolder, "ggml-base.bin");
+    internal static readonly string ModelPath = Path.Combine(ModelFolder, "ggml-base.bin");
 
     private readonly Func<double> _playbackSeconds;
     private readonly ConcurrentQueue<(short[] Samples, double Start)> _segments = new();
