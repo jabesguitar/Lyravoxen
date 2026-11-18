@@ -111,10 +111,10 @@
        <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
        <Grid Grid.Row="1" Margin="3,0,3,5">
         <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <TextBox x:Name="MusicComposerBox" Grid.Column="0" Height="30" FontSize="11" Padding="6,4" ToolTip="Autor / compositor" LostFocus="MusicMetadata_LostFocus" Margin="2"/>
-        <TextBox x:Name="MusicArtistBox" Grid.Column="1" Height="30" FontSize="11" Padding="6,4" ToolTip="Intérprete" LostFocus="MusicMetadata_LostFocus" Margin="2"/>
-        <TextBox x:Name="MusicTrackBox" Grid.Column="2" Height="30" FontSize="11" Padding="6,4" ToolTip="Título da música" LostFocus="MusicMetadata_LostFocus" Margin="2"/>
-        <Button Grid.Column="3" Content="Buscar letra" Click="SearchLyrics_Click" Background="#176E68" Margin="2,2,4,2" Padding="12,4"/>
+        <StackPanel Grid.Column="0"><TextBlock Text="AUTOR / COMPOSITOR" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/><TextBox x:Name="MusicComposerBox" Height="30" FontSize="11" Padding="6,4" ToolTip="Autor / compositor" LostFocus="MusicMetadata_LostFocus" Margin="2"/></StackPanel>
+        <StackPanel Grid.Column="1"><TextBlock Text="INTÉRPRETE" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/><TextBox x:Name="MusicArtistBox" Height="30" FontSize="11" Padding="6,4" ToolTip="Intérprete" LostFocus="MusicMetadata_LostFocus" Margin="2"/></StackPanel>
+        <StackPanel Grid.Column="2"><TextBlock Text="TÍTULO DA MÚSICA" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/><TextBox x:Name="MusicTrackBox" Height="30" FontSize="11" Padding="6,4" ToolTip="Título da música" LostFocus="MusicMetadata_LostFocus" Margin="2"/></StackPanel>
+        <Button Grid.Column="3" Content="Buscar letra" Click="SearchLyrics_Click" Background="#176E68" Margin="2,13,4,2" Padding="12,4"/>
        </Grid>
        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,8"><TextBlock Text="Linhas:" Foreground="#F2F6F8" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="64" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,5,0"/></StackPanel>
        <Border Grid.Row="4" Background="#132533" BorderBrush="#3D657A" BorderThickness="1.5" CornerRadius="10" Padding="12" Margin="4,2,4,6">
