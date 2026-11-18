@@ -289,3 +289,7 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
   2. Gerar novo ZIP portátil e instalador.
   3. Teste manual: abrir/fechar projeção com botão e ESC; conferir prévia no aplicativo e tela externa; conferir reprodução e sincronização de letras que já eram encontradas; conferir fallback de busca de letras ausentes; conferir que o leitor bíblico sem microfone continua abrindo e projetando referências.
   4. Não mesclar PR #9 até aprovação do usuário.
+
+
+- Arquivo de transferência para Cloud criado em `docs/CONTEXTO_COMPLETO_LYRAVOXEN_PARA_CLOUD.md`, commit `0f77eb73a67adb1afe65c697c87b770b40cf612c`. Contém instruções de continuidade, estado atual, resumo da etapa e cópia integral do `MEMORIA_CONTINUA.md` até a consolidação.
+- Workflow do HEAD `0f77eb73a67adb1afe65c697c87b770b40cf612c`: run #567, ID `44218852475`, está em andamento. Até a última consulta, checkout e geração do ícone concluídos; Setup .NET em andamento; restore/build/testes/pacotes ainda pendentes. Não entregar pacote para teste até conclusão verde.
