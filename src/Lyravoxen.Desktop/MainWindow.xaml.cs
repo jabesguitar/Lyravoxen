@@ -11,7 +11,6 @@ using Lyravoxen.Integration;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
 using Lyravoxen.Services;
-using NAudio.Wave;
 
 namespace Lyravoxen;
 
@@ -265,7 +264,14 @@ public partial class MainWindow : Window
     private string? EnsureProjectionWindow()
     {
         if (_projection is null || !_projection.IsVisible)
+        {
             _projection = new ProjectionWindow();
+            _projection.Closed += (_, _) =>
+            {
+                if (LocalProjectionToggleButton is not null)
+                    LocalProjectionToggleButton.Content = "Abrir projeção própria";
+            };
+        }
         var outputDevice = _projection.ShowOnOutputDisplay();
         _projection.SetMaxLines(_maxProjectionLines);
         _projection.SetBackgroundImage(_selectedProjectionBackgroundPath);
@@ -445,20 +451,6 @@ public partial class MainWindow : Window
         var url = ActiveBrowserView?.Source?.ToString();
         if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Nenhum endereço disponível nesta aba."; return; }
         try { System.Windows.Clipboard.SetText(url); StatusText.Text = "Link copiado: " + url; }
-        catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
-    }
-
-    private void CopyCurrentVideoLink_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentVideo?.IsOffline == true)
-        {
-            StatusText.Text = "A música atual é um arquivo offline e não possui link do YouTube.";
-            return;
-        }
-        var url = _currentVideo?.Url;
-        if (string.IsNullOrWhiteSpace(url)) url = YoutubeUrlBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Carregue uma música antes de copiar o link."; return; }
-        try { System.Windows.Clipboard.SetText(url); StatusText.Text = "Link da música atual copiado."; }
         catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
     }
 
