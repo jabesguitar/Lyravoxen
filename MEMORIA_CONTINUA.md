@@ -246,3 +246,46 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
   2. Gerar novo ZIP portátil e instalador.
   3. Teste manual: abrir/fechar projeção com botão e ESC; conferir prévia no aplicativo e tela externa; conferir reprodução e sincronização de letras que já eram encontradas; conferir fallback de busca de letras ausentes; conferir que o leitor bíblico sem microfone continua abrindo e projetando referências.
   4. Não mesclar PR #9 até aprovação do usuário.
+
+
+### Solicitação e revisão de escopo — remover microfone bíblico e melhorar projeção (2026-11-17)
+- Solicitações do usuário:
+  1. Retirar do projeto, por enquanto, o reconhecimento bíblico por microfone, pois não funcionou no computador de teste.
+  2. Corrigir a projeção própria: o botão abria a tela, mas faltava uma saída clara.
+  3. Remover o botão superior “Copiar link atual”, pois há opção de copiar link na área de música/navegador.
+  4. Compactar os campos de autor/compositor, intérprete e título no cabeçalho da área de música.
+  5. Ampliar significativamente a prévia do telão, que deve exibir as mesmas letras que estão sendo enviadas à projeção externa.
+  6. Criar um arquivo Markdown com o histórico/contexto do projeto para transferir a outro ambiente (Cloud).
+- Decisões de escopo:
+  - Removido apenas o recurso de reconhecimento bíblico por microfone. A aba/leitor bíblico e a projeção de referências permanecem, sem depender de microfone.
+  - Preservar player, pesquisa YouTube, próxima música, busca e aplicação das letras já encontradas, biblioteca, sincronização, projeção e integração Holyrics.
+  - Remover o botão superior de copiar link; manter as ações de cópia existentes na área de navegador/música.
+  - Não alterar o controle liga/desliga do Holyrics.
+- Implementado:
+  1. Removida a subaba “Bíblia e microfone” e todo seu painel de seleção de dispositivo, ativação, estado, medidor e transcrição. A área Bíblia permanece com consulta/projeção manual.
+  2. Removidas do MainWindow os handlers e estados de microfone bíblico, incluindo inicialização e encerramento do serviço.
+  3. Excluído `Services/MicrophoneTranscriptionService.cs`. A captura WASAPI usada pelo reconhecimento musical continua no `LiveAudioTranscriptionService`; dependências NAudio/Whisper continuam necessárias para a sincronização musical.
+  4. Removido o botão “Copiar link atual” do cabeçalho e seu handler dedicado; a ação de copiar link do navegador continua disponível.
+  5. Campos de autor/compositor, intérprete e título foram compactados em uma linha superior, com rótulos pequenos e campos menores, liberando altura para a prévia.
+  6. Colunas do layout principal foram ajustadas para dar mais largura à área de sincronização/prévia (0.62* player / 1.38* área de trabalho).
+  7. Prévia renomeada para “PRÉVIA AO VIVO — O QUE ESTÁ SENDO PROJETADO”, com quadro 1280x720, texto ampliado e maior altura disponível. A atualização continua ligada ao mesmo método PublishProjectionOnly que recebe as frases enviadas à saída.
+  8. “Abrir projeção própria” passou a funcionar como botão alternador: abre quando fechada e fecha quando aberta; o rótulo acompanha o estado.
+  9. A janela de projeção própria fecha com ESC; o evento Closed também restaura o rótulo do botão na janela principal. “Sair da projeção” fecha a janela própria mesmo se o Holyrics falhar e tenta fechar a apresentação do Holyrics separadamente.
+  10. Não foi alterado o botão/interruptor Holyrics ativo.
+- Verificação estática após mudanças:
+  - Nenhum handler Click declarado no XAML ficou sem método correspondente.
+  - Nenhuma referência a BibleMicrophone/MicrophoneTranscriptionService/StopBibleMicrophone permanece em MainWindow XAML/C#.
+  - Nenhuma referência ao botão/handler CopyCurrentVideoLink permanece no cabeçalho/MainWindow.
+  - Projeção própria tem saída por botão e ESC.
+- Commits desta rodada:
+  - XAML e remoção da UI de microfone: `139b08c6c306edabb11e4d8029105386260be593`.
+  - Lógica de projeção e remoção do handler de cópia/microfone: `3bc4406fd9a1c2f631a6f8d665b72762764b96ed`.
+  - Saída ESC: `045d6dddc03252f776d13bb1e3f69d1eedc27d51`.
+  - Ajustes finais de rótulos e eventos: `929656f8acc2883e85b1683e500f6b40561eae9d`, `aa2f71b6ccd7157528690d7d3ded891b30912777`.
+  - Remoção do serviço: `5c8d6e7d89c350602a1dd3c47adca097d0d15699`.
+- Estado: alterações estão na branch `feature/integrated-bible-microphone-holyrics`, PR #9 permanece draft e sem merge. CI/build desta rodada ainda pendente; não entregar novo instalador antes da aprovação.
+- Próximas ações:
+  1. Conferir o workflow da ponta atual da branch, corrigir qualquer erro de build/teste.
+  2. Gerar novo ZIP portátil e instalador.
+  3. Teste manual: abrir/fechar projeção com botão e ESC; conferir prévia no aplicativo e tela externa; conferir reprodução e sincronização de letras que já eram encontradas; conferir fallback de busca de letras ausentes; conferir que o leitor bíblico sem microfone continua abrindo e projetando referências.
+  4. Não mesclar PR #9 até aprovação do usuário.
