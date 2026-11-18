@@ -76,4 +76,43 @@ Check(BibleReferenceParser.TryParse("Salmos vinte e três") == "Salmos 23", "cap
 Check(BibleReferenceParser.TryParse("uma conversa sem referência") is null, "rejeita fala sem livro bíblico");
 Check(BibleReferenceParser.TryParse("João 0:16") is null, "rejeita capítulo inválido");
 
+// Recuperação quando o reconhecimento perde frases e planejamento dos tempos salvos.
+var longLyrics = new[]
+{
+    "Grandes coisas fez o Senhor por nós", "Estamos alegres com a sua bondade",
+    "Meu coração canta louvores ao Rei", "Rios de paz inundam a minha alma",
+    "Sobre a rocha firmei os meus passos", "Nenhuma sombra pode me separar",
+    "Aleluia aleluia ao Cordeiro de Deus", "Em toda a terra ressoa seu nome"
+};
+liveMatch = LiveLyricsMatcher.FindNextLine(longLyrics, 0, "Sobre a rocha firmei os meus passos", out liveConfidence);
+Check(liveMatch == -1, "janela normal não salta para uma frase distante");
+liveMatch = LiveLyricsMatcher.FindNextLine(longLyrics, 0, "Sobre a rocha firmei os meus passos", out liveConfidence, 0.78, 12);
+Check(liveMatch == 4 && liveConfidence >= 0.85, "janela ampliada recupera frase distante com alta confiança");
+liveMatch = LiveLyricsMatcher.FindNextLine(longLyrics, 0, "conversa sem relação nenhuma", out liveConfidence, 0.78, 12);
+Check(liveMatch == -1, "janela ampliada ainda rejeita ruído");
+
+var planSingle = AutoSyncPlanner.CreateCuesForMatch(longLyrics, 0, 0, null, 12.5);
+Check(planSingle.Count == 1 && planSingle[0].Text == longLyrics[0] && Math.Abs(planSingle[0].Seconds - 12.5) < 1e-9,
+    "primeira frase reconhecida gera uma marca no tempo reconhecido");
+
+var planSkip = AutoSyncPlanner.CreateCuesForMatch(longLyrics, 1, 3, 10.0, 20.0);
+Check(planSkip.Count == 3 && planSkip[0].Text == longLyrics[1] && planSkip[1].Text == longLyrics[2] && planSkip[2].Text == longLyrics[3],
+    "frases puladas continuam na letra sincronizada, em ordem");
+Check(planSkip[0].Seconds > 10.0 && planSkip[0].Seconds < planSkip[1].Seconds && planSkip[1].Seconds < planSkip[2].Seconds && Math.Abs(planSkip[2].Seconds - 20.0) < 1e-9,
+    "tempos das frases puladas ficam entre a marca anterior e a reconhecida");
+
+var planBehind = AutoSyncPlanner.CreateCuesForMatch(longLyrics, 1, 1, 30.0, 5.0);
+Check(planBehind.Count == 1 && planBehind[0].Seconds > 30.0, "tempo nunca recua em relação à última marca");
+
+var planMidSong = AutoSyncPlanner.CreateCuesForMatch(longLyrics, 0, 5, null, 80.0);
+Check(planMidSong.Count == 1 && planMidSong[0].Text == longLyrics[5],
+    "música iniciada no meio não inventa tempos para frases não ouvidas");
+
+var planLeading = AutoSyncPlanner.CreateCuesForMatch(longLyrics, 0, 2, null, 8.0);
+Check(planLeading.Count == 3 && planLeading[0].Seconds >= 0 && planLeading[0].Seconds < planLeading[1].Seconds && planLeading[1].Seconds < planLeading[2].Seconds,
+    "poucas frases iniciais perdidas recebem tempos estimados antes da reconhecida");
+
+Check(AutoSyncPlanner.CreateCuesForMatch(longLyrics, 3, 1, null, 5.0).Count == 0, "índice anterior ao esperado não gera marcas");
+Check(AutoSyncPlanner.CreateCuesForMatch(longLyrics, 0, 99, null, 5.0).Count == 0, "índice inexistente não gera marcas");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção e referências bíblicas passaram.");

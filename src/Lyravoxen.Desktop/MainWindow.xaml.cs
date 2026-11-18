@@ -31,6 +31,10 @@ public partial class MainWindow : Window
     private BibleChapter? _loadedBibleChapter;
     private bool _syncingBibleVerseSelection;
     private bool _automaticLyricsActive;
+    // Letra salva antes de a música tocar: a sincronização começa sozinha no primeiro play.
+    private bool _autoSyncPending;
+    // Resultados seguidos sem casar com a letra; alarga a busca para o reconhecimento não travar.
+    private int _unmatchedTranscriptBlocks;
     private readonly StringBuilder _liveTranscriptBuffer = new();
     private int _manualDraftIndex;
     private bool _manualDraftActive;
@@ -521,6 +525,7 @@ public partial class MainWindow : Window
                 await StopAutoRecognitionAsync(savePartial: true);
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
+            _autoSyncPending = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
@@ -700,7 +705,7 @@ public partial class MainWindow : Window
         StatusText.Text = "Não encontrei uma letra sincronizada no catálogo. Abri pesquisas internas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Letras.com e catálogos de hinos. Copie a letra encontrada e use Cadastrar letra para salvar e sincronizar.";
     }
 
-    private void SaveFullLyrics_Click(object sender, RoutedEventArgs e)
+    private async void SaveFullLyrics_Click(object sender, RoutedEventArgs e)
     {
         if (_currentVideo is null)
         {
@@ -714,10 +719,58 @@ public partial class MainWindow : Window
             StatusText.Text = "Cole ou digite a letra completa antes de salvar.";
             return;
         }
+        var lyricsChanged = !string.Equals(_currentVideo.FullLyrics?.Trim(), fullLyrics, StringComparison.Ordinal);
         _currentVideo.FullLyrics = fullLyrics;
         SaveCurrentFullLyrics();
         ManualSyncProgressText.Text = "Letra completa salva e vinculada a esta música. Você poderá reutilizá-la nas próximas reproduções.";
         StatusText.Text = "Letra completa salva na biblioteca local para: " + MusicTrackBox.Text;
+
+        // Letra nova (ou música ainda sem tempos): sincroniza sozinha, sem outro clique.
+        if (lyricsChanged || _cues.Count == 0)
+        {
+            try { await BeginAutomaticSyncAfterSaveAsync(lyricsChanged); }
+            catch (Exception ex) { StatusText.Text = "Letra salva, mas a sincronização automática não pôde iniciar: " + ex.Message; }
+        }
+    }
+
+    private async Task BeginAutomaticSyncAfterSaveAsync(bool lyricsChanged)
+    {
+        if (_liveRecognition is not null)
+        {
+            // Reconhecimento já ativo com a mesma letra: nada a refazer.
+            if (!lyricsChanged) return;
+            await StopAutoRecognitionAsync(savePartial: false);
+        }
+
+        var isPlaying = _isLocalAudioPlaying || _lastPlayerState == 1;
+        if (!isPlaying)
+        {
+            _autoSyncPending = true;
+            ManualSyncProgressText.Text = "Letra salva. A sincronização começa sozinha assim que a música tocar.";
+            StatusText.Text = "Letra salva. Dê play na música: a sincronização e a projeção começam automaticamente.";
+            return;
+        }
+
+        if (!_isLocalAudioPlaying && _lastKnownPlaybackSeconds > 15)
+        {
+            var restart = System.Windows.MessageBox.Show(
+                "A música já está em " + TimeSpan.FromSeconds(_lastKnownPlaybackSeconds).ToString(@"mm\:ss") +
+                ".\n\nPara sincronizar a letra inteira, é melhor começar do início.\n\nReiniciar a música agora?",
+                "Sincronizar letra", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (restart == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(
+                        "typeof player !== 'undefined' && player && typeof player.seekTo === 'function' ? player.seekTo(0, true) : null");
+                    _lastKnownPlaybackSeconds = 0;
+                    await Task.Delay(400);
+                }
+                catch (Exception ex) { StatusText.Text = "Não foi possível reiniciar a música: " + ex.Message; }
+            }
+        }
+
+        await StartAutoRecognitionAsync();
     }
 
     private void SaveCurrentFullLyrics()
@@ -735,6 +788,14 @@ public partial class MainWindow : Window
             await StopAutoRecognitionAsync(savePartial: true);
             return;
         }
+
+        _autoSyncPending = false;
+        await StartAutoRecognitionAsync();
+    }
+
+    private async Task StartAutoRecognitionAsync()
+    {
+        if (_liveRecognition is not null) return;
 
         if (_currentVideo is null || (!_isLocalAudioPlaying && _lastPlayerState != 1))
         {
@@ -759,6 +820,7 @@ public partial class MainWindow : Window
         _manualDraftLines = lines;
         _manualDraftCues.Clear();
         _liveTranscriptBuffer.Clear();
+        _unmatchedTranscriptBlocks = 0;
         _manualDraftIndex = 0;
         _automaticLyricsActive = true;
         _manualDraftActive = false;
@@ -813,33 +875,42 @@ public partial class MainWindow : Window
             if (_liveTranscriptBuffer.Length > 0) _liveTranscriptBuffer.Append(' ');
             _liveTranscriptBuffer.Append(e.Transcript);
 
+            // Aceita a próxima frase ou uma das duas seguintes quando a transcrição vier agrupada.
+            // Se o reconhecimento ficar preso (várias transcrições sem casar), a busca é alargada
+            // gradualmente, com exigência de confiança maior para frases mais distantes.
+            // O avanço é sempre para frente; nunca volta a projetar uma frase anterior.
+            var lookAhead = _unmatchedTranscriptBlocks >= 6 ? 12 : _unmatchedTranscriptBlocks >= 3 ? 6 : 2;
             var match = LiveLyricsMatcher.FindNextLine(
                 _manualDraftLines, _manualDraftIndex, _liveTranscriptBuffer.ToString(),
-                out var confidence, 0.78);
+                out var confidence, 0.78, lookAhead);
 
-            // Aceita a próxima frase ou uma das duas seguintes quando a transcrição vier agrupada.
-            // O avanço é sempre para frente; nunca volta a projetar uma frase anterior.
             if (match < _manualDraftIndex)
             {
+                _unmatchedTranscriptBlocks++;
                 if (_liveTranscriptBuffer.Length > 600)
                     _liveTranscriptBuffer.Remove(0, _liveTranscriptBuffer.Length - 400);
                 ManualSyncProgressText.Text = $"Comparando o áudio com a letra salva... confiança {confidence:P0}.";
                 return;
             }
 
+            _unmatchedTranscriptBlocks = 0;
             _liveTranscriptBuffer.Clear();
             var matchedIndex = match;
             var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 0.5);
-            if (_manualDraftCues.Count > 0)
-                estimatedSeconds = Math.Max(estimatedSeconds, _manualDraftCues[^1].Seconds + 0.05);
+            double? lastCueSeconds = _manualDraftCues.Count > 0 ? _manualDraftCues[^1].Seconds : null;
 
-            var cue = new LyricCue { Seconds = estimatedSeconds, Text = _manualDraftLines[matchedIndex] };
-            _manualDraftCues.Add(cue);
+            // Frases puladas pelo reconhecimento continuam na letra sincronizada (com tempos estimados).
+            var plannedCues = AutoSyncPlanner.CreateCuesForMatch(
+                _manualDraftLines, _manualDraftIndex, matchedIndex, lastCueSeconds, estimatedSeconds);
+            if (plannedCues.Count == 0) return;
+            _manualDraftCues.AddRange(plannedCues);
+            var cue = plannedCues[^1];
+            estimatedSeconds = cue.Seconds;
             _manualDraftIndex = matchedIndex + 1;
 
+            // Mesmo caminho da reprodução normal: prévia, janela de projeção própria e Holyrics.
             var block = CueTimeline.BuildProjectionBlock(_manualDraftCues, _manualDraftCues.Count - 1, _maxProjectionLines);
-            _currentProjectedLyric = block;
-            ProjectionPreviewText.Text = block;
+            PublishProjectionOnly(block);
             QueueHolyricsUpdate(block);
 
             SecondsBox.Text = estimatedSeconds.ToString("0.00", CultureInfo.InvariantCulture);
@@ -853,6 +924,7 @@ public partial class MainWindow : Window
             else
             {
                 ManualCurrentLineText.Text = "Todas as frases foram reconhecidas. Sincronização concluída.";
+                NextProjectionPreviewText.Text = "Próxima: —";
                 ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} trechos identificados e sincronizados. Letra e tempos salvos na biblioteca.";
                 _ = StopAutoRecognitionAsync(savePartial: true);
             }
@@ -1386,6 +1458,15 @@ public partial class MainWindow : Window
             if (state != _lastPlayerState)
             {
                 _lastPlayerState = state;
+                if (state == 1 && _autoSyncPending)
+                {
+                    _autoSyncPending = false;
+                    Dispatcher.BeginInvoke(new Action(async () =>
+                    {
+                        try { await StartAutoRecognitionAsync(); }
+                        catch (Exception ex) { StatusText.Text = "Não foi possível iniciar a sincronização automática: " + ex.Message; }
+                    }));
+                }
                 if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando. Nenhuma letra sincronizada foi carregada.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>

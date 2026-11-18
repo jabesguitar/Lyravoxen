@@ -10,12 +10,16 @@ namespace Lyravoxen.Models;
 /// </summary>
 public static class LiveLyricsMatcher
 {
+    private const int NearWindow = 2;
+    private const double FarMatchConfidence = 0.85;
+
     public static int FindNextLine(
         IReadOnlyList<string> expectedLines,
         int nextExpectedIndex,
         string transcript,
         out double confidence,
-        double minimumConfidence = 0.78)
+        double minimumConfidence = 0.78,
+        int maxLookAhead = 2)
     {
         confidence = 0;
         if (expectedLines.Count == 0 || nextExpectedIndex < 0 || nextExpectedIndex >= expectedLines.Count)
@@ -26,7 +30,8 @@ public static class LiveLyricsMatcher
 
         var bestIndex = -1;
         var bestScore = 0d;
-        var lastCandidate = Math.Min(expectedLines.Count - 1, nextExpectedIndex + 2);
+        var highestScore = 0d;
+        var lastCandidate = Math.Min(expectedLines.Count - 1, nextExpectedIndex + Math.Max(0, maxLookAhead));
 
         for (var index = nextExpectedIndex; index <= lastCandidate; index++)
         {
@@ -34,15 +39,22 @@ public static class LiveLyricsMatcher
             if (expected.Length == 0) continue;
 
             var score = ScoreExpectedPhrase(expected, spoken);
-            if (score > bestScore)
+            if (score > highestScore) highestScore = score;
+
+            // Frases além da janela normal só são aceitas com confiança maior:
+            // evita saltar para um refrão parecido quando o reconhecimento falha.
+            var required = index > nextExpectedIndex + NearWindow
+                ? Math.Max(minimumConfidence, FarMatchConfidence)
+                : minimumConfidence;
+            if (score >= required && score > bestScore)
             {
                 bestScore = score;
                 bestIndex = index;
             }
         }
 
-        confidence = bestScore;
-        return bestScore >= minimumConfidence ? bestIndex : -1;
+        confidence = bestIndex >= 0 ? bestScore : highestScore;
+        return bestIndex;
     }
 
     private static double ScoreExpectedPhrase(string[] expected, string[] spoken)
