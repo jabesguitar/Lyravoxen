@@ -85,7 +85,6 @@
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="7" Margin="0,0,0,10">
    <WrapPanel>
     <TextBox x:Name="YoutubeUrlBox" Width="280" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube"/>
-    <Button 
     <Button x:Name="LoadYoutubeButton" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
     <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
