@@ -95,3 +95,13 @@ Fontes:
 
 - Se o catálogo LRCLIB retornar metadados sem letra sincronizada compatível, o fallback para as pesquisas alternativas ocorre automaticamente, sem uma segunda confirmação.
 - A ação de busca alternativa separada foi removida; não há referência XAML pendente ao handler antigo. Verificação estática encontrou todos os handlers de clique declarados no XAML.
+
+
+## Retirada do microfone bíblico e melhorias da projeção — 17/11/2026
+- Retirado temporariamente o reconhecimento bíblico por microfone, incluindo interface, serviço e handlers. A consulta/leitura bíblica e projeção manual permanecem.
+- Removido o botão superior duplicado “Copiar link atual”; copiar link na área do navegador continua.
+- Metadados musicais compactados em uma linha com rótulos: autor/compositor, intérprete e título.
+- A prévia agora usa quadro 1280x720 e recebe o mesmo texto publicado pela projeção, com mais espaço na coluna principal.
+- “Abrir projeção própria” alterna entre abrir e fechar; ESC fecha a janela externa e atualiza o botão principal. “Sair da projeção” fecha a saída local independentemente do retorno do Holyrics.
+- Player, busca YouTube, próxima música, sincronização, busca de letras, biblioteca, integração Holyrics e o interruptor Holyrics foram preservados.
+- CI desta rodada ainda pendente; teste manual necessário antes do merge.
