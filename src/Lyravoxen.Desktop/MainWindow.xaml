@@ -235,6 +235,27 @@
    </Border>
   </Grid>
  </TabItem> <TabItem Header="✦ Bíblia" x:Name="BibleWorkspaceTab">
+   <TabItem.Resources>
+    <ItemsPanelTemplate x:Key="BibleVerseGridPanel">
+     <WrapPanel/>
+    </ItemsPanelTemplate>
+    <ItemsPanelTemplate x:Key="BibleVerseListPanel">
+     <VirtualizingStackPanel/>
+    </ItemsPanelTemplate>
+    <DataTemplate x:Key="BibleVerseNumberTemplate">
+     <TextBlock Text="{Binding Number}" MinWidth="30" TextAlignment="Center" FontWeight="SemiBold"/>
+    </DataTemplate>
+    <DataTemplate x:Key="BibleVerseTextTemplate">
+     <Grid>
+      <Grid.ColumnDefinitions>
+       <ColumnDefinition Width="36"/>
+       <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <TextBlock Text="{Binding Number}" FontWeight="Bold" Opacity="0.7"/>
+      <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap"/>
+     </Grid>
+    </DataTemplate>
+   </TabItem.Resources>
    <Grid Margin="18">
     <Grid.RowDefinitions>
      <RowDefinition Height="Auto"/>
@@ -324,18 +345,6 @@
      <DockPanel Grid.Column="2" Margin="0,0,8,0">
       <TextBlock DockPanel.Dock="Top" Text="VERSÍCULOS — Ctrl ou Shift para vários · Enter ou duplo clique projeta" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
       <ListBox x:Name="BibleVersesList" FontSize="15" SelectionMode="Extended" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="BibleVersesList_SelectionChanged" MouseDoubleClick="BibleVersesList_MouseDoubleClick" KeyDown="BibleVersesList_KeyDown">
-       <ListBox.ItemTemplate>
-        <DataTemplate>
-         <Grid>
-          <Grid.ColumnDefinitions>
-           <ColumnDefinition Width="36"/>
-           <ColumnDefinition Width="*"/>
-          </Grid.ColumnDefinitions>
-          <TextBlock Text="{Binding Number}" FontWeight="Bold" Opacity="0.7"/>
-          <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap"/>
-         </Grid>
-        </DataTemplate>
-       </ListBox.ItemTemplate>
       </ListBox>
      </DockPanel>
 

@@ -246,8 +246,7 @@ public partial class MainWindow : Window
         }
 
         BibleSourceNoteText.Text = source.IsHolyrics
-            ? "Projeção pelo Holyrics: " + source.Title + ". A prévia acima usa " +
-              BibleReaderService.FreePortugueseVersions[0].Name + " só para conferir a referência."
+            ? "Texto original do Holyrics (" + source.Title + "). O Lyravoxen escolhe o versículo e o Holyrics exibe."
             : "Projeção na tela própria do Lyravoxen.";
         BibleCopyrightText.Text = source.IsHolyrics
             ? "A Bíblia precisa estar instalada e licenciada no Holyrics."
@@ -385,6 +384,9 @@ public partial class MainWindow : Window
 
         var requestId = Interlocked.Increment(ref _bibleLoadVersion);
         var source = BibleSourceBox.SelectedItem as BibleSourceOption;
+        // Com a Bíblia do Holyrics, o texto é do Holyrics: aqui só aparece a numeração dos versículos.
+        var numbersOnly = source is { IsHolyrics: true };
+        ApplyBibleVerseLayout(numbersOnly);
         var previewVersion = source is { IsHolyrics: false }
             ? BibleReaderService.FreePortugueseVersions.FirstOrDefault(v => v.Slug == source.Id) ?? BibleReaderService.FreePortugueseVersions[0]
             : BibleReaderService.FreePortugueseVersions[0];
@@ -417,7 +419,7 @@ public partial class MainWindow : Window
             var result = await _bibleReader.GetChapterAsync(previewVersion.Slug, local, chapter);
             if (requestId != _bibleLoadVersion) return;
 
-            var verses = result.Verses.Select((text, index) => new BibleVerseItem(chapter, index + 1, text)).ToList();
+            var verses = result.Verses.Select((text, index) => new BibleVerseItem(chapter, index + 1, numbersOnly ? "" : text)).ToList();
             _bibleUiUpdating = true;
             try
             {
@@ -432,8 +434,8 @@ public partial class MainWindow : Window
             if (selectVerseStart.HasValue) SelectBibleVerses(selectVerseStart.Value, selectVerseEnd);
             else UpdateBiblePreview();
 
-            SetBibleStatus(book.Name + " " + chapter + " · " + verses.Count + " versículos · prévia: " + previewVersion.Name +
-                           (result.FromCache ? " (guardado neste computador)" : ""));
+            SetBibleStatus(book.Name + " " + chapter + " · " + verses.Count + " versículos" +
+                           (numbersOnly ? " · o texto vem do Holyrics" : " · texto: " + previewVersion.Name));
             if (!string.IsNullOrWhiteSpace(result.Copyright) && source is { IsHolyrics: false })
                 BibleCopyrightText.Text = result.Copyright;
         }
@@ -443,6 +445,12 @@ public partial class MainWindow : Window
             SetBibleStatus("Não foi possível carregar o texto de " + book.Name + " " + chapter + " (" + ex.Message +
                            "). Você ainda pode projetar digitando a referência.");
         }
+    }
+
+    private void ApplyBibleVerseLayout(bool numbersOnly)
+    {
+        BibleVersesList.ItemsPanel = (ItemsPanelTemplate)BibleWorkspaceTab.FindResource(numbersOnly ? "BibleVerseGridPanel" : "BibleVerseListPanel");
+        BibleVersesList.ItemTemplate = (DataTemplate)BibleWorkspaceTab.FindResource(numbersOnly ? "BibleVerseNumberTemplate" : "BibleVerseTextTemplate");
     }
 
     private void SelectBibleVerses(int start, int? end)
@@ -503,7 +511,11 @@ public partial class MainWindow : Window
 
         BiblePreviewReferenceText.Text = reference.ToString();
         var selected = SelectedBibleVerses();
-        if (selected.Count > 0)
+        if (BibleSourceBox.SelectedItem is BibleSourceOption { IsHolyrics: true } holyricsSource)
+            BiblePreviewVerseText.Text = reference.VerseStart.HasValue
+                ? "O Holyrics vai exibir este versículo em " + holyricsSource.Title + "."
+                : "Escolha um versículo na lista ao lado.";
+        else if (selected.Count > 0)
             BiblePreviewVerseText.Text = ComposeBibleText(selected);
         else if (reference.VerseStart.HasValue)
             BiblePreviewVerseText.Text = "Prévia do texto indisponível agora. O telão ainda pode projetar esta referência.";
@@ -624,11 +636,12 @@ public partial class MainWindow : Window
     {
         try
         {
-            _projection?.ClearDisplay();
+            // Fecha a tela própria de verdade: some o fundo e aparece a área de trabalho do computador.
+            if (_projection is { IsVisible: true }) _projection.Close();
         }
         catch (Exception ex)
         {
-            SetBibleStatus("Falha ao limpar a projeção própria: " + ex.Message);
+            SetBibleStatus("Falha ao fechar a projeção própria: " + ex.Message);
         }
 
         if (_holyricsEnabled && _holyrics.IsConfigured)
