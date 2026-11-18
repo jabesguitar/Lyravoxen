@@ -28,12 +28,9 @@ public partial class MainWindow : Window
     private List<string> _manualDraftLines = new();
     private readonly List<LyricCue> _manualDraftCues = new();
     private LiveAudioTranscriptionService? _liveRecognition;
-    private MicrophoneTranscriptionService? _bibleMicrophoneRecognition;
     private readonly BibleReaderService _bibleReader = new();
     private BibleChapter? _loadedBibleChapter;
-    private bool _loadingMicrophoneDevices;
     private bool _syncingBibleVerseSelection;
-    private bool _updatingBibleMicrophoneToggle;
     private bool _automaticLyricsActive;
     private readonly StringBuilder _liveTranscriptBuffer = new();
     private int _manualDraftIndex;
@@ -78,7 +75,6 @@ public partial class MainWindow : Window
         LoadLibrary();
         Closing += async (_, _) =>
         {
-            await StopBibleMicrophoneAsync();
             if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
         };
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
@@ -96,7 +92,6 @@ public partial class MainWindow : Window
                 }
                 await InitializeBrowserViewAsync(YoutubeSearchView);
                 LoadPreferences();
-                RefreshMicrophoneDevices();
                 await LoadBibleCatalogAsync();
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
                 _searchWebViewReady = true;
@@ -254,8 +249,17 @@ public partial class MainWindow : Window
 
     private void OpenLocalProjection_Click(object sender, RoutedEventArgs e)
     {
+        if (_projection is { IsVisible: true })
+        {
+            _projection.Close();
+            LocalProjectionToggleButton.Content = "Abrir projeção própria";
+            StatusText.Text = "Projeção própria fechada. O Lyravoxen continua aberto.";
+            return;
+        }
+
         EnsureProjectionWindow();
-        StatusText.Text = "Projeção própria aberta. Ela funciona independentemente do Holyrics.";
+        LocalProjectionToggleButton.Content = "Fechar projeção própria";
+        StatusText.Text = "Projeção própria aberta. Pressione ESC ou use Fechar projeção própria para sair.";
     }
 
     private string? EnsureProjectionWindow()
@@ -315,208 +319,6 @@ public partial class MainWindow : Window
             File.Move(temp, _preferencesFile, true);
         }
         catch (Exception ex) { StatusText.Text = "Fundo aplicado, mas a preferência não pôde ser salva: " + ex.Message; }
-    }
-
-    private void BibleMicrophone_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_loadingMicrophoneDevices || BibleMicrophoneBox.SelectedItem is not string selected) return;
-        BibleMicrophoneStatusText.Text = selected.StartsWith("Nenhum", StringComparison.OrdinalIgnoreCase)
-            ? "O Windows não disponibilizou um dispositivo de entrada."
-            : "Dispositivo selecionado: " + selected + ". Ative o microfone bíblico para iniciar a escuta.";
-    }
-
-    private void RefreshMicrophones_Click(object sender, RoutedEventArgs e) => RefreshMicrophoneDevices();
-
-    private void RefreshMicrophoneDevices()
-    {
-        if (BibleMicrophoneBox is null) return;
-        if (_bibleMicrophoneRecognition is not null)
-        {
-            BibleMicrophoneStatusText.Text = "Pare o microfone antes de atualizar a lista de dispositivos.";
-            return;
-        }
-        _loadingMicrophoneDevices = true;
-        var previous = (BibleMicrophoneBox.SelectedItem as string);
-        BibleMicrophoneBox.Items.Clear();
-        try
-        {
-            for (var i = 0; i < WaveIn.DeviceCount; i++)
-            {
-                var capabilities = WaveIn.GetCapabilities(i);
-                BibleMicrophoneBox.Items.Add($"{i}: {capabilities.ProductName}");
-            }
-            if (BibleMicrophoneBox.Items.Count == 0)
-            {
-                BibleMicrophoneBox.Items.Add("Nenhum microfone detectado");
-                BibleMicrophoneBox.SelectedIndex = 0;
-                BibleMicrophoneEnabledBox.IsEnabled = false;
-                BibleMicrophoneToggleStateText.Text = "SEM DISPOSITIVO";
-                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Orange;
-                BibleMicrophoneStatusText.Text = "O Windows não disponibilizou nenhuma entrada de microfone. Verifique Configurações > Sistema > Som > Entrada e a permissão de microfone do Windows.";
-            }
-            else
-            {
-                var selected = previous is null ? -1 : BibleMicrophoneBox.Items.IndexOf(previous);
-                BibleMicrophoneBox.SelectedIndex = selected >= 0 ? selected : 0;
-                BibleMicrophoneEnabledBox.IsEnabled = true;
-                BibleMicrophoneToggleStateText.Text = "DESLIGADO";
-                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
-                BibleMicrophoneStatusText.Text = $"{BibleMicrophoneBox.Items.Count} dispositivo(s) de entrada detectado(s). Selecione um e ative o microfone.";
-            }
-        }
-        catch (Exception ex)
-        {
-            BibleMicrophoneEnabledBox.IsEnabled = false;
-            BibleMicrophoneToggleStateText.Text = "ERRO";
-            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.OrangeRed;
-            BibleMicrophoneStatusText.Text = "Não foi possível listar os microfones: " + ex.Message;
-        }
-        finally { _loadingMicrophoneDevices = false; }
-    }
-
-    private async void BibleMicrophoneEnabled_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_loadingMicrophoneDevices || _updatingBibleMicrophoneToggle || BibleMicrophoneEnabledBox is null) return;
-        if (BibleMicrophoneEnabledBox.IsChecked != true)
-        {
-            await StopBibleMicrophoneAsync();
-            return;
-        }
-
-        if (BibleMicrophoneBox.SelectedIndex < 0 ||
-            BibleMicrophoneBox.SelectedItem?.ToString() is not string selected ||
-            !int.TryParse(selected.Split(':', 2)[0], out var deviceNumber))
-        {
-            BibleMicrophoneEnabledBox.IsChecked = false;
-            BibleMicrophoneStatusText.Text = "Escolha um microfone válido antes de ativar.";
-            return;
-        }
-
-        BibleMicrophoneEnabledBox.IsEnabled = false;
-        BibleMicrophoneToggleStateText.Text = "INICIANDO";
-        BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
-        BibleMicrophoneStatusText.Text = "Preparando o reconhecimento. No primeiro uso, o modelo gratuito de voz será baixado; aguarde até aparecer OUVINDO.";
-        try
-        {
-            var service = new MicrophoneTranscriptionService(deviceNumber);
-            service.TranscriptReceived += BibleMicrophone_TranscriptReceived;
-            service.StatusChanged += BibleMicrophone_StatusChanged;
-            service.AudioLevelChanged += BibleMicrophone_AudioLevelChanged;
-            _bibleMicrophoneRecognition = service;
-            await service.StartAsync();
-            BibleMicrophoneBox.IsEnabled = false;
-            RefreshMicrophonesButton.IsEnabled = false;
-            BibleMicrophoneToggleStateText.Text = "OUVINDO";
-            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.LightGreen;
-            BibleMicrophoneStatusText.Text = "Microfone ativo e captando. Fale uma referência, por exemplo: João capítulo três, versículo dezesseis.";
-        }
-        catch (Exception ex)
-        {
-            await StopBibleMicrophoneAsync();
-            _loadingMicrophoneDevices = true;
-            BibleMicrophoneEnabledBox.IsChecked = false;
-            _loadingMicrophoneDevices = false;
-            BibleMicrophoneToggleStateText.Text = "ERRO";
-            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.OrangeRed;
-            BibleMicrophoneStatusText.Text = "Não foi possível iniciar o microfone: " + ex.Message;
-        }
-        finally { BibleMicrophoneEnabledBox.IsEnabled = true; }
-    }
-
-    private void BibleMicrophone_AudioLevelChanged(double level)
-    {
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            BibleMicrophoneLevelBar.Value = level;
-            BibleMicrophoneLevelText.Text = level < 3 ? "Sem sinal de áudio" : level < 18 ? "Sinal baixo" : level < 70 ? "Áudio captado" : "Sinal forte";
-            BibleMicrophoneLevelText.Foreground = level < 3
-                ? System.Windows.Media.Brushes.Orange
-                : System.Windows.Media.Brushes.LightGreen;
-        }));
-    }
-
-    private void BibleMicrophone_StatusChanged(object? sender, string message)
-    {
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            BibleMicrophoneStatusText.Text = message;
-            if (message.Contains("ativo", StringComparison.OrdinalIgnoreCase))
-            {
-                BibleMicrophoneToggleStateText.Text = "OUVINDO";
-                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.LightGreen;
-            }
-            else if (message.Contains("falha", StringComparison.OrdinalIgnoreCase) ||
-                     message.Contains("interromp", StringComparison.OrdinalIgnoreCase))
-            {
-                BibleMicrophoneToggleStateText.Text = "VERIFICAR";
-                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Orange;
-            }
-            else if (message.Contains("modelo", StringComparison.OrdinalIgnoreCase) ||
-                     message.Contains("baix", StringComparison.OrdinalIgnoreCase))
-            {
-                BibleMicrophoneToggleStateText.Text = "PREPARANDO";
-                BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
-            }
-        }));
-    }
-
-    private void BibleMicrophone_TranscriptReceived(object? sender, LiveTranscriptEventArgs e)
-    {
-        Dispatcher.BeginInvoke(new Action(async () =>
-        {
-            if (BibleMicrophoneEnabledBox.IsChecked != true) return;
-            var line = e.Transcript.Trim();
-            if (string.IsNullOrWhiteSpace(line)) return;
-            BibleTranscriptBox.AppendText((BibleTranscriptBox.Text.Length == 0 ? "" : Environment.NewLine) + line);
-            BibleTranscriptBox.ScrollToEnd();
-
-            var possibleReference = BibleReferenceParser.TryParse(line);
-            if (string.IsNullOrWhiteSpace(possibleReference))
-            {
-                try { possibleReference = await _bibleReader.ParseReferenceAsync(line); }
-                catch (Exception ex)
-                {
-                    BibleMicrophoneStatusText.Text = "Transcrição recebida. A interpretação online está indisponível (" + ex.Message + "); confira a referência manualmente.";
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(possibleReference))
-            {
-                BibleHolyricsReferenceBox.Text = possibleReference;
-                BibleMicrophoneStatusText.Text = "Referência sugerida: " + possibleReference + ". Confira a tradução e confirme antes de projetar.";
-            }
-            else if (BibleMicrophoneStatusText.Text.StartsWith("Microfone ativo", StringComparison.OrdinalIgnoreCase))
-                BibleMicrophoneStatusText.Text = "Voz transcrita. Não consegui identificar uma referência bíblica; fale o nome do livro, capítulo e versículo com clareza.";
-        }));
-    }
-
-    private async Task StopBibleMicrophoneAsync()
-    {
-        var service = _bibleMicrophoneRecognition;
-        _bibleMicrophoneRecognition = null;
-        if (service is not null)
-        {
-            service.TranscriptReceived -= BibleMicrophone_TranscriptReceived;
-            service.StatusChanged -= BibleMicrophone_StatusChanged;
-            service.AudioLevelChanged -= BibleMicrophone_AudioLevelChanged;
-            await service.DisposeAsync();
-        }
-        if (BibleMicrophoneBox is not null) BibleMicrophoneBox.IsEnabled = true;
-        if (RefreshMicrophonesButton is not null) RefreshMicrophonesButton.IsEnabled = true;
-        if (BibleMicrophoneEnabledBox is not null && BibleMicrophoneEnabledBox.IsChecked == true)
-        {
-            _updatingBibleMicrophoneToggle = true;
-            BibleMicrophoneEnabledBox.IsChecked = false;
-            _updatingBibleMicrophoneToggle = false;
-        }
-        if (BibleMicrophoneLevelBar is not null) BibleMicrophoneLevelBar.Value = 0;
-        if (BibleMicrophoneLevelText is not null) BibleMicrophoneLevelText.Text = "Sem sinal de áudio";
-        if (BibleMicrophoneToggleStateText is not null)
-        {
-            BibleMicrophoneToggleStateText.Text = "DESLIGADO";
-            BibleMicrophoneToggleStateText.Foreground = System.Windows.Media.Brushes.Gold;
-        }
-        if (BibleMicrophoneStatusText is not null)
-            BibleMicrophoneStatusText.Text = "Microfone desligado. Nenhuma captação está ativa.";
     }
 
     private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
@@ -1875,15 +1677,17 @@ public partial class MainWindow : Window
 
     private async void ExitProjection_Click(object sender, RoutedEventArgs e)
     {
+        // A saída local nunca depende de o Holyrics estar conectado ou responder.
         try
         {
+            if (_projection is { IsVisible: true }) _projection.Close();
+            LocalProjectionToggleButton.Content = "Abrir projeção própria";
             await QueueHolyricsCloseProjectionAsync();
-            _projection?.Close();
-            StatusText.Text = "Projeção do Holyrics encerrada. O Lyravoxen permanece aberto para a próxima música.";
+            StatusText.Text = "Projeção própria e apresentação do Holyrics encerradas. O Lyravoxen permanece aberto.";
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Não foi possível encerrar a projeção do Holyrics: " + ex.Message;
+            StatusText.Text = "Projeção própria encerrada. O Holyrics não confirmou o fechamento: " + ex.Message;
         }
     }
 
