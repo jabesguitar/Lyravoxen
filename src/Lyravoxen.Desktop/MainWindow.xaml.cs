@@ -28,8 +28,13 @@ public partial class MainWindow : Window
     private readonly List<LyricCue> _manualDraftCues = new();
     private LiveAudioTranscriptionService? _liveRecognition;
     private readonly BibleReaderService _bibleReader = new();
-    private BibleChapter? _loadedBibleChapter;
-    private bool _syncingBibleVerseSelection;
+    private IReadOnlyList<BibleBook> _bibleCatalog = Array.Empty<BibleBook>();
+    private readonly Dictionary<int, BibleBook> _bibleLocalMap = new();
+    private List<BibleVerseItem> _bibleVerses = new();
+    private BibleReference? _bibleTypedReference;
+    private bool _bibleUiUpdating;
+    private bool _bibleSourceChosenByUser;
+    private int _bibleLoadVersion;
     private bool _automaticLyricsActive;
     // Letra salva antes de a música tocar: a sincronização começa sozinha no primeiro play.
     private bool _autoSyncPending;
@@ -105,149 +110,530 @@ public partial class MainWindow : Window
         };
     }
 
-    private async Task LoadBibleCatalogAsync()
+    // ====================================================================== Central Bíblica
+    private sealed record BibleSourceOption(bool IsHolyrics, string Id, string Title, string Note);
+
+    private sealed record BibleVerseItem(int Chapter, int Number, string Text);
+
+    private Task LoadBibleCatalogAsync()
     {
-        BibleVersionReaderBox.ItemsSource = BibleReaderService.FreePortugueseVersions;
-        BibleVersionReaderBox.SelectedIndex = 0;
+        // Livros e capítulos vêm da tabela interna: a tela funciona mesmo sem internet.
+        var view = new System.Windows.Data.ListCollectionView(BibleReferenceParser.Books.ToList());
+        view.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(BibleBookInfo.Testament)));
+        BibleBooksList.ItemsSource = view;
+        RebuildBibleSources(null);
+        SetBibleStatus("Digite uma referência (ex.: Jo 3:16) ou escolha o livro, o capítulo e o versículo.");
+        BibleBooksList.SelectedItem = BibleReferenceParser.Books[0];
+        _ = LoadBibleLocalCatalogAsync();
+        _ = RefreshBibleHolyricsVersionsAsync(showErrors: false);
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadBibleLocalCatalogAsync()
+    {
         try
         {
-            var books = await _bibleReader.GetBooksAsync();
-            BibleBookReaderBox.ItemsSource = books;
-            if (books.Count > 0) BibleBookReaderBox.SelectedIndex = 0;
-            BibleCopyrightText.Text = "Versões livres disponíveis. Cada capítulo consultado é guardado localmente para leitura offline; confira a licença exibida.";
+            _bibleCatalog = await _bibleReader.GetBooksAsync();
+            BuildLocalBibleBookMap();
+            var current = SelectedBibleVerses();
+            await ReloadBibleChapterTextAsync(current.FirstOrDefault()?.Number, current.Count > 1 ? (int?)current[^1].Number : null);
         }
         catch (Exception ex)
         {
-            BibleCopyrightText.Text = "Catálogo de livros indisponível sem conexão inicial: " + ex.Message;
+            SetBibleStatus("Textos locais indisponíveis sem conexão inicial. A projeção pelo Holyrics continua funcionando. (" + ex.Message + ")");
         }
     }
 
-    private void BibleBookReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    // Liga a tabela interna de livros ao catálogo do leitor local, sem confiar só no nome do livro.
+    private void BuildLocalBibleBookMap()
     {
-        if (BibleBookReaderBox.SelectedItem is not BibleBook book) return;
-        _loadedBibleChapter = null;
-        BibleVersesList.ItemsSource = null;
-        BibleVerseReaderBox.ItemsSource = null;
-        BibleChapterReaderBox.ItemsSource = Enumerable.Range(1, book.Chapters).ToList();
-        BibleChapterReaderBox.SelectedIndex = 0;
-    }
+        _bibleLocalMap.Clear();
+        var catalog = _bibleCatalog;
+        if (catalog.Count == 0) return;
 
-    private void BibleChapterReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_syncingBibleVerseSelection) return;
-        _loadedBibleChapter = null;
-        BibleVersesList.ItemsSource = null;
-        BibleVerseReaderBox.ItemsSource = null;
-    }
+        var parsed = new int[catalog.Count];
+        for (var i = 0; i < catalog.Count; i++)
+            parsed[i] = BibleReferenceParser.TryParseReference(catalog[i].Name + " 1")?.Book.Number ?? 0;
 
-    private async void LoadBibleChapter_Click(object sender, RoutedEventArgs e)
-    {
-        if (BibleVersionReaderBox.SelectedItem is not BibleVersion version ||
-            BibleBookReaderBox.SelectedItem is not BibleBook book ||
-            BibleChapterReaderBox.SelectedItem is not int chapter)
+        var recognised = parsed.Count(n => n > 0);
+        var inOrder = catalog.Count == BibleReferenceParser.Books.Count;
+        if (inOrder)
         {
-            BibleCopyrightText.Text = "Selecione uma versão, um livro e um capítulo.";
+            var agree = Enumerable.Range(0, catalog.Count).Count(i => parsed[i] == i + 1);
+            inOrder = recognised > 0 && agree >= recognised * 0.85;
+        }
+
+        if (inOrder)
+        {
+            for (var i = 0; i < catalog.Count; i++)
+                if (catalog[i].Chapters == BibleReferenceParser.Books[i].Chapters)
+                    _bibleLocalMap[i + 1] = catalog[i];
+            return;
+        }
+
+        foreach (var group in Enumerable.Range(0, catalog.Count)
+                     .Where(i => parsed[i] > 0)
+                     .GroupBy(i => parsed[i])
+                     .Where(g => g.Count() == 1))
+        {
+            var index = group.First();
+            if (catalog[index].Chapters == BibleReferenceParser.Books[group.Key - 1].Chapters)
+                _bibleLocalMap[group.Key] = catalog[index];
+        }
+    }
+
+    private BibleBook? ResolveLocalBibleBook(BibleBookInfo book)
+        => _bibleLocalMap.TryGetValue(book.Number, out var local) ? local : null;
+
+    private void SetBibleStatus(string message, bool alsoGlobal = false)
+    {
+        BibleStatusText.Text = message;
+        if (alsoGlobal) StatusText.Text = message;
+    }
+
+    private void RebuildBibleSources(IReadOnlyList<HolyricsClient.BibleVersionInfo>? holyricsVersions)
+    {
+        var previous = BibleSourceBox.SelectedItem as BibleSourceOption;
+        var options = new List<BibleSourceOption>();
+        if (holyricsVersions is not null)
+        {
+            var arc = holyricsVersions.FirstOrDefault(v => string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase));
+            if (arc is not null)
+                options.Add(new BibleSourceOption(true, arc.Version, "Almeida Revista e Corrigida (ARC) — Holyrics", ""));
+            foreach (var version in holyricsVersions
+                         .Where(v => !string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase))
+                         .OrderBy(v => v.Title, StringComparer.CurrentCultureIgnoreCase))
+                options.Add(new BibleSourceOption(true, version.Version, version.Title + " — Holyrics", ""));
+        }
+
+        foreach (var local in BibleReaderService.FreePortugueseVersions)
+            options.Add(new BibleSourceOption(false, local.Slug, local.Name + " — local", local.License));
+
+        // Enquanto você não escolher manualmente, a ARC do Holyrics (se instalada) é a versão padrão.
+        BibleSourceOption? selected = null;
+        if (_bibleSourceChosenByUser && previous is not null)
+            selected = options.FirstOrDefault(o => o.IsHolyrics == previous.IsHolyrics && string.Equals(o.Id, previous.Id, StringComparison.Ordinal));
+        selected ??= options.FirstOrDefault();
+
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleSourceBox.ItemsSource = options;
+            BibleSourceBox.SelectedItem = selected;
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        UpdateBibleSourceNote();
+
+        if (previous is null || selected is null || previous.IsHolyrics != selected.IsHolyrics ||
+            !string.Equals(previous.Id, selected.Id, StringComparison.Ordinal))
+        {
+            var current = SelectedBibleVerses();
+            _ = ReloadBibleChapterTextAsync(current.FirstOrDefault()?.Number, current.Count > 1 ? (int?)current[^1].Number : null);
+        }
+    }
+
+    private void UpdateBibleSourceNote()
+    {
+        if (BibleSourceBox.SelectedItem is not BibleSourceOption source)
+        {
+            BibleSourceNoteText.Text = "";
+            BibleCopyrightText.Text = "";
+            return;
+        }
+
+        BibleSourceNoteText.Text = source.IsHolyrics
+            ? "Projeção pelo Holyrics: " + source.Title + ". A prévia acima usa " +
+              BibleReaderService.FreePortugueseVersions[0].Name + " só para conferir a referência."
+            : "Projeção na tela própria do Lyravoxen.";
+        BibleCopyrightText.Text = source.IsHolyrics
+            ? "A Bíblia precisa estar instalada e licenciada no Holyrics."
+            : source.Note;
+    }
+
+    private async void RefreshHolyricsBibleVersions_Click(object sender, RoutedEventArgs e)
+        => await RefreshBibleHolyricsVersionsAsync(showErrors: true);
+
+    private async Task RefreshBibleHolyricsVersionsAsync(bool showErrors)
+    {
+        if (!_holyrics.IsConfigured)
+        {
+            if (showErrors)
+                SetBibleStatus("Conecte o Holyrics (aba Ao vivo) para usar a ARC e as demais versões instaladas nele.", true);
             return;
         }
 
         try
         {
-            var requestedCount = Math.Clamp(BibleChapterCountBox.SelectedIndex + 1, 1, 6);
-            var actualCount = Math.Min(requestedCount, book.Chapters - chapter + 1);
-            BibleCopyrightText.Text = "Carregando " + actualCount + (actualCount == 1 ? " capítulo..." : " capítulos consecutivos...");
-            var loaded = new List<BibleVerseItem>();
-            var cacheStates = new List<string>();
-            string copyright = "";
-            for (var offset = 0; offset < actualCount; offset++)
-            {
-                var chapterNumber = chapter + offset;
-                var result = await _bibleReader.GetChapterAsync(version.Slug, book, chapterNumber);
-                if (offset == 0) _loadedBibleChapter = result;
-                if (string.IsNullOrWhiteSpace(copyright)) copyright = result.Copyright;
-                cacheStates.Add(result.FromCache ? "cache offline" : "salvo offline");
-                loaded.AddRange(result.Verses.Select((text, index) =>
-                    new BibleVerseItem(chapterNumber, index + 1, text)));
-            }
-            _syncingBibleVerseSelection = true;
-            BibleVersesList.ItemsSource = loaded;
-            BibleVerseReaderBox.ItemsSource = loaded.Select(v => new BibleVerseChoice(v.Chapter, v.Number)).ToList();
-            if (loaded.Count > 0)
-            {
-                BibleVersesList.SelectedIndex = 0;
-                BibleVerseReaderBox.SelectedIndex = 0;
-            }
-            _syncingBibleVerseSelection = false;
-            var cacheStatus = cacheStates.Distinct().Count() == 1 ? cacheStates[0] : "capítulos carregados e armazenados localmente";
-            BibleCopyrightText.Text = version.Name + " | " + book.Name + " " + chapter +
-                (actualCount > 1 ? "–" + (chapter + actualCount - 1) : "") + " | " + cacheStatus +
-                (string.IsNullOrWhiteSpace(copyright) ? "" : Environment.NewLine + copyright);
+            SetBibleStatus("Consultando as Bíblias instaladas no Holyrics...");
+            var versions = await _holyrics.GetBibleVersionsAsync();
+            RebuildBibleSources(versions);
+            var hasArc = versions.Any(v => string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase));
+            SetBibleStatus(hasArc
+                ? versions.Count + " versões no Holyrics. ARC pronta para projetar."
+                : versions.Count + " versões no Holyrics, mas a ARC (pt_arc) não está instalada nele.", showErrors);
         }
         catch (Exception ex)
         {
-            BibleCopyrightText.Text = "Não foi possível carregar os capítulos: " + ex.Message;
+            if (showErrors)
+                SetBibleStatus("Falha ao consultar o Holyrics: " + ex.Message, true);
+            else
+                SetBibleStatus("Holyrics não respondeu. Use o botão ↻ Holyrics quando ele estiver aberto.");
         }
     }
 
-    private void BibleVerse_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        => ProjectBibleVerse_Click(sender, e);
-
-    private void BibleVerseReader_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void BibleSourceBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_syncingBibleVerseSelection || BibleVerseReaderBox.SelectedItem is not BibleVerseChoice choice) return;
-        _syncingBibleVerseSelection = true;
-        BibleVersesList.SelectedItem = (BibleVersesList.ItemsSource as IEnumerable<BibleVerseItem>)?
-            .FirstOrDefault(v => v.Chapter == choice.Chapter && v.Number == choice.Number);
-        BibleVersesList.ScrollIntoView(BibleVersesList.SelectedItem);
-        _syncingBibleVerseSelection = false;
+        if (_bibleUiUpdating || BibleSourceBox.SelectedItem is null) return;
+        _bibleSourceChosenByUser = true;
+        UpdateBibleSourceNote();
+        var current = SelectedBibleVerses();
+        _ = ReloadBibleChapterTextAsync(current.FirstOrDefault()?.Number, current.Count > 1 ? (int?)current[^1].Number : null);
+    }
+
+    private void BibleBooksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_bibleUiUpdating || BibleBooksList.SelectedItem is not BibleBookInfo book) return;
+        _bibleTypedReference = null;
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleChaptersList.ItemsSource = Enumerable.Range(1, book.Chapters).ToList();
+            BibleChaptersList.SelectedItem = 1;
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        _ = ReloadBibleChapterTextAsync();
+    }
+
+    private void BibleChaptersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_bibleUiUpdating || BibleChaptersList.SelectedItem is not int) return;
+        _bibleTypedReference = null;
+        _ = ReloadBibleChapterTextAsync();
     }
 
     private void BibleVersesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_syncingBibleVerseSelection || BibleVersesList.SelectedItem is not BibleVerseItem verse) return;
-        _syncingBibleVerseSelection = true;
-        BibleVerseReaderBox.SelectedItem = new BibleVerseChoice(verse.Chapter, verse.Number);
-        _syncingBibleVerseSelection = false;
+        if (_bibleUiUpdating) return;
+        UpdateBiblePreview();
     }
 
-    private void ProjectBibleVerse_Click(object sender, RoutedEventArgs e)
+    private async void BibleVersesList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => await ProjectBibleSelectionAsync();
+
+    private async void BibleVersesList_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        var verse = BibleVersesList.SelectedItem as BibleVerseItem;
-        if (verse is null && BibleVerseReaderBox.SelectedItem is BibleVerseChoice choice)
-            verse = (BibleVersesList.ItemsSource as IEnumerable<BibleVerseItem>)?
-                .FirstOrDefault(v => v.Chapter == choice.Chapter && v.Number == choice.Number);
-        if (_loadedBibleChapter is null || verse is null || BibleBookReaderBox.SelectedItem is not BibleBook book)
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        e.Handled = true;
+        await ProjectBibleSelectionAsync();
+    }
+
+    private async void BibleSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        e.Handled = true;
+        var control = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control;
+        await LocateBibleReferenceAsync(project: control);
+    }
+
+    private async void BibleLocate_Click(object sender, RoutedEventArgs e)
+        => await LocateBibleReferenceAsync(project: false);
+
+    private async Task LocateBibleReferenceAsync(bool project)
+    {
+        var text = BibleSearchBox.Text.Trim();
+        if (text.Length == 0) return;
+
+        var parsed = BibleReferenceParser.TryParseReference(text, allowBookOnly: true);
+        if (parsed is null)
         {
-            BibleCopyrightText.Text = "Carregue a leitura, escolha o livro, capítulo e versículo e tente novamente.";
+            SetBibleStatus("Não entendi “" + text + "”. Exemplos: João 3:16 · Sl 23 · 1 Co 13:4-7 · Gênesis 1");
             return;
         }
 
-        var reference = $"{book.Name} {verse.Chapter}:{verse.Number}";
+        _bibleTypedReference = parsed.VerseStart.HasValue ? parsed : null;
+        _bibleUiUpdating = true;
         try
         {
-            var outputDevice = EnsureProjectionWindow();
-            _projection!.ShowBibleVerse(reference, verse.Text);
-            _projection.Activate();
-            BibleCopyrightText.Text = "Enviado para a tela de projeção: " + reference +
-                (string.IsNullOrWhiteSpace(outputDevice) ? "" : " | Monitor: " + outputDevice);
-            StatusText.Text = "Versículo enviado à projeção própria: " + reference +
-                (string.IsNullOrWhiteSpace(outputDevice) ? "" : " — " + outputDevice);
+            BibleBooksList.SelectedItem = parsed.Book;
+            BibleBooksList.ScrollIntoView(parsed.Book);
+            BibleChaptersList.ItemsSource = Enumerable.Range(1, parsed.Book.Chapters).ToList();
+            BibleChaptersList.SelectedItem = parsed.Chapter;
+            BibleChaptersList.ScrollIntoView(parsed.Chapter);
+            BibleSearchBox.Text = parsed.ToString();
+            BibleSearchBox.SelectAll();
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        await ReloadBibleChapterTextAsync(parsed.VerseStart, parsed.VerseEnd);
+        if (project && parsed.VerseStart.HasValue) await ProjectBibleSelectionAsync();
+    }
+
+    private async Task ReloadBibleChapterTextAsync(int? selectVerseStart = null, int? selectVerseEnd = null)
+    {
+        if (BibleBooksList.SelectedItem is not BibleBookInfo book || BibleChaptersList.SelectedItem is not int chapter) return;
+
+        var requestId = Interlocked.Increment(ref _bibleLoadVersion);
+        var source = BibleSourceBox.SelectedItem as BibleSourceOption;
+        var previewVersion = source is { IsHolyrics: false }
+            ? BibleReaderService.FreePortugueseVersions.FirstOrDefault(v => v.Slug == source.Id) ?? BibleReaderService.FreePortugueseVersions[0]
+            : BibleReaderService.FreePortugueseVersions[0];
+
+        _bibleUiUpdating = true;
+        try
+        {
+            _bibleVerses = new List<BibleVerseItem>();
+            BibleVersesList.ItemsSource = null;
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        UpdateBiblePreview();
+
+        var local = ResolveLocalBibleBook(book);
+        if (local is null)
+        {
+            SetBibleStatus(_bibleCatalog.Count == 0
+                ? "Carregando o catálogo de textos... Pelo Holyrics já dá para projetar digitando a referência."
+                : "Texto local indisponível para " + book.Name + ". Digite a referência e projete pelo Holyrics.");
+            return;
+        }
+
+        SetBibleStatus("Carregando " + book.Name + " " + chapter + "...");
+        try
+        {
+            var result = await _bibleReader.GetChapterAsync(previewVersion.Slug, local, chapter);
+            if (requestId != _bibleLoadVersion) return;
+
+            var verses = result.Verses.Select((text, index) => new BibleVerseItem(chapter, index + 1, text)).ToList();
+            _bibleUiUpdating = true;
+            try
+            {
+                _bibleVerses = verses;
+                BibleVersesList.ItemsSource = _bibleVerses;
+            }
+            finally
+            {
+                _bibleUiUpdating = false;
+            }
+
+            if (selectVerseStart.HasValue) SelectBibleVerses(selectVerseStart.Value, selectVerseEnd);
+            else UpdateBiblePreview();
+
+            SetBibleStatus(book.Name + " " + chapter + " · " + verses.Count + " versículos · prévia: " + previewVersion.Name +
+                           (result.FromCache ? " (guardado neste computador)" : ""));
+            if (!string.IsNullOrWhiteSpace(result.Copyright) && source is { IsHolyrics: false })
+                BibleCopyrightText.Text = result.Copyright;
         }
         catch (Exception ex)
         {
-            BibleCopyrightText.Text = "Não foi possível abrir a tela de projeção: " + ex.Message;
-            StatusText.Text = BibleCopyrightText.Text;
+            if (requestId != _bibleLoadVersion) return;
+            SetBibleStatus("Não foi possível carregar o texto de " + book.Name + " " + chapter + " (" + ex.Message +
+                           "). Você ainda pode projetar digitando a referência.");
         }
     }
 
-    private sealed record BibleVerseChoice(int Chapter, int Number)
+    private void SelectBibleVerses(int start, int? end)
     {
-        public string Display => $"{Chapter}:{Number}";
-        public override string ToString() => Display;
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleVersesList.SelectedItems.Clear();
+            if (_bibleVerses.Count > 0)
+            {
+                var first = start == int.MaxValue ? _bibleVerses.Count : Math.Clamp(start, 1, _bibleVerses.Count);
+                var last = end.HasValue ? Math.Clamp(end.Value, first, _bibleVerses.Count) : first;
+                foreach (var verse in _bibleVerses.Where(v => v.Number >= first && v.Number <= last))
+                    BibleVersesList.SelectedItems.Add(verse);
+                var anchor = _bibleVerses.FirstOrDefault(v => v.Number == first);
+                if (anchor is not null) BibleVersesList.ScrollIntoView(anchor);
+            }
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        UpdateBiblePreview();
     }
 
-    private sealed record BibleVerseItem(int Chapter, int Number, string Text)
+    private List<BibleVerseItem> SelectedBibleVerses()
+        => BibleVersesList.SelectedItems.OfType<BibleVerseItem>().OrderBy(v => v.Number).ToList();
+
+    private static string ComposeBibleText(IReadOnlyList<BibleVerseItem> verses)
+        => string.Join(" ", verses.Select(v => verses.Count > 1 ? v.Number + " " + v.Text : v.Text));
+
+    private BibleReference? GetBibleSelectionReference()
     {
-        public string Display => $"{Chapter}:{Number}  {Text}";
+        if (BibleBooksList.SelectedItem is not BibleBookInfo book || BibleChaptersList.SelectedItem is not int chapter) return null;
+
+        var selected = SelectedBibleVerses();
+        if (selected.Count > 0)
+        {
+            var end = selected[^1].Number > selected[0].Number ? (int?)selected[^1].Number : null;
+            return new BibleReference(book, chapter, selected[0].Number, end);
+        }
+
+        var typed = _bibleTypedReference;
+        if (typed is not null && typed.Book.Number == book.Number && typed.Chapter == chapter) return typed;
+        return new BibleReference(book, chapter, null, null);
+    }
+
+    private void UpdateBiblePreview()
+    {
+        var reference = GetBibleSelectionReference();
+        if (reference is null)
+        {
+            BiblePreviewReferenceText.Text = "Nenhum versículo selecionado";
+            BiblePreviewVerseText.Text = "Digite uma referência ou escolha livro, capítulo e versículo.";
+            return;
+        }
+
+        BiblePreviewReferenceText.Text = reference.ToString();
+        var selected = SelectedBibleVerses();
+        if (selected.Count > 0)
+            BiblePreviewVerseText.Text = ComposeBibleText(selected);
+        else if (reference.VerseStart.HasValue)
+            BiblePreviewVerseText.Text = "Prévia do texto indisponível agora. O telão ainda pode projetar esta referência.";
+        else
+            BiblePreviewVerseText.Text = "Escolha um versículo na lista ao lado.";
+    }
+
+    private async void BiblePrevious_Click(object sender, RoutedEventArgs e) => await StepBibleVerseAsync(-1);
+
+    private async void BibleNext_Click(object sender, RoutedEventArgs e) => await StepBibleVerseAsync(1);
+
+    // Anterior/Próximo andam um versículo (atravessando capítulos) e já projetam.
+    private async Task StepBibleVerseAsync(int direction)
+    {
+        if (BibleBooksList.SelectedItem is not BibleBookInfo book || BibleChaptersList.SelectedItem is not int chapter) return;
+        if (_bibleVerses.Count == 0)
+        {
+            SetBibleStatus("Sem texto carregado para andar de versículo em versículo. Digite a próxima referência.");
+            return;
+        }
+
+        var selected = SelectedBibleVerses();
+        int target;
+        if (selected.Count == 0) target = direction > 0 ? 1 : _bibleVerses.Count;
+        else target = (direction > 0 ? selected[^1].Number : selected[0].Number) + direction;
+
+        if (target >= 1 && target <= _bibleVerses.Count)
+        {
+            SelectBibleVerses(target, null);
+            await ProjectBibleSelectionAsync();
+            return;
+        }
+
+        var nextChapter = chapter + direction;
+        if (nextChapter < 1 || nextChapter > book.Chapters)
+        {
+            SetBibleStatus(direction > 0 ? "Fim de " + book.Name + "." : "Início de " + book.Name + ".");
+            return;
+        }
+
+        _bibleTypedReference = null;
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleChaptersList.SelectedItem = nextChapter;
+            BibleChaptersList.ScrollIntoView(nextChapter);
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        await ReloadBibleChapterTextAsync(direction > 0 ? 1 : int.MaxValue, null);
+        await ProjectBibleSelectionAsync();
+    }
+
+    private async void ProjectBibleSelection_Click(object sender, RoutedEventArgs e) => await ProjectBibleSelectionAsync();
+
+    private async Task ProjectBibleSelectionAsync()
+    {
+        var reference = GetBibleSelectionReference();
+        if (reference is null || !reference.VerseStart.HasValue)
+        {
+            SetBibleStatus("Escolha um versículo (ou digite a referência) antes de projetar.");
+            return;
+        }
+
+        if (BibleSourceBox.SelectedItem is not BibleSourceOption source)
+        {
+            SetBibleStatus("Escolha a versão da Bíblia.");
+            return;
+        }
+
+        var referenceText = reference.ToString();
+        if (source.IsHolyrics)
+        {
+            if (!_holyricsEnabled)
+            {
+                SetBibleStatus("Ative a integração com o Holyrics (aba Ao vivo) para projetar a " + source.Title + ".", true);
+                return;
+            }
+
+            try
+            {
+                await _holyrics.ShowBibleVerseAsync(referenceText, source.Id);
+                SetBibleStatus("Projetado no Holyrics: " + referenceText + " — " + source.Title, true);
+            }
+            catch (Exception ex)
+            {
+                SetBibleStatus("Não foi possível projetar no Holyrics: " + ex.Message, true);
+            }
+
+            return;
+        }
+
+        var selected = SelectedBibleVerses();
+        if (selected.Count == 0)
+        {
+            SetBibleStatus("Esta versão ainda não tem o texto carregado. Conecte-se à internet uma vez para guardá-lo.", true);
+            return;
+        }
+
+        try
+        {
+            var outputDevice = EnsureProjectionWindow();
+            _projection!.ShowBibleVerse(referenceText, ComposeBibleText(selected));
+            _projection.Activate();
+            SetBibleStatus("Enviado para a projeção própria: " + referenceText +
+                           (string.IsNullOrWhiteSpace(outputDevice) ? "" : " | Monitor: " + outputDevice), true);
+        }
+        catch (Exception ex)
+        {
+            SetBibleStatus("Não foi possível abrir a tela de projeção: " + ex.Message, true);
+        }
+    }
+
+    private void ClearBibleProjection_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            _projection?.ClearDisplay();
+        }
+        catch (Exception ex)
+        {
+            SetBibleStatus("Falha ao limpar a projeção própria: " + ex.Message);
+        }
+
+        if (_holyricsEnabled && _holyrics.IsConfigured)
+            _ = ObserveHolyricsQueueAsync(QueueHolyricsCloseProjectionAsync());
+        SetBibleStatus("Telão limpo.", true);
     }
 
     private void OpenLocalProjection_Click(object sender, RoutedEventArgs e)
@@ -1580,75 +1966,6 @@ public partial class MainWindow : Window
             File.Move(temp, _preferencesFile, true);
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível salvar o estado do Holyrics: " + ex.Message; }
-    }
-
-    private async void RefreshHolyricsBibleVersions_Click(object sender, RoutedEventArgs e)
-    {
-        if (!_holyrics.IsConfigured)
-        {
-            BibleHolyricsVersionStatusText.Text = "Conecte o Holyrics em Ao vivo > Conectar Holyrics antes de buscar a ARC.";
-            StatusText.Text = BibleHolyricsVersionStatusText.Text;
-            return;
-        }
-        try
-        {
-            StatusText.Text = "Consultando as traduções instaladas no Holyrics...";
-            var versions = await _holyrics.GetBibleVersionsAsync();
-            // O ID pt_arc identifica a ARC brasileira da SBB; pt_rc69 é outra edição e não deve ser confundida.
-            // Não selecionamos por semelhança textual do título nem fazemos fallback para ACF/ARA/1911.
-            var arcVersions = versions
-                .Where(v => string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase))
-                .Select(v => new HolyricsClient.BibleVersionInfo(
-                    v.Version, "Almeida Revista e Corrigida © 2009 (SBB)", v.Language))
-                .ToList();
-            BibleHolyricsArcVersionBox.ItemsSource = arcVersions;
-            BibleHolyricsArcVersionBox.DisplayMemberPath = "Title";
-            if (arcVersions.Count == 0)
-            {
-                BibleHolyricsVersionStatusText.Text = "A instalação do Holyrics não disponibilizou a versão ARC identificada como pt_arc. Nenhuma tradução semelhante foi selecionada.";
-                StatusText.Text = BibleHolyricsVersionStatusText.Text;
-                return;
-            }
-            BibleHolyricsArcVersionBox.SelectedIndex = 0;
-            BibleHolyricsVersionStatusText.Text = $"{arcVersions.Count} versão ARC encontrada no Holyrics. Selecione-a e informe livro, capítulo e versículo para projetar.";
-            StatusText.Text = BibleHolyricsVersionStatusText.Text;
-        }
-        catch (Exception ex)
-        {
-            BibleHolyricsVersionStatusText.Text = "Falha ao consultar as Bíblias do Holyrics: " + ex.Message;
-            StatusText.Text = BibleHolyricsVersionStatusText.Text;
-        }
-    }
-
-    private async void ProjectHolyricsBibleReference_Click(object sender, RoutedEventArgs e)
-    {
-        if (!_holyricsEnabled)
-        {
-            StatusText.Text = "Ative a integração Holyrics antes de projetar a ARC original.";
-            return;
-        }
-        if (BibleHolyricsArcVersionBox.SelectedItem is not HolyricsClient.BibleVersionInfo version)
-        {
-            StatusText.Text = "Busque e selecione uma versão Almeida Revista e Corrigida instalada no Holyrics.";
-            return;
-        }
-        var reference = BibleHolyricsReferenceBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(reference))
-        {
-            StatusText.Text = "Informe uma referência bíblica, por exemplo João 3:16.";
-            return;
-        }
-        try
-        {
-            await _holyrics.ShowBibleVerseAsync(reference, version.Version);
-            BibleHolyricsVersionStatusText.Text = $"Solicitação enviada ao Holyrics: {version.Title} — {reference}.";
-            StatusText.Text = BibleHolyricsVersionStatusText.Text;
-        }
-        catch (Exception ex)
-        {
-            BibleHolyricsVersionStatusText.Text = "Não foi possível projetar a referência ARC: " + ex.Message;
-            StatusText.Text = BibleHolyricsVersionStatusText.Text;
-        }
     }
 
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)

@@ -115,4 +115,22 @@ Check(planLeading.Count == 3 && planLeading[0].Seconds >= 0 && planLeading[0].Se
 Check(AutoSyncPlanner.CreateCuesForMatch(longLyrics, 3, 1, null, 5.0).Count == 0, "índice anterior ao esperado não gera marcas");
 Check(AutoSyncPlanner.CreateCuesForMatch(longLyrics, 0, 99, null, 5.0).Count == 0, "índice inexistente não gera marcas");
 
+// Referências bíblicas digitadas na Central Bíblica.
+Check(BibleReferenceParser.TryParse("Jo 3:16") == "João 3:16", "Jo (sem acento) é a abreviação de João, não de Jó");
+Check(BibleReferenceParser.TryParse("Jó 1:1") == "Jó 1:1", "Jó com acento continua sendo o livro de Jó");
+Check(BibleReferenceParser.TryParse("1 jo 3:16") == "1 João 3:16", "1 Jo com espaço é 1 João");
+Check(BibleReferenceParser.TryParse("1 João 4:8") == "1 João 4:8", "1 João não é confundido com João");
+Check(BibleReferenceParser.TryParse("primeiro joão 4:8") == "1 João 4:8", "primeiro João falado");
+Check(BibleReferenceParser.TryParse("1Co 13:4-7") == "1 Coríntios 13:4-7", "intervalo de versículos com abreviação");
+Check(BibleReferenceParser.TryParse("João 3:16 ao 18") == "João 3:16-18", "intervalo falado com 'ao'");
+Check(BibleReferenceParser.TryParse("Sl 23") == "Salmos 23", "abreviação Sl");
+Check(BibleReferenceParser.TryParse("Cânticos 2") == "Cantares 2", "Cânticos é Cantares");
+Check(BibleReferenceParser.TryParse("abram na bíblia em joão capítulo 3 versículo 16") == "João 3:16", "frase falada com palavras antes do livro");
+Check(BibleReferenceParser.TryParse("Obadias 2") is null, "capítulo inexistente no livro é recusado");
+Check(BibleReferenceParser.TryParse("Salmos 151") is null, "Salmos tem 150 capítulos");
+var bookOnly = BibleReferenceParser.TryParseReference("Gênesis", allowBookOnly: true);
+Check(bookOnly is not null && bookOnly.Chapter == 1 && bookOnly.VerseStart is null, "livro sem capítulo abre o capítulo 1");
+Check(BibleReferenceParser.TryParseReference("Gênesis") is null, "sem permissão, livro sem capítulo não é referência");
+Check(BibleReferenceParser.Books.Count == 66 && BibleReferenceParser.Books.Sum(b => b.Chapters) == 1189, "66 livros e 1189 capítulos");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção e referências bíblicas passaram.");

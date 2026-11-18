@@ -33,9 +33,32 @@ public sealed class BibleReaderService
 
     public async Task<IReadOnlyList<BibleBook>> GetBooksAsync(CancellationToken cancellationToken = default)
     {
+        // A lista de livros não muda: depois da primeira consulta, abre do computador (rápido e sem internet).
+        var cachePath = Path.Combine(_cacheRoot, "books.json");
+        if (File.Exists(cachePath))
+        {
+            try
+            {
+                return ParseBooks(await File.ReadAllTextAsync(cachePath, cancellationToken));
+            }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or IOException)
+            {
+                // Arquivo corrompido: consulta novamente abaixo.
+            }
+        }
+
         using var response = await Http.GetAsync("https://api.midvash.com/v1/books", cancellationToken);
         response.EnsureSuccessStatusCode();
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var books = ParseBooks(body);
+        Directory.CreateDirectory(_cacheRoot);
+        await File.WriteAllTextAsync(cachePath, body, cancellationToken);
+        return books;
+    }
+
+    private static IReadOnlyList<BibleBook> ParseBooks(string body)
+    {
+        using var json = JsonDocument.Parse(body);
         var books = new List<BibleBook>();
         foreach (var item in json.RootElement.GetProperty("data").EnumerateArray())
         {
@@ -54,21 +77,28 @@ public sealed class BibleReaderService
         var cacheDirectory = Path.Combine(_cacheRoot, Safe(version), Safe(book.Slug));
         Directory.CreateDirectory(cacheDirectory);
         var cachePath = Path.Combine(cacheDirectory, chapter.ToString("D3") + ".json");
-        var url = $"https://api.midvash.com/v1/{Uri.EscapeDataString(version)}/{Uri.EscapeDataString(book.Slug)}/{chapter}";
 
-        try
+        // O texto bíblico não muda: capítulo já consultado abre do computador (rápido e funciona offline).
+        if (File.Exists(cachePath))
         {
-            using var response = await Http.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            await File.WriteAllTextAsync(cachePath, body, cancellationToken);
-            return ParseChapter(body, version, book, chapter, false);
+            try
+            {
+                var cached = await File.ReadAllTextAsync(cachePath, cancellationToken);
+                return ParseChapter(cached, version, book, chapter, true);
+            }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or IOException)
+            {
+                // Arquivo corrompido: baixa novamente abaixo.
+            }
         }
-        catch when (File.Exists(cachePath))
-        {
-            var cached = await File.ReadAllTextAsync(cachePath, cancellationToken);
-            return ParseChapter(cached, version, book, chapter, true);
-        }
+
+        var url = $"https://api.midvash.com/v1/{Uri.EscapeDataString(version)}/{Uri.EscapeDataString(book.Slug)}/{chapter}";
+        using var response = await Http.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var parsed = ParseChapter(body, version, book, chapter, false);
+        await File.WriteAllTextAsync(cachePath, body, cancellationToken);
+        return parsed;
     }
 
     public async Task<string?> ParseReferenceAsync(string spokenText, CancellationToken cancellationToken = default)
