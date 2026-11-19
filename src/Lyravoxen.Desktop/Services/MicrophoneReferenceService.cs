@@ -31,6 +31,7 @@ public sealed class MicrophoneReferenceService : IDisposable
     private WhisperFactory? _factory;
     private WhisperProcessor? _processor;
     private int _disposed;
+    private bool _useWindowsSpeech;
 
     public event EventHandler<double>? LevelChanged;
     public event EventHandler<string>? StatusChanged;
@@ -157,13 +158,23 @@ public sealed class MicrophoneReferenceService : IDisposable
         await _modelGate.WaitAsync(cancellationToken);
         try
         {
-            if (_processor is not null) return;
-            await EnsureModelAsync(cancellationToken);
-            _factory = WhisperDiagnostics.CreateFactory(LiveAudioTranscriptionService.ModelPath);
-            _processor = _factory.CreateBuilder()
-                .WithLanguage("pt")
-                .WithPrompt(Prompt)
-                .Build();
+            if (_processor is not null || _useWindowsSpeech) return;
+            try
+            {
+                await EnsureModelAsync(cancellationToken);
+                _factory = WhisperDiagnostics.CreateFactory(LiveAudioTranscriptionService.ModelPath);
+                _processor = _factory.CreateBuilder()
+                    .WithLanguage("pt")
+                    .WithPrompt(Prompt)
+                    .Build();
+            }
+            catch (InvalidOperationException ex) when (ex.InnerException is not null)
+            {
+                // O Whisper não carrega neste PC: usa o reconhecimento de fala do Windows.
+                _useWindowsSpeech = true;
+                AppLog.Info("Whisper indisponível; usando o reconhecimento de fala do Windows.");
+                StatusChanged?.Invoke(this, "Motor Whisper indisponível neste PC; usando o reconhecimento de fala do Windows.");
+            }
         }
         finally
         {
@@ -175,6 +186,9 @@ public sealed class MicrophoneReferenceService : IDisposable
     {
         if (samples16k.Length < TargetRate * 4 / 10) return "";
         await PrepareAsync(cancellationToken);
+
+        if (_useWindowsSpeech)
+            return await Task.Run(() => WindowsSpeechReferenceRecognizer.Recognize(samples16k), cancellationToken);
 
         await _modelGate.WaitAsync(cancellationToken);
         try

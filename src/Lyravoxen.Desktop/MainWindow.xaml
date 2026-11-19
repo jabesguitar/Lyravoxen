@@ -89,6 +89,7 @@
     <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
     <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
     <Button Content="🩺 Diagnóstico" Click="Diagnostics_Click" ToolTip="Confere Holyrics, permissões, microfone, monitores e internet"/>
+    <Button x:Name="PinTopButton" Content="📌 Fixar à frente" Click="PinTop_Click" ToolTip="Mantém o Lyravoxen sempre à frente (útil contra a janela Apresentação Rápida do Holyrics)"/>
     <Button Content="📋 Relatório" Click="Report_Click" ToolTip="Copia o relatório de uso e erros para colar na conversa"/>
     <Button x:Name="LocalProjectionToggleButton" Content="Abrir projeção própria" Click="OpenLocalProjection_Click" ToolTip="Abrir ou fechar a tela independente de projeção"/>
     <Button Content="Escolher fundo" Click="SelectProjectionBackground_Click" ToolTip="Importar um fundo JPG ou PNG para a projeção própria"/>

@@ -98,11 +98,20 @@ public partial class MainWindow
             {
                 if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
                 Topmost = true;
-                Topmost = false;
+                if (!_pinnedOnTop) Topmost = false;
                 Activate();
                 if (WorkspaceTabs.SelectedItem == BibleWorkspaceTab) BibleSearchBox.Focus();
             }
             catch { /* melhor esforço */ }
         }
+    }
+
+    private bool _pinnedOnTop;
+
+    private void PinTop_Click(object sender, RoutedEventArgs e)
+    {
+        _pinnedOnTop = !_pinnedOnTop;
+        Topmost = _pinnedOnTop;
+        PinTopButton.Content = _pinnedOnTop ? "📌 Fixado à frente" : "📌 Fixar à frente";
     }
 }

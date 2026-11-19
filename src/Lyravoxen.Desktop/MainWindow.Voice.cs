@@ -101,7 +101,7 @@ public partial class MainWindow
         BibleMicButton.Content = "● Gravando… solte para enviar";
         SetBibleStatus("Ouvindo… diga, por exemplo: “João 3:16” ou “Salmos 23”. Solte o botão (ou F4) ao terminar.");
         // Carrega o modelo em segundo plano enquanto o operador fala.
-        _ = GetMicService().PrepareAsync().ContinueWith(_ => { }, TaskScheduler.Default);
+        _ = GetMicService().PrepareAsync().ContinueWith(t => { _ = t.Exception; }, TaskScheduler.Default);
     }
 
     private async Task EndVoiceCaptureAsync()
