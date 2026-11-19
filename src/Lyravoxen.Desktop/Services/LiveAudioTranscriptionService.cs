@@ -47,7 +47,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
         StatusChanged?.Invoke(this, "Verificando o modelo gratuito de reconhecimento local...");
         await EnsureModelAsync(linked.Token);
 
-        _factory = WhisperFactory.FromPath(ModelPath);
+        _factory = WhisperDiagnostics.CreateFactory(ModelPath);
         _processor = _factory.CreateBuilder()
             .WithLanguage("pt")
             .Build();

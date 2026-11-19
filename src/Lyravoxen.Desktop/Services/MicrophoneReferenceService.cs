@@ -159,7 +159,7 @@ public sealed class MicrophoneReferenceService : IDisposable
         {
             if (_processor is not null) return;
             await EnsureModelAsync(cancellationToken);
-            _factory = WhisperFactory.FromPath(LiveAudioTranscriptionService.ModelPath);
+            _factory = WhisperDiagnostics.CreateFactory(LiveAudioTranscriptionService.ModelPath);
             _processor = _factory.CreateBuilder()
                 .WithLanguage("pt")
                 .WithPrompt(Prompt)

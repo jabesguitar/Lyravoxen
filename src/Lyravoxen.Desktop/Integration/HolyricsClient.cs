@@ -21,15 +21,20 @@ public sealed class HolyricsClient
 
     public bool IsConfigured => File.Exists(_settingsPath);
 
-    public async Task ConfigureAndTestAsync(string host, int port, string token)
+    /// <summary>Salva a conexão. Devolve um aviso (ou null) quando o token não tem alguma permissão necessária.</summary>
+    public async Task<string?> ConfigureAndTestAsync(string host, int port, string token)
     {
         if (string.IsNullOrWhiteSpace(host)) throw new ArgumentException("Informe o endereço do Holyrics.");
         if (port is < 1 or > 65535) throw new ArgumentOutOfRangeException(nameof(port));
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token do Holyrics.");
 
         var settings = new Settings(host.Trim(), port, token.Trim());
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation,GetBibleVersionsV2,ShowVerse");
+        var denied = await CheckPermissionAsync(settings, string.Join(",", RequiredActions));
         Save(settings);
+        return denied.Count == 0
+            ? null
+            : "Conexão salva, mas o token não permite: " + string.Join(", ", denied) +
+              ". Marque essas permissões no token do Holyrics (API Server Local) para usar Bíblia e projeção.";
     }
 
     public async Task TestConnectionAsync()
@@ -37,7 +42,9 @@ public sealed class HolyricsClient
         var settings = Load();
         if (settings is null)
             throw new InvalidOperationException("Holyrics ainda não foi configurado. Abra as configurações e teste a conexão primeiro.");
-        await CheckPermissionAsync(settings, "ShowQuickPresentation,CloseCurrentQuickPresentation,CloseCurrentPresentation");
+        var denied = await CheckPermissionAsync(settings, string.Join(",", RequiredActions));
+        if (denied.Count > 0)
+            throw new InvalidOperationException("O token do Holyrics não permite: " + string.Join(", ", denied) + ".");
     }
 
     public async Task<IReadOnlyList<BibleVersionInfo>> GetBibleVersionsAsync()
@@ -46,7 +53,7 @@ public sealed class HolyricsClient
         if (settings is null) throw new InvalidOperationException("Holyrics ainda não foi configurado.");
         using var response = await SendJsonAsync(BuildUrl(settings, "GetBibleVersionsV2"), JsonSerializer.SerializeToUtf8Bytes(new { }));
         var body = await response.Content.ReadAsStringAsync();
-        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {body}");
+        if (!response.IsSuccessStatusCode) throw HttpFailure("GetBibleVersionsV2", response.StatusCode, body);
         EnsureApiSuccess(body);
         using var json = JsonDocument.Parse(body);
         var result = new List<BibleVersionInfo>();
@@ -75,7 +82,7 @@ public sealed class HolyricsClient
         });
         using var response = await SendJsonAsync(BuildUrl(settings, "ShowVerse"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
-        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+        if (!response.IsSuccessStatusCode) throw HttpFailure("ShowVerse", response.StatusCode, responseBody);
         if (!string.IsNullOrWhiteSpace(responseBody)) EnsureApiSuccess(responseBody);
     }
 
@@ -90,7 +97,7 @@ public sealed class HolyricsClient
         using var response = await SendJsonAsync(BuildUrl(settings, "ShowQuickPresentation"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+            throw HttpFailure("ShowQuickPresentation", response.StatusCode, responseBody);
         if (!string.IsNullOrWhiteSpace(responseBody))
             EnsureApiSuccess(responseBody);
     }
@@ -104,7 +111,7 @@ public sealed class HolyricsClient
         using var response = await SendJsonAsync(BuildUrl(settings, "CloseCurrentQuickPresentation"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+            throw HttpFailure("CloseCurrentQuickPresentation", response.StatusCode, responseBody);
         if (!string.IsNullOrWhiteSpace(responseBody))
             EnsureApiSuccess(responseBody);
     }
@@ -133,23 +140,68 @@ public sealed class HolyricsClient
         using var response = await SendJsonAsync(BuildUrl(settings, action), body);
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Holyrics ({action}) respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+            throw HttpFailure(action, response.StatusCode, responseBody);
         if (!string.IsNullOrWhiteSpace(responseBody))
             EnsureApiSuccess(responseBody);
     }
 
-    private static async Task CheckPermissionAsync(Settings settings, string action)
+    private static async Task<List<string>> CheckPermissionAsync(Settings settings, string action)
     {
         var body = JsonSerializer.SerializeToUtf8Bytes(new { actions = action });
         using var response = await SendJsonAsync(BuildUrl(settings, "CheckPermissions"), body);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Holyrics respondeu HTTP {(int)response.StatusCode}: {responseBody}");
+            throw HttpFailure("CheckPermissions", response.StatusCode, responseBody);
         if (string.IsNullOrWhiteSpace(responseBody))
             throw new InvalidOperationException("O Holyrics não retornou confirmação. Confira se o API Server Local está ativo.");
 
         EnsureApiSuccess(responseBody);
+    }
+
+
+    private static HttpRequestException HttpFailure(string action, HttpStatusCode status, string body)
+    {
+        if (status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            return new HttpRequestException(
+                "o token do Holyrics não tem permissão para a ação \"" + action + "\". " +
+                "No Holyrics, abra as configurações do API Server Local, edite as permissões do token e marque: " +
+                string.Join(", ", RequiredActions) + ". Depois use o botão ↻ Holyrics (não precisa reconectar).");
+        return new HttpRequestException($"Holyrics respondeu HTTP {(int)status} na ação {action}: {body}");
+    }
+
+    private static readonly string[] RequiredActions =
+    {
+        "ShowQuickPresentation", "CloseCurrentQuickPresentation", "CloseCurrentPresentation", "GetBibleVersionsV2", "ShowVerse"
+    };
+
+    /// <summary>Lê o retorno de CheckPermissions e devolve as ações que o token NÃO permite.</summary>
+    private static List<string> DeniedActions(string body)
+    {
+        var denied = new List<string>();
+        try
+        {
+            using var json = JsonDocument.Parse(body);
+            if (!json.RootElement.TryGetProperty("data", out var data)) return denied;
+            if (data.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var item in data.EnumerateObject())
+                    if (item.Value.ValueKind == JsonValueKind.False) denied.Add(item.Name);
+            }
+            else if (data.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in data.EnumerateArray())
+                {
+                    if (item.ValueKind != JsonValueKind.Object) continue;
+                    var name = item.TryGetProperty("action", out var a) ? a.GetString() : null;
+                    var allowed = item.TryGetProperty("allowed", out var al) ? al.ValueKind != JsonValueKind.False
+                                : item.TryGetProperty("permission", out var pe) ? pe.ValueKind != JsonValueKind.False : true;
+                    if (!string.IsNullOrEmpty(name) && !allowed) denied.Add(name);
+                }
+            }
+        }
+        catch (JsonException) { }
+        return denied;
     }
 
     private static async Task<HttpResponseMessage> SendJsonAsync(string url, byte[] body)
