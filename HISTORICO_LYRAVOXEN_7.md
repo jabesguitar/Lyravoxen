@@ -67,6 +67,12 @@
    - **Ainda NÃO recriados** (descritos nos itens 6–9 acima, o código foi perdido): correção de nomes mal ouvidos (`CorrectBookTypos`), Modo clique, lista Recentes, `LyricsSearchQueryBuilder`, dica de playback em 45 s, Tudo ±0,5 s / Exportar .LRC (`CueTools`), `docs/GUIA_RAPIDO.md` e **toda a Bíblia fiel do Holyrics** (item 8: leitura de volta, cache, ⇩ Guardar capítulo). O `Diagnóstico` já mostra se o token tem `GetCurrentQuickPresentation`/`GetCurrentPresentation`.
    - Os arquivos `HISTORICO_LYRAVOXEN_4/5/6.md` eram idênticos entre si; este é o `_7` (6 + item 10).
 
+11. **Digitação rápida da Bíblia e foco** (ZIP `Lyravoxen-biblia-digitacao-rapida`, **sem compilar**; arquivos: `src`):
+   - Estando na aba Bíblia, **qualquer letra/número digitado vai para o campo de referência**; o livro é destacado na lista enquanto digita (`o` → Oseias, `sl` → Salmos, `1co`). **Enter projeta** (antes só localizava; Ctrl+Enter deixou de ser necessário). Ex.: `jo 3 16` + Enter. Se o nome está incompleto (`ger 3 4`), o app completa com o primeiro livro que começa assim. Arquivo: `MainWindow.QuickBible.cs`.
+   - Depois de projetar no Holyrics, o Lyravoxen volta para a frente (a janela "Apresentação Rápida" é do próprio Holyrics e a API não permite escondê-la) e o foco volta ao campo de referência.
+   - Voz: teste do usuário (Actions já compila) → "A biblioteca existe, mas o Windows recusou carregá-la [AVX sim; whisper.dll presente]". O erro completo agora vai para o log (📋 Relatório). Plano B se persistir: reconhecedor de voz do próprio Windows com gramática fixa (livros e números), sem DLL nativa nem download.
+   - O usuário aceita abandonar a voz se for inviável; prioridade é o atalho rápido por teclado como no Holyrics.
+
 ## 5. Feedback do usuário (último teste)
 - A lista de versões apareceu e projetou.
 - "Limpar telão" deixava o fundo do telão; ele quer ver a área de trabalho.
