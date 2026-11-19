@@ -78,7 +78,7 @@ public partial class MainWindow
     private void MainWindow_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         if (WorkspaceTabs.SelectedItem != BibleWorkspaceTab || _tapActive) return;
-        if (Keyboard.FocusedElement is TextBox or ComboBox or System.Windows.Controls.Primitives.TextBoxBase) return;
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox or System.Windows.Controls.ComboBox or System.Windows.Controls.Primitives.TextBoxBase) return;
         if (e.OriginalSource is Microsoft.Web.WebView2.Wpf.WebView2) return;
         if (string.IsNullOrEmpty(e.Text) || !char.IsLetterOrDigit(e.Text[0])) return;
 
