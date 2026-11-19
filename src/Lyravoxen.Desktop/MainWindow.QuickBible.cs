@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Lyravoxen.Models;
+using Lyravoxen.Services;
 
 namespace Lyravoxen;
 
@@ -96,6 +97,8 @@ public partial class MainWindow
             await Task.Delay(delay);
             try
             {
+                var moved = NativeWindows.SendToBack("Apresentação Rápida") + NativeWindows.SendToBack("Quick Presentation");
+                AppLog.Info("Janelas do Holyrics enviadas para trás: " + moved);
                 if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
                 Topmost = true;
                 if (!_pinnedOnTop) Topmost = false;
