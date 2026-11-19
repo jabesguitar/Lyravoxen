@@ -157,8 +157,27 @@ public sealed class HolyricsClient
             throw new InvalidOperationException("O Holyrics não retornou confirmação. Confira se o API Server Local está ativo.");
 
         EnsureApiSuccess(responseBody);
+        return DeniedActions(responseBody);
     }
 
+    /// <summary>Confere uma a uma as permissões do token e devolve um texto legível.</summary>
+    public async Task<string> DiagnoseAsync()
+    {
+        var settings = Load();
+        if (settings is null) return "Holyrics: ainda não configurado (use Conectar Holyrics).";
+        var text = new StringBuilder();
+        var actions = RequiredActions.Concat(new[] { "GetCurrentQuickPresentation", "GetCurrentPresentation" });
+        foreach (var action in actions)
+        {
+            try
+            {
+                var denied = await CheckPermissionAsync(settings, action);
+                text.AppendLine((denied.Count == 0 ? "  OK      " : "  NEGADA  ") + action);
+            }
+            catch (Exception ex) { text.AppendLine("  ERRO    " + action + ": " + ex.Message); }
+        }
+        return text.ToString();
+    }
 
     private static HttpRequestException HttpFailure(string action, HttpStatusCode status, string body)
     {

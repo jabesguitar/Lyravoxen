@@ -128,6 +128,10 @@ public partial class MainWindow
                 return;
             }
 
+            AppLog.Info("[voz] ouvi: " + heard);
+            var command = VoiceBibleCommandInterpreter.TryInterpret(heard);
+            if (command is not null && await ExecuteVoiceCommandAsync(command, heard)) return;
+
             var parsed = VoiceBibleReferenceParser.TryParse(heard);
             if (parsed is null)
             {
@@ -202,6 +206,14 @@ public partial class MainWindow
             return true;
         }
 
+        if (WorkspaceTabs.SelectedItem == BibleWorkspaceTab &&
+            (e.Key == System.Windows.Input.Key.F2 || e.Key == System.Windows.Input.Key.F3))
+        {
+            e.Handled = true;
+            if (!e.IsRepeat) _ = StepBibleVerseAsync(e.Key == System.Windows.Input.Key.F3 ? 1 : -1);
+            return true;
+        }
+
         if (!typing && BibleVoiceConfirmPanel.Visibility == Visibility.Visible &&
             WorkspaceTabs.SelectedItem == BibleWorkspaceTab)
         {
@@ -236,6 +248,50 @@ public partial class MainWindow
             }
         }
 
+        return false;
+    }
+
+    /// <summary>Executa um comando falado. Devolve false se o comando não se aplica (cai na referência).</summary>
+    private async Task<bool> ExecuteVoiceCommandAsync(VoiceBibleCommand command, string heard)
+    {
+        var confirmationOpen = BibleVoiceConfirmPanel.Visibility == Visibility.Visible && BibleVoiceConfirmButton.IsEnabled;
+        switch (command.Kind)
+        {
+            case VoiceBibleCommandKind.Confirm:
+                if (!confirmationOpen) return false;
+                await ConfirmVoiceProjectionAsync();
+                return true;
+            case VoiceBibleCommandKind.Cancel:
+                HideVoiceConfirmation();
+                SetBibleStatus("Cancelado por voz.");
+                return true;
+            case VoiceBibleCommandKind.Next:
+                await StepBibleVerseAsync(1);
+                return true;
+            case VoiceBibleCommandKind.Previous:
+                await StepBibleVerseAsync(-1);
+                return true;
+            case VoiceBibleCommandKind.Project:
+                HideVoiceConfirmation();
+                await ProjectBibleSelectionAsync();
+                return true;
+            case VoiceBibleCommandKind.Clear:
+                ClearBibleProjection_Click(this, new RoutedEventArgs());
+                return true;
+            case VoiceBibleCommandKind.Verse:
+                if (_bibleVerses.Count == 0)
+                {
+                    SetBibleStatus("Abra um capítulo antes de pedir um versículo (ouvi: “" + heard + "”).");
+                    return true;
+                }
+                SelectBibleVerses(command.VerseStart!.Value, command.VerseEnd);
+                BibleVoiceHeardText.Text = "Entendi: versículo" + (command.VerseEnd.HasValue ? "s " + command.VerseStart + " a " + command.VerseEnd : " " + command.VerseStart)
+                    + "    (ouvi: “" + heard + "”)";
+                BibleVoiceHintText.Text = "Enter confirma e projeta · Esc descarta";
+                BibleVoiceConfirmButton.IsEnabled = true;
+                BibleVoiceConfirmPanel.Visibility = Visibility.Visible;
+                return true;
+        }
         return false;
     }
 }

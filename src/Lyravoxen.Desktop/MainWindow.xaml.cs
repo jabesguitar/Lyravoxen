@@ -190,6 +190,7 @@ public partial class MainWindow : Window
     private void SetBibleStatus(string message, bool alsoGlobal = false)
     {
         BibleStatusText.Text = message;
+        Services.AppLog.Info("[bíblia] " + message);
         if (alsoGlobal) StatusText.Text = message;
     }
 
