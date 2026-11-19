@@ -19,6 +19,7 @@ internal static class WhisperDiagnostics
         }
         catch (Exception ex) when (IsNativeLoadFailure(ex))
         {
+            AppLog.Error("Falha ao carregar o whisper", ex);
             throw new InvalidOperationException(Explain(), ex);
         }
     }

@@ -341,8 +341,8 @@ public partial class MainWindow : Window
     {
         if (e.Key != System.Windows.Input.Key.Enter) return;
         e.Handled = true;
-        var control = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control;
-        await LocateBibleReferenceAsync(project: control);
+        ExpandTypedBookPrefix();
+        await LocateBibleReferenceAsync(project: true);
     }
 
     private async void BibleLocate_Click(object sender, RoutedEventArgs e)
@@ -605,6 +605,7 @@ public partial class MainWindow : Window
             {
                 await _holyrics.ShowBibleVerseAsync(referenceText, source.Id);
                 SetBibleStatus("Projetado no Holyrics: " + referenceText + " — " + source.Title, true);
+                _ = BringToFrontAsync();
             }
             catch (Exception ex)
             {
