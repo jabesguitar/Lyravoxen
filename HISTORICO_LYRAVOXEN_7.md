@@ -73,6 +73,13 @@
    - Voz: teste do usuário (Actions já compila) → "A biblioteca existe, mas o Windows recusou carregá-la [AVX sim; whisper.dll presente]". O erro completo agora vai para o log (📋 Relatório). Plano B se persistir: reconhecedor de voz do próprio Windows com gramática fixa (livros e números), sem DLL nativa nem download.
    - O usuário aceita abandonar a voz se for inviável; prioridade é o atalho rápido por teclado como no Holyrics.
 
+12. **Voz pelo Windows + fixar à frente** (ZIP `Lyravoxen-voz-windows`, **sem compilar**; arquivos: `src`):
+   - Relatório do usuário: PC Windows 10 (19045), 4 núcleos, **sem AVX2**; `whisper.dll` presente mas "Cannot load the library… PInvokeError: A operação foi concluída com êxito" (o Windows recusa carregar mesmo com o VC++). Digitação rápida da Bíblia **funcionou**; permissões do Holyrics todas OK no último Diagnóstico.
+   - Novo `Services/WindowsSpeechReferenceRecognizer.cs` (pacote `System.Speech`): se o Whisper não carrega, a voz da Bíblia usa o reconhecedor do Windows em pt-BR com gramática fechada (livros, números até 176, "capítulo/versículo", a/ao/até, comandos). Precisa do recurso "Reconhecimento de fala" do Português (Brasil) instalado; senão o app explica como instalar.
+   - **A sincronização automática de letras (loopback) também usa Whisper e continua indisponível neste PC**; usar Marcação por toque.
+   - Botão **📌 Fixar à frente** mantém o Lyravoxen sobre a "Apresentação Rápida" do Holyrics. Dica: arrastar essa janela do Holyrics para outro monitor (ele costuma lembrar a posição).
+   - Onde ficam as músicas: `%LocalAppData%\Lyravoxen\library.json` (+ `.bak`), histórico em `video-history.json`, mídia em `Media\`. Não há backup automático.
+
 ## 5. Feedback do usuário (último teste)
 - A lista de versões apareceu e projetou.
 - "Limpar telão" deixava o fundo do telão; ele quer ver a área de trabalho.
