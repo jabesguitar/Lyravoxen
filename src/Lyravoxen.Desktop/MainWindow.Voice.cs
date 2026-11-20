@@ -195,6 +195,15 @@ public partial class MainWindow
     /// <summary>Atalhos da voz (F4, Enter/Esc na confirmação) e da marcação por toque (Espaço/Backspace).</summary>
     private bool HandleVoiceAndTapKeys(System.Windows.Input.KeyEventArgs e)
     {
+        if (e.Key == System.Windows.Input.Key.F1)
+        {
+            e.Handled = true;
+            ShowHelp(WorkspaceTabs.SelectedItem);
+            return true;
+        }
+
+        if (HandleBibleNavigationKeys(e)) return true;
+
         var typing = e.OriginalSource is System.Windows.Controls.TextBox or
             System.Windows.Controls.Primitives.TextBoxBase or
             System.Windows.Controls.ComboBox;

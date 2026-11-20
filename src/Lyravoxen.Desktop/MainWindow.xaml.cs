@@ -80,6 +80,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitializeBackup();
+        InitializeRemote();
+        InitializeHelp();
         LoadHistory();
         LoadLibrary();
         Closing += async (_, _) =>
