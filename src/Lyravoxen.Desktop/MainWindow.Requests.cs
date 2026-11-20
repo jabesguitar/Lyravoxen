@@ -70,6 +70,7 @@ public partial class MainWindow
             SongRequestStore.Save(_requests);
             UpdateRequestsButton();
             RefreshRequestsWindow();
+            PrecheckRequestLyrics();
         }
         return (total, total > 0 ? "" : lastMessage);
     }
@@ -90,6 +91,7 @@ public partial class MainWindow
                 StatusText.Text = "📥 Novo pedido de " + who + ": " + added.Count + (added.Count == 1 ? " música." : " músicas.");
                 AppLog.Info("Pedido recebido de " + who + " (" + ip + "): " + added.Count);
                 RefreshRequestsWindow();
+                PrecheckRequestLyrics();
             }
             return (ok, message);
         }).Task;
@@ -198,6 +200,7 @@ public partial class MainWindow
             content.Children.Add(RequestText("De: " + (string.IsNullOrWhiteSpace(request.Group) ? "não informado" : request.Group) +
                                              " · " + request.ReceivedAt.ToString("dd/MM HH:mm"), 12, false, "#4A5A6B"));
             content.Children.Add(RequestText(request.Url, 12, false, "#2D6A9F"));
+            content.Children.Add(RequestText(RequestLyricsLine(request), 12, false, "#1A2430"));
 
             var buttons = new System.Windows.Controls.WrapPanel();
             var item = request;
@@ -248,6 +251,7 @@ public partial class MainWindow
         PlayNextButton.IsEnabled = true;
         StatusText.Text = "Próxima música preparada a partir do pedido" +
                           (string.IsNullOrWhiteSpace(request.Group) ? "." : " de " + request.Group + ".");
+        RefreshNextLyricsPreview();
         RemoveRequest(request);
     }
 
@@ -441,6 +445,7 @@ public partial class MainWindow
                              (string.IsNullOrWhiteSpace(request.Name) ? "" : ": " + request.Name) +
                              ". A música atual continua tocando até você selecionar Tocar próxima.";
         PlayNextButton.IsEnabled = true;
+        RefreshNextLyricsPreview();
         var who = string.IsNullOrWhiteSpace(request.Group) ? "" : " de " + request.Group;
         RemoveRequest(request);
         return "Próxima preparada: " + (string.IsNullOrWhiteSpace(request.Name) ? videoId : request.Name) + who + ".";

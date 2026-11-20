@@ -152,3 +152,8 @@
 - **Celular, aba Ao vivo**: Tocar próxima, pausar/continuar, encerrar música, preparar o pedido mais antigo como próxima/trocar (`MainWindow.Remote.cs`, página em `RemoteControlServer.cs`). Tocar/encerrar pedem confirmação no celular.
 - Testes novos no `Program.cs` (conversa Android/iPhone/Web, link de grupo).
 - Relatório de 19/11: Whisper não carrega neste PC (sem AVX2) mesmo com o pacote NoAvx; usa o reconhecimento do Windows. Pendente investigar com o erro bruto do Actions/pacote.
+
+## 12. Prévia de letra da próxima música e dos pedidos (SEM compilar, sem teste)
+- `Services/LyricsPreviewService.cs` (sem janelas): dado o videoId, procura (1) a letra na biblioteca (mesmo vídeo ou a mesma música em outro vídeo), (2) senão pega o título no oEmbed do YouTube, limpa ("Clipe Oficial", "Ao Vivo"...) e consulta o catálogo lrclib. Resultado: ✅ sincronizada / 🟡 só texto ou artista não confere / ❌ não encontrada / ⚠ sem internet, com as 5 primeiras linhas para conferir se é o mesmo louvor. Cache em memória; erro vale só 2 min.
+- `MainWindow.NextLyrics.cs`: caixa de prévia no painel PRÓXIMA MÚSICA (aba de pesquisa) atualizada ao preparar a próxima (pelo botão, por pedido ou pelo celular) e ao abrir o app; botão 🔎 Verificar letra. Cada pedido na janela 📥 mostra a verificação (feita em fila, uma por vez, assim que o pedido chega). O celular mostra o resumo na aba Ao vivo.
+- Não altera nem salva nada; só informa. Testes novos no `Program.cs`.

@@ -98,7 +98,8 @@ public partial class MainWindow
 
     private string LiveStateText() =>
         "▶ Próxima: " + (string.IsNullOrWhiteSpace(_nextVideoUrl) ? "nenhuma preparada" : "preparada") +
-        " · 📥 " + _requests.Count + (_requests.Count == 1 ? " pedido" : " pedidos");
+        " · 📥 " + _requests.Count + (_requests.Count == 1 ? " pedido" : " pedidos") +
+        (string.IsNullOrWhiteSpace(_nextVideoUrl) || _nextLyrics is null ? "" : "\n" + _nextLyrics.Headline);
 
     private async Task<string> ToggleLivePlaybackAsync()
     {

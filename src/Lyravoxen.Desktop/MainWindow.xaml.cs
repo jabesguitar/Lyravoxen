@@ -82,6 +82,7 @@ public partial class MainWindow : Window
         InitializeBackup();
         InitializeRemote();
         InitializeRequests();
+        InitializeNextLyrics();
         InitializeHelp();
         LoadHistory();
         LoadLibrary();
@@ -892,6 +893,7 @@ public partial class MainWindow : Window
         NextTrackText.Text = "Próxima faixa preparada (" + videoId + "). A música atual continua tocando até você selecionar Tocar próxima.";
         PlayNextButton.IsEnabled = true;
         StatusText.Text = "Próxima música preparada sem interromper a reprodução atual.";
+        RefreshNextLyricsPreview();
     }
 
     private async void PlayNextPrepared_Click(object sender, RoutedEventArgs e)
@@ -1875,6 +1877,7 @@ public partial class MainWindow : Window
                         SaveNextVideoPreference();
                         PlayNextButton.IsEnabled = false;
                         NextTrackText.Text = "Pesquise e prepare a próxima música.";
+                        RefreshNextLyricsPreview();
                         StatusText.Text = "Próxima música carregada e player confirmado.";
                     }
                     else

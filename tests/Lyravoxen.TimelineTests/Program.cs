@@ -178,4 +178,19 @@ var token = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"grupo\
 Check(SongRequestStore.MessagesToJson("[19/11/2026 20:15:10] Rui: 🎵 Pedido\n#LYRA:" + token)[0].Contains("Rui"), "formulário: remetente preenche o grupo vazio");
 Check(WhatsAppSettings.NormalizeGroupLink("veja https://chat.whatsapp.com/AbCdEfGhIjKlMn?x=1") == "https://chat.whatsapp.com/AbCdEfGhIjKlMn" && WhatsAppSettings.NormalizeGroupLink("https://exemplo.com/x") == "", "link de convite do grupo");
 
+// Prévia de letra da próxima música.
+Check(LyricsPreviewService.CleanTitle("Eliã Oliveira - Reconstrução (Clipe Oficial) [HD]") == "Eliã Oliveira - Reconstrução", "prévia: título limpo");
+Check(LyricsPreviewService.BuildQueries("Reconstrução - Eliã Oliveira (Ao Vivo)").SequenceEqual(new[] { "Reconstrução - Eliã Oliveira", "Reconstrução", "Eliã Oliveira" }), "prévia: consultas com cada parte do título");
+Check(LyricsPreviewService.Normalize("Reconstrução!") == "reconstrucao", "prévia: normalização sem acentos");
+Check(LyricsPreviewService.LrcTextLines("[00:12.30] Primeira linha\n[00:20.00][00:40.00]Refrão\n[00:50.00]").SequenceEqual(new[] { "Primeira linha", "Refrão" }), "prévia: tira tempos do .lrc");
+var catalog = System.Text.Json.JsonDocument.Parse("""
+[{"trackName":"Deus","artistName":"Outro","plainLyrics":"x\ny\nz\nw"},
+ {"trackName":"Reconstrução","artistName":"Eliã Oliveira","plainLyrics":"texto\nsem tempos\na\nb"},
+ {"trackName":"Reconstrução","artistName":"Eliã Oliveira","syncedLyrics":"[00:10.00] Nada mais\n[00:15.00] Resta"}]
+""").RootElement.EnumerateArray().Select(e => e.Clone()).ToList();
+var picked = LyricsPreviewService.Pick(catalog, "Reconstrução - Eliã Oliveira (Clipe Oficial)", "Eliã Oliveira");
+Check(picked.Availability == LyricsAvailability.Synced && picked.ArtistMatches && picked.Preview.StartsWith("Nada mais"), "prévia: prefere letra sincronizada e mostra as primeiras linhas");
+Check(LyricsPreviewService.Pick(catalog, "Deus é fiel - Banda", "Canal").Availability == LyricsAvailability.NotFound, "prévia: nome curto dentro de outro título não conta");
+Check(LyricsPreviewService.Pick(new System.Text.Json.JsonElement[0], "Qualquer", "x").Availability == LyricsAvailability.NotFound, "prévia: sem resultados = não encontrada");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");
