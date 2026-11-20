@@ -21,6 +21,10 @@ internal sealed class LyricsPreview
     public int CueCount { get; init; }
     /// <summary>Primeiras linhas da letra, para o operador conferir se é o mesmo louvor.</summary>
     public string Preview { get; init; } = "";
+    /// <summary>Frases com tempo da letra do catálogo (vazio se só houver texto ou se veio da biblioteca).</summary>
+    public List<LyricCue> Cues { get; init; } = new();
+    /// <summary>Letra completa em texto, sem tempos.</summary>
+    public string PlainText { get; init; } = "";
     public DateTime CreatedAt { get; init; } = DateTime.Now;
 
     public string Headline => Availability switch
@@ -101,22 +105,78 @@ internal static class LyricsPreviewService
 
         try
         {
-            var items = new List<JsonElement>();
-            foreach (var query in BuildQueries(title))
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(query));
-                using var response = await Http.SendAsync(request);
-                if (!response.IsSuccessStatusCode) continue;
-                using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-                if (json.RootElement.ValueKind == JsonValueKind.Array)
-                    items.AddRange(json.RootElement.EnumerateArray().Select(item => item.Clone()));
-            }
+            var items = await SearchCatalogAsync(BuildQueries(title));
             return Store(videoId, Pick(items, title, author));
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
             return Store(videoId, new LyricsPreview { Availability = LyricsAvailability.Error, VideoTitle = title });
         }
+    }
+
+    /// <summary>Consulta o catálogo (lrclib) em paralelo, uma consulta por termo.</summary>
+    private static async Task<List<JsonElement>> SearchCatalogAsync(IEnumerable<string> queries)
+    {
+        var tasks = queries.Select(async query =>
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(query));
+            using var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<JsonElement>();
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            return json.RootElement.ValueKind == JsonValueKind.Array
+                ? json.RootElement.EnumerateArray().Select(item => item.Clone()).ToList()
+                : new List<JsonElement>();
+        }).ToList();
+        return (await Task.WhenAll(tasks)).SelectMany(list => list).ToList();
+    }
+
+    /// <summary>Letra já salva na biblioteca para este vídeo (ou null). Chamar da thread da tela.</summary>
+    public static LyricsPreview? LibraryMatch(string videoId, IEnumerable<LibraryFolder> library)
+    {
+        var video = library.SelectMany(folder => folder.Videos)
+            .FirstOrDefault(item => !item.IsOffline && item.VideoId == videoId && HasLyrics(item));
+        return video is null ? null : FromLibrary(video, video.Title);
+    }
+
+    /// <summary>Procura a letra pelo nome da música e do autor digitados pelo operador (não usa o título do vídeo).</summary>
+    public static async Task<LyricsPreview> SearchByNamesAsync(string track, string artist)
+    {
+        track = (track ?? "").Trim();
+        artist = (artist ?? "").Trim();
+        if (track.Length == 0) return new LyricsPreview { Availability = LyricsAvailability.NotFound };
+        try
+        {
+            var queries = new List<string>();
+            if (artist.Length > 0) queries.Add(track + " " + artist);
+            queries.Add(track);
+            var items = await SearchCatalogAsync(queries.Distinct(StringComparer.OrdinalIgnoreCase));
+            // Reaproveita a mesma escolha usada para títulos de vídeo: "música - autor".
+            return Pick(items, artist.Length > 0 ? track + " - " + artist : track, artist);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return new LyricsPreview { Availability = LyricsAvailability.Error };
+        }
+    }
+
+    /// <summary>Converte uma letra .lrc ("[01:23.45] texto") em frases com tempo.</summary>
+    public static List<LyricCue> ParseLrc(string? lrc)
+    {
+        var cues = new List<LyricCue>();
+        foreach (var raw in (lrc ?? "").Replace("\r", "").Split('\n'))
+        {
+            var tags = Regex.Matches(raw, @"\[(\d{1,3}):(\d{1,2}(?:[.,]\d{1,3})?)\]");
+            if (tags.Count == 0) continue;
+            var text = Regex.Replace(raw, @"^(\s*\[\d[^\]]*\])+\s*", "").Trim();
+            if (text.Length == 0) continue;
+            foreach (Match tag in tags)
+            {
+                var seconds = int.Parse(tag.Groups[1].Value, CultureInfo.InvariantCulture) * 60 +
+                              double.Parse(tag.Groups[2].Value.Replace(',', '.'), CultureInfo.InvariantCulture);
+                cues.Add(new LyricCue { Seconds = seconds, Text = text });
+            }
+        }
+        return cues.OrderBy(cue => cue.Seconds).ToList();
     }
 
     private static bool HasLyrics(LibraryVideo video) => video.Cues.Count > 0 || !string.IsNullOrWhiteSpace(video.FullLyrics);
@@ -186,7 +246,7 @@ internal static class LyricsPreviewService
         var normalizedAuthor = Normalize(Regex.Replace(author ?? "", @"\s*-\s*topic$|vevo$|\s+oficial$|\s+official$", "", RegexOptions.IgnoreCase));
         var titleParts = Regex.Split(cleanedTitle, @"\s+[-–—|]\s+").Select(Normalize).Where(part => part.Length > 0).ToList();
 
-        var best = new List<(double Score, bool Synced, bool ArtistOk, string Track, string Artist, string Text)>();
+        var best = new List<(double Score, bool Synced, bool ArtistOk, string Track, string Artist, string Text, List<LyricCue> Cues)>();
         foreach (var item in items)
         {
             string Str(string name) => item.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.String ? element.GetString() ?? "" : "";
@@ -201,12 +261,14 @@ internal static class LyricsPreviewService
             var artistOk = normalizedArtist.Length >= 3 &&
                            (ContainsPhrase(normalizedTitle, normalizedArtist) || ContainsPhrase(normalizedAuthor, normalizedArtist) ||
                             ContainsPhrase(normalizedArtist, normalizedAuthor) && normalizedAuthor.Length >= 3);
-            var synced = Str("syncedLyrics");
+            var syncedText = Str("syncedLyrics");
             var plain = Str("plainLyrics");
-            var text = !string.IsNullOrWhiteSpace(synced) ? synced : plain;
+            var cues = string.IsNullOrWhiteSpace(syncedText) ? new List<LyricCue>() : ParseLrc(syncedText);
+            var isSynced = cues.Count >= 2;
+            var text = isSynced ? syncedText : (!string.IsNullOrWhiteSpace(plain) ? plain : "");
             if (string.IsNullOrWhiteSpace(text)) continue;
             var score = (exact ? 4 : 0) + (artistOk ? 3 : 0) + Math.Min(normalizedTrack.Length, 40) / 100d;
-            best.Add((score, !string.IsNullOrWhiteSpace(synced), artistOk, foundTrack, foundArtist, text));
+            best.Add((score, isSynced, artistOk, foundTrack, foundArtist, text, cues));
         }
 
         if (best.Count == 0) return new LyricsPreview { Availability = LyricsAvailability.NotFound, VideoTitle = title };
@@ -220,7 +282,9 @@ internal static class LyricsPreviewService
             FoundTrack = pick.Track,
             FoundArtist = pick.Artist,
             ArtistMatches = pick.ArtistOk,
-            Preview = FirstLines(lines)
+            Preview = FirstLines(lines),
+            Cues = pick.Synced ? pick.Cues : new List<LyricCue>(),
+            PlainText = string.Join("\n", pick.Synced ? LrcTextLines(pick.Text) : pick.Text.Replace("\r", "").Split('\n')).Trim()
         };
     }
 }

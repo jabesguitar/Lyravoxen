@@ -87,7 +87,7 @@ internal sealed class RemoteControlServer : IDisposable
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-                timeout.CancelAfter(TimeSpan.FromSeconds(20));
+                timeout.CancelAfter(TimeSpan.FromSeconds(45)); // a verificação de letra pode levar alguns segundos
                 var stream = client.GetStream();
                 var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address.ToString() ?? "?";
 
@@ -213,6 +213,8 @@ button{font-size:18px;padding:16px;border:0;border-radius:12px;background:#1d2a3
 button.main{background:#176e68}button.warn{background:#8c3b3b}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
 #st{margin-top:12px;font-size:14px;color:#8fa1b3;min-height:40px;white-space:pre-wrap}
+.card{background:#0f171f;border:1px solid #1f2d3b;border-radius:14px;padding:10px;margin:10px 0}
+.card input{margin:6px 0}
 </style></head><body>
 <h1>Lyravoxen · Controle</h1>
 <div id="pinbox"><input id="pin" inputmode="numeric" placeholder="PIN mostrado no computador" autocomplete="off">
@@ -220,6 +222,10 @@ button.main{background:#176e68}button.warn{background:#8c3b3b}
 <div id="app" style="display:none">
 <div class="row"><button id="t-bible" class="main" onclick="tab('bible')">📖 Bíblia</button><button id="t-live" onclick="tab('live')">▶ Ao vivo</button></div>
 <div id="p-live" style="display:none">
+<div class="card"><b>Próxima música</b>
+<input id="nt" placeholder="Música (use o microfone do teclado)" autocomplete="off">
+<input id="na" placeholder="Autor / intérprete" autocomplete="off">
+<div class="row"><button onclick="nextCheck()">🔎 Verificar letra</button><button class="main" onclick="nextConfirm()">✅ Confirmar letra</button></div></div>
 <button class="main" onclick="ask('playnext','Tocar a próxima música agora?')">⏭ Tocar próxima</button>
 <div class="row"><button onclick="cmd('toggle')">⏯ Pausar / continuar</button><button class="warn" onclick="ask('endlive','Encerrar a música e limpar a projeção?')">⏹ Encerrar</button></div>
 <div class="row"><button onclick="cmd('reqnext')">📥 Pedido → próxima</button><button onclick="ask('reqreplace','Trocar a próxima preparada pelo pedido mais antigo?')">Trocar pelo pedido</button></div>
@@ -236,11 +242,15 @@ var pin='';try{pin=localStorage.getItem('lyra-pin')||'';}catch(e){}
 function $(id){return document.getElementById(id);}
 function show(){$('pinbox').style.display=pin?'none':'block';$('app').style.display=pin?'block':'none';}
 function savePin(){pin=$('pin').value.trim();if(pin){try{localStorage.setItem('lyra-pin',pin);}catch(e){}show();cmd('state');}}
-async function cmd(c,a){
+var holdUntil=0;
+function nextCheck(){holdUntil=Date.now()+90000;$('st').textContent='Verificando a letra…';cmd('nextcheck',$('nt').value.trim()+'\n'+$('na').value.trim());}
+function nextConfirm(){holdUntil=Date.now()+90000;cmd('nextconfirm');}
+async function cmd(c,a,poll){
  try{
   var r=await fetch('/api?pin='+encodeURIComponent(pin)+'&c='+c+'&a='+encodeURIComponent(a||''));
   var j=await r.json();
   if(r.status===401){try{localStorage.removeItem('lyra-pin');}catch(e){}pin='';show();}
+  if(poll&&Date.now()<holdUntil)return;
   $('st').textContent=j.status||j.error||'';
  }catch(e){$('st').textContent='Sem conexão com o computador.';}
 }
@@ -248,7 +258,7 @@ function tab(t){$('p-bible').style.display=t==='bible'?'block':'none';$('p-live'
 function ask(c,q){if(confirm(q))cmd(c);}
 function go(){var v=$('ref').value.trim();if(v){cmd('ref',v);$('ref').select();}}
 show();if(pin)cmd('state');
-setInterval(function(){if(pin)cmd('state');},4000);
+setInterval(function(){if(pin)cmd('state','',true);},4000);
 </script></body></html>
 """;
 

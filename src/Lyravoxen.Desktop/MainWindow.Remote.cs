@@ -62,8 +62,11 @@ public partial class MainWindow
                 {
                     case "playnext":
                         if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return "Não há próxima música preparada." + "\n" + LiveStateText();
+                        var lyricsWarning = NextLyricsWarning();
                         PlayNextPrepared_Click(this, new RoutedEventArgs());
-                        return "Tocando a próxima música…" + "\n" + LiveStateText();
+                        return "Tocando a próxima música…" + lyricsWarning + "\n" + LiveStateText();
+                    case "nextcheck": return await CheckNextLyricsFromRemoteAsync(argument);
+                    case "nextconfirm": return ConfirmNextLyricsFromRemote();
                     case "toggle": return await ToggleLivePlaybackAsync() + "\n" + LiveStateText();
                     case "endlive":
                         EndPlaybackManually_Click(this, new RoutedEventArgs());

@@ -157,3 +157,9 @@
 - `Services/LyricsPreviewService.cs` (sem janelas): dado o videoId, procura (1) a letra na biblioteca (mesmo vídeo ou a mesma música em outro vídeo), (2) senão pega o título no oEmbed do YouTube, limpa ("Clipe Oficial", "Ao Vivo"...) e consulta o catálogo lrclib. Resultado: ✅ sincronizada / 🟡 só texto ou artista não confere / ❌ não encontrada / ⚠ sem internet, com as 5 primeiras linhas para conferir se é o mesmo louvor. Cache em memória; erro vale só 2 min.
 - `MainWindow.NextLyrics.cs`: caixa de prévia no painel PRÓXIMA MÚSICA (aba de pesquisa) atualizada ao preparar a próxima (pelo botão, por pedido ou pelo celular) e ao abrir o app; botão 🔎 Verificar letra. Cada pedido na janela 📥 mostra a verificação (feita em fila, uma por vez, assim que o pedido chega). O celular mostra o resumo na aba Ao vivo.
 - Não altera nem salva nada; só informa. Testes novos no `Program.cs`.
+
+## 13. Celular (aba Ao vivo): música e autor da próxima + verificar e confirmar a letra (SEM compilar, sem teste)
+- Página do celular: campos Música/Autor (microfone do teclado), 🔎 Verificar letra (`nextcheck`), ✅ Confirmar letra (`nextconfirm`), ⏭ Tocar próxima. O resultado fica na tela por 90 s (a atualização automática de 4 s não apaga mais).
+- `LyricsPreviewService.SearchByNamesAsync` procura pelo nome/autor digitados (ou pelo título do vídeo se vazio); `ParseLrc` guarda as frases com tempo. Confirmar grava/atualiza o vídeo na biblioteca (pasta "Músicas sincronizadas") com TrackName, Artist, FullLyrics e Cues; ao tocar a próxima, `LoadVideoAsync` já carrega essas frases e a projeção segue o player.
+- Só texto (sem tempos) é salvo mas não roda sozinho; "Tocar próxima" avisa quando não há letra com tempos. Tempos do catálogo são da gravação de estúdio: playback/ao vivo pode desalinhar (usar Tudo ±0,5 s ou marcação por toque).
+- Consultas ao catálogo agora em paralelo; timeout do servidor do celular subiu para 45 s.

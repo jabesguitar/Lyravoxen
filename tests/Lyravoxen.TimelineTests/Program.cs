@@ -193,4 +193,10 @@ Check(picked.Availability == LyricsAvailability.Synced && picked.ArtistMatches &
 Check(LyricsPreviewService.Pick(catalog, "Deus é fiel - Banda", "Canal").Availability == LyricsAvailability.NotFound, "prévia: nome curto dentro de outro título não conta");
 Check(LyricsPreviewService.Pick(new System.Text.Json.JsonElement[0], "Qualquer", "x").Availability == LyricsAvailability.NotFound, "prévia: sem resultados = não encontrada");
 
+var lrcCues = LyricsPreviewService.ParseLrc("[ti:x]\n[00:12.30] A\n[01:05.5][02:00.0] B\n[03:00.00]");
+Check(lrcCues.Count == 3 && lrcCues[0].Text == "A" && Math.Abs(lrcCues[1].Seconds - 65.5) < 0.001 && lrcCues[2].Seconds == 120, "prévia: .lrc vira frases com tempo (várias marcas por linha)");
+Check(picked.Cues.Count == 2 && picked.PlainText == "Nada mais\nResta", "prévia: escolha guarda frases e texto completo para confirmar");
+var byNames = LyricsPreviewService.Pick(catalog, "Reconstrução - Eliã Oliveira", "Eliã Oliveira");
+Check(byNames.Availability == LyricsAvailability.Synced && byNames.ArtistMatches, "prévia: busca por música e autor digitados");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");
