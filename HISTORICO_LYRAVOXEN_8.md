@@ -163,3 +163,11 @@
 - `LyricsPreviewService.SearchByNamesAsync` procura pelo nome/autor digitados (ou pelo título do vídeo se vazio); `ParseLrc` guarda as frases com tempo. Confirmar grava/atualiza o vídeo na biblioteca (pasta "Músicas sincronizadas") com TrackName, Artist, FullLyrics e Cues; ao tocar a próxima, `LoadVideoAsync` já carrega essas frases e a projeção segue o player.
 - Só texto (sem tempos) é salvo mas não roda sozinho; "Tocar próxima" avisa quando não há letra com tempos. Tempos do catálogo são da gravação de estúdio: playback/ao vivo pode desalinhar (usar Tudo ±0,5 s ou marcação por toque).
 - Consultas ao catálogo agora em paralelo; timeout do servidor do celular subiu para 45 s.
+
+## 14. Pedidos pela internet, de qualquer rede (Cloudflare Worker + KV, grátis) (SEM compilar, sem teste)
+- Pedido do usuário: o HTML enviado pelo WhatsApp deve mandar o pedido direto ao programa, sem exigir a mesma rede.
+- Janela 📥 Pedidos → ☁ Pedidos pela internet: endereço do serviço + senha (gerada, mín. 12) + busca automática a cada 20 s. **📄 Gerar código do serviço** salva `worker.js` (traz a página /pedido) e `LEIA-ME-nuvem.txt` (passo a passo no painel do Cloudflare, sem linha de comando). 🧪 Testar conexão (`/ping`).
+- Serviço (`Services/CloudWorker.cs`): POST `/enviar` (público, aceita formulário simples e JSON; exige link; texto ≤4000; fila ≤150; guarda 2 dias), GET `/pedidos?v=` e POST `/confirmar` e GET `/ping` (exigem `Authorization: Bearer <senha>` = ADMIN_TOKEN). A busca usa a chave `ultimo` para quase não gastar o limite grátis do KV (≈1000 gravações/listagens por dia, 100 mil leituras).
+- `Services/CloudRequestClient.cs` busca/confirma; o app importa com `ImportMessageText` (repetidos são ignorados) e só então apaga do serviço. Pode levar até ~1 min (KV é eventualmente consistente).
+- Formulário HTML (`OfflineRequestForm.Build(settings, sendUrl)`): com nuvem, o formulário simples (sem JS) faz POST ao serviço e o completo faz XMLHttpRequest; WhatsApp/grupo viram alternativas. A senha NUNCA vai no HTML. Arquivo `pedidos-whatsapp.txt` (agora com nuvem/senha) segue no backup.
+- Risco conhecido: quem tem o link público pode enviar pedidos (só texto com link); não consegue ler a fila sem a senha.

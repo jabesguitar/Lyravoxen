@@ -1,4 +1,5 @@
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Lyravoxen.Services;
@@ -17,6 +18,37 @@ internal sealed class WhatsAppSettings
     public string GroupLink { get; set; } = "";
     /// <summary>Importar sozinho os pedidos que forem copiados do WhatsApp (Web/Desktop) para a área de transferência.</summary>
     public bool WatchClipboard { get; set; } = true;
+    /// <summary>Endereço do serviço gratuito na nuvem que recebe os pedidos de qualquer rede (https://nome.conta.workers.dev).</summary>
+    public string CloudUrl { get; set; } = "";
+    /// <summary>Senha que só o Lyravoxen conhece, para buscar os pedidos no serviço. Nunca vai para o formulário HTML.</summary>
+    public string CloudToken { get; set; } = "";
+    /// <summary>Buscar os pedidos da internet sozinho, a cada 20 segundos.</summary>
+    public bool CloudAuto { get; set; } = true;
+
+    /// <summary>Endereço onde o formulário envia o pedido (vazio = sem nuvem).</summary>
+    public string SendUrl => CloudUrl.Length > 0 ? CloudUrl + "/enviar" : "";
+
+    /// <summary>Só aceita endereço https com nome de site simples; devolve só "https://site" (sem caminho) ou "".</summary>
+    public static string NormalizeCloudUrl(string? value)
+    {
+        var text = (value ?? "").Trim();
+        if (text.Length == 0) return "";
+        if (!text.Contains("://", StringComparison.Ordinal)) text = "https://" + text;
+        if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !uri.Host.Contains('.')) return "";
+        if (uri.Host.Any(c => !(char.IsAsciiLetterOrDigit(c) || c == '-' || c == '.'))) return "";
+        return "https://" + uri.Host + (uri.IsDefaultPort ? "" : ":" + uri.Port);
+    }
+
+    public static string SafeToken(string? value) =>
+        new string((value ?? "").Where(c => char.IsAsciiLetterOrDigit(c) || c == '-' || c == '_').Take(64).ToArray());
+
+    public static string NewToken()
+    {
+        const string alphabet = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var chars = new char[24];
+        for (var i = 0; i < chars.Length; i++) chars[i] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
+        return new string(chars);
+    }
 
     public static string DigitsOnly(string? value) => new((value ?? "").Where(char.IsDigit).ToArray());
 
@@ -60,6 +92,9 @@ internal sealed class WhatsAppSettings
                     case "grupo": settings.GroupName = SafeName(value); break;
                     case "link": settings.GroupLink = NormalizeGroupLink(value); break;
                     case "copiados": settings.WatchClipboard = value != "0"; break;
+                    case "nuvem": settings.CloudUrl = NormalizeCloudUrl(value); break;
+                    case "senha": settings.CloudToken = SafeToken(value); break;
+                    case "nuvemauto": settings.CloudAuto = value != "0"; break;
                 }
             }
         }
@@ -77,7 +112,10 @@ internal sealed class WhatsAppSettings
                 "numero=" + DigitsOnly(Number),
                 "grupo=" + SafeName(GroupName),
                 "link=" + NormalizeGroupLink(GroupLink),
-                "copiados=" + (WatchClipboard ? "1" : "0")
+                "copiados=" + (WatchClipboard ? "1" : "0"),
+                "nuvem=" + NormalizeCloudUrl(CloudUrl),
+                "senha=" + SafeToken(CloudToken),
+                "nuvemauto=" + (CloudAuto ? "1" : "0")
             });
         }
         catch (Exception ex) { AppLog.Error("Não foi possível salvar a configuração do WhatsApp", ex); }

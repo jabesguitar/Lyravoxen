@@ -22,6 +22,7 @@ public partial class MainWindow
         {
             UpdateRequestsButton();
             StartClipboardWatch();
+            StartCloudPolling();
         };
     }
 
@@ -50,6 +51,54 @@ public partial class MainWindow
             StatusText.Text = "📥 Pedido copiado do WhatsApp importado: " + added + (added == 1 ? " música." : " músicas.");
             AppLog.Info("Pedido importado da área de transferência: " + added);
         }
+    }
+
+    // ----- Pedidos pela internet (serviço gratuito na nuvem; ver CloudWorker) -----
+    private DispatcherTimer? _cloudTimer;
+    private string _cloudVersion = "";
+    private bool _cloudBusy;
+    private bool _cloudFailureLogged;
+
+    private void StartCloudPolling()
+    {
+        _cloudTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
+        _cloudTimer.Tick += async (_, _) => await CloudTickAsync();
+        _cloudTimer.Start();
+        _ = CloudTickAsync();
+    }
+
+    private bool CloudConfigured => _whatsApp.CloudUrl.Length > 0 && _whatsApp.CloudToken.Length > 0;
+
+    /// <summary>Busca os pedidos que chegaram ao serviço, importa e apaga do serviço o que já foi recebido.</summary>
+    private async Task CloudTickAsync(bool force = false)
+    {
+        if (_cloudBusy || !CloudConfigured || (!_whatsApp.CloudAuto && !force)) return;
+        _cloudBusy = true;
+        try
+        {
+            var result = await CloudRequestClient.FetchAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, force ? "" : _cloudVersion);
+            if (!result.Ok)
+            {
+                _cloudVersion = "";
+                if (!_cloudFailureLogged) { AppLog.Info("Pedidos pela internet: " + result.Message); _cloudFailureLogged = true; }
+                return;
+            }
+            _cloudFailureLogged = false;
+            if (result.Items.Count == 0) { _cloudVersion = result.Version; return; }
+
+            var total = 0;
+            foreach (var item in result.Items) total += ImportMessageText(item.Text).Added;
+            var acked = await CloudRequestClient.AckAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, result.Items.Select(item => item.Id));
+            // Se não conseguiu apagar, busca tudo de novo na próxima vez (repetidos são ignorados pelo endereço do link).
+            _cloudVersion = acked ? result.Version : "";
+            if (total > 0)
+            {
+                StatusText.Text = "📥 Pedido recebido pela internet: " + total + (total == 1 ? " música." : " músicas.");
+                AppLog.Info("Pedidos pela internet: " + total + " música(s) de " + result.Items.Count + " mensagem(ns).");
+            }
+        }
+        catch (Exception ex) { AppLog.Error("Pedidos pela internet falharam", ex); }
+        finally { _cloudBusy = false; }
     }
 
     /// <summary>Importa pedidos de um texto (mensagem, várias mensagens ou conversa inteira). Devolve quantas músicas entraram.</summary>
@@ -165,6 +214,18 @@ public partial class MainWindow
             }));
         }
 
+        if (_whatsApp.CloudUrl.Length > 0)
+        {
+            var cloudLink = _whatsApp.CloudUrl + "/pedido";
+            _requestsPanel.Children.Add(RequestText("Link de pedidos pela internet (funciona em qualquer rede):", 13, true));
+            _requestsPanel.Children.Add(new System.Windows.Controls.TextBox { Text = cloudLink, IsReadOnly = true, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
+            _requestsPanel.Children.Add(RequestButton("Copiar link da internet", () =>
+            {
+                try { System.Windows.Clipboard.SetText(cloudLink); StatusText.Text = "Link copiado: " + cloudLink; }
+                catch (Exception ex) { StatusText.Text = "Não foi possível copiar: " + ex.Message; }
+            }));
+        }
+
         var groupInfo = !string.IsNullOrEmpty(_whatsApp.GroupLink) || !string.IsNullOrEmpty(_whatsApp.GroupName)
             ? "Pelo WhatsApp — grupo: " + (string.IsNullOrEmpty(_whatsApp.GroupName) ? "(sem nome)" : _whatsApp.GroupName)
             : "Pelo WhatsApp (sem rede local):";
@@ -173,6 +234,7 @@ public partial class MainWindow
             "Num grupo: copie as mensagens de pedido no WhatsApp Web/Desktop (Ctrl+C) e elas entram aqui sozinhas" +
             (_whatsApp.WatchClipboard ? "." : " (importação automática DESLIGADA nas configurações)."), 12, false, "#4A5A6B"));
         var offlineButtons = new System.Windows.Controls.WrapPanel();
+        offlineButtons.Children.Add(RequestButton("☁ Pedidos pela internet (qualquer rede)", CloudSettingsDialog));
         offlineButtons.Children.Add(RequestButton("⚙ WhatsApp: número e grupo / formulário", WhatsAppSettingsDialog));
         offlineButtons.Children.Add(RequestButton("📋 Importar pedido (colar mensagem)", ImportRequestDialog));
         offlineButtons.Children.Add(RequestButton("🗂 Importar conversa exportada (.txt)", ImportChatFile));
@@ -409,7 +471,7 @@ public partial class MainWindow
             if (save.ShowDialog(dialog) != true) return;
             try
             {
-                System.IO.File.WriteAllText(save.FileName, OfflineRequestForm.Build(_whatsApp), new System.Text.UTF8Encoding(false));
+                System.IO.File.WriteAllText(save.FileName, OfflineRequestForm.Build(_whatsApp, _whatsApp.SendUrl), new System.Text.UTF8Encoding(false));
                 StatusText.Text = "Formulário salvo em " + save.FileName + ". Envie esse arquivo pelo WhatsApp.";
                 status.Foreground = Hex("#1A6B3A");
                 status.Text = "Salvo. No celular, se o arquivo abrir num visualizador, use ⋮ → Abrir com → Chrome. O formulário simples funciona mesmo sem isso.";
@@ -449,5 +511,105 @@ public partial class MainWindow
         var who = string.IsNullOrWhiteSpace(request.Group) ? "" : " de " + request.Group;
         RemoveRequest(request);
         return "Próxima preparada: " + (string.IsNullOrWhiteSpace(request.Name) ? videoId : request.Name) + who + ".";
+    }
+
+    private void CloudSettingsDialog()
+    {
+        System.Windows.Controls.TextBox Field(string value) => new() { Text = value, Margin = new Thickness(0, 4, 0, 10), FontSize = 14 };
+        var url = Field(_whatsApp.CloudUrl);
+        var token = Field(_whatsApp.CloudToken.Length > 0 ? _whatsApp.CloudToken : WhatsAppSettings.NewToken());
+        var auto = new System.Windows.Controls.CheckBox { Content = "Buscar pedidos da internet sozinho (a cada 20 s)", IsChecked = _whatsApp.CloudAuto, Margin = new Thickness(0, 0, 0, 10) };
+        var status = RequestText("", 12, false, "#B3261E");
+
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(14) };
+        panel.Children.Add(RequestText("☁ Pedidos pela internet", 18, true));
+        panel.Children.Add(RequestText(
+            "Um serviço gratuito (Cloudflare) guarda os pedidos enviados de qualquer rede até o Lyravoxen buscá-los. " +
+            "Faça uma vez: 1) clique em \"Gerar código do serviço\" e siga o LEIA-ME que ele cria junto; 2) cole abaixo o endereço que o Cloudflare der; 3) Testar conexão.", 12));
+        panel.Children.Add(RequestText("Endereço do serviço (ex.: https://lyravoxen-pedidos.seunome.workers.dev):", 12));
+        panel.Children.Add(url);
+        panel.Children.Add(RequestText("Senha (só o Lyravoxen e o serviço conhecem; não envie a ninguém):", 12));
+        panel.Children.Add(token);
+        panel.Children.Add(auto);
+        panel.Children.Add(status);
+
+        var dialog = new Window
+        {
+            Title = "Pedidos pela internet",
+            Owner = _requestsWindow ?? this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 600,
+            SizeToContent = SizeToContent.Height,
+            Background = Hex("#F5F7FA"),
+            Content = panel
+        };
+
+        bool Apply()
+        {
+            var normalized = WhatsAppSettings.NormalizeCloudUrl(url.Text);
+            if (!string.IsNullOrWhiteSpace(url.Text) && normalized.Length == 0)
+            {
+                status.Foreground = Hex("#B3261E");
+                status.Text = "Endereço inválido. Deve começar com https:// e ser o endereço do serviço (termina em .workers.dev).";
+                return false;
+            }
+            var newToken = WhatsAppSettings.SafeToken(token.Text);
+            if (newToken.Length < 12)
+            {
+                status.Foreground = Hex("#B3261E");
+                status.Text = "A senha precisa ter pelo menos 12 letras/números (use \"Nova senha\").";
+                return false;
+            }
+            if (normalized != _whatsApp.CloudUrl || newToken != _whatsApp.CloudToken) _cloudVersion = "";
+            _whatsApp.CloudUrl = normalized;
+            _whatsApp.CloudToken = newToken;
+            _whatsApp.CloudAuto = auto.IsChecked == true;
+            _whatsApp.Save();
+            RefreshRequestsWindow();
+            return true;
+        }
+
+        var buttons = new System.Windows.Controls.WrapPanel();
+        buttons.Children.Add(RequestButton("Salvar", () =>
+        {
+            if (!Apply()) return;
+            StatusText.Text = "Pedidos pela internet: configuração salva.";
+            dialog.Close();
+        }));
+        buttons.Children.Add(RequestButton("🧪 Testar conexão", async () =>
+        {
+            if (!Apply()) return;
+            if (!CloudConfigured) { status.Foreground = Hex("#B3261E"); status.Text = "Cole o endereço do serviço primeiro."; return; }
+            status.Foreground = Hex("#4A5A6B");
+            status.Text = "Testando…";
+            var (ok, message) = await CloudRequestClient.PingAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken);
+            status.Foreground = Hex(ok ? "#1A6B3A" : "#B3261E");
+            status.Text = ok ? "✅ Conectado. Os pedidos enviados de qualquer rede chegarão aqui." : message;
+            if (ok) _ = CloudTickAsync(force: true);
+        }));
+        buttons.Children.Add(RequestButton("📄 Gerar código do serviço (worker.js)", () =>
+        {
+            if (!Apply()) return;
+            var save = new Microsoft.Win32.SaveFileDialog { FileName = "worker.js", Filter = "Código do serviço (*.js)|*.js" };
+            if (save.ShowDialog(dialog) != true) return;
+            try
+            {
+                var folder = System.IO.Path.GetDirectoryName(save.FileName)!;
+                System.IO.File.WriteAllText(save.FileName, CloudWorker.Build(_whatsApp), new System.Text.UTF8Encoding(false));
+                System.IO.File.WriteAllText(System.IO.Path.Combine(folder, "LEIA-ME-nuvem.txt"),
+                    CloudWorker.Readme(System.IO.Path.GetFileName(save.FileName)), new System.Text.UTF8Encoding(true));
+                status.Foreground = Hex("#1A6B3A");
+                status.Text = "Salvei " + System.IO.Path.GetFileName(save.FileName) + " e LEIA-ME-nuvem.txt em " + folder + ". Siga o LEIA-ME.";
+            }
+            catch (Exception ex) { status.Foreground = Hex("#B3261E"); status.Text = "Não foi possível salvar: " + ex.Message; }
+        }));
+        buttons.Children.Add(RequestButton("🔑 Nova senha", () => { token.Text = WhatsAppSettings.NewToken(); status.Foreground = Hex("#4A5A6B"); status.Text = "Nova senha gerada. Salve e coloque a mesma no Cloudflare (ADMIN_TOKEN)."; }));
+        buttons.Children.Add(RequestButton("Copiar senha", () =>
+        {
+            try { System.Windows.Clipboard.SetText(token.Text); status.Foreground = Hex("#1A6B3A"); status.Text = "Senha copiada."; }
+            catch (Exception ex) { status.Foreground = Hex("#B3261E"); status.Text = "Não foi possível copiar: " + ex.Message; }
+        }));
+        panel.Children.Add(buttons);
+        dialog.Show();
     }
 }

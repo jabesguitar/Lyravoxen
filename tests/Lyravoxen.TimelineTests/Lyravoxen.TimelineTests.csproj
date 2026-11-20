@@ -18,5 +18,7 @@
     <Compile Include="../../src/Lyravoxen.Desktop/Services/AppLog.cs" Link="AppLog.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/SongRequestStore.cs" Link="SongRequestStore.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/WhatsAppSettings.cs" Link="WhatsAppSettings.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/OfflineRequestForm.cs" Link="OfflineRequestForm.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/CloudWorker.cs" Link="CloudWorker.cs" />
   </ItemGroup>
 </Project>

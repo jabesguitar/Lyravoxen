@@ -199,4 +199,16 @@ Check(picked.Cues.Count == 2 && picked.PlainText == "Nada mais\nResta", "prévia
 var byNames = LyricsPreviewService.Pick(catalog, "Reconstrução - Eliã Oliveira", "Eliã Oliveira");
 Check(byNames.Availability == LyricsAvailability.Synced && byNames.ArtistMatches, "prévia: busca por música e autor digitados");
 
+// Pedidos pela internet (Cloudflare).
+Check(WhatsAppSettings.NormalizeCloudUrl("x.workers.dev/pedido?a=1") == "https://x.workers.dev", "nuvem: endereço sem caminho");
+Check(WhatsAppSettings.NormalizeCloudUrl("http://x.workers.dev") == "" && WhatsAppSettings.NormalizeCloudUrl("https://x\"y.dev") == "", "nuvem: só https e nome simples");
+Check(WhatsAppSettings.NewToken().Length == 24, "nuvem: senha gerada");
+var cloudCfg = new WhatsAppSettings { CloudUrl = "https://x.workers.dev", CloudToken = "SEGREDOSEGREDO1234", Number = "5582999999999" };
+var cloudForm = OfflineRequestForm.Build(cloudCfg, cloudCfg.SendUrl);
+Check(cloudForm.Contains("method=\"post\" action=\"https://x.workers.dev/enviar\"") && cloudForm.Contains("SEND='https://x.workers.dev/enviar'"), "nuvem: formulário envia ao serviço, com e sem JavaScript");
+Check(!cloudForm.Contains("SEGREDO"), "nuvem: a senha nunca vai no formulário");
+Check(OfflineRequestForm.Build(cloudCfg).Contains("method=\"get\""), "formulário sem nuvem continua indo ao WhatsApp");
+var workerCode = CloudWorker.Build(cloudCfg);
+Check(workerCode.Contains("env.PEDIDOS") && workerCode.Contains("ADMIN_TOKEN") && workerCode.Contains("const PAGE = \"") && !workerCode.Contains("SEGREDO"), "nuvem: código do serviço traz a página e não traz a senha");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

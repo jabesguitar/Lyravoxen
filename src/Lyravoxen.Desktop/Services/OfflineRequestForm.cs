@@ -8,8 +8,11 @@ namespace Lyravoxen.Services;
 /// </summary>
 internal static class OfflineRequestForm
 {
-    public static string Build(WhatsAppSettings settings)
+    /// <param name="sendUrl">Endereço do serviço na nuvem que recebe o pedido (ex.: https://x.workers.dev/enviar ou "/enviar"); vazio = só WhatsApp.</param>
+    public static string Build(WhatsAppSettings settings, string? sendUrl = null)
     {
+        var cloud = !string.IsNullOrWhiteSpace(sendUrl);
+        sendUrl = cloud ? new string(sendUrl!.Trim().Where(c => char.IsAsciiLetterOrDigit(c) || "-._~:/".Contains(c)).ToArray()) : "";
         var number = WhatsAppSettings.DigitsOnly(settings.Number);
         var groupLink = WhatsAppSettings.NormalizeGroupLink(settings.GroupLink);
         var groupName = WhatsAppSettings.SafeName(settings.GroupName);
@@ -19,8 +22,12 @@ internal static class OfflineRequestForm
         var directAction = number.Length > 0 ? "https://wa.me/" + number : "https://wa.me/";
         var directLabel = number.Length > 0 ? "Enviar para o operador no WhatsApp" : "Enviar pelo WhatsApp (escolher contato)";
 
+        var plainMain = cloud
+            ? "<button class=\"main\" type=\"submit\">Enviar pedido ao operador</button>\n" +
+              "<button type=\"submit\" formmethod=\"get\" formaction=\"" + directAction + "\">" + directLabel + "</button>"
+            : "<button class=\"main\" type=\"submit\">" + directLabel + "</button>";
         var plainGroupButton = hasGroup
-            ? "<button class=\"grp\" type=\"submit\" formaction=\"https://wa.me/\">Enviar para o grupo" +
+            ? "<button class=\"grp\" type=\"submit\" formmethod=\"get\" formaction=\"https://wa.me/\">Enviar para o grupo" +
               (groupName.Length > 0 ? " " + groupName : "") + " (escolha o grupo na lista)</button>"
             : "";
         var plainGroupOpen = groupLink.Length > 0
@@ -34,6 +41,10 @@ internal static class OfflineRequestForm
             .Replace("__GN__", groupName)
             .Replace("__DIRECT_ACTION__", directAction)
             .Replace("__DIRECT_LABEL__", directLabel)
+            .Replace("__PLAIN_METHOD__", cloud ? "post" : "get")
+            .Replace("__PLAIN_ACTION__", cloud ? sendUrl : directAction)
+            .Replace("__PLAIN_MAIN__", plainMain)
+            .Replace("__SEND__", sendUrl)
             .Replace("__PLAIN_GROUP__", plainGroupButton)
             .Replace("__PLAIN_GROUP_OPEN__", plainGroupOpen);
     }
@@ -73,14 +84,14 @@ button.grp{background:#25508a}
 
 <div id="plain">
 <p>Escreva uma música por linha, com o nome e o link (do YouTube, por exemplo). Depois toque no botão para enviar pelo WhatsApp.</p>
-<form method="get" action="__DIRECT_ACTION__">
+<form method="__PLAIN_METHOD__" action="__PLAIN_ACTION__" accept-charset="utf-8">
 <textarea name="text" aria-label="Pedido de músicas">🎵 Pedido de músicas
 Conjunto: 
 
 1. Nome da música - link
 2. Nome da música - link
 3. Nome da música - link</textarea>
-<button class="main" type="submit">__DIRECT_LABEL__</button>
+__PLAIN_MAIN__
 __PLAIN_GROUP__
 </form>
 __PLAIN_GROUP_OPEN__
@@ -98,6 +109,7 @@ __PLAIN_GROUP_OPEN__
 <div id="out">
 <label>Mensagem pronta:</label>
 <textarea id="msg" readonly></textarea>
+<button type="button" class="main" id="b-send" style="display:none">Enviar pedido ao operador</button>
 <button type="button" class="main" id="b-wa">__DIRECT_LABEL__</button>
 <button type="button" class="grp" id="b-grp" style="display:none">Enviar para o grupo __GN__</button>
 <button type="button" id="b-open" style="display:none">Copiar e abrir o grupo __GN__</button>
@@ -108,13 +120,14 @@ __PLAIN_GROUP_OPEN__
 <div id="st"></div>
 <script>
 (function(){
-var n=0,WA='__WA__',GL='__GL__',GN='__GN__';
+var n=0,WA='__WA__',GL='__GL__',GN='__GN__',SEND='__SEND__';
 function $(id){return document.getElementById(id);}
 function say(t){$('st').textContent=t;}
 try{
  // Se este script está rodando, troca o formulário simples pelo completo.
  $('plain').style.display='none';
  $('fancy').style.display='block';
+ if(SEND){$('b-send').style.display='block';}
  if(GL||GN){$('b-grp').style.display='block';}
  if(GL){$('b-open').style.display='block';}
  function add(){
@@ -145,6 +158,19 @@ try{
   t.setAttribute('readonly','');
   return ok;
  }
+ $('b-send').onclick=function(){
+  say('Enviando…');
+  var x=new XMLHttpRequest();
+  x.open('POST',SEND,true);
+  x.setRequestHeader('Content-Type','application/json');
+  x.onreadystatechange=function(){
+   if(x.readyState!==4){return;}
+   var r=null;try{r=JSON.parse(x.responseText);}catch(e){}
+   if(x.status===200&&r&&r.ok){say('✅ '+r.status);$('b-send').style.display='none';}
+   else{say((r&&r.status)?r.status:'Não foi possível enviar agora. Use o botão do WhatsApp.');}
+  };
+  x.send(JSON.stringify({text:$('msg').value}));
+ };
  $('b-add').onclick=add;
  $('b-build').onclick=build;
  $('b-back').onclick=back;
