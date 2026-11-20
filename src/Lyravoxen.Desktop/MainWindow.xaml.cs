@@ -79,6 +79,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeBackup();
         LoadHistory();
         LoadLibrary();
         Closing += async (_, _) =>
