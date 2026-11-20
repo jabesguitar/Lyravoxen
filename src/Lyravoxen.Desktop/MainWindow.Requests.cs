@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Threading;
 using Lyravoxen.Services;
 
 namespace Lyravoxen;
@@ -9,11 +10,68 @@ public partial class MainWindow
     private List<SongRequest> _requests = new();
     private Window? _requestsWindow;
     private System.Windows.Controls.StackPanel? _requestsPanel;
+    private WhatsAppSettings _whatsApp = new();
+    private DispatcherTimer? _clipTimer;
+    private string _lastClip = "";
 
     private void InitializeRequests()
     {
         _requests = SongRequestStore.Load();
-        Loaded += (_, _) => UpdateRequestsButton();
+        _whatsApp = WhatsAppSettings.Load();
+        Loaded += (_, _) =>
+        {
+            UpdateRequestsButton();
+            StartClipboardWatch();
+        };
+    }
+
+    // Pedidos que chegam por um grupo do WhatsApp: o operador seleciona e copia as mensagens no WhatsApp Web/Desktop
+    // e o Lyravoxen importa sozinho (só textos que parecem pedido; links soltos copiados para outro fim são ignorados).
+    private void StartClipboardWatch()
+    {
+        try { _lastClip = System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText() : ""; } catch { _lastClip = ""; }
+        _clipTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+        _clipTimer.Tick += (_, _) => ClipboardTick();
+        _clipTimer.Start();
+    }
+
+    private void ClipboardTick()
+    {
+        if (!_whatsApp.WatchClipboard) return;
+        string? text;
+        try { text = System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText() : null; }
+        catch { return; } // a área de transferência pode estar em uso por outro programa; tenta no próximo ciclo
+        if (string.IsNullOrEmpty(text) || text == _lastClip) return;
+        _lastClip = text;
+        if (!SongRequestStore.LooksLikeRequest(text)) return;
+        var (added, _) = ImportMessageText(text);
+        if (added > 0)
+        {
+            StatusText.Text = "📥 Pedido copiado do WhatsApp importado: " + added + (added == 1 ? " música." : " músicas.");
+            AppLog.Info("Pedido importado da área de transferência: " + added);
+        }
+    }
+
+    /// <summary>Importa pedidos de um texto (mensagem, várias mensagens ou conversa inteira). Devolve quantas músicas entraram.</summary>
+    private (int Added, string Message) ImportMessageText(string text)
+    {
+        var jsons = SongRequestStore.MessagesToJson(text);
+        if (jsons.Count == 0) return (0, "Não encontrei links nessa mensagem.");
+        var total = 0;
+        var lastMessage = "";
+        foreach (var json in jsons)
+        {
+            var (added, ok, message) = SongRequestStore.Parse(json, _requests, DateTime.Now);
+            if (ok) { _requests.AddRange(added); total += added.Count; }
+            else lastMessage = message;
+        }
+        if (total > 0)
+        {
+            SongRequestStore.Save(_requests);
+            UpdateRequestsButton();
+            RefreshRequestsWindow();
+        }
+        return (total, total > 0 ? "" : lastMessage);
     }
 
     private void UpdateRequestsButton() => RequestsButton.Content = "📥 Pedidos (" + _requests.Count + ")";
@@ -105,10 +163,17 @@ public partial class MainWindow
             }));
         }
 
-        _requestsPanel.Children.Add(RequestText("Sem rede? Pelo WhatsApp:", 13, true));
+        var groupInfo = !string.IsNullOrEmpty(_whatsApp.GroupLink) || !string.IsNullOrEmpty(_whatsApp.GroupName)
+            ? "Pelo WhatsApp — grupo: " + (string.IsNullOrEmpty(_whatsApp.GroupName) ? "(sem nome)" : _whatsApp.GroupName)
+            : "Pelo WhatsApp (sem rede local):";
+        _requestsPanel.Children.Add(RequestText(groupInfo, 13, true));
+        _requestsPanel.Children.Add(RequestText(
+            "Num grupo: copie as mensagens de pedido no WhatsApp Web/Desktop (Ctrl+C) e elas entram aqui sozinhas" +
+            (_whatsApp.WatchClipboard ? "." : " (importação automática DESLIGADA nas configurações)."), 12, false, "#4A5A6B"));
         var offlineButtons = new System.Windows.Controls.WrapPanel();
+        offlineButtons.Children.Add(RequestButton("⚙ WhatsApp: número e grupo / formulário", WhatsAppSettingsDialog));
         offlineButtons.Children.Add(RequestButton("📋 Importar pedido (colar mensagem)", ImportRequestDialog));
-        offlineButtons.Children.Add(RequestButton("📄 Gerar formulário para enviar por WhatsApp", GenerateOfflineForm));
+        offlineButtons.Children.Add(RequestButton("🗂 Importar conversa exportada (.txt)", ImportChatFile));
         _requestsPanel.Children.Add(offlineButtons);
 
         if (_requests.Count == 0)
@@ -204,9 +269,6 @@ public partial class MainWindow
         catch (Exception ex) { StatusText.Text = "Não foi possível abrir o link: " + ex.Message; }
     }
 
-    private static readonly string WhatsAppFile = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "pedidos-whatsapp.txt");
-
     private void ImportRequestDialog()
     {
         var box = new System.Windows.Controls.TextBox
@@ -214,12 +276,22 @@ public partial class MainWindow
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
-            Height = 220,
+            Height = 240,
             Margin = new Thickness(0, 6, 0, 8)
         };
+        try
+        {
+            if (System.Windows.Clipboard.ContainsText())
+            {
+                var clip = System.Windows.Clipboard.GetText();
+                if (SongRequestStore.LooksLikeRequest(clip)) box.Text = clip;
+            }
+        }
+        catch { /* sem acesso à área de transferência: o campo fica vazio */ }
+
         var import = new System.Windows.Controls.Button { Content = "Importar", Padding = new Thickness(18, 6, 18, 6), HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
         var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(14) };
-        panel.Children.Add(RequestText("Cole aqui a mensagem recebida pelo WhatsApp (do formulário ou um texto com links):", 13));
+        panel.Children.Add(RequestText("Cole aqui a mensagem do WhatsApp — de uma pessoa, várias mensagens ou o trecho do grupo (do formulário ou texto com links):", 13));
         panel.Children.Add(box);
         panel.Children.Add(import);
         var dialog = new Window
@@ -227,77 +299,150 @@ public partial class MainWindow
             Title = "Importar pedido",
             Owner = _requestsWindow ?? this,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Width = 520,
+            Width = 540,
             SizeToContent = SizeToContent.Height,
             Background = Hex("#F5F7FA"),
             Content = panel
         };
         import.Click += (_, _) =>
         {
-            var json = SongRequestStore.MessageToJson(box.Text);
-            if (json is null)
+            var (added, message) = ImportMessageText(box.Text);
+            if (added > 0)
             {
-                System.Windows.MessageBox.Show(dialog, "Não encontrei links nessa mensagem.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-            var (added, ok, message) = SongRequestStore.Parse(json, _requests, DateTime.Now);
-            if (ok)
-            {
-                _requests.AddRange(added);
-                SongRequestStore.Save(_requests);
-                UpdateRequestsButton();
-                StatusText.Text = "📥 Pedido importado: " + added.Count + (added.Count == 1 ? " música." : " músicas.");
-                RefreshRequestsWindow();
+                StatusText.Text = "📥 Pedido importado: " + added + (added == 1 ? " música." : " músicas.");
                 dialog.Close();
             }
-            else
-            {
-                System.Windows.MessageBox.Show(dialog, message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            else System.Windows.MessageBox.Show(dialog, message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
         };
         dialog.Show();
         box.Focus();
     }
 
-    private void GenerateOfflineForm()
+    private void ImportChatFile()
     {
-        string saved = "";
-        try { if (System.IO.File.Exists(WhatsAppFile)) saved = System.IO.File.ReadAllText(WhatsAppFile).Trim(); } catch { }
+        var open = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Conversa exportada do WhatsApp (sem mídia)",
+            Filter = "Conversa do WhatsApp (*.txt)|*.txt|Todos os arquivos (*.*)|*.*"
+        };
+        if (open.ShowDialog(_requestsWindow ?? this) != true) return;
+        try
+        {
+            var text = System.IO.File.ReadAllText(open.FileName, System.Text.Encoding.UTF8);
+            var (added, message) = ImportMessageText(text);
+            StatusText.Text = added > 0 ? "📥 Conversa importada: " + added + (added == 1 ? " música." : " músicas.") : message;
+            System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                added > 0
+                    ? added + (added == 1 ? " música entrou" : " músicas entraram") + " na lista de espera (lidas as últimas 40 mensagens com pedidos; links já recebidos nos últimos 2 dias são ignorados)."
+                    : message,
+                "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível ler a conversa: " + ex.Message; }
+    }
 
-        var number = new System.Windows.Controls.TextBox { Text = saved, Margin = new Thickness(0, 6, 0, 8), FontSize = 15 };
-        var create = new System.Windows.Controls.Button { Content = "Gerar arquivo", Padding = new Thickness(18, 6, 18, 6), HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+    private void WhatsAppSettingsDialog()
+    {
+        System.Windows.Controls.TextBox Field(string value) => new() { Text = value, Margin = new Thickness(0, 4, 0, 10), FontSize = 14 };
+        var number = Field(_whatsApp.Number);
+        var groupName = Field(_whatsApp.GroupName);
+        var groupLink = Field(_whatsApp.GroupLink);
+        var watch = new System.Windows.Controls.CheckBox
+        {
+            Content = "Importar sozinho os pedidos copiados do WhatsApp Web/Desktop",
+            IsChecked = _whatsApp.WatchClipboard,
+            Margin = new Thickness(0, 0, 0, 10)
+        };
+        var status = RequestText("", 12, false, "#B3261E");
+
         var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(14) };
-        panel.Children.Add(RequestText("Seu WhatsApp para receber os pedidos, com país e DDD (ex.: 5582999999999). Deixe em branco para a pessoa escolher o contato:", 13));
+        panel.Children.Add(RequestText("WhatsApp: número e/ou grupo", 18, true));
+        panel.Children.Add(RequestText("Seu número, com país e DDD (ex.: 5582999999999). Deixe em branco se só for usar o grupo:", 12));
         panel.Children.Add(number);
-        panel.Children.Add(create);
+        panel.Children.Add(RequestText("Nome do grupo (aparece no formulário):", 12));
+        panel.Children.Add(groupName);
+        panel.Children.Add(RequestText("Link de convite do grupo (no WhatsApp: Dados do grupo → Convidar via link). Opcional, só serve para abrir o grupo:", 12));
+        panel.Children.Add(groupLink);
+        panel.Children.Add(watch);
+        panel.Children.Add(status);
+
         var dialog = new Window
         {
-            Title = "Formulário para WhatsApp",
+            Title = "WhatsApp — número e grupo",
             Owner = _requestsWindow ?? this,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Width = 520,
+            Width = 560,
             SizeToContent = SizeToContent.Height,
             Background = Hex("#F5F7FA"),
             Content = panel
         };
-        create.Click += (_, _) =>
+
+        bool Apply()
         {
-            var save = new Microsoft.Win32.SaveFileDialog
+            var link = WhatsAppSettings.NormalizeGroupLink(groupLink.Text);
+            if (!string.IsNullOrWhiteSpace(groupLink.Text) && link.Length == 0)
             {
-                FileName = "Pedido-de-musicas.html",
-                Filter = "Página HTML (*.html)|*.html"
-            };
+                status.Text = "Esse link não é de convite de grupo. Deve ser parecido com https://chat.whatsapp.com/AbCdEfGhIjK";
+                return false;
+            }
+            _whatsApp.Number = WhatsAppSettings.DigitsOnly(number.Text);
+            _whatsApp.GroupName = WhatsAppSettings.SafeName(groupName.Text);
+            _whatsApp.GroupLink = link;
+            _whatsApp.WatchClipboard = watch.IsChecked == true;
+            _whatsApp.Save();
+            RefreshRequestsWindow();
+            return true;
+        }
+
+        var buttons = new System.Windows.Controls.WrapPanel();
+        buttons.Children.Add(RequestButton("Salvar", () =>
+        {
+            if (Apply()) { StatusText.Text = "Configuração do WhatsApp salva."; dialog.Close(); }
+        }));
+        buttons.Children.Add(RequestButton("📄 Gerar formulário (.html)", () =>
+        {
+            if (!Apply()) return;
+            var save = new Microsoft.Win32.SaveFileDialog { FileName = "Pedido-de-musicas.html", Filter = "Página HTML (*.html)|*.html" };
             if (save.ShowDialog(dialog) != true) return;
             try
             {
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(WhatsAppFile)!);
-                System.IO.File.WriteAllText(WhatsAppFile, number.Text.Trim());
-                System.IO.File.WriteAllText(save.FileName, OfflineRequestForm.Build(number.Text), new System.Text.UTF8Encoding(false));
+                System.IO.File.WriteAllText(save.FileName, OfflineRequestForm.Build(_whatsApp), new System.Text.UTF8Encoding(false));
                 StatusText.Text = "Formulário salvo em " + save.FileName + ". Envie esse arquivo pelo WhatsApp.";
-                dialog.Close();
+                status.Foreground = Hex("#1A6B3A");
+                status.Text = "Salvo. No celular, se o arquivo abrir num visualizador, use ⋮ → Abrir com → Chrome. O formulário simples funciona mesmo sem isso.";
             }
-            catch (Exception ex) { StatusText.Text = "Não foi possível salvar o formulário: " + ex.Message; }
-        };
+            catch (Exception ex) { status.Text = "Não foi possível salvar o formulário: " + ex.Message; }
+        }));
+        buttons.Children.Add(RequestButton("💬 Copiar texto de convite para o grupo", () =>
+        {
+            try
+            {
+                System.Windows.Clipboard.SetText(OfflineRequestForm.GroupInvitationText());
+                status.Foreground = Hex("#1A6B3A");
+                status.Text = "Copiado. Cole no grupo: as pessoas respondem ali e você copia as respostas para o Lyravoxen importar.";
+            }
+            catch (Exception ex) { status.Text = "Não foi possível copiar: " + ex.Message; }
+        }));
+        panel.Children.Add(buttons);
         dialog.Show();
+    }
+
+    /// <summary>Usado pelo celular (aba Ao vivo): prepara o pedido mais antigo com link do YouTube como próxima música, sem janelas no PC.</summary>
+    private string PrepareOldestRequestForRemote(bool replace)
+    {
+        var request = _requests.OrderBy(r => r.ReceivedAt).FirstOrDefault(r => YouTubeLink.TryGetVideoId(r.Url) is not null);
+        if (request is null) return _requests.Count == 0 ? "Nenhum pedido na lista." : "Os pedidos da lista não têm link de vídeo do YouTube.";
+        if (!string.IsNullOrWhiteSpace(_nextVideoUrl) && !replace)
+            return "Já existe uma próxima preparada. Toque em \"Tocar próxima\" ou use \"Trocar pelo pedido\".";
+
+        var videoId = YouTubeLink.TryGetVideoId(request.Url)!;
+        _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
+        SaveNextVideoPreference();
+        NextTrackText.Text = "Próxima faixa preparada (" + videoId + ")" +
+                             (string.IsNullOrWhiteSpace(request.Name) ? "" : ": " + request.Name) +
+                             ". A música atual continua tocando até você selecionar Tocar próxima.";
+        PlayNextButton.IsEnabled = true;
+        var who = string.IsNullOrWhiteSpace(request.Group) ? "" : " de " + request.Group;
+        RemoveRequest(request);
+        return "Próxima preparada: " + (string.IsNullOrWhiteSpace(request.Name) ? videoId : request.Name) + who + ".";
     }
 }

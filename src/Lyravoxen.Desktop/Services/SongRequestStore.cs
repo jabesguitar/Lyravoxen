@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Lyravoxen.Services;
@@ -40,6 +41,7 @@ internal static class SongRequestStore
         {
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(requests, new JsonSerializerOptions { WriteIndented = true }));
+            Remember(requests.Select(r => r.Url));
         }
         catch (Exception ex) { AppLog.Error("Não foi possível salvar os pedidos", ex); }
     }
@@ -56,7 +58,7 @@ internal static class SongRequestStore
             if (!root.TryGetProperty("itens", out var items) || items.ValueKind != JsonValueKind.Array)
                 return (added, false, "Nenhuma música recebida.");
 
-            var known = new HashSet<string>(existing.Select(r => r.Url), StringComparer.OrdinalIgnoreCase);
+            var known = new HashSet<string>(existing.Select(r => r.Url).Concat(RecentlySeen()), StringComparer.OrdinalIgnoreCase);
             var ignored = 0;
             foreach (var item in items.EnumerateArray().Take(10))
             {
@@ -94,28 +96,148 @@ internal static class SongRequestStore
         }
     }
 
+    private static readonly string SeenPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "pedidos-vistos.txt");
+    private static readonly TimeSpan SeenFor = TimeSpan.FromDays(2);
+
+    /// <summary>Links já recebidos nos últimos 2 dias (mesmo que o pedido já tenha sido tocado ou descartado),
+    /// para que importar de novo a mesma conversa do grupo não traga tudo outra vez.</summary>
+    private static IEnumerable<string> RecentlySeen()
+    {
+        var result = new List<string>();
+        try
+        {
+            if (!File.Exists(SeenPath)) return result;
+            var limit = DateTime.UtcNow - SeenFor;
+            foreach (var line in File.ReadAllLines(SeenPath))
+            {
+                var tab = line.IndexOf('\t');
+                if (tab < 0 || !long.TryParse(line[..tab], out var ticks)) continue;
+                if (new DateTime(ticks, DateTimeKind.Utc) >= limit) result.Add(line[(tab + 1)..]);
+            }
+        }
+        catch { /* sem o histórico, só deixa de filtrar repetidos antigos */ }
+        return result;
+    }
+
+    private static void Remember(IEnumerable<string> urls)
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+            var limit = now - SeenFor;
+            var lines = new List<string>();
+            var have = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(SeenPath))
+            {
+                foreach (var line in File.ReadAllLines(SeenPath))
+                {
+                    var tab = line.IndexOf('\t');
+                    if (tab < 0 || !long.TryParse(line[..tab], out var ticks)) continue;
+                    if (new DateTime(ticks, DateTimeKind.Utc) < limit) continue;
+                    lines.Add(line);
+                    have.Add(line[(tab + 1)..]);
+                }
+            }
+            foreach (var url in urls)
+                if (!string.IsNullOrWhiteSpace(url) && have.Add(url)) lines.Add(now.Ticks + "\t" + url);
+            Directory.CreateDirectory(Path.GetDirectoryName(SeenPath)!);
+            File.WriteAllLines(SeenPath, lines.TakeLast(1000));
+        }
+        catch { /* histórico é só uma conveniência */ }
+    }
+
+    // Cabeçalhos de mensagem de conversa do WhatsApp: exportação do Android ("19/11/2026 20:15 - Maria: ..."),
+    // do iPhone ("[19/11/2026 20:15:10] Maria: ...") e cópia do WhatsApp Web ("[20:15, 19/11/2026] Maria: ...").
+    private static readonly Regex ChatHeader = new(
+        @"^\u200e?\u200f?(?:\[?\d{1,2}[/\.]\d{1,2}[/\.]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap]\.?[Mm]\.?)?\]?\s*-?\s*" +
+        @"|\[\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?,?\s*\d{1,2}[/\.]\d{1,2}[/\.]\d{2,4}\]\s*)" +
+        @"(?<sender>[^:\r\n]{1,60}?):\s?(?<msg>.*)$",
+        RegexOptions.Compiled);
+
+    private static readonly Regex GroupLine = new(
+        @"^(?:conjunto|grupo|banda|minist[eé]rio)\s*[:\-]\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Separa um texto de conversa do WhatsApp em mensagens (quem enviou + texto).
+    /// Sem cabeçalhos de conversa, devolve o texto inteiro como uma única mensagem sem remetente.</summary>
+    public static List<(string Sender, string Body)> SplitChat(string text)
+    {
+        var messages = new List<(string Sender, System.Text.StringBuilder Body)>();
+        foreach (var raw in (text ?? "").Replace("\r", "").Split('\n'))
+        {
+            var match = ChatHeader.Match(raw);
+            if (match.Success)
+            {
+                messages.Add((match.Groups["sender"].Value.Trim(), new System.Text.StringBuilder(match.Groups["msg"].Value)));
+            }
+            else if (messages.Count > 0) messages[^1].Body.Append('\n').Append(raw);
+            else messages.Add(("", new System.Text.StringBuilder(raw)));
+        }
+        return messages.Select(m => (m.Sender, m.Body.ToString())).ToList();
+    }
+
+    /// <summary>True se o texto copiado parece um pedido de música feito de propósito (e não só um link solto
+    /// que o operador copiou para outro fim): tem a marca do formulário, ou "Conjunto: X" / cabeçalho de conversa com link.</summary>
+    public static bool LooksLikeRequest(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length > 20000) return false;
+        if (text.Contains("#LYRA:", StringComparison.Ordinal)) return true;
+        if (!Regex.IsMatch(text, @"https?://|youtu\.be/|youtube\.com/|www\.", RegexOptions.IgnoreCase)) return false;
+        if (text.Contains("Pedido de músicas", StringComparison.OrdinalIgnoreCase)) return true;
+        foreach (var raw in text.Replace("\r", "").Split('\n'))
+        {
+            var line = raw.Trim();
+            if (GroupLine.IsMatch(line)) return true;
+            var header = ChatHeader.Match(line);
+            if (header.Success && GroupLine.IsMatch(header.Groups["msg"].Value.Trim())) return true;
+        }
+        return SplitChat(text).Count(m => m.Sender.Length > 0) > 0;
+    }
+
     /// <summary>
-    /// Converte uma mensagem colada (do WhatsApp) no JSON de pedido. Aceita a mensagem do formulário offline
-    /// (com a linha #LYRA:...) ou um texto livre com links ("Conjunto: X" e "nome - link" por linha).
+    /// Converte um texto colado (do WhatsApp, de uma pessoa ou de um grupo inteiro) em pedidos (JSON).
+    /// Entende a mensagem do formulário (linha #LYRA:...), texto livre ("Conjunto: X" e "nome - link" por linha)
+    /// e conversas copiadas/exportadas do WhatsApp (o nome de quem enviou vira o "conjunto" quando o texto não traz um).
     /// </summary>
-    public static string? MessageToJson(string text)
+    public static List<string> MessagesToJson(string text, int lastMessages = 40)
+    {
+        var result = new List<string>();
+        foreach (var (sender, body) in SplitChat(text).TakeLast(lastMessages))
+        {
+            var json = MessageToJson(body, sender);
+            if (json is not null) result.Add(json);
+        }
+        return result;
+    }
+
+    public static string? MessageToJson(string text, string defaultGroup = "")
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         var token = Regex.Match(text, @"#LYRA:([A-Za-z0-9+/=]+)");
         if (token.Success)
         {
-            try { return Encoding.UTF8.GetString(Convert.FromBase64String(token.Groups[1].Value)); }
-            catch (FormatException) { }
+            try
+            {
+                var json = Encoding.UTF8.GetString(Convert.FromBase64String(token.Groups[1].Value));
+                if (string.IsNullOrWhiteSpace(defaultGroup)) return json;
+                if (JsonNode.Parse(json) is JsonObject node)
+                {
+                    if (string.IsNullOrWhiteSpace((string?)node["grupo"])) node["grupo"] = defaultGroup;
+                    return node.ToJsonString();
+                }
+                return json;
+            }
+            catch (Exception ex) when (ex is FormatException or JsonException) { }
         }
 
-        var group = "";
+        var group = defaultGroup;
         var items = new List<object>();
         foreach (var raw in text.Split('\n'))
         {
             var line = raw.Trim();
             if (line.Length == 0) continue;
-            var groupMatch = Regex.Match(line, @"^(?:conjunto|grupo|banda|minist[eé]rio)\s*[:\-]\s*(.+)$", RegexOptions.IgnoreCase);
+            var groupMatch = GroupLine.Match(line);
             if (groupMatch.Success) { group = groupMatch.Groups[1].Value; continue; }
 
             var link = Regex.Match(line, @"(https?://\S+|(?:www\.|youtu\.be/|youtube\.com/)\S+)", RegexOptions.IgnoreCase);

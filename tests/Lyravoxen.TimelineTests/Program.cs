@@ -1,4 +1,5 @@
 using Lyravoxen.Models;
+using Lyravoxen.Services;
 
 static void Check(bool condition, string name)
 {
@@ -161,5 +162,20 @@ var partialTap = TapSyncPlanner.BuildCues(stanzas, new[] { 5d, 15d });
 Check(partialTap.Count == 5 && partialTap[^1].Text == "b3", "estrofes sem toque ficam de fora");
 Check(TapSyncPlanner.LinesBefore(stanzas, 2) == 5, "linhas antes da estrofe 3");
 Check(CueTimeline.BuildProjectionBlock(tapCues, TapSyncPlanner.LinesBefore(stanzas, 1), 4) == string.Join(Environment.NewLine, new[] { "a1", "a2", "b1", "b2" }), "projeção da estrofe usa o bloco rolante já existente");
+
+// Pedidos por WhatsApp (pessoa, grupo, exportação e cópia do WhatsApp Web).
+var android = "19/11/2026 20:15 - Maria: Conjunto: Jovens\n1. Santo - https://youtu.be/abcdefghijk\n19/11/2026 20:16 - Joao: Grande é o Senhor https://www.youtube.com/watch?v=12345678901\n19/11/2026 20:17 - Ana: oi pessoal";
+var chat = SongRequestStore.MessagesToJson(android);
+Check(chat.Count == 2, "grupo: só mensagens com link viram pedido");
+Check(chat[0].Contains("Jovens") && chat[1].Contains("Joao"), "grupo: 'Conjunto:' vale; sem ele o remetente vira o grupo");
+var ios = "[19/11/2026 20:15:10] Pedro: 1. Aleluia - https://youtu.be/abcdefghijk";
+Check(SongRequestStore.MessagesToJson(ios).Count == 1, "grupo: formato do iPhone");
+var web = "[20:15, 19/11/2026] Lia: Hosana https://youtu.be/abcdefghijk";
+Check(SongRequestStore.MessagesToJson(web).Count == 1, "grupo: formato do WhatsApp Web");
+Check(SongRequestStore.LooksLikeRequest(web) && SongRequestStore.LooksLikeRequest("Conjunto: X\nhttps://youtu.be/abcdefghijk"), "área de transferência: reconhece pedido");
+Check(!SongRequestStore.LooksLikeRequest("https://youtu.be/abcdefghijk") && !SongRequestStore.LooksLikeRequest("bom dia"), "área de transferência: link solto é ignorado");
+var token = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"grupo\":\"\",\"itens\":[{\"nome\":\"A\",\"link\":\"https://youtu.be/abcdefghijk\"}]}"));
+Check(SongRequestStore.MessagesToJson("[19/11/2026 20:15:10] Rui: 🎵 Pedido\n#LYRA:" + token)[0].Contains("Rui"), "formulário: remetente preenche o grupo vazio");
+Check(WhatsAppSettings.NormalizeGroupLink("veja https://chat.whatsapp.com/AbCdEfGhIjKlMn?x=1") == "https://chat.whatsapp.com/AbCdEfGhIjKlMn" && WhatsAppSettings.NormalizeGroupLink("https://exemplo.com/x") == "", "link de convite do grupo");
 
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

@@ -60,6 +60,17 @@ public partial class MainWindow
             {
                 switch (command)
                 {
+                    case "playnext":
+                        if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return "Não há próxima música preparada." + "\n" + LiveStateText();
+                        PlayNextPrepared_Click(this, new RoutedEventArgs());
+                        return "Tocando a próxima música…" + "\n" + LiveStateText();
+                    case "toggle": return await ToggleLivePlaybackAsync() + "\n" + LiveStateText();
+                    case "endlive":
+                        EndPlaybackManually_Click(this, new RoutedEventArgs());
+                        return "Música encerrada e projeção limpa." + "\n" + LiveStateText();
+                    case "reqnext": return PrepareOldestRequestForRemote(replace: false) + "\n" + LiveStateText();
+                    case "reqreplace": return PrepareOldestRequestForRemote(replace: true) + "\n" + LiveStateText();
+                    case "live": return LiveStateText();
                     case "ref":
                         if (string.IsNullOrWhiteSpace(argument)) return "Digite uma referência.";
                         BibleSearchBox.Text = argument.Trim();
@@ -75,7 +86,7 @@ public partial class MainWindow
                     case "state": break;
                     default: return "Comando desconhecido.";
                 }
-                return BibleStatusText.Text;
+                return BibleStatusText.Text + "\n" + LiveStateText();
             }
             catch (Exception ex)
             {
@@ -83,6 +94,24 @@ public partial class MainWindow
                 return "Erro: " + ex.Message;
             }
         }).Task.Unwrap();
+    }
+
+    private string LiveStateText() =>
+        "▶ Próxima: " + (string.IsNullOrWhiteSpace(_nextVideoUrl) ? "nenhuma preparada" : "preparada") +
+        " · 📥 " + _requests.Count + (_requests.Count == 1 ? " pedido" : " pedidos");
+
+    private async Task<string> ToggleLivePlaybackAsync()
+    {
+        if (_isLocalAudioPlaying) return "Pausar pelo celular só funciona com música do YouTube.";
+        if (YoutubePlayer.CoreWebView2 is null) return "Nenhuma música carregada.";
+        var result = await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(
+            "typeof player !== 'undefined' && player && typeof player.getPlayerState === 'function' ? (player.getPlayerState()===1 ? (player.pauseVideo(),'pausada') : (player.playVideo(),'tocando')) : 'sem player'");
+        return result.Trim('"') switch
+        {
+            "pausada" => "Música pausada.",
+            "tocando" => "Música tocando.",
+            _ => "O player ainda não está pronto."
+        };
     }
 
     private static System.Windows.Media.Brush Hex(string color) =>

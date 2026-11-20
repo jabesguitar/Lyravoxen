@@ -218,10 +218,18 @@ button.main{background:#176e68}button.warn{background:#8c3b3b}
 <div id="pinbox"><input id="pin" inputmode="numeric" placeholder="PIN mostrado no computador" autocomplete="off">
 <div class="row"><button class="main" onclick="savePin()">Entrar</button></div></div>
 <div id="app" style="display:none">
+<div class="row"><button id="t-bible" class="main" onclick="tab('bible')">📖 Bíblia</button><button id="t-live" onclick="tab('live')">▶ Ao vivo</button></div>
+<div id="p-live" style="display:none">
+<button class="main" onclick="ask('playnext','Tocar a próxima música agora?')">⏭ Tocar próxima</button>
+<div class="row"><button onclick="cmd('toggle')">⏯ Pausar / continuar</button><button class="warn" onclick="ask('endlive','Encerrar a música e limpar a projeção?')">⏹ Encerrar</button></div>
+<div class="row"><button onclick="cmd('reqnext')">📥 Pedido → próxima</button><button onclick="ask('reqreplace','Trocar a próxima preparada pelo pedido mais antigo?')">Trocar pelo pedido</button></div>
+</div>
+<div id="p-bible">
 <input id="ref" placeholder="Ex.: João 3 16 (use o microfone do teclado)" autocomplete="off" autocapitalize="none" onkeydown="if(event.key==='Enter')go()">
 <div class="row"><button class="main" onclick="go()">Projetar</button><button class="warn" onclick="cmd('clear')">Limpar telão</button></div>
 <div class="row"><button onclick="cmd('prev')">◀ Versículo</button><button onclick="cmd('next')">Versículo ▶</button></div>
 <div class="row"><button onclick="cmd('chprev')">◀ Capítulo</button><button onclick="cmd('chnext')">Capítulo ▶</button></div>
+</div>
 <div id="st"></div></div>
 <script>
 var pin='';try{pin=localStorage.getItem('lyra-pin')||'';}catch(e){}
@@ -236,6 +244,8 @@ async function cmd(c,a){
   $('st').textContent=j.status||j.error||'';
  }catch(e){$('st').textContent='Sem conexão com o computador.';}
 }
+function tab(t){$('p-bible').style.display=t==='bible'?'block':'none';$('p-live').style.display=t==='live'?'block':'none';$('t-bible').className=t==='bible'?'main':'';$('t-live').className=t==='live'?'main':'';}
+function ask(c,q){if(confirm(q))cmd(c);}
 function go(){var v=$('ref').value.trim();if(v){cmd('ref',v);$('ref').select();}}
 show();if(pin)cmd('state');
 setInterval(function(){if(pin)cmd('state');},4000);
