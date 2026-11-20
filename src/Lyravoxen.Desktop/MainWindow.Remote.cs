@@ -41,7 +41,7 @@ public partial class MainWindow
     {
         try
         {
-            _remote = new RemoteControlServer(LoadOrCreatePin()) { Handler = HandleRemoteCommandAsync };
+            _remote = new RemoteControlServer(LoadOrCreatePin()) { Handler = HandleRemoteCommandAsync, RequestHandler = HandleSongRequestAsync };
             _remote.Start();
             AppLog.Info("Controle remoto ativo na porta " + _remote.Port);
         }

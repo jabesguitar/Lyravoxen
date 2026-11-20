@@ -17,6 +17,23 @@ internal sealed class RemoteControlServer : IDisposable
     public string Pin { get; set; }
     public int Port { get; private set; }
     public Func<string, string, Task<string>>? Handler { get; set; }
+    public Func<string, string, Task<(bool Ok, string Message)>>? RequestHandler { get; set; }
+
+    private readonly Dictionary<string, Queue<DateTime>> _submissions = new();
+
+    /// <summary>No máximo 6 envios por minuto por aparelho.</summary>
+    private bool AllowSubmission(string ip)
+    {
+        lock (_submissions)
+        {
+            if (!_submissions.TryGetValue(ip, out var times)) _submissions[ip] = times = new Queue<DateTime>();
+            var now = DateTime.UtcNow;
+            while (times.Count > 0 && now - times.Peek() > TimeSpan.FromMinutes(1)) times.Dequeue();
+            if (times.Count >= 6) return false;
+            times.Enqueue(now);
+            return true;
+        }
+    }
 
     public void Start(int firstPort = 5280)
     {
@@ -72,8 +89,9 @@ internal sealed class RemoteControlServer : IDisposable
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
                 timeout.CancelAfter(TimeSpan.FromSeconds(20));
                 var stream = client.GetStream();
+                var ip = (client.Client.RemoteEndPoint as IPEndPoint)?.Address.ToString() ?? "?";
 
-                var buffer = new byte[8192];
+                var buffer = new byte[16384];
                 var length = 0;
                 while (length < buffer.Length)
                 {
@@ -99,6 +117,29 @@ internal sealed class RemoteControlServer : IDisposable
                 if (path == "/")
                 {
                     await WriteAsync(stream, 200, "text/html; charset=utf-8", PageHtml, timeout.Token);
+                    return;
+                }
+
+                if (path == "/pedido")
+                {
+                    await WriteAsync(stream, 200, "text/html; charset=utf-8", RequestPageHtml, timeout.Token);
+                    return;
+                }
+
+                if (path == "/pedido/enviar")
+                {
+                    if (!AllowSubmission(ip))
+                    {
+                        await WriteAsync(stream, 429, "application/json; charset=utf-8",
+                            JsonSerializer.Serialize(new { ok = false, status = "Muitos envios seguidos. Aguarde um minuto." }), timeout.Token);
+                        return;
+                    }
+                    query.TryGetValue("d", out var payload);
+                    var outcome = RequestHandler is null
+                        ? (Ok: false, Message: "Pedidos indisponíveis no momento.")
+                        : await RequestHandler(payload ?? "", ip);
+                    await WriteAsync(stream, 200, "application/json; charset=utf-8",
+                        JsonSerializer.Serialize(new { ok = outcome.Ok, status = outcome.Message }), timeout.Token);
                     return;
                 }
 
@@ -145,7 +186,7 @@ internal sealed class RemoteControlServer : IDisposable
     private static async Task WriteAsync(NetworkStream stream, int code, string contentType, string body, CancellationToken token)
     {
         var bytes = Encoding.UTF8.GetBytes(body);
-        var reason = code switch { 200 => "OK", 401 => "Unauthorized", 404 => "Not Found", 405 => "Method Not Allowed", _ => "Error" };
+        var reason = code switch { 200 => "OK", 401 => "Unauthorized", 404 => "Not Found", 405 => "Method Not Allowed", 429 => "Too Many Requests", _ => "Error" };
         var head = "HTTP/1.1 " + code + " " + reason + "\r\nContent-Type: " + contentType +
                    "\r\nContent-Length: " + bytes.Length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n";
         await stream.WriteAsync(Encoding.ASCII.GetBytes(head), token);
@@ -198,6 +239,59 @@ async function cmd(c,a){
 function go(){var v=$('ref').value.trim();if(v){cmd('ref',v);$('ref').select();}}
 show();if(pin)cmd('state');
 setInterval(function(){if(pin)cmd('state');},4000);
+</script></body></html>
+""";
+
+    private const string RequestPageHtml = """
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Pedido de músicas</title>
+<style>
+:root{color-scheme:dark}
+body{margin:0;font-family:system-ui,sans-serif;background:#0b1117;color:#e8eef4;padding:14px}
+h1{font-size:18px;margin:0 0 6px;color:#6fd6c8}
+p{font-size:14px;color:#8fa1b3;margin:0 0 12px}
+label{font-size:13px;color:#8fa1b3}
+input{width:100%;box-sizing:border-box;font-size:17px;padding:12px;border-radius:12px;border:1px solid #2b3a4a;background:#131b24;color:#e8eef4;margin:4px 0 8px}
+button{font-size:17px;padding:14px;border:0;border-radius:12px;background:#1d2a38;color:#e8eef4;width:100%;margin:6px 0}
+button.main{background:#176e68}
+.card{background:#0f171f;border:1px solid #1f2d3b;border-radius:14px;padding:10px;margin:10px 0}
+#st{margin-top:12px;font-size:15px;color:#6fd6c8;white-space:pre-wrap}
+</style></head><body>
+<h1>Pedido de músicas</h1>
+<p>Informe o nome do conjunto e cole o link de cada música. Os pedidos chegam ao operador do som.</p>
+<label>Nome do conjunto / grupo (opcional)</label>
+<input id="g" maxlength="60" autocomplete="off" placeholder="Ex.: Grupo de Louvor Jovem">
+<div id="list"></div>
+<button onclick="add()">+ Adicionar outra música</button>
+<button class="main" onclick="send()">Enviar</button>
+<div id="st"></div>
+<script>
+var n=0;
+function $(id){return document.getElementById(id);}
+function add(){
+ if(n>=10){return;}
+ n++;
+ var d=document.createElement('div');d.className='card';
+ d.innerHTML='<b>Música '+n+'</b><input class="nm" maxlength="80" placeholder="Nome da música (opcional)" autocomplete="off"><input class="lk" placeholder="Cole o link aqui" inputmode="url" autocapitalize="none" autocomplete="off">';
+ $('list').appendChild(d);
+}
+async function send(){
+ var cards=document.querySelectorAll('.card'),items=[];
+ for(var i=0;i<cards.length;i++){
+  var link=cards[i].querySelector('.lk').value.trim();
+  if(link){items.push({nome:cards[i].querySelector('.nm').value.trim(),link:link});}
+ }
+ if(!items.length){$('st').textContent='Cole pelo menos um link.';return;}
+ var d=JSON.stringify({grupo:$('g').value.trim(),itens:items});
+ try{
+  var r=await fetch('/pedido/enviar?d='+encodeURIComponent(d));
+  var j=await r.json();
+  $('st').textContent=j.status||'';
+  if(j.ok){$('list').innerHTML='';n=0;add();}
+ }catch(e){$('st').textContent='Não foi possível enviar. Confira se está na mesma rede (Wi-Fi) do computador.';}
+}
+add();
 </script></body></html>
 """;
 }

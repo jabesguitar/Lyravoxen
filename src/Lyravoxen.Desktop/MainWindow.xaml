@@ -90,6 +90,7 @@
     <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
     <Button Content="🩺 Diagnóstico" Click="Diagnostics_Click" ToolTip="Confere Holyrics, permissões, microfone, monitores e internet"/>
     <Button Content="☁ Backup" Click="Backup_Click" ToolTip="Backup da biblioteca em uma pasta (OneDrive, Google Drive, pendrive) e restauração"/>
+    <Button x:Name="RequestsButton" Content="📥 Pedidos (0)" Click="Requests_Click" ToolTip="Músicas enviadas pelas pessoas pelo link de pedidos"/>
     <Button Content="📱 Celular" Click="Remote_Click" ToolTip="Controlar a aba Bíblia pelo celular (QR code e PIN)"/>
     <Button x:Name="PinTopButton" Content="📌 Fixar à frente" Click="PinTop_Click" ToolTip="Mantém o Lyravoxen sempre à frente (útil contra a janela Apresentação Rápida do Holyrics)"/>
     <Button Content="📋 Relatório" Click="Report_Click" ToolTip="Copia o relatório de uso e erros para colar na conversa"/>

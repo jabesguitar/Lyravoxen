@@ -135,6 +135,7 @@ public partial class MainWindow
             new HelpItem("Conectar Holyrics", "Informe endereço, porta e token da API do Holyrics e teste. Sem isso o app projeta só na tela própria."),
             new HelpItem("🩺 Diagnóstico", "Confere Holyrics e permissões do token, microfones, modelo de voz, monitores e internet. O resultado é copiado para colar numa conversa de suporte."),
             new HelpItem("☁ Backup", "Guarda uma cópia da biblioteca (letras, tempos, mídia) numa pasta de sua escolha, como OneDrive ou Google Drive. É automático ao abrir, a cada 10 minutos e ao fechar. Também restaura em outro computador."),
+            new HelpItem("📥 Pedidos", "Lista de músicas enviadas pelas pessoas (ex.: grupos de louvor) pelo link de pedidos, com o nome de quem enviou. Para cada uma: Preparar como próxima (YouTube), Abrir, Copiar link ou Descartar. No topo da janela está o link de pedidos para você mandar às pessoas (elas precisam estar na mesma rede Wi-Fi)."),
             new HelpItem("📱 Celular", "Mostra o QR code e o PIN para controlar a aba Bíblia pelo celular, na mesma rede Wi-Fi."),
             new HelpItem("📌 Fixar à frente", "Mantém o Lyravoxen por cima das outras janelas."),
             new HelpItem("📋 Relatório", "Copia o registro de uso e de erros para você colar numa conversa de suporte."),

@@ -16,7 +16,7 @@ internal static class BackupService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen");
     private static readonly string SettingsFile = Path.Combine(Root, "backup-folder.txt");
 
-    private static readonly string[] Files = { "library.json", "video-history.json", "preferences.json" };
+    private static readonly string[] Files = { "library.json", "video-history.json", "preferences.json", "pedidos.json" };
     private static readonly string[] Folders = { "Media", "ProjectionBackgrounds" };
 
     public static string? GetFolder()
