@@ -105,6 +105,12 @@ public partial class MainWindow
             }));
         }
 
+        _requestsPanel.Children.Add(RequestText("Sem rede? Pelo WhatsApp:", 13, true));
+        var offlineButtons = new System.Windows.Controls.WrapPanel();
+        offlineButtons.Children.Add(RequestButton("📋 Importar pedido (colar mensagem)", ImportRequestDialog));
+        offlineButtons.Children.Add(RequestButton("📄 Gerar formulário para enviar por WhatsApp", GenerateOfflineForm));
+        _requestsPanel.Children.Add(offlineButtons);
+
         if (_requests.Count == 0)
         {
             _requestsPanel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Nenhum pedido na lista de espera.", Margin = new Thickness(0, 14, 0, 0), Foreground = Hex("#4A5A6B") });
@@ -196,5 +202,102 @@ public partial class MainWindow
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(request.Url) { UseShellExecute = true });
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível abrir o link: " + ex.Message; }
+    }
+
+    private static readonly string WhatsAppFile = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "pedidos-whatsapp.txt");
+
+    private void ImportRequestDialog()
+    {
+        var box = new System.Windows.Controls.TextBox
+        {
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+            Height = 220,
+            Margin = new Thickness(0, 6, 0, 8)
+        };
+        var import = new System.Windows.Controls.Button { Content = "Importar", Padding = new Thickness(18, 6, 18, 6), HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(14) };
+        panel.Children.Add(RequestText("Cole aqui a mensagem recebida pelo WhatsApp (do formulário ou um texto com links):", 13));
+        panel.Children.Add(box);
+        panel.Children.Add(import);
+        var dialog = new Window
+        {
+            Title = "Importar pedido",
+            Owner = _requestsWindow ?? this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 520,
+            SizeToContent = SizeToContent.Height,
+            Background = Hex("#F5F7FA"),
+            Content = panel
+        };
+        import.Click += (_, _) =>
+        {
+            var json = SongRequestStore.MessageToJson(box.Text);
+            if (json is null)
+            {
+                System.Windows.MessageBox.Show(dialog, "Não encontrei links nessa mensagem.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var (added, ok, message) = SongRequestStore.Parse(json, _requests, DateTime.Now);
+            if (ok)
+            {
+                _requests.AddRange(added);
+                SongRequestStore.Save(_requests);
+                UpdateRequestsButton();
+                StatusText.Text = "📥 Pedido importado: " + added.Count + (added.Count == 1 ? " música." : " músicas.");
+                RefreshRequestsWindow();
+                dialog.Close();
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(dialog, message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        };
+        dialog.Show();
+        box.Focus();
+    }
+
+    private void GenerateOfflineForm()
+    {
+        string saved = "";
+        try { if (System.IO.File.Exists(WhatsAppFile)) saved = System.IO.File.ReadAllText(WhatsAppFile).Trim(); } catch { }
+
+        var number = new System.Windows.Controls.TextBox { Text = saved, Margin = new Thickness(0, 6, 0, 8), FontSize = 15 };
+        var create = new System.Windows.Controls.Button { Content = "Gerar arquivo", Padding = new Thickness(18, 6, 18, 6), HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(14) };
+        panel.Children.Add(RequestText("Seu WhatsApp para receber os pedidos, com país e DDD (ex.: 5582999999999). Deixe em branco para a pessoa escolher o contato:", 13));
+        panel.Children.Add(number);
+        panel.Children.Add(create);
+        var dialog = new Window
+        {
+            Title = "Formulário para WhatsApp",
+            Owner = _requestsWindow ?? this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 520,
+            SizeToContent = SizeToContent.Height,
+            Background = Hex("#F5F7FA"),
+            Content = panel
+        };
+        create.Click += (_, _) =>
+        {
+            var save = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = "Pedido-de-musicas.html",
+                Filter = "Página HTML (*.html)|*.html"
+            };
+            if (save.ShowDialog(dialog) != true) return;
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(WhatsAppFile)!);
+                System.IO.File.WriteAllText(WhatsAppFile, number.Text.Trim());
+                System.IO.File.WriteAllText(save.FileName, OfflineRequestForm.Build(number.Text), new System.Text.UTF8Encoding(false));
+                StatusText.Text = "Formulário salvo em " + save.FileName + ". Envie esse arquivo pelo WhatsApp.";
+                dialog.Close();
+            }
+            catch (Exception ex) { StatusText.Text = "Não foi possível salvar o formulário: " + ex.Message; }
+        };
+        dialog.Show();
     }
 }

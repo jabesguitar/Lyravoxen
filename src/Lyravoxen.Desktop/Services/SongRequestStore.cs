@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Lyravoxen.Services;
 
@@ -91,6 +92,39 @@ internal static class SongRequestStore
         {
             return (added, false, "Pedido inválido.");
         }
+    }
+
+    /// <summary>
+    /// Converte uma mensagem colada (do WhatsApp) no JSON de pedido. Aceita a mensagem do formulário offline
+    /// (com a linha #LYRA:...) ou um texto livre com links ("Conjunto: X" e "nome - link" por linha).
+    /// </summary>
+    public static string? MessageToJson(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        var token = Regex.Match(text, @"#LYRA:([A-Za-z0-9+/=]+)");
+        if (token.Success)
+        {
+            try { return Encoding.UTF8.GetString(Convert.FromBase64String(token.Groups[1].Value)); }
+            catch (FormatException) { }
+        }
+
+        var group = "";
+        var items = new List<object>();
+        foreach (var raw in text.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length == 0) continue;
+            var groupMatch = Regex.Match(line, @"^(?:conjunto|grupo|banda|minist[eé]rio)\s*[:\-]\s*(.+)$", RegexOptions.IgnoreCase);
+            if (groupMatch.Success) { group = groupMatch.Groups[1].Value; continue; }
+
+            var link = Regex.Match(line, @"(https?://\S+|(?:www\.|youtu\.be/|youtube\.com/)\S+)", RegexOptions.IgnoreCase);
+            if (!link.Success) continue;
+            var name = Regex.Replace(line[..link.Index], @"^[\s\d\.\)\-–—:•*]+|[\s\-–—:•*]+$", "");
+            items.Add(new { nome = name, link = link.Value.TrimEnd(')', ',', '.', ';') });
+        }
+
+        return items.Count == 0 ? null : JsonSerializer.Serialize(new { grupo = group, itens = items });
     }
 
     private static string Clean(string? value, int maxLength)
