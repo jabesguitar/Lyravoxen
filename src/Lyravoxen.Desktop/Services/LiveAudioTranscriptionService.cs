@@ -19,7 +19,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
     private static readonly string ModelFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Lyravoxen", "Models");
-    private static readonly string ModelPath = Path.Combine(ModelFolder, "ggml-base.bin");
+    internal static readonly string ModelPath = Path.Combine(ModelFolder, "ggml-base.bin");
 
     private readonly Func<double> _playbackSeconds;
     private readonly ConcurrentQueue<(short[] Samples, double Start)> _segments = new();
@@ -47,7 +47,7 @@ public sealed class LiveAudioTranscriptionService : IAsyncDisposable
         StatusChanged?.Invoke(this, "Verificando o modelo gratuito de reconhecimento local...");
         await EnsureModelAsync(linked.Token);
 
-        _factory = WhisperFactory.FromPath(ModelPath);
+        _factory = WhisperDiagnostics.CreateFactory(ModelPath);
         _processor = _factory.CreateBuilder()
             .WithLanguage("pt")
             .Build();
