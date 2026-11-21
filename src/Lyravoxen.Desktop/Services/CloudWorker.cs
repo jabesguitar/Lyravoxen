@@ -25,16 +25,16 @@ ou me mande o texto/foto da tela.
 1) Crie a conta gratuita em https://dash.cloudflare.com/sign-up (só e-mail e senha).
 
 2) Crie o armazenamento:
-   Menu da esquerda → "Storage & Databases" (ou "Armazenamento") → "KV" → "Create"/"Criar namespace".
+   Menu da esquerda → "Storage & Databases" (ou "Armazenamento") → "Workers KV" → "Create instance"/"Create namespace".
    Nome: pedidos   (pode ser outro).
 
 3) Crie o serviço:
-   Menu da esquerda → "Workers & Pages" → "Create" → "Create Worker" (começar com "Hello World").
+   Menu da esquerda → "Workers & Pages" → "Create application" → "Start with Hello World!" → "Get started".
    Nome: por exemplo lyravoxen-pedidos → "Deploy".
    Depois clique em "Edit code". Apague TODO o código que aparece e cole TODO o conteúdo do arquivo {workerFileName}. Clique em "Deploy".
 
 4) Ligue o armazenamento ao serviço:
-   No serviço → "Settings" → "Bindings" → "Add" → "KV namespace".
+   Abra o serviço → aba "Bindings" (ou "Settings" → "Bindings") → "Add binding" → "KV namespace".
    Variable name: PEDIDOS   (exatamente assim, maiúsculas)
    KV namespace: o que você criou no passo 2. Salve/Deploy.
 
@@ -49,7 +49,7 @@ ou me mande o texto/foto da tela.
 COMO USAR
 - Divulgue o link  ENDEREÇO/pedido  (o Lyravoxen copia para você) ou mande o formulário .html gerado depois de salvar o endereço:
   a pessoa preenche e toca em "Enviar pedido ao operador"; o pedido entra na lista 📥 Pedidos em até ~1 minuto, de qualquer rede.
-- O Lyravoxen precisa estar aberto e com internet para buscar. Pedidos esperam no serviço por até 2 dias.
+- O Lyravoxen precisa estar aberto e com internet para buscar. Pedidos ficam no serviço por 12 horas; todos os computadores com o mesmo endereço e senha recebem os mesmos pedidos.
 - Segurança: quem tem o link pode enviar pedidos (só texto com link de música). Quem não tem a senha não consegue LER os pedidos.
   Não mande a senha para ninguém e não coloque o arquivo da senha em grupos.
 - Limites do plano gratuito (por dia): cerca de 1.000 gravações no armazenamento — dá para algumas centenas de pedidos por dia.
@@ -128,7 +128,7 @@ async function enviar(request, env) {
   if (pending.keys.length >= 150) return reply(false, "A fila do operador está cheia. Tente mais tarde.", 429);
 
   var id = String(Date.now()).padStart(13, "0") + "-" + Math.random().toString(36).slice(2, 8);
-  await env.PEDIDOS.put("p:" + id, JSON.stringify({ text: text, at: new Date().toISOString() }), { expirationTtl: 172800 });
+  await env.PEDIDOS.put("p:" + id, JSON.stringify({ text: text, at: new Date().toISOString() }), { expirationTtl: 43200 });
   await env.PEDIDOS.put("ultimo", id);
   return reply(true, "Pedido enviado! O operador do som já pode ver.", 200);
 }

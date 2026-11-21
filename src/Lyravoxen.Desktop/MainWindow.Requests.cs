@@ -58,6 +58,7 @@ public partial class MainWindow
     private string _cloudVersion = "";
     private bool _cloudBusy;
     private bool _cloudFailureLogged;
+    private readonly HashSet<string> _cloudSeenIds = new();
 
     private void StartCloudPolling()
     {
@@ -69,7 +70,7 @@ public partial class MainWindow
 
     private bool CloudConfigured => _whatsApp.CloudUrl.Length > 0 && _whatsApp.CloudToken.Length > 0;
 
-    /// <summary>Busca os pedidos que chegaram ao serviço, importa e apaga do serviço o que já foi recebido.</summary>
+    /// <summary>Busca os pedidos que chegaram ao serviço e importa os que este computador ainda não viu.</summary>
     private async Task CloudTickAsync(bool force = false)
     {
         if (_cloudBusy || !CloudConfigured || (!_whatsApp.CloudAuto && !force)) return;
@@ -86,11 +87,12 @@ public partial class MainWindow
             _cloudFailureLogged = false;
             if (result.Items.Count == 0) { _cloudVersion = result.Version; return; }
 
+            // Não apaga nada do serviço: assim vários computadores (casa, igreja) recebem os mesmos pedidos.
+            // O serviço descarta sozinho depois de algumas horas; cada computador lembra o que já importou.
             var total = 0;
-            foreach (var item in result.Items) total += ImportMessageText(item.Text).Added;
-            var acked = await CloudRequestClient.AckAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, result.Items.Select(item => item.Id));
-            // Se não conseguiu apagar, busca tudo de novo na próxima vez (repetidos são ignorados pelo endereço do link).
-            _cloudVersion = acked ? result.Version : "";
+            foreach (var item in result.Items)
+                if (_cloudSeenIds.Add(item.Id)) total += ImportMessageText(item.Text).Added;
+            _cloudVersion = result.Version;
             if (total > 0)
             {
                 StatusText.Text = "📥 Pedido recebido pela internet: " + total + (total == 1 ? " música." : " músicas.");

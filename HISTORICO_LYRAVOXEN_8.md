@@ -171,3 +171,7 @@
 - `Services/CloudRequestClient.cs` busca/confirma; o app importa com `ImportMessageText` (repetidos são ignorados) e só então apaga do serviço. Pode levar até ~1 min (KV é eventualmente consistente).
 - Formulário HTML (`OfflineRequestForm.Build(settings, sendUrl)`): com nuvem, o formulário simples (sem JS) faz POST ao serviço e o completo faz XMLHttpRequest; WhatsApp/grupo viram alternativas. A senha NUNCA vai no HTML. Arquivo `pedidos-whatsapp.txt` (agora com nuvem/senha) segue no backup.
 - Risco conhecido: quem tem o link público pode enviar pedidos (só texto com link); não consegue ler a fila sem a senha.
+
+## 15. Vários computadores recebendo os mesmos pedidos da nuvem (SEM compilar, sem teste)
+- Problema: o primeiro Lyravoxen a buscar apagava os pedidos do serviço; o outro (igreja) nunca os via.
+- Agora o app não apaga nada: cada computador guarda os ids já importados (`_cloudSeenIds`) e o serviço descarta sozinho após 12 h (TTL 43200). `/confirmar` continua existindo no serviço, sem uso. Quem já tem o worker antigo publicado continua funcionando (TTL de 2 dias); regenerar o `worker.js` só muda o TTL.
