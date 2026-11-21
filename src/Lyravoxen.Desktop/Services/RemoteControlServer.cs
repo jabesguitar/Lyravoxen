@@ -212,7 +212,10 @@ input{width:100%;box-sizing:border-box;font-size:18px;padding:12px;border-radius
 button{font-size:17px;padding:14px;border:0;border-radius:12px;background:#1d2a38;color:#e8eef4;width:100%}
 button.main{background:#176e68}button.warn{background:#8c3b3b}button.small{font-size:14px;padding:9px 10px;width:auto}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
-#st{margin-top:12px;font-size:14px;color:#8fa1b3;min-height:40px;white-space:pre-wrap}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0}
+body{padding-bottom:120px}
+#st{position:fixed;left:10px;right:10px;bottom:10px;z-index:5;font-size:14px;color:#e8eef4;background:#16212c;border:1px solid #2f4357;border-radius:12px;padding:10px 12px;max-height:38vh;overflow:auto;white-space:pre-wrap;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#st:empty{display:none}
 .card{background:#0f171f;border:1px solid #1f2d3b;border-radius:14px;padding:10px;margin:10px 0}
 .card h2{font-size:14px;margin:0 0 8px;color:#8fa1b3;font-weight:600}
 .slide{background:#000;border:1px solid #243342;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;color:#fff;line-height:1.25;white-space:pre-wrap;overflow:hidden}
@@ -240,6 +243,10 @@ button.main{background:#176e68}button.warn{background:#8c3b3b}button.small{font-
   <div class="slide big" id="nowline">Nenhuma música tocando</div>
   <div class="dim" id="nowinfo"></div>
   <div class="dim" id="nownext"></div>
+  <div class="row"><button onclick="act('cueprev')">◀ Frase</button><button onclick="act('cuenext')">Frase ▶</button></div>
+  <button id="autobtn" class="main" style="display:none;margin-bottom:10px" onclick="act('auto')">🔄 Voltar ao automático</button>
+  <div class="row"><button onclick="act('seek','-10')">⏪ −10 s</button><button onclick="act('seek','10')">+10 s ⏩</button></div>
+  <div class="row3"><button onclick="act('vol','-10')">🔉 −</button><button onclick="act('vol','mute')">🔇 Mudo</button><button onclick="act('vol','10')">🔊 +</button></div>
   <div class="row"><button onclick="act('toggle')">⏯ Pausar / continuar</button><button class="warn" onclick="ask('endlive','Encerrar a música e limpar a projeção?')">⏹ Encerrar</button></div>
  </div>
 
@@ -336,7 +343,8 @@ function render(s){
  live=s;
  var now=s.now||{};
  $('nowline').textContent=now.line||(now.state==='parada'?'Nenhuma música tocando':'…');
- $('nowinfo').textContent=now.title?(now.title+' · '+now.state):'';
+ $('nowinfo').textContent=now.title?(now.title+' · '+now.state+(now.manual?' · modo manual':'')):'';
+ $('autobtn').style.display=now.manual?'block':'none';
  $('nownext').textContent=now.next?('Próxima frase: '+now.next):'';
  var nx=s.next;
  if(!nx){$('nextempty').style.display='block';$('nextbody').style.display='none';lastNextId='';}

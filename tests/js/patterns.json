@@ -1,0 +1,13 @@
+{
+ "chatHeader": "^\\u200e?\\u200f?(?:\\[?\\d{1,2}[/\\.]\\d{1,2}[/\\.]\\d{2,4},?\\s+\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\s?[APap]\\.?[Mm]\\.?)?\\]?\\s*-?\\s*|\\[\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\s?[APap][Mm])?,?\\s*\\d{1,2}[/\\.]\\d{1,2}[/\\.]\\d{2,4}\\]\\s*)(?<sender>[^:\\r\\n]{1,60}?):\\s?(?<msg>.*)$",
+ "groupLine": "^(?:conjunto|grupo|banda|minist[eé]rio)\\s*[:\\-]\\s*(.+)$",
+ "token": "#LYRA:([A-Za-z0-9+/=]+)",
+ "link": "(https?://\\S+|(?:www\\.|youtu\\.be/|youtube\\.com/)\\S+)",
+ "nameClean": "^\\s*(?:(?:\\d{1,2}\\s*[\\.\\)\\-–—:]\\s+|\\d{1,2}[\\.\\)](?=\\D)|[•*\\-–—]\\s*)\\s*)+|[\\s\\-–—:•*]+$",
+ "hasLink": "https?://|youtu\\.be/|youtube\\.com/|www\\.",
+ "cleanBrackets": "[\\(\\[\\{][^\\)\\]\\}]*[\\)\\]\\}]",
+ "cleanWords": "\\b(clipe oficial|v[ií]deo oficial|official (?:music )?video|official audio|[aá]udio oficial|lyric video|lyrics|com letra|letra|playback|ao vivo|live|karaok[eê]|legendado|hd|4k)\\b",
+ "lrcTag": "\\[(\\d{1,3}):(\\d{1,2}(?:[.,]\\d{1,3})?)\\]",
+ "lrcLead": "^(\\s*\\[\\d[^\\]]*\\])+\\s*",
+ "split": "\\s+[-–—|]\\s+"
+}

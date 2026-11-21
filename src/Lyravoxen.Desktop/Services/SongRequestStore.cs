@@ -242,7 +242,8 @@ internal static class SongRequestStore
 
             var link = Regex.Match(line, @"(https?://\S+|(?:www\.|youtu\.be/|youtube\.com/)\S+)", RegexOptions.IgnoreCase);
             if (!link.Success) continue;
-            var name = Regex.Replace(line[..link.Index], @"^[\s\d\.\)\-–—:•*]+|[\s\-–—:•*]+$", "");
+            // Tira só a numeração da lista ("1.", "2)", "3 -", "•"); nomes que começam com número ("10.000 Razões") ficam inteiros.
+            var name = Regex.Replace(line[..link.Index], @"^\s*(?:(?:\d{1,2}\s*[\.\)\-–—:]\s+|\d{1,2}[\.\)](?=\D)|[•*\-–—]\s*)\s*)+|[\s\-–—:•*]+$", "");
             items.Add(new { nome = name, link = link.Value.TrimEnd(')', ',', '.', ';') });
         }
 

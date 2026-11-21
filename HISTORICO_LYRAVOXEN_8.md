@@ -181,3 +181,9 @@
 - Novo comando `livejson` (a página consulta a cada 3 s): o que está no telão (`_currentProjectedLyric`, próxima frase, estado), próxima música (miniatura do YouTube `i.ytimg.com`, status da letra, 5 primeiras linhas num "slide" preto, caixa verde "Encontrei esta letra… Confirmar", campos Música/Autor já preenchidos), pedidos (com status da letra e botão Preparar por pedido: `reqpick`) e busca na biblioteca (`libsearch`/`libpick`: Próxima ou ▶ Tocar já).
 - A página monta tudo com `textContent` (títulos/pedidos vêm de terceiros); "Tocar" avisa se não há letra com tempos e se vai trocar a música atual. A miniatura precisa de internet no celular (se faltar, some sozinha).
 - `PrepareNextForRemote` centraliza "deixar como próxima" para pedidos, biblioteca e "pedido mais antigo".
+
+## 17. Aba Ao vivo: testes automáticos, correções e novos controles (C# AINDA NÃO COMPILADO)
+- Testes rodados (em `tests/js`, Node + Chromium): serviço da nuvem com KV falso (30), formulário com e sem JavaScript e envio ao serviço (23), página do celular contra um "computador" falso com a mesma estrutura JSON do `BuildLiveJson` (45), regex reais do C# aplicadas a conversas Android/iPhone/Web, títulos de vídeo e .lrc (41). Também: XAML bem formado, chaves/parênteses balanceados, símbolos usados existem. NÃO foi compilado (sem .NET no ambiente): rodar o Actions.
+- Bug achado e corrigido: nomes que começam com número ("10.000 Razões") perdiam o nome ao importar (a limpeza de numeração era gananciosa). Agora só tira "1.", "2)", "3 -", "•".
+- Mensagens de resposta do celular agora ficam fixas no pé da tela (antes ficavam fora da vista).
+- Novos controles na aba Ao vivo: ◀ Frase / Frase ▶ (projeção manual), 🔄 Voltar ao automático (aparece no modo manual), ⏪ −10 s / +10 s ⏩, 🔉 − / 🔇 Mudo / 🔊 + (só YouTube). Comandos `cueprev`, `cuenext`, `auto`, `seek`, `vol`.

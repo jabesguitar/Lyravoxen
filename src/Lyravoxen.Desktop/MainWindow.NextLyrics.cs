@@ -336,7 +336,9 @@ public partial class MainWindow
                 title = nowTitle,
                 state = hasSong ? (paused ? "pausada" : "tocando") : "parada",
                 line = hasSong ? _currentProjectedLyric ?? "" : "",
-                next = nextLine
+                next = nextLine,
+                manual = hasSong && _manualProjectionMode,
+                cues = _cues.Count
             },
             next,
             requestCount = _requests.Count,

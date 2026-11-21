@@ -211,4 +211,7 @@ Check(OfflineRequestForm.Build(cloudCfg).Contains("method=\"get\""), "formulári
 var workerCode = CloudWorker.Build(cloudCfg);
 Check(workerCode.Contains("env.PEDIDOS") && workerCode.Contains("ADMIN_TOKEN") && workerCode.Contains("const PAGE = \"") && !workerCode.Contains("SEGREDO"), "nuvem: código do serviço traz a página e não traz a senha");
 
+var numbered = SongRequestStore.MessagesToJson("Conjunto: J\n1. 10.000 Razões - https://youtu.be/abcdefghijk\n2) Santo https://youtu.be/bbbbbbbbbbb\n- 40 dias https://youtu.be/ccccccccccc");
+Check(numbered.Count == 1 && numbered[0].Contains("10.000 Raz") && numbered[0].Contains("\"Santo\"") && numbered[0].Contains("40 dias"), "pedido: tira só a numeração da lista, não números que fazem parte do nome");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

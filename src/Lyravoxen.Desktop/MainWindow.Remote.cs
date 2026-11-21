@@ -68,6 +68,17 @@ public partial class MainWindow
                     case "nextcheck": return await CheckNextLyricsFromRemoteAsync(argument);
                     case "nextconfirm": return ConfirmNextLyrics();
                     case "livejson": return BuildLiveJson();
+                    case "cueprev":
+                        PreviousCue_Click(this, new RoutedEventArgs());
+                        return StatusText.Text;
+                    case "cuenext":
+                        NextCue_Click(this, new RoutedEventArgs());
+                        return StatusText.Text;
+                    case "auto":
+                        ResumeAutomaticProjection_Click(this, new RoutedEventArgs());
+                        return "Projeção automática retomada.";
+                    case "vol":
+                    case "seek": return await RemotePlayerActionAsync(command, argument);
                     case "reqpick": return RequestPickForRemote(argument);
                     case "libsearch": return LibrarySearchJson(argument);
                     case "libpick": return LibraryPickForRemote(argument);
@@ -120,6 +131,37 @@ public partial class MainWindow
             "tocando" => "Música tocando.",
             _ => "O player ainda não está pronto."
         };
+    }
+
+    /// <summary>Volume ("+10", "-10", "mute") e avançar/voltar (segundos) no player do YouTube, pelo celular.</summary>
+    private async Task<string> RemotePlayerActionAsync(string command, string argument)
+    {
+        if (_isLocalAudioPlaying) return "Volume e avançar/voltar pelo celular só funcionam com música do YouTube.";
+        if (YoutubePlayer.CoreWebView2 is null) return "Nenhuma música carregada.";
+        const string guard = "if(typeof player==='undefined'||!player||typeof player.getVolume!=='function')return 'sem player';";
+        string script;
+        if (command == "seek")
+        {
+            if (!double.TryParse(argument, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var seconds) || Math.Abs(seconds) > 120)
+                return "Valor inválido.";
+            script = "(function(){" + guard + "var t=Math.max(0,player.getCurrentTime()+(" +
+                     seconds.ToString(System.Globalization.CultureInfo.InvariantCulture) + "));player.seekTo(t,true);return 'ok';})()";
+        }
+        else if (argument == "mute")
+        {
+            script = "(function(){" + guard + "if(player.isMuted()){player.unMute();return 'Som ligado.';}player.mute();return 'Som desligado (mudo).';})()";
+        }
+        else
+        {
+            if (!int.TryParse(argument, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var step) || Math.Abs(step) > 50)
+                return "Valor inválido.";
+            script = "(function(){" + guard + "var v=Math.max(0,Math.min(100,player.getVolume()+(" + step +
+                     ")));player.setVolume(v);if(v>0&&player.isMuted()){player.unMute();}return 'Volume '+Math.round(v)+'%';})()";
+        }
+
+        var result = (await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(script)).Trim('"');
+        if (result == "sem player") return "O player ainda não está pronto.";
+        return command == "seek" ? "Posição ajustada (" + argument + " s)." : result;
     }
 
     private static System.Windows.Media.Brush Hex(string color) =>
