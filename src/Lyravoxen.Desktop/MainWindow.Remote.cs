@@ -66,7 +66,11 @@ public partial class MainWindow
                         PlayNextPrepared_Click(this, new RoutedEventArgs());
                         return "Tocando a próxima música…" + lyricsWarning + "\n" + LiveStateText();
                     case "nextcheck": return await CheckNextLyricsFromRemoteAsync(argument);
-                    case "nextconfirm": return ConfirmNextLyricsFromRemote();
+                    case "nextconfirm": return ConfirmNextLyrics();
+                    case "livejson": return BuildLiveJson();
+                    case "reqpick": return RequestPickForRemote(argument);
+                    case "libsearch": return LibrarySearchJson(argument);
+                    case "libpick": return LibraryPickForRemote(argument);
                     case "toggle": return await ToggleLivePlaybackAsync() + "\n" + LiveStateText();
                     case "endlive":
                         EndPlaybackManually_Click(this, new RoutedEventArgs());

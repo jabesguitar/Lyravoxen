@@ -250,7 +250,7 @@
    <Border Grid.Row="2" Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,10,0,0">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
      <StackPanel><TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontWeight="Bold"/><TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/><TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,8,0,0" MaxHeight="150"/></StackPanel>
-     <StackPanel Grid.Column="1"><Button Content="Preparar próxima" Click="PrepareNext_Click" Background="#176E68"/><Button Content="🔎 Verificar letra" Click="VerifyNextLyrics_Click" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/></StackPanel>
+     <StackPanel Grid.Column="1"><Button Content="Preparar próxima" Click="PrepareNext_Click" Background="#176E68"/><Button Content="✅ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#176E68" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/><Button Content="🔎 Verificar letra" Click="VerifyNextLyrics_Click" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/></StackPanel>
     </Grid>
    </Border>
   </Grid>

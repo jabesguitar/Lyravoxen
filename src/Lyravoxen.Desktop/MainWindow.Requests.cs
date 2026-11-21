@@ -494,25 +494,12 @@ public partial class MainWindow
         dialog.Show();
     }
 
-    /// <summary>Usado pelo celular (aba Ao vivo): prepara o pedido mais antigo com link do YouTube como próxima música, sem janelas no PC.</summary>
+    /// <summary>Usado pelo celular: prepara o pedido mais antigo com link do YouTube como próxima música, sem janelas no PC.</summary>
     private string PrepareOldestRequestForRemote(bool replace)
     {
         var request = _requests.OrderBy(r => r.ReceivedAt).FirstOrDefault(r => YouTubeLink.TryGetVideoId(r.Url) is not null);
         if (request is null) return _requests.Count == 0 ? "Nenhum pedido na lista." : "Os pedidos da lista não têm link de vídeo do YouTube.";
-        if (!string.IsNullOrWhiteSpace(_nextVideoUrl) && !replace)
-            return "Já existe uma próxima preparada. Toque em \"Tocar próxima\" ou use \"Trocar pelo pedido\".";
-
-        var videoId = YouTubeLink.TryGetVideoId(request.Url)!;
-        _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
-        SaveNextVideoPreference();
-        NextTrackText.Text = "Próxima faixa preparada (" + videoId + ")" +
-                             (string.IsNullOrWhiteSpace(request.Name) ? "" : ": " + request.Name) +
-                             ". A música atual continua tocando até você selecionar Tocar próxima.";
-        PlayNextButton.IsEnabled = true;
-        RefreshNextLyricsPreview();
-        var who = string.IsNullOrWhiteSpace(request.Group) ? "" : " de " + request.Group;
-        RemoveRequest(request);
-        return "Próxima preparada: " + (string.IsNullOrWhiteSpace(request.Name) ? videoId : request.Name) + who + ".";
+        return RequestPickForRemote(request.Id + "|" + (replace ? "1" : "0"));
     }
 
     private void CloudSettingsDialog()

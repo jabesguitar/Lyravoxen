@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Windows;
 using Lyravoxen.Models;
 using Lyravoxen.Services;
@@ -9,6 +10,12 @@ namespace Lyravoxen;
 public partial class MainWindow
 {
     private LyricsPreview? _nextLyrics;
+    /// <summary>Vídeo a que _nextLyrics se refere (evita usar a letra de outra música).</summary>
+    private string? _nextLyricsVideoId;
+    /// <summary>Nome/autor digitados no celular para a verificação atual.</summary>
+    private (string VideoId, string Track, string Artist)? _nextTyped;
+    /// <summary>Nome da próxima música quando vem de um pedido ou da biblioteca (para mostrar no celular).</summary>
+    private (string VideoId, string Label)? _nextHint;
     private int _nextLyricsToken;
     private readonly HashSet<string> _lyricsQueued = new();
     private readonly SemaphoreSlim _lyricsGate = new(1, 1);
@@ -21,6 +28,17 @@ public partial class MainWindow
 
     private void VerifyNextLyrics_Click(object sender, RoutedEventArgs e) => RefreshNextLyricsPreview(force: true);
 
+    private void ConfirmNextLyrics_Click(object sender, RoutedEventArgs e)
+    {
+        var message = ConfirmNextLyrics();
+        StatusText.Text = message;
+        System.Windows.MessageBox.Show(this, message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    /// <summary>Letra do catálogo ainda não salva, que o operador pode confirmar.</summary>
+    private static bool IsLyricsCandidate(LyricsPreview preview) =>
+        preview.Availability is LyricsAvailability.Synced or LyricsAvailability.PlainOnly;
+
     /// <summary>Atualiza a prévia da letra da música preparada como próxima (limpa se não houver próxima).</summary>
     private async void RefreshNextLyricsPreview(bool force = false)
     {
@@ -28,9 +46,10 @@ public partial class MainWindow
         {
             var videoId = YouTubeLink.TryGetVideoId(_nextVideoUrl);
             var token = ++_nextLyricsToken;
+            _nextLyrics = null;
+            _nextLyricsVideoId = null;
             if (videoId is null)
             {
-                _nextLyrics = null;
                 NextLyricsText.Text = "";
                 return;
             }
@@ -39,9 +58,11 @@ public partial class MainWindow
             var preview = await LyricsPreviewService.CheckAsync(videoId, _library, force);
             if (token != _nextLyricsToken) return; // outra música foi preparada enquanto verificava
             _nextLyrics = preview;
+            _nextLyricsVideoId = videoId;
             NextLyricsText.Text = preview.Headline +
                 (string.IsNullOrWhiteSpace(preview.VideoTitle) ? "" : "\nVídeo: " + preview.VideoTitle) +
-                (preview.Preview.Length > 0 ? "\n\nPrévia da letra:\n" + preview.Preview : "");
+                (preview.Preview.Length > 0 ? "\n\nPrévia da letra:\n" + preview.Preview : "") +
+                (IsLyricsCandidate(preview) ? "\n\n✅ Para usar esta letra, clique em Confirmar letra." : "");
         }
         catch (Exception ex)
         {
@@ -86,9 +107,7 @@ public partial class MainWindow
         RefreshRequestsWindow();
     }
 
-    // ----- Celular: nome/autor da próxima música, verificação e confirmação da letra -----
-
-    private (string VideoId, string Track, string Artist, LyricsPreview Preview)? _remoteLyricsCheck;
+    // ----- Celular e computador: confirmar a letra, preparar músicas, estado ao vivo -----
 
     /// <summary>Aviso curto para quando se toca a próxima sem letra que role sozinha.</summary>
     private string NextLyricsWarning() => _nextLyrics switch
@@ -100,11 +119,11 @@ public partial class MainWindow
         _ => ""
     };
 
-    /// <summary>Procura a letra da música preparada como próxima, pelo nome/autor digitados no celular (ou pelo título do vídeo).</summary>
+    /// <summary>Procura a letra da próxima pelo nome/autor digitados no celular (ou pelo título do vídeo, se vazios).</summary>
     private async Task<string> CheckNextLyricsFromRemoteAsync(string argument)
     {
         var videoId = YouTubeLink.TryGetVideoId(_nextVideoUrl);
-        if (videoId is null) return "Prepare uma próxima música antes (por um pedido ou pela aba de pesquisa).";
+        if (videoId is null) return "Prepare uma próxima música antes (escolha um pedido ou busque na biblioteca).";
         var parts = (argument ?? "").Split('\n');
         var track = parts[0].Trim();
         var artist = parts.Length > 1 ? parts[1].Trim() : "";
@@ -117,37 +136,35 @@ public partial class MainWindow
         if (YouTubeLink.TryGetVideoId(_nextVideoUrl) != videoId)
             return "A próxima música mudou durante a verificação. Verifique de novo.";
 
-        _remoteLyricsCheck = (videoId, track, artist, preview);
+        _nextTyped = track.Length > 0 ? (videoId, track, artist) : null;
         _nextLyrics = preview;
-        NextLyricsText.Text = preview.Headline + (preview.Preview.Length > 0 ? "\n\nPrévia da letra:\n" + preview.Preview : "");
+        _nextLyricsVideoId = videoId;
+        NextLyricsText.Text = preview.Headline + (preview.Preview.Length > 0 ? "\n\nPrévia da letra:\n" + preview.Preview : "") +
+                              (IsLyricsCandidate(preview) ? "\n\n✅ Para usar esta letra, clique em Confirmar letra." : "");
 
         var text = new System.Text.StringBuilder(preview.Headline);
         if (track.Length > 0) text.Append("\nProcurado: ").Append(track).Append(artist.Length > 0 ? " — " + artist : "");
-        if (preview.Preview.Length > 0) text.Append("\n\nPrévia da letra:\n").Append(preview.Preview);
-        text.Append(preview.Availability switch
-        {
-            LyricsAvailability.Synced => "\n\nÉ esta? Toque em ✅ Confirmar letra. Os tempos são da versão do catálogo: se o vídeo for outra gravação (ao vivo, playback), a letra pode adiantar ou atrasar.",
-            LyricsAvailability.PlainOnly => "\n\nSó há o texto, sem tempos. Dá para confirmar e salvar, mas ele não roda sozinho: use a marcação por toque no computador.",
-            LyricsAvailability.Library => preview.CueCount > 0 ? "\n\nJá está salva com tempos. É só tocar." : "\n\nSó há o texto salvo, sem tempos: não roda sozinho.",
-            LyricsAvailability.NotFound => "\n\nTente outro nome ou autor. Sem letra, a música toca sem projeção.",
-            _ => "\n\nTente de novo em instantes."
-        });
+        if (IsLyricsCandidate(preview)) text.Append("\n\nÉ esta? Toque em ✅ Confirmar letra.");
+        else if (preview.Availability == LyricsAvailability.NotFound) text.Append("\n\nTente outro nome ou autor. Sem letra, a música toca sem projeção.");
         return text.ToString();
     }
 
-    /// <summary>Guarda na biblioteca a letra verificada para o vídeo da próxima música; ao tocar, o carregamento já usa essas frases.</summary>
-    private string ConfirmNextLyricsFromRemote()
+    /// <summary>Guarda na biblioteca a letra encontrada para a próxima música; ao tocar, o carregamento já usa essas frases.</summary>
+    private string ConfirmNextLyrics()
     {
         var videoId = YouTubeLink.TryGetVideoId(_nextVideoUrl);
         if (videoId is null) return "Não há próxima música preparada.";
-        if (_remoteLyricsCheck is not { } check || check.VideoId != videoId) return "Primeiro toque em 🔎 Verificar letra.";
-        var preview = check.Preview;
+        if (_nextLyrics is null || _nextLyricsVideoId != videoId)
+            return "Ainda verificando a letra. Espere alguns segundos e toque de novo.";
+        var preview = _nextLyrics;
         if (preview.Availability == LyricsAvailability.Library) return "Esta música já tem letra salva. É só tocar.";
-        if (preview.Availability is LyricsAvailability.NotFound or LyricsAvailability.Error || string.IsNullOrWhiteSpace(preview.PlainText))
-            return "Não há letra encontrada para confirmar.";
+        if (!IsLyricsCandidate(preview) || string.IsNullOrWhiteSpace(preview.PlainText))
+            return "Não há letra encontrada para confirmar. Digite música e autor e toque em Verificar.";
 
-        var track = check.Track.Length > 0 ? check.Track : preview.FoundTrack;
-        var artist = check.Artist.Length > 0 ? check.Artist : preview.FoundArtist;
+        var typedTrack = _nextTyped is { } typed && typed.VideoId == videoId ? typed.Track : "";
+        var typedArtist = _nextTyped is { } typedBoth && typedBoth.VideoId == videoId ? typedBoth.Artist : "";
+        var track = typedTrack.Length > 0 ? typedTrack : preview.FoundTrack;
+        var artist = typedTrack.Length > 0 ? typedArtist : preview.FoundArtist;
 
         var folder = _library.FirstOrDefault(item => string.Equals(item.Name, "Músicas sincronizadas", StringComparison.OrdinalIgnoreCase));
         if (folder is null)
@@ -173,13 +190,157 @@ public partial class MainWindow
         video.Cues = preview.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         SaveLibrary();
         RefreshLibrarySongs();
-        _remoteLyricsCheck = null;
+        _nextTyped = null;
         RefreshNextLyricsPreview(force: true);
-        AppLog.Info("Letra confirmada pelo celular para " + videoId + ": " + track + " — " + artist + " (" + video.Cues.Count + " frases)");
-        StatusText.Text = "Letra confirmada pelo celular: " + track + (artist.Length > 0 ? " — " + artist : "") + ".";
+        AppLog.Info("Letra confirmada para " + videoId + ": " + track + " — " + artist + " (" + video.Cues.Count + " frases)");
+        var summary = track + (artist.Length > 0 ? " — " + artist : "");
+        StatusText.Text = "Letra confirmada: " + summary + ".";
 
         return video.Cues.Count > 0
-            ? "✅ Letra confirmada e salva: " + track + (artist.Length > 0 ? " — " + artist : "") + " (" + video.Cues.Count + " frases). Ao tocar a próxima, ela roda no telão."
+            ? "✅ Letra confirmada e salva: " + summary + " (" + video.Cues.Count + " frases). Ao tocar a próxima, ela roda no telão."
             : "Letra salva só como texto (sem tempos). Ao tocar, ela não roda sozinha.";
+    }
+
+    /// <summary>Deixa uma música (pedido ou biblioteca) como próxima, sem janelas no computador.</summary>
+    private (bool Ok, string Message) PrepareNextForRemote(string videoId, string label, bool replace)
+    {
+        label = (label ?? "").Trim();
+        if (!string.IsNullOrWhiteSpace(_nextVideoUrl) && !replace)
+            return (false, "Já existe uma próxima preparada. Escolha \"Trocar\" para substituí-la.");
+        _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
+        _nextHint = (videoId, label);
+        _nextTyped = null;
+        SaveNextVideoPreference();
+        NextTrackText.Text = "Próxima faixa preparada (" + videoId + ")" + (label.Length > 0 ? ": " + label : "") +
+                             ". A música atual continua tocando até você selecionar Tocar próxima.";
+        PlayNextButton.IsEnabled = true;
+        RefreshNextLyricsPreview();
+        return (true, "Próxima preparada: " + (label.Length > 0 ? label : videoId) + ".");
+    }
+
+    private string LibraryLabel(LibraryVideo video)
+    {
+        var name = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
+        return string.IsNullOrWhiteSpace(video.Artist) ? name : name + " — " + video.Artist;
+    }
+
+    private string LibrarySearchJson(string query)
+    {
+        var words = LyricsPreviewService.Normalize(query).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var found = _library.SelectMany(folder => folder.Videos)
+            .Where(video => !video.IsOffline && !string.IsNullOrWhiteSpace(video.VideoId))
+            .GroupBy(video => video.VideoId)
+            .Select(group => group.First())
+            .Where(video =>
+            {
+                var haystack = LyricsPreviewService.Normalize(video.TrackName + " " + video.Artist + " " + video.Title);
+                return words.All(word => haystack.Contains(word, StringComparison.Ordinal));
+            })
+            .OrderBy(video => LibraryLabel(video), StringComparer.CurrentCultureIgnoreCase)
+            .Take(8)
+            .Select(video => new
+            {
+                id = video.VideoId,
+                title = LibraryLabel(video),
+                lyrics = video.Cues.Count > 0 ? "sync" : !string.IsNullOrWhiteSpace(video.FullLyrics) ? "text" : "none"
+            });
+        return JsonSerializer.Serialize(found);
+    }
+
+    /// <summary>Música da biblioteca como próxima ("next") ou tocando já ("play").</summary>
+    private string LibraryPickForRemote(string argument)
+    {
+        var parts = (argument ?? "").Split('|');
+        var videoId = parts[0].Trim();
+        var play = parts.Length > 1 && parts[1] == "play";
+        var video = _library.SelectMany(folder => folder.Videos).FirstOrDefault(item => !item.IsOffline && item.VideoId == videoId);
+        if (video is null) return "Música não encontrada na biblioteca.";
+        var (ok, message) = PrepareNextForRemote(videoId, LibraryLabel(video), replace: true);
+        if (!ok || !play) return message;
+        var warning = video.Cues.Count == 0 ? " (sem letra com tempos: não vai projetar sozinha)" : "";
+        PlayNextPrepared_Click(this, new RoutedEventArgs());
+        return "Tocando: " + LibraryLabel(video) + warning;
+    }
+
+    /// <summary>Pedido escolhido no celular ("id|1" troca a próxima já preparada, "id|0" só se não houver).</summary>
+    private string RequestPickForRemote(string argument)
+    {
+        var parts = (argument ?? "").Split('|');
+        var request = _requests.FirstOrDefault(item => item.Id == parts[0]);
+        if (request is null) return "Esse pedido não está mais na lista.";
+        var videoId = YouTubeLink.TryGetVideoId(request.Url);
+        if (videoId is null) return "Esse pedido não tem link de vídeo do YouTube.";
+        var (ok, message) = PrepareNextForRemote(videoId, request.Name, replace: parts.Length > 1 && parts[1] == "1");
+        if (ok) RemoveRequest(request);
+        return message + (ok && !string.IsNullOrWhiteSpace(request.Group) ? " (pedido de " + request.Group + ")" : "");
+    }
+
+    /// <summary>Tudo o que a aba Ao vivo do celular mostra: o que está no telão, a próxima música com prévia da letra, pedidos.</summary>
+    private string BuildLiveJson()
+    {
+        PrecheckRequestLyrics();
+
+        var playing = _isLocalAudioPlaying || _lastPlayerState == 1;
+        var paused = !_isLocalAudioPlaying && _lastPlayerState == 2;
+        var hasSong = _currentVideo is not null && (playing || paused);
+        var nowTitle = hasSong ? LibraryLabel(_currentVideo!) : "";
+        var nextLine = hasSong ? (NextProjectionPreviewText?.Text ?? "").Replace("Próxima:", "").Trim(' ', '—') : "";
+
+        object? next = null;
+        var nextId = YouTubeLink.TryGetVideoId(_nextVideoUrl);
+        if (nextId is not null)
+        {
+            var preview = _nextLyricsVideoId == nextId ? _nextLyrics : null;
+            var status = preview is null ? "checking" : preview.Availability switch
+            {
+                LyricsAvailability.Library => preview.CueCount > 0 ? "library" : "library-text",
+                LyricsAvailability.Synced => "synced",
+                LyricsAvailability.PlainOnly => "plain",
+                LyricsAvailability.NotFound => "notfound",
+                _ => "error"
+            };
+            var hint = _nextHint is { } h && h.VideoId == nextId ? h.Label : "";
+            var typedTrack = _nextTyped is { } typed && typed.VideoId == nextId ? typed.Track : "";
+            var typedArtist = _nextTyped is { } typedBoth && typedBoth.VideoId == nextId ? typedBoth.Artist : "";
+            next = new
+            {
+                videoId = nextId,
+                title = hint.Length > 0 ? hint : !string.IsNullOrWhiteSpace(preview?.VideoTitle) ? preview!.VideoTitle : "Próxima música",
+                status,
+                headline = preview?.Headline ?? "🔎 Verificando se tem letra…",
+                preview = (preview?.Preview ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries),
+                track = typedTrack.Length > 0 ? typedTrack : preview?.FoundTrack ?? "",
+                artist = typedTrack.Length > 0 ? typedArtist : preview?.FoundArtist ?? "",
+                canConfirm = preview is not null && IsLyricsCandidate(preview),
+                warning = preview is null ? "" : NextLyricsWarning().Trim(' ', '(', ')')
+            };
+        }
+
+        var requests = _requests.OrderBy(item => item.ReceivedAt).Take(8).Select(item =>
+        {
+            var id = YouTubeLink.TryGetVideoId(item.Url);
+            var cached = id is null ? null : LyricsPreviewService.Cached(id);
+            return new
+            {
+                id = item.Id,
+                name = string.IsNullOrWhiteSpace(item.Name) ? "(sem nome)" : item.Name,
+                group = item.Group,
+                lyrics = id is null ? "Sem link de vídeo do YouTube" : cached?.Headline ?? "🔎 Verificando se tem letra…"
+            };
+        }).ToList();
+
+        return JsonSerializer.Serialize(new
+        {
+            now = new
+            {
+                title = nowTitle,
+                state = hasSong ? (paused ? "pausada" : "tocando") : "parada",
+                line = hasSong ? _currentProjectedLyric ?? "" : "",
+                next = nextLine
+            },
+            next,
+            requestCount = _requests.Count,
+            requests
+        });
     }
 }

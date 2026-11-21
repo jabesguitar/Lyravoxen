@@ -175,3 +175,9 @@
 ## 15. Vários computadores recebendo os mesmos pedidos da nuvem (SEM compilar, sem teste)
 - Problema: o primeiro Lyravoxen a buscar apagava os pedidos do serviço; o outro (igreja) nunca os via.
 - Agora o app não apaga nada: cada computador guarda os ids já importados (`_cloudSeenIds`) e o serviço descarta sozinho após 12 h (TTL 43200). `/confirmar` continua existindo no serviço, sem uso. Quem já tem o worker antigo publicado continua funcionando (TTL de 2 dias); regenerar o `worker.js` só muda o TTL.
+
+## 16. Aba Ao vivo do celular "como no computador": sugestão de letra, miniatura/prévia e escolha de músicas (SEM compilar, sem teste)
+- Causa do "Confirmar letra não funciona": o celular só confirmava depois de tocar em Verificar (exigia `_remoteLyricsCheck`). Agora há um único candidato (`_nextLyrics`/`_nextLyricsVideoId`) que o app acha sozinho ao preparar a próxima; "Confirmar letra" usa ele (`ConfirmNextLyrics`, também botão ✅ no painel PRÓXIMA MÚSICA do computador).
+- Novo comando `livejson` (a página consulta a cada 3 s): o que está no telão (`_currentProjectedLyric`, próxima frase, estado), próxima música (miniatura do YouTube `i.ytimg.com`, status da letra, 5 primeiras linhas num "slide" preto, caixa verde "Encontrei esta letra… Confirmar", campos Música/Autor já preenchidos), pedidos (com status da letra e botão Preparar por pedido: `reqpick`) e busca na biblioteca (`libsearch`/`libpick`: Próxima ou ▶ Tocar já).
+- A página monta tudo com `textContent` (títulos/pedidos vêm de terceiros); "Tocar" avisa se não há letra com tempos e se vai trocar a música atual. A miniatura precisa de internet no celular (se faltar, some sozinha).
+- `PrepareNextForRemote` centraliza "deixar como próxima" para pedidos, biblioteca e "pedido mais antigo".
