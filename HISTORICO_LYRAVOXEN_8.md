@@ -187,3 +187,11 @@
 - Bug achado e corrigido: nomes que começam com número ("10.000 Razões") perdiam o nome ao importar (a limpeza de numeração era gananciosa). Agora só tira "1.", "2)", "3 -", "•".
 - Mensagens de resposta do celular agora ficam fixas no pé da tela (antes ficavam fora da vista).
 - Novos controles na aba Ao vivo: ◀ Frase / Frase ▶ (projeção manual), 🔄 Voltar ao automático (aparece no modo manual), ⏪ −10 s / +10 s ⏩, 🔉 − / 🔇 Mudo / 🔊 + (só YouTube). Comandos `cueprev`, `cuenext`, `auto`, `seek`, `vol`.
+
+## 18. Nomes (intérprete + título), letra ao colar o link e cadastro rápido (C# AINDA NÃO COMPILADO)
+- Campo "Autor / compositor" removido da interface (só INTÉRPRETE e TÍTULO DA MÚSICA). O modelo ainda guarda `Composer` para não perder dados antigos.
+- `Services/TrackTitleParser.cs`: separa intérprete e título a partir do título e do canal do YouTube. Ordem: canal = intérprete; intérpretes já cadastrados (biblioteca/histórico); senão padrão "Intérprete - Música" e o catálogo decide depois (`LyricsPreviewService.ResolveOrderAsync`). `CleanTitle` agora também tira Legendado, Playback, Clipe/Vídeo/Áudio Oficial, Lyrics, Letra, HD/HQ/4K, Ao Vivo/Live, emojis e colchetes. Canais de playback/karaokê/legendado não viram intérprete.
+- Aplicado em `AddVideoToHistoryAsync`: só corrige o que ainda parece o título inteiro do vídeo (`LooksUncorrected`: igual ao título, com " - " ou com Playback/Legendado...). Nomes que o usuário já corrigiu ficam. Botão "✨ Corrigir nomes" refaz na hora.
+- `MainWindow.LinkLyrics.cs`: dica "já tem letra?" sob a barra do link (a cada 700 ms após colar) e na aba Sincronização, com botão "Usar esta letra" (sincronizada: aplica e salva; só texto: leva para o cadastro). O celular também recebe palpite de música/autor mesmo quando o catálogo não acha.
+- Cadastro rápido (aba Cadastrar letra): "📋 Colar e limpar letra" (`LyricsTextCleaner`: tira cifras, [Refrão], créditos, links, "(2x)") e "⚡ Cadastro rápido" (letra do catálogo ou da área de transferência → salva texto → reinicia a música do zero → inicia a marcação por toque). Concluir salva já com os nomes preenchidos.
+- Testes: `tests/js/names.test.mjs` (35) usa as regex reais; `Program.cs` ganhou testes de nomes e limpeza. Limites conhecidos: título da música com " - " é tratado como "não corrigido" e será separado de novo ao carregar o link.

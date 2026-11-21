@@ -275,6 +275,8 @@ public partial class MainWindow
         return message + (ok && !string.IsNullOrWhiteSpace(request.Group) ? " (pedido de " + request.Group + ")" : "");
     }
 
+    private static string FirstFilled(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "";
+
     /// <summary>Tudo o que a aba Ao vivo do celular mostra: o que está no telão, a próxima música com prévia da letra, pedidos.</summary>
     private string BuildLiveJson()
     {
@@ -309,8 +311,8 @@ public partial class MainWindow
                 status,
                 headline = preview?.Headline ?? "🔎 Verificando se tem letra…",
                 preview = (preview?.Preview ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries),
-                track = typedTrack.Length > 0 ? typedTrack : preview?.FoundTrack ?? "",
-                artist = typedTrack.Length > 0 ? typedArtist : preview?.FoundArtist ?? "",
+                track = typedTrack.Length > 0 ? typedTrack : FirstFilled(preview?.FoundTrack, preview?.GuessTrack),
+                artist = typedTrack.Length > 0 ? typedArtist : FirstFilled(preview?.FoundArtist, preview?.GuessArtist),
                 canConfirm = preview is not null && IsLyricsCandidate(preview),
                 warning = preview is null ? "" : NextLyricsWarning().Trim(' ', '(', ')')
             };

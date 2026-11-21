@@ -214,4 +214,17 @@ Check(workerCode.Contains("env.PEDIDOS") && workerCode.Contains("ADMIN_TOKEN") &
 var numbered = SongRequestStore.MessagesToJson("Conjunto: J\n1. 10.000 Razões - https://youtu.be/abcdefghijk\n2) Santo https://youtu.be/bbbbbbbbbbb\n- 40 dias https://youtu.be/ccccccccccc");
 Check(numbered.Count == 1 && numbered[0].Contains("10.000 Raz") && numbered[0].Contains("\"Santo\"") && numbered[0].Contains("40 dias"), "pedido: tira só a numeração da lista, não números que fazem parte do nome");
 
+// Intérprete e título da música a partir do título/canal do vídeo; limpeza de letra copiada.
+var nameA = TrackTitleParser.Parse("Eliã Oliveira - Reconstrução (Clipe Oficial)", "Eliã Oliveira");
+Check(nameA.Track == "Reconstrução" && nameA.Artist == "Eliã Oliveira" && nameA.Confident, "nomes: intérprete = canal");
+var nameB = TrackTitleParser.Parse("Fernandinho - Santo (Ao Vivo)", "Som Gospel Playback");
+Check(nameB.Track == "Santo" && nameB.Artist == "Fernandinho" && !nameB.Confident && nameB.PartA == "Fernandinho", "nomes: canal de playback não vira intérprete; ordem a confirmar");
+var nameC = TrackTitleParser.Parse("Santo - Fernandinho", "Canal X", new[] { "Fernandinho" });
+Check(nameC.Track == "Santo" && nameC.Artist == "Fernandinho" && nameC.Confident, "nomes: intérprete conhecido resolve a ordem invertida");
+var nameD = TrackTitleParser.Parse("Grande é o Senhor (Legendado)", "Adhemar de Campos - Topic");
+Check(nameD.Track == "Grande é o Senhor" && nameD.Artist == "Adhemar de Campos", "nomes: título único + canal Topic");
+Check(TrackTitleParser.LooksUncorrected("Fernandinho - Santo (Ao Vivo)", "x") && !TrackTitleParser.LooksUncorrected("Rei dos Reis", "Aline - Rei dos Reis"), "nomes: só corrige o que ainda é o título inteiro");
+Check(LyricsTextCleaner.Clean("[Refrão]\nC G Am\nSanto, santo\n\n\nSenhor (2x)\nCompositor: X\n© 2020").Replace("\r", "") == "Santo, santo\n\nSenhor", "letra: tira rótulos, cifras, créditos e marcas de repetição");
+Check(!LyricsTextCleaner.LooksLikeLyrics("https://youtu.be/abcdefghijk") && LyricsTextCleaner.LooksLikeLyrics("Santo, santo, santo\nSenhor Deus todo-poderoso\nA terra e o céu cheios estão\nDa tua glória, Senhor"), "letra: link não parece letra");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

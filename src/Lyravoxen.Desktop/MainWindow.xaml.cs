@@ -965,7 +965,6 @@ public partial class MainWindow : Window
             if (string.IsNullOrWhiteSpace(_currentVideo.Composer)) _currentVideo.Composer = historyMetadata?.Composer ?? "";
             if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = historyMetadata?.Artist ?? "";
             MusicTrackBox.Text = _currentVideo.TrackName;
-            MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
             ManualLyricsBox.Text = _currentVideo.FullLyrics ?? "";
             ManualSyncProgressText.Text = string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)
@@ -1716,14 +1715,28 @@ public partial class MainWindow : Window
         if (_currentVideo?.VideoId == videoId)
         {
             _currentVideo.Title = displayTitle;
-            // Preserve metadata corrected by the user; use YouTube oEmbed only as a first suggestion.
-            if (string.IsNullOrWhiteSpace(_currentVideo.TrackName))
-                _currentVideo.TrackName = title;
-            if (string.IsNullOrWhiteSpace(_currentVideo.Artist))
-                _currentVideo.Artist = author;
+            _currentRawTitle = title;
+            _currentRawChannel = author;
+            // Nomes digitados/corrigidos pelo usuário são preservados. Só o que ainda é o título inteiro do YouTube
+            // ("Intérprete - Música (Playback)") é separado automaticamente em intérprete e título da música.
+            ParsedTrack? pendingNames = null;
+            if (!title.StartsWith("Vídeo do YouTube", StringComparison.Ordinal))
+            {
+                if (TrackTitleParser.LooksUncorrected(_currentVideo.TrackName, title))
+                {
+                    var parsed = TrackTitleParser.Parse(title, author, KnownArtists());
+                    _currentVideo.TrackName = parsed.Track;
+                    _currentVideo.Artist = parsed.Artist;
+                    if (!parsed.Confident) pendingNames = parsed;
+                }
+                else if (string.IsNullOrWhiteSpace(_currentVideo.Artist))
+                    _currentVideo.Artist = TrackTitleParser.CleanChannel(author);
+            }
             MusicTrackBox.Text = _currentVideo.TrackName;
-            MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
+            _urlHintFor = videoId;
+            if (pendingNames is not null) _ = RefineNamesAsync(videoId, pendingNames);
+            else _ = CheckCurrentVideoLyricsAsync(videoId);
         }
         if (!saveToHistory) return;
 
@@ -1732,12 +1745,11 @@ public partial class MainWindow : Window
         {
             existing.Title = displayTitle;
             existing.TrackName = MusicTrackBox.Text.Trim();
-            existing.Composer = MusicComposerBox.Text.Trim();
             existing.Artist = MusicArtistBox.Text.Trim();
             existing.Url = url;
             existing.LastUsed = DateTime.Now;
         }
-        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = url, LastUsed = DateTime.Now });
+        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = url, LastUsed = DateTime.Now });
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
         SaveHistory();
         RefreshHistory();
@@ -2561,7 +2573,6 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.TrackName = MusicTrackBox.Text.Trim();
-        _currentVideo.Composer = MusicComposerBox.Text.Trim();
         _currentVideo.Artist = MusicArtistBox.Text.Trim();
         UpdateCurrentHistoryMetadata();
         SaveCurrentVideoMetadata();
@@ -2573,7 +2584,6 @@ public partial class MainWindow : Window
         var item = _history.FirstOrDefault(entry => entry.VideoId == _currentVideo.VideoId);
         if (item is null) return;
         item.TrackName = MusicTrackBox.Text.Trim();
-        item.Composer = MusicComposerBox.Text.Trim();
         item.Artist = MusicArtistBox.Text.Trim();
         item.LastUsed = DateTime.Now;
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
@@ -2605,7 +2615,6 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.TrackName = MusicTrackBox.Text.Trim();
-        _currentVideo.Composer = MusicComposerBox.Text.Trim();
         _currentVideo.Artist = MusicArtistBox.Text.Trim();
         UpdateCurrentHistoryMetadata();
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
@@ -2796,7 +2805,7 @@ public partial class MainWindow : Window
         if (video is null)
             folder.Videos.Add(new LibraryVideo
             {
-                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
+                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
                 FullLyrics = _currentVideo.FullLyrics,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
@@ -2804,7 +2813,6 @@ public partial class MainWindow : Window
         {
             video.Title = _currentVideo.Title;
             video.TrackName = MusicTrackBox.Text.Trim();
-            video.Composer = MusicComposerBox.Text.Trim();
             video.Artist = MusicArtistBox.Text.Trim();
             video.Url = _currentVideo.Url;
             video.FullLyrics = _currentVideo.FullLyrics;
@@ -2878,7 +2886,6 @@ public partial class MainWindow : Window
             _audioTimer.Start();
             _currentVideo = video;
             MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
-            MusicComposerBox.Text = video.Composer;
             MusicArtistBox.Text = video.Artist;
             ManualLyricsBox.Text = video.FullLyrics ?? "";
             ManualSyncProgressText.Text = string.IsNullOrWhiteSpace(video.FullLyrics)

@@ -10,10 +10,14 @@ namespace Lyravoxen.Services;
 internal enum LyricsAvailability { Library, Synced, PlainOnly, NotFound, Error }
 
 /// <summary>Resultado da verificação "este vídeo já tem letra?" (sem abrir janelas, sem alterar nada).</summary>
-internal sealed class LyricsPreview
+internal sealed record LyricsPreview
 {
     public LyricsAvailability Availability { get; init; }
     public string VideoTitle { get; init; } = "";
+    public string VideoChannel { get; init; } = "";
+    /// <summary>Título da música e intérprete deduzidos do título/canal do vídeo (já sem "Playback", "Legendado"...).</summary>
+    public string GuessTrack { get; init; } = "";
+    public string GuessArtist { get; init; } = "";
     public string FoundTrack { get; init; } = "";
     public string FoundArtist { get; init; } = "";
     /// <summary>False quando a faixa do catálogo tem o nome certo mas o artista não aparece no título/canal: conferir a versão.</summary>
@@ -106,11 +110,17 @@ internal static class LyricsPreviewService
         try
         {
             var items = await SearchCatalogAsync(BuildQueries(title));
-            return Store(videoId, Pick(items, title, author));
+            var guess = TrackTitleParser.Parse(title, author, videos.Select(video => video.Artist));
+            return Store(videoId, Pick(items, title, author) with
+            {
+                VideoChannel = author,
+                GuessTrack = guess.Track,
+                GuessArtist = guess.Artist
+            });
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
-            return Store(videoId, new LyricsPreview { Availability = LyricsAvailability.Error, VideoTitle = title });
+            return Store(videoId, new LyricsPreview { Availability = LyricsAvailability.Error, VideoTitle = title, VideoChannel = author });
         }
     }
 
@@ -157,6 +167,33 @@ internal static class LyricsPreviewService
         {
             return new LyricsPreview { Availability = LyricsAvailability.Error };
         }
+    }
+
+    /// <summary>Para "A - B" sem pistas: o catálogo confirma se A é a música (true) ou se B é a música (false). null = não deu para decidir.</summary>
+    public static async Task<bool?> ResolveOrderAsync(string partA, string partB)
+    {
+        try { return DecideOrder(await SearchCatalogAsync(new[] { partA + " " + partB }), partA, partB); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException) { return null; }
+    }
+
+    public static bool? DecideOrder(IEnumerable<JsonElement> items, string partA, string partB)
+    {
+        var a = Normalize(partA);
+        var b = Normalize(partB);
+        var aTrack = 0;
+        var bTrack = 0;
+        foreach (var item in items)
+        {
+            string Str(string name) => item.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.String ? element.GetString() ?? "" : "";
+            var track = Normalize(Str("trackName"));
+            var artist = Normalize(Str("artistName"));
+            bool Near(string x, string y) => x.Length >= 3 && y.Length >= 3 && (x == y || ContainsPhrase(x, y) || ContainsPhrase(y, x));
+            if (track == a && Near(artist, b)) aTrack++;
+            if (track == b && Near(artist, a)) bTrack++;
+        }
+        if (aTrack > 0 && bTrack == 0) return true;
+        if (bTrack > 0 && aTrack == 0) return false;
+        return null;
     }
 
     /// <summary>Converte uma letra .lrc ("[01:23.45] texto") em frases com tempo.</summary>
@@ -206,14 +243,15 @@ internal static class LyricsPreviewService
             .Select(line => Regex.Replace(line, @"^(\s*\[[^\]]*\])+\s*", ""))
             .Where(line => line.Trim().Length > 0);
 
-    /// <summary>Remove marcas comuns de título de vídeo ("Clipe Oficial", "(Ao Vivo)", "Playback", "[HD]"...).</summary>
+    /// <summary>Remove marcas comuns de título de vídeo ("Clipe Oficial", "(Ao Vivo)", "Playback", "Legendado", "[HD]", emojis...).</summary>
     public static string CleanTitle(string? title)
     {
         var text = Regex.Replace(title ?? "", @"[\(\[\{][^\)\]\}]*[\)\]\}]", " ");
+        text = Regex.Replace(text, @"[\u2600-\u27BF\u266A\u266B]|[\uD83C-\uDBFF][\uDC00-\uDFFF]", " ");
         text = Regex.Replace(text,
-            @"\b(clipe oficial|v[ií]deo oficial|official (?:music )?video|official audio|[aá]udio oficial|lyric video|lyrics|com letra|letra|playback|ao vivo|live|karaok[eê]|legendado|hd|4k)\b",
+            @"\b(?:(?:clipe|v[ií]deo|[aá]udio|videoclipe)\s+oficial|official\s+(?:music\s+|lyric\s+)?(?:video|audio)|lyrics?\s+video|lyrics?|com\s+legendas?|com\s+letras?|legendad[oa]s?|legendas?|letras?|play\s?back|ao\s+vivo|live|karaok[eê]|(?:full\s+)?hd|hq|4k|1080p|720p|oficial|official|visualizer)\b",
             " ", RegexOptions.IgnoreCase);
-        return Regex.Replace(text, @"\s+", " ").Trim(' ', '-', '–', '—', '|', ':', '/');
+        return Regex.Replace(text, @"\s+", " ").Trim(' ', '-', '–', '—', '|', ':', '/', '"', '“', '”', '*');
     }
 
     /// <summary>Consultas ao catálogo: título limpo inteiro e, se houver "A - B", cada parte (a ordem artista/música varia).</summary>
