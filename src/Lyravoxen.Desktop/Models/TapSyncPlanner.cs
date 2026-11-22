@@ -83,6 +83,30 @@ public static class TapSyncPlanner
         return cues;
     }
 
+    /// <summary>
+    /// Rascunho de tempos SEM tocar: distribui o início de cada estrofe pela duração da música, proporcional ao tamanho do texto.
+    /// <paramref name="firstStart"/> = instante em que a 1ª estrofe começa (negativo = estimar uma introdução curta).
+    /// É aproximado (não sabe de solos nem de refrões repetidos): serve para começar rápido e ajustar depois.
+    /// </summary>
+    public static List<double> EstimateStarts(IReadOnlyList<IReadOnlyList<string>> stanzas, double durationSeconds, double firstStart = -1, double tailSeconds = -1)
+    {
+        var starts = new List<double>();
+        if (stanzas.Count == 0 || durationSeconds <= 0) return starts;
+        var first = firstStart >= 0 ? Math.Min(firstStart, durationSeconds * 0.5) : Math.Min(20, durationSeconds * 0.06);
+        var tail = tailSeconds >= 0 ? tailSeconds : Math.Min(15, durationSeconds * 0.05);
+        var span = Math.Max(1, durationSeconds - first - tail);
+        // +25: cada estrofe "pesa" um pouco mais por causa da pausa entre elas.
+        var weights = stanzas.Select(stanza => stanza.Sum(line => (double)Math.Max(1, line.Length)) + 25).ToList();
+        var total = weights.Sum();
+        var cumulative = 0d;
+        foreach (var weight in weights)
+        {
+            starts.Add(first + span * cumulative / total);
+            cumulative += weight;
+        }
+        return starts;
+    }
+
     /// <summary>Quantidade de linhas das estrofes anteriores à de índice <paramref name="stanzaIndex"/>.</summary>
     public static int LinesBefore(IReadOnlyList<IReadOnlyList<string>> stanzas, int stanzaIndex)
         => stanzas.Take(Math.Max(0, stanzaIndex)).Sum(stanza => stanza.Count);

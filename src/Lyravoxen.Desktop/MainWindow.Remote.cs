@@ -17,7 +17,7 @@ public partial class MainWindow
     private void InitializeRemote()
     {
         Loaded += (_, _) => StartRemote();
-        Closed += (_, _) => _remote?.Dispose();
+        Closed += (_, _) => { _remote?.Dispose(); _audioMonitor.Dispose(); };
     }
 
     private static string LoadOrCreatePin(bool renew = false)
@@ -41,7 +41,12 @@ public partial class MainWindow
     {
         try
         {
-            _remote = new RemoteControlServer(LoadOrCreatePin()) { Handler = HandleRemoteCommandAsync, RequestHandler = HandleSongRequestAsync };
+            _remote = new RemoteControlServer(LoadOrCreatePin())
+            {
+                Handler = HandleRemoteCommandAsync,
+                RequestHandler = HandleSongRequestAsync,
+                AudioStreamer = _audioMonitor.StreamAsync
+            };
             _remote.Start();
             AppLog.Info("Controle remoto ativo na porta " + _remote.Port);
         }
@@ -68,6 +73,20 @@ public partial class MainWindow
                     case "nextcheck": return await CheckNextLyricsFromRemoteAsync(argument);
                     case "nextconfirm": return ConfirmNextLyrics();
                     case "livejson": return BuildLiveJson();
+                    case "audiolevel":
+                        _audioMonitor.EnsureStarted();
+                        return _audioMonitor.Running ? _audioMonitor.Level.ToString() : "ERR:" + (_audioMonitor.LastError.Length > 0 ? _audioMonitor.LastError : "captura desligada");
+                    case "clearlive": return ClearLiveProjectionForRemote();
+                    case "nextreject": return RejectNextLyricsForRemote();
+                    case "fixnames": return await FixNextNamesForRemoteAsync();
+                    case "lyricsnext": return LyricsTextForNextFromRemote(argument);
+                    case "lyricsnow": return LyricsTextForNowFromRemote(argument);
+                    case "estimate": return EstimateTimings();
+                    case "tapstart":
+                    case "tapmark":
+                    case "tapundo":
+                    case "tapfinish":
+                    case "tapcancel": return await TapCommandForRemoteAsync(command);
                     case "cueprev":
                         PreviousCue_Click(this, new RoutedEventArgs());
                         return StatusText.Text;

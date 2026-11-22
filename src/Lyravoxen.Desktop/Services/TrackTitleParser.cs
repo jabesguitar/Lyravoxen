@@ -18,7 +18,7 @@ internal static class TrackTitleParser
 
     // Canais de playback/letra/karaokê não são o intérprete.
     private static readonly Regex NotAnArtistChannel = new(
-        @"\b(?:play\s?back|karaok[eê]|legendad[oa]s?|lyrics?|letras?|instrumental|cifras?|covers?)\b",
+        @"\b(?:play\s?back|karaok[eê]|legendad[oa]s?|lyrics?|letras?|instrumental|cifras?|covers?|hinos?|hin[áa]rios?|louvores|m[uú]sicas|v[ií]deos|canal)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public static string CleanChannel(string? channel)

@@ -130,13 +130,15 @@ public partial class MainWindow
         "A barra de botões do topo cuida da conexão, do backup e da projeção.",
         new[]
         {
-            new HelpItem("Carregar YouTube", "Cole o link do vídeo no campo ao lado e clique. O vídeo abre no player e o app procura a letra no catálogo."),
+            new HelpItem("Carregar YouTube", "Cole o link do vídeo no campo ao lado e clique. Mesmo antes de clicar, logo abaixo da barra o app já diz se o vídeo tem letra: ✅ sincronizada (pronta para projetar), 🟡 só texto, ❌ não achada. Ao carregar, o INTÉRPRETE e o TÍTULO DA MÚSICA são separados sozinhos a partir do título do vídeo, sem Playback, Legendado, Ao Vivo, \"um tom abaixo\" etc."),
             new HelpItem("Tocar próxima", "Toca a música que você deixou preparada na aba \"＋ Próxima música\". Só fica ativo depois de preparar uma."),
             new HelpItem("Conectar Holyrics", "Informe endereço, porta e token da API do Holyrics e teste. Sem isso o app projeta só na tela própria."),
             new HelpItem("🩺 Diagnóstico", "Confere Holyrics e permissões do token, microfones, modelo de voz, monitores e internet. O resultado é copiado para colar numa conversa de suporte."),
             new HelpItem("☁ Backup", "Guarda uma cópia da biblioteca (letras, tempos, mídia) numa pasta de sua escolha, como OneDrive ou Google Drive. É automático ao abrir, a cada 10 minutos e ao fechar. Também restaura em outro computador."),
-            new HelpItem("📥 Pedidos", "Lista de músicas enviadas pelas pessoas (ex.: grupos de louvor) pelo link de pedidos, com o nome de quem enviou. Para cada uma: Preparar como próxima (YouTube), Abrir, Copiar link ou Descartar. No topo da janela está o link de pedidos para você mandar às pessoas (elas precisam estar na mesma rede Wi-Fi). Sem rede: \"Gerar formulário para enviar por WhatsApp\" cria um arquivo que a pessoa abre no celular; ela gera uma mensagem e manda para você, e \"Importar pedido\" lê essa mensagem (ou qualquer texto com links)."),
-            new HelpItem("📱 Celular", "Mostra o QR code e o PIN para controlar a aba Bíblia pelo celular, na mesma rede Wi-Fi."),
+            new HelpItem("📥 Pedidos", "Lista de músicas enviadas pelas pessoas, com o nome de quem enviou e, abaixo, se a música já tem letra (✅ sincronizada, 🟡 só texto, ❌ não achada). Para cada uma: Preparar como próxima (YouTube), Abrir, Copiar link ou Descartar.\nComo as pessoas enviam:\n• Link da rede local (no topo da janela): funciona no mesmo Wi-Fi.\n• ☁ Pedidos pela internet: link que funciona em qualquer rede, por um serviço gratuito do Cloudflare. O botão gera o código e o passo a passo (LEIA-ME). Informe o endereço e a senha, teste a conexão e divulgue o link /pedido. O app busca os pedidos sozinho.\n• ⚙ WhatsApp: cadastre seu número e o link do grupo e gere o formulário .html para enviar. Ele funciona mesmo no celular sem JavaScript. 💬 copia o texto de convite para colar no grupo.\nPedidos feitos dentro de um grupo: copie as mensagens no WhatsApp Web (Ctrl+C) e elas entram sozinhas; ou use 📋 Importar pedido / 🗂 Importar conversa exportada (.txt). Links repetidos há menos de 2 dias são ignorados."),
+            new HelpItem("Botões da janela de Pedidos", "Copiar link de pedidos: copia o link da rede local. Copiar link da internet: copia o link /pedido do serviço na nuvem.\n☁ Pedidos pela internet (qualquer rede): endereço do serviço e senha, 🧪 Testar conexão, 🔑 Nova senha e 📄 Gerar código do serviço (worker.js), que vem com o passo a passo (LEIA-ME).\n⚙ WhatsApp: número e grupo / formulário: cadastra seu número e o grupo; 📄 Gerar formulário (.html) cria o arquivo para enviar; 💬 Copiar texto de convite para o grupo copia o texto para colar no grupo.\n📋 Importar pedido (colar mensagem) e 🗂 Importar conversa exportada (.txt) trazem pedidos de mensagens do WhatsApp."),
+            new HelpItem("🎧 Som do computador no celular", "Na aba ▶ Ao vivo do celular, o cartão \"Som do computador\" tem um medidor que mostra se está saindo som no PC (🔊) ou se está em silêncio (🔇) e o botão \"Ouvir a música do PC\": LIGADO / DESLIGADO, que toca no celular o mesmo som que o computador está tocando, para você ter certeza de que a música rolou. Funciona pela rede Wi-Fi local, sem internet, com um atraso de menos de 1 segundo. O som é captado do Windows e só é enviado enquanto o botão estiver ligado. Se o medidor mostrar silêncio com música tocando, confira o volume e a saída de áudio do PC. No iPhone, desligue o modo silencioso."),
+            new HelpItem("📱 Celular", "Mostra o QR code e o PIN para controlar o Lyravoxen pelo celular, na mesma rede Wi-Fi. Trocar PIN gera um PIN novo.\nAba Bíblia: digite ou fale a referência, versículo e capítulo anterior/próximo, Limpar telão.\nAba ▶ Ao vivo:\n• No telão agora: a frase projetada, ◀ Frase / Frase ▶ (modo manual), 🔄 Voltar ao automático, 🧹 Limpar telão, ⏪/⏩ 10 s, volume e mudo, pausar/continuar e encerrar.\n• Próxima música: miniatura, prévia da letra, ✅ Confirmar letra ou ✖ Não usar, ✎ Criar letra (cole o texto), ⇄ Trocar campos, ✨ Corrigir nomes, 🔎 Verificar com estes nomes e Tocar próxima.\n• Sem letra com tempos: ⏱ Estimar tempos e 👆 Marcar por toque (botão grande TOQUE no celular).\n• Som do computador: medidor de nível e botão para ouvir a música do PC no celular.\n• Pedidos (Preparar), Últimas músicas salvas e busca na biblioteca (Próxima / Tocar já)."),
             new HelpItem("📌 Fixar à frente", "Mantém o Lyravoxen por cima das outras janelas."),
             new HelpItem("📋 Relatório", "Copia o registro de uso e de erros para você colar numa conversa de suporte."),
             new HelpItem("Abrir projeção própria", "Abre ou fecha a tela independente de projeção (tela cheia, no outro monitor)."),
@@ -144,14 +146,14 @@ public partial class MainWindow
             new HelpItem("Holyrics ativo", "Liga ou desliga o envio ao Holyrics, sem fechá-lo."),
             new HelpItem("Sair da projeção", "Fecha a projeção própria e a apresentação atual do Holyrics."),
             new HelpItem("Encerrar música", "Para a música e fecha a projeção no Lyravoxen e no Holyrics."),
-            new HelpItem("Sub-aba Sincronização", "Mostra a letra e o andamento da música. \"Buscar letra\" procura no catálogo online."),
+            new HelpItem("Sub-aba Sincronização", "Mostra a letra e o andamento da música. Os campos são INTÉRPRETE e TÍTULO DA MÚSICA: o app preenche sozinho a partir do título do vídeo. ✨ Corrigir nomes refaz a separação (e o catálogo ajuda a descobrir quem é o intérprete). Buscar letra procura no catálogo online. A linha de status abaixo dos campos mostra se a música já tem letra; quando o catálogo tem, o botão \"Usar esta letra\" aplica e salva (sincronizada) ou leva o texto para Cadastrar letra."),
             new HelpItem("Sub-aba Controles manuais", "◀ Anterior / Próxima ▶ / Projetar selecionada: navegam e projetam frases à mão.\n" +
                 "Modo automático: a projeção acompanha o tempo da música.\n" +
                 "Editar selecionada, Atualizar frase, Excluir frase, ↑/↓ Reordenar: corrigem a letra.\n" +
                 "Adicionar tempo, Marcar frase no tempo atual: acertam o instante de cada frase.\n" +
                 "Importar letra sincronizada (.LRC / .SRT): traz uma letra com tempos de um arquivo."),
             new HelpItem("Sub-aba Histórico de vídeos", "Lista os vídeos já usados. Use a lupa (⌕) para filtrar e clique para reabrir."),
-            new HelpItem("Sub-aba Biblioteca", "Suas músicas organizadas em pastas. Criar pasta, Renomear, Excluir, Adicionar vídeo atual a esta pasta e Importar áudio MP3/WAV para uso offline.")
+            new HelpItem("Sub-aba Biblioteca", "Suas músicas organizadas em pastas. Criar pasta, Renomear, Excluir, Adicionar vídeo atual a esta pasta e Importar áudio MP3/WAV para uso offline. Letras confirmadas ou cadastradas pelo celular ficam na pasta \"Músicas sincronizadas\". ✨ Corrigir nomes de todas as músicas limpa o intérprete e o título de toda a biblioteca e do histórico (Playback, Legendado, um tom abaixo...).")
         });
 
     private static readonly HelpPage RegisterHelp = new(
@@ -160,6 +162,10 @@ public partial class MainWindow
         "Depois escolha como sincronizar.",
         new[]
         {
+            new HelpItem("📋 Colar e limpar letra", "Cola o que você copiou de um site (Letras.mus.br, Cifra Club...) e limpa: tira cifras, [Refrão], créditos, links e \"(2x)\", e separa as estrofes por uma linha em branco."),
+            new HelpItem("⚡ Cadastro rápido", "O caminho mais curto para uma música sem letra: pega a letra do catálogo (se só tiver o texto) ou da área de transferência, salva, reinicia a música do começo e já liga a marcação por toque. Sem letra copiada, ele abre as fontes de pesquisa; copie a letra (Ctrl+C) e clique de novo."),
+            new HelpItem("⏱ Estimar tempos (rascunho)", "Distribui as estrofes pela duração da música em segundos, proporcional ao tamanho do texto. Se a música estiver tocando, o instante atual vira o começo da 1ª estrofe. É aproximado (não sabe de solos nem refrões repetidos): acompanhe e corrija com Frase ◀/▶ ou marque por toque."),
+            new HelpItem("Pelo celular", "A aba ▶ Ao vivo do celular também cola a letra, estima os tempos e tem o botão TOQUE para marcar as estrofes, sem precisar estar no computador."),
             new HelpItem("Salvar e sincronizar", "Salva a letra colada e inicia a sincronização (automática, quando disponível, ou no primeiro play)."),
             new HelpItem("Iniciar reconhecimento automático", "O app ouve a música e marca os tempos sozinho. Precisa do motor de voz Whisper, que não funciona em computadores sem AVX2."),
             new HelpItem("Iniciar marcação por toque", "Você toca a cada estrofe enquanto a música toca. Funciona em qualquer computador e em músicas só com playback."),
@@ -179,7 +185,8 @@ public partial class MainWindow
             new HelpItem("Voltar / Avançar / Atualizar", "Controles de navegação, como num navegador comum."),
             new HelpItem("Copiar link", "Copia o endereço da página aberta."),
             new HelpItem("＋ Nova aba / Fechar aba", "Abre ou fecha abas de pesquisa."),
-            new HelpItem("Atalhos de sites", "YouTube, Google, Cifra Club, Vagalume, Letras.mus.br, Ouvir Música e Harpa Cristã abrem direto na aba atual."),
+            new HelpItem("Atalhos de sites", "▶ YouTube, G Google, ♫ Cifra Club, V Vagalume, L Letras.mus.br, ♪ Ouvir Música e ✝ Harpa Cristã abrem direto na aba atual."),
+            new HelpItem("🔎 Verificar letra / ✅ Confirmar letra", "Ao preparar a próxima, o painel mostra a miniatura do que foi achado e as primeiras linhas da letra (✅ sincronizada, 🟡 só texto, ❌ não achada). Se for a música certa, clique em Confirmar letra: ela é salva na biblioteca e roda sozinha no telão quando tocar. Verificar letra refaz a consulta."),
             new HelpItem("Preparar próxima", "Abra o vídeo desejado (não apenas a página de resultados) e clique. Ela fica pronta para o botão \"Tocar próxima\" na aba Ao vivo.")
         });
 

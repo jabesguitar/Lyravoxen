@@ -197,7 +197,7 @@
           <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
          </Grid>
          <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
-         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/></StackPanel>
+         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/><Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" Margin="0,5,0,0" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/></StackPanel>
         </Grid>
        </Grid>
       </Grid>
@@ -215,6 +215,7 @@
     <TextBlock Text="Quando a busca automática não encontrar a letra, procure nas fontes alternativas, copie a letra completa e cole aqui (uma frase por linha). Clique em Salvar e sincronizar: com a música tocando, o Lyravoxen reconhece o áudio, sincroniza a letra sozinho e já projeta cada trecho na prévia, na projeção própria e no Holyrics. Se a música ainda não estiver tocando, a sincronização começa assim que você der play." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
     <WrapPanel Margin="0,10,0,0">
      <Button Content="📋 Colar e limpar letra" Click="PasteCleanLyrics_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Cola o que você copiou, tira cifras, [Refrão], créditos e links e separa as estrofes"/>
+     <Button Content="⏱ Estimar tempos (rascunho)" Click="EstimateTimings_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Distribui as estrofes pela duração da música em segundos. Se a música estiver tocando, o instante atual vira o começo da 1ª estrofe. Depois ajuste com Frase ◀/▶ ou marque por toque"/>
      <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="#176E68" Padding="14,6" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque"/>
     </WrapPanel>
    </StackPanel>

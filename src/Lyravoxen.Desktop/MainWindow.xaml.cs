@@ -2648,6 +2648,7 @@ public partial class MainWindow : Window
                 LocalPath = _currentVideo.LocalPath,
                 Format = _currentVideo.Format,
                 FullLyrics = _currentVideo.FullLyrics,
+                SavedAt = DateTime.Now,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         }
@@ -2655,6 +2656,7 @@ public partial class MainWindow : Window
         {
             foreach (var saved in savedItems)
             {
+                saved.SavedAt = DateTime.Now;
                 saved.Title = _currentVideo.Title;
                 saved.TrackName = _currentVideo.TrackName;
                 saved.Composer = _currentVideo.Composer;

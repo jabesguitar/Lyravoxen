@@ -227,4 +227,23 @@ Check(TrackTitleParser.LooksUncorrected("Fernandinho - Santo (Ao Vivo)", "x") &&
 Check(LyricsTextCleaner.Clean("[Refrão]\nC G Am\nSanto, santo\n\n\nSenhor (2x)\nCompositor: X\n© 2020").Replace("\r", "") == "Santo, santo\n\nSenhor", "letra: tira rótulos, cifras, créditos e marcas de repetição");
 Check(!LyricsTextCleaner.LooksLikeLyrics("https://youtu.be/abcdefghijk") && LyricsTextCleaner.LooksLikeLyrics("Santo, santo, santo\nSenhor Deus todo-poderoso\nA terra e o céu cheios estão\nDa tua glória, Senhor"), "letra: link não parece letra");
 
+// Rascunho de tempos, nomes com "tom abaixo"/feat. e busca tolerante por nomes.
+var estimated = TapSyncPlanner.EstimateStarts(new List<List<string>>
+{
+    new() { new string('a', 40), new string('b', 40) },
+    new() { new string('c', 40), new string('d', 40) },
+    new() { new string('e', 80), new string('f', 80) }
+}, 240);
+Check(estimated.Count == 3 && Math.Abs(estimated[0] - 14.4) < 1e-9 && estimated[0] < estimated[1] && estimated[1] < estimated[2] && estimated[2] < 228, "estimativa: 1ª estrofe após 6% e estrofes crescentes dentro da música");
+Check(TapSyncPlanner.EstimateStarts(new List<List<string>> { new() { "x" } }, 200, 30)[0] == 30, "estimativa: usa o instante informado como começo da 1ª estrofe");
+Check(TrackTitleParser.Parse("Santo - Um Tom Abaixo", "Fernandinho").Track == "Santo" && TrackTitleParser.Parse("Santo - Dois Tons Acima", "Fernandinho").Track == "Santo", "nomes: tira \"um tom abaixo\" e \"dois tons acima\"");
+Check(TrackTitleParser.Parse("Fernandinho - Santo feat. Aline Barros (Ao Vivo)", "Fernandinho").Track == "Santo", "nomes: feat. sai do título da música");
+Check(TrackTitleParser.Parse("Rei dos Reis", "Hinos Cantados TV").Artist == "", "nomes: canal de hinos não vira intérprete");
+var catalogItems = System.Text.Json.JsonDocument.Parse("[{\"trackName\":\"Reconstrução - Ao Vivo\",\"artistName\":\"Eliã Oliveira\",\"syncedLyrics\":\"[00:10.00] a\\n[00:20.00] b\"},{\"trackName\":\"Deus é fiel\",\"artistName\":\"Banda\",\"plainLyrics\":\"x\\ny\"}]")
+    .RootElement.EnumerateArray().Select(e => e.Clone()).ToList();
+Check(LyricsPreviewService.PickByNames(catalogItems, "Reconstrução", "Eliã Oliveira").Availability == LyricsAvailability.Synced, "busca por nomes: aceita sufixo \"Ao Vivo\" do catálogo");
+Check(LyricsPreviewService.PickByNames(catalogItems, "Eliã Oliveira", "Reconstrução").Availability == LyricsAvailability.Synced, "busca por nomes: campos trocados também acham");
+var shortName = LyricsPreviewService.PickByNames(catalogItems, "Deus", "");
+Check(shortName.Availability == LyricsAvailability.NotFound && shortName.CatalogResults == 2, "busca por nomes: \"Deus\" não casa com \"Deus é fiel\" e informa os resultados");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

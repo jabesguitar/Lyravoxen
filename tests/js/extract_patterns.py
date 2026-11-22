@@ -20,7 +20,7 @@ tp=open(D+'/TrackTitleParser.cs',encoding='utf-8').read()
 lc=open(D+'/LyricsTextCleaner.cs',encoding='utf-8').read()
 body=lp[lp.index('public static string CleanTitle'):]; body=body[:body.index('public static List<string> BuildQueries')]
 pieces=verb(body)
-P['cleanBrackets']=pieces[0]; P['emoji']=pieces[1]; P['cleanWords']=pieces[2]
+P['cleanBrackets']=pieces[0]; P['emoji']=pieces[1]; P['feat']=pieces[2]; P['cleanWords']=pieces[3]
 P['partSplit']=verb(tp[tp.index('PartSplit = new('):tp.index('RegexOptions.Compiled);',tp.index('PartSplit = new('))])[0]
 blk=tp[tp.index('ChannelSuffix = new('):]; blk=blk[:blk.index('RegexOptions')]; P['channelSuffix']=''.join(verb(blk))
 blk=tp[tp.index('NotAnArtistChannel = new('):]; blk=blk[:blk.index('RegexOptions')]; P['notArtist']=''.join(verb(blk))

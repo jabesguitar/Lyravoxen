@@ -151,6 +151,14 @@ public partial class MainWindow
                 ? "❌ Não achei a letra no catálogo. Use ⚡ Cadastro rápido na aba Cadastrar letra."
                 : preview.Headline + lines;
             UrlLyricsHintText.Text = preview.Headline;
+            if (found && string.IsNullOrWhiteSpace(MusicArtistBox.Text) && !string.IsNullOrWhiteSpace(preview.FoundArtist))
+            {
+                // Intérprete que o título do vídeo não trazia: usa o do catálogo.
+                MusicArtistBox.Text = preview.FoundArtist;
+                _currentVideo.Artist = preview.FoundArtist;
+                UpdateCurrentHistoryMetadata();
+                SaveCurrentVideoMetadata();
+            }
             if (found)
             {
                 _currentCatalogLyrics = preview;
@@ -286,5 +294,73 @@ public partial class MainWindow
         await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(
             "(function(){if(typeof player==='undefined'||!player||typeof player.seekTo!=='function')return 'x';player.seekTo(0,true);player.playVideo();return 'ok';})()");
         _lastKnownPlaybackSeconds = 0;
+    }
+
+    // ----- corrigir os nomes de todas as músicas já salvas -----
+
+    private static bool FixNamePair(string? savedTitle, string track, string artist, List<string> known, out string newTrack, out string newArtist)
+    {
+        newTrack = track;
+        newArtist = artist;
+        // O título salvo é "Título do vídeo — Canal".
+        var title = savedTitle ?? "";
+        var cut = title.LastIndexOf(" — ", StringComparison.Ordinal);
+        var rawTitle = cut > 0 ? title[..cut] : title;
+        var channel = cut > 0 ? title[(cut + 3)..] : "";
+
+        if (TrackTitleParser.LooksUncorrected(track, rawTitle))
+        {
+            var parsed = TrackTitleParser.Parse(rawTitle, channel, known);
+            var normalizedArtist = LyricsPreviewService.Normalize(artist);
+            var artistUntouched = normalizedArtist.Length == 0 ||
+                                  normalizedArtist == LyricsPreviewService.Normalize(channel) ||
+                                  normalizedArtist == LyricsPreviewService.Normalize(TrackTitleParser.CleanChannel(channel));
+            if (parsed.Track.Length == 0 || (!parsed.Confident && !artistUntouched)) return false; // não adivinha por cima do que foi digitado
+            newTrack = parsed.Track;
+            newArtist = parsed.Artist.Length > 0 ? parsed.Artist : artist;
+        }
+        else
+        {
+            newTrack = LyricsPreviewService.CleanTitle(track);
+            newArtist = LyricsPreviewService.CleanTitle(artist);
+            if (newTrack.Length == 0) newTrack = track;
+        }
+        return newTrack != track || newArtist != artist;
+    }
+
+    private void FixAllNames_Click(object sender, RoutedEventArgs e)
+    {
+        if (System.Windows.MessageBox.Show(this,
+                "Corrigir o intérprete e o título de TODAS as músicas da biblioteca e do histórico?\n\n" +
+                "O programa tira Playback, Legendado, Ao Vivo, \"um tom abaixo\" etc. e coloca cada nome no seu campo. " +
+                "Nomes que você já digitou certinho são mantidos.",
+                "Corrigir nomes", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        var known = KnownArtists().ToList();
+        var changedLibrary = 0;
+        foreach (var video in _library.SelectMany(folder => folder.Videos).Where(video => !video.IsOffline))
+        {
+            if (!FixNamePair(video.Title, video.TrackName, video.Artist, known, out var track, out var artist)) continue;
+            video.TrackName = track;
+            video.Artist = artist;
+            changedLibrary++;
+        }
+        var changedHistory = 0;
+        foreach (var item in _history)
+        {
+            if (!FixNamePair(item.Title, item.TrackName, item.Artist, known, out var track, out var artist)) continue;
+            item.TrackName = track;
+            item.Artist = artist;
+            changedHistory++;
+        }
+        if (changedLibrary > 0) { SaveLibrary(); RefreshLibrarySongs(); }
+        if (changedHistory > 0) { SaveHistory(); RefreshHistory(); }
+        if (_currentVideo is not null)
+        {
+            MusicTrackBox.Text = _currentVideo.TrackName;
+            MusicArtistBox.Text = _currentVideo.Artist;
+        }
+        StatusText.Text = "Nomes corrigidos: " + changedLibrary + " na biblioteca e " + changedHistory + " no histórico.";
     }
 }
