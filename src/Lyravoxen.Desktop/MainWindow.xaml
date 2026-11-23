@@ -78,11 +78,11 @@
   </ControlTemplate></Setter.Value></Setter>
  </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo"><Grid Margin="14">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <DockPanel Grid.Row="0" Margin="4,0,4,2">
-   <StackPanel><TextBlock Text="LYRAVOXEN" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/></StackPanel>
+  <DockPanel Grid.Row="0" Margin="4,0,4,10">
+   <StackPanel><TextBlock Text="LYRAVOXEN" Foreground="{StaticResource Accent}" FontSize="24" FontWeight="Bold"/><TextBlock Text="Música em sintonia com palavras." Foreground="{StaticResource TextMuted}" FontSize="12"/></StackPanel>
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
-  <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="7" Margin="0,0,0,6">
+  <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="7" Margin="0,0,0,10">
    <StackPanel><WrapPanel>
     <TextBox x:Name="YoutubeUrlBox" Width="280" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube" TextChanged="YoutubeUrlBox_TextChanged"/>
     <Button x:Name="LoadYoutubeButton" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
@@ -115,7 +115,7 @@
     <TabControl x:Name="SyncTabs" Background="{StaticResource Panel}" BorderThickness="0">
      <TabItem Header="Sincronização">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-       <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="13" Margin="4,0,4,2"/>
+       <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,8"/>
        <Grid Grid.Row="1" Margin="3,0,3,5">
         <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1.4*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0"><TextBlock Text="INTÉRPRETE" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/><TextBox x:Name="MusicArtistBox" Height="30" FontSize="11" Padding="6,4" ToolTip="Intérprete" LostFocus="MusicMetadata_LostFocus" Margin="2"/></StackPanel>
@@ -123,20 +123,20 @@
         <Button Grid.Column="2" Content="Buscar letra" Click="SearchLyrics_Click" Background="#176E68" Margin="2,13,2,2" Padding="12,4"/>
         <Button Grid.Column="3" Content="✨ Corrigir nomes" Click="FixNames_Click" Margin="2,13,4,2" Padding="12,4" ToolTip="Separa intérprete e título a partir do título do vídeo e tira Playback, Legendado, Ao vivo etc."/>
        </Grid>
-       <StackPanel Grid.Row="2" Margin="4,0,4,2">
+       <StackPanel Grid.Row="2" Margin="4,0,4,6">
         <TextBlock x:Name="LinkLyricsStatusText" Foreground="#F2F6F8" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"/>
         <Button x:Name="UseCatalogLyricsButton" Content="Usar esta letra" Click="UseCatalogLyrics_Click" Visibility="Collapsed" Background="#176E68" HorizontalAlignment="Left" Padding="14,6" Margin="0,6,0,0"/>
        </StackPanel>
-       <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,2"><TextBlock Text="Linhas:" Foreground="#F2F6F8" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="64" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,5,0"/></StackPanel>
-       <Border Grid.Row="4" Background="#132533" BorderBrush="#3D657A" BorderThickness="1.5" CornerRadius="10" Padding="6" Margin="2,0,2,2">
+       <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,8"><TextBlock Text="Linhas:" Foreground="#F2F6F8" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="64" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,5,0"/></StackPanel>
+       <Border Grid.Row="4" Background="#132533" BorderBrush="#3D657A" BorderThickness="1.5" CornerRadius="10" Padding="12" Margin="4,2,4,6">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <TextBlock Text="PRÉVIA AO VIVO — O QUE ESTÁ SENDO PROJETADO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="2,0,2,3"/>
-         <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+         <TextBlock Text="PRÉVIA AO VIVO — O QUE ESTÁ SENDO PROJETADO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="2,0,2,8"/>
+         <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxHeight="760">
           <Border Width="1280" Height="720" Background="#080D12" BorderBrush="#6B8798" BorderThickness="2" CornerRadius="8" Padding="64" MinWidth="800">
            <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="58" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center"/>
           </Border>
          </Viewbox>
-         <TextBlock x:Name="NextProjectionPreviewText" Grid.Row="2" Text="Próxima: —" Foreground="#B8CAD5" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,3,0,0"/>
+         <TextBlock x:Name="NextProjectionPreviewText" Grid.Row="2" Text="Próxima: —" Foreground="#B8CAD5" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"/>
         </Grid>
        </Border>
       </Grid>
@@ -215,6 +215,8 @@
     <TextBlock Text="Quando a busca automática não encontrar a letra, procure nas fontes alternativas, copie a letra completa e cole aqui (uma frase por linha). Clique em Salvar e sincronizar: com a música tocando, o Lyravoxen reconhece o áudio, sincroniza a letra sozinho e já projeta cada trecho na prévia, na projeção própria e no Holyrics. Se a música ainda não estiver tocando, a sincronização começa assim que você der play." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
     <WrapPanel Margin="0,10,0,0">
      <Button Content="📋 Colar e limpar letra" Click="PasteCleanLyrics_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Cola o que você copiou, tira cifras, [Refrão], créditos e links e separa as estrofes"/>
+     <Button Content="🔎 Buscar texto da letra" Click="FetchLyricsText_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Busca o texto da letra pelo intérprete e título, no Vagalume (precisa da chave gratuita)"/>
+     <Button Content="⚙ Fonte de letras" Click="LyricSource_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Chave gratuita do Vagalume para buscar o texto da letra automaticamente"/>
      <Button Content="⏱ Estimar tempos (rascunho)" Click="EstimateTimings_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Distribui as estrofes pela duração da música em segundos. Se a música estiver tocando, o instante atual vira o começo da 1ª estrofe. Depois ajuste com Frase ◀/▶ ou marque por toque"/>
      <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="#176E68" Padding="14,6" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque"/>
     </WrapPanel>
@@ -260,7 +262,7 @@
    <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="PESQUISA E FONTES DE LETRAS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="14,6"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="14,6" Margin="6,0,0,0"/></DockPanel><WrapPanel Grid.Row="1" Margin="2,0,2,8"><Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click"/><Button Content="G Google" Tag="google" Click="OpenQuickSite_Click"/><Button Content="♫ Cifra Club" Tag="cifraclub" Click="OpenQuickSite_Click"/><Button Content="V Vagalume" Tag="vagalume" Click="OpenQuickSite_Click"/><Button Content="L Letras.mus.br" Tag="letras" Click="OpenQuickSite_Click"/><Button Content="♪ Ouvir Música" Tag="ouvir" Click="OpenQuickSite_Click"/><Button Content="✝ Harpa Cristã" Tag="harpa" Click="OpenQuickSite_Click"/></WrapPanel><TabControl x:Name="BrowserTabs" Grid.Row="2" Background="#080D12" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
    <Border Grid.Row="2" Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,10,0,0">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <StackPanel><TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontWeight="Bold"/><TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/><TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,8,0,0" MaxHeight="150"/></StackPanel>
+     <StackPanel><TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontWeight="Bold"/><TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/><TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,8,0,0" MaxHeight="150"/><CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima sozinha quando a música terminar" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/></StackPanel>
      <StackPanel Grid.Column="1"><Button Content="Preparar próxima" Click="PrepareNext_Click" Background="#176E68"/><Button Content="✅ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#176E68" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/><Button Content="🔎 Verificar letra" Click="VerifyNextLyrics_Click" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/></StackPanel>
     </Grid>
    </Border>

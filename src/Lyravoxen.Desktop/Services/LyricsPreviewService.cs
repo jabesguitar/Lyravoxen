@@ -194,6 +194,9 @@ internal static class LyricsPreviewService
         return (double)wa.Intersect(wb).Count() / Math.Min(wa.Count, wb.Count);
     }
 
+    /// <summary>Quanto o nome encontrado combina com o digitado, de 0 a 4 (3 ou mais = é a mesma música).</summary>
+    public static int NameMatch(string typed, string found) => NameScore(Normalize(CleanTitle(typed)), Normalize(found));
+
     /// <summary>0 a 4: quanto o nome encontrado combina com o digitado (4 = igual, 3 = um contém o outro, 1 = palavras em comum).</summary>
     private static int NameScore(string typed, string found)
     {

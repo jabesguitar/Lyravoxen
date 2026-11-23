@@ -246,4 +246,14 @@ Check(LyricsPreviewService.PickByNames(catalogItems, "Eliã Oliveira", "Reconstr
 var shortName = LyricsPreviewService.PickByNames(catalogItems, "Deus", "");
 Check(shortName.Availability == LyricsAvailability.NotFound && shortName.CatalogResults == 2, "busca por nomes: \"Deus\" não casa com \"Deus é fiel\" e informa os resultados");
 
+// Texto da letra pelo Vagalume.
+const string lyricsBody = "Estátuas e cofres\\ne paredes pintadas\\nNinguém sabe o que aconteceu\\nÉ só uma criança\\nque quer ser feliz e não sabe\\nde onde vem a dor";
+var vagalumeOk = VagalumeLyricsService.Parse("{\"type\":\"exact\",\"art\":{\"name\":\"Legião Urbana\"},\"mus\":[{\"name\":\"Pais e Filhos\",\"text\":\"" + lyricsBody + "\"}]}", "Pais e Filhos");
+Check(vagalumeOk.Found && vagalumeOk.Artist == "Legião Urbana" && vagalumeOk.Text.Contains("Estátuas e cofres"), "vagalume: resposta exata vira texto limpo");
+Check(!VagalumeLyricsService.Parse("{\"type\":\"notfound\"}", "Santo").Found && VagalumeLyricsService.Parse("{\"type\":\"song_notfound\"}", "Santo").Message.Contains("não tem"), "vagalume: música inexistente");
+Check(!VagalumeLyricsService.Parse("{\"type\":\"aprox\",\"mus\":[{\"name\":\"Outra Coisa\",\"text\":\"" + lyricsBody + "\"}]}", "Pais e Filhos").Found, "vagalume: música aproximada com outro nome é recusada");
+Check(VagalumeLyricsService.Parse("{\"type\":\"aprox\",\"mus\":[{\"name\":\"Pais e Filhos - Ao Vivo\",\"text\":\"" + lyricsBody + "\"}]}", "Pais e Filhos").Found, "vagalume: aceita o mesmo nome com sufixo");
+Check(!VagalumeLyricsService.Parse("não é json", "x").Found && !VagalumeLyricsService.Parse("{\"type\":\"exact\",\"mus\":[{\"name\":\"X\",\"text\":\"curto\"}]}", "X").Found, "vagalume: resposta inválida ou texto curto");
+Check(LyricsSourceSettings.SafeKey("abc-123_DEF ;'\"") == "abc-123_DEF", "vagalume: chave só com letras, números, - e _");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");

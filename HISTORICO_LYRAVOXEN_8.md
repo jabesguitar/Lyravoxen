@@ -210,3 +210,11 @@
 - Servidor (`RemoteControlServer`): rota `GET /audio?pin=` com fluxo longo (sem o limite de 45 s), PCM s16le; comando `audiolevel` para o medidor (resposta `ERR:motivo` se a captura falhar).
 - Celular: cartão "🎧 Som do computador" com medidor (consulta a cada 1 s) e botão "Ouvir a música do PC: LIGADO/DESLIGADO" (fetch em streaming + Web Audio; folga de 0,3 s, descarta blocos se o atraso passar de 1,5 s). Precisa do gesto do toque; no iPhone o modo silencioso muda o volume do Web Audio.
 - Limites: captura TUDO o que o Windows toca; conteúdo protegido pode vir mudo; ~48 KB/s por celular; qualidade de monitoramento (não de gravação). Testado só a parte do celular (Chromium com servidor falso) e a matemática (`audio.test.mjs`); a captura real depende do Windows.
+
+## 21. Link colado no celular, fila, tocar sozinho ao terminar e texto automático da letra (C# AINDA NÃO COMPILADO)
+- Celular: card "🔗 Colar link do YouTube" (`setnext "0|1|link"`: ▶ Como próxima, troca com confirmação; ➕ Na fila: `qadd "url|link"`); pedidos e biblioteca ganharam ➕ Fila (`qadd req|id`, `lib|id`); card "📋 Fila" com ✖ e 🗑 Limpar (`qremove`, `qclear`).
+- Fila (`MainWindow.RemoteQueue.cs`): lista em memória (até 20, não persiste). Sem próxima preparada, o item vira a próxima; quando a próxima começa a tocar (`PromoteQueue` no ponto em que `_nextVideoUrl = null`), a primeira da fila assume.
+- Tocar a próxima sozinha: caixa no painel PRÓXIMA MÚSICA (PC) e botão no celular (`autoadvance`); salvo em `preferences.json` (`AutoAdvance`); só dispara quando o player avisa o fim (state 0), espera 3 s, não dispara em "Encerrar" manual (`firstEnd`).
+- Texto automático: `VagalumeLyricsService` (API oficial `api.vagalume.com.br/search.php?art=&mus=&apikey=`, chave gratuita em `fontes-letra.txt`, no backup). Só aceita se o nome achado combinar (`NameMatch`). Usos: 🔎 Buscar texto da letra (PC), 2ª chance quando o catálogo não acha (vira "📝 Usar o texto"), ⚡ Cadastro rápido, e 📝 Buscar o texto automaticamente no celular (`lyricsfetch`). A resposta real do Vagalume NÃO foi testada aqui (sem rede/chave): o formato foi lido na documentação de terceiros; `Parse` é defensivo.
+- Ajuda atualizada; `tests/help_coverage.py` passa.
+- Testes: JS 280 (celular 99, nomes/busca/Vagalume 70, leitores de texto 41, worker 30, formulários 23, áudio 17) + C# no `Program.cs`.

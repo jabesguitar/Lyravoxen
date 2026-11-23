@@ -10,8 +10,8 @@ const page_html=fs.readFileSync('./phone_page.html','utf8');
 const S={pin:'1234',now:null,next:null,manual:false,lib:[{id:'LIB00000001',title:'Santo — Fernandinho',lyrics:'sync'},{id:'LIB00000002',title:'Reconstrução — Eliã Oliveira',lyrics:'none'}],
  requests:[{id:'r1',name:'Grande é o Senhor',group:'Jovens',videoId:'REQ00000001',lyrics:'✅ Letra sincronizada no catálogo: Grande é o Senhor — Adhemar.'},
            {id:'r2',name:'<img src=x onerror="window.__xss=1">',group:'<b>x</b>',videoId:'REQ00000002',lyrics:'❌ Letra não encontrada no catálogo. Será preciso cadastrar.'}],
- log:[],checkingUntil:0,tap:{active:false,marked:0,total:0,nextLine:''},recent:[{id:'REC00000001',title:'Aleluia <b>x</b> — Coral',lyrics:'sync'}],hasText:false,hasCues:true,namesRev:0};
-const live=()=>({now:{title:S.now?S.now.title:'',state:S.now?S.now.state:'parada',line:S.now?S.now.line:'',next:S.now?S.now.nextLine:'',manual:!!(S.now&&S.manual),cues:S.now?12:0,hasCues:S.hasCues,hasText:S.hasText},tap:S.tap,recent:S.recent,
+ log:[],checkingUntil:0,tap:{active:false,marked:0,total:0,nextLine:''},recent:[{id:'REC00000001',title:'Aleluia <b>x</b> — Coral',lyrics:'sync'}],hasText:false,hasCues:true,namesRev:0,queue:[],autoAdvance:false,canFetchText:false};
+const live=()=>({queue:S.queue.map((q,i)=>({i,id:q.id,title:q.title,lyrics:'🔎 Verificando se tem letra…'})),autoAdvance:S.autoAdvance,canFetchText:S.canFetchText,now:{title:S.now?S.now.title:'',state:S.now?S.now.state:'parada',line:S.now?S.now.line:'',next:S.now?S.now.nextLine:'',manual:!!(S.now&&S.manual),cues:S.now?12:0,hasCues:S.hasCues,hasText:S.hasText},tap:S.tap,recent:S.recent,
  next:S.next?{videoId:S.next.videoId,title:S.next.title,status:Date.now()<S.checkingUntil?'checking':S.next.status,headline:Date.now()<S.checkingUntil?'🔎 Verificando se tem letra…':S.next.headline,preview:Date.now()<S.checkingUntil?[]:S.next.preview,track:S.next.track,artist:S.next.artist,canConfirm:Date.now()>=S.checkingUntil&&S.next.status==='synced'&&!S.next.rejected,rejected:!!S.next.rejected,namesRev:S.namesRev,warning:S.next.warning}:null,
  requestCount:S.requests.length,requests:S.requests.map(r=>({id:r.id,name:r.name,group:r.group,lyrics:r.lyrics}))});
 const mkNext=(videoId,title,status)=>({videoId,title,status,headline:status==='synced'?'✅ Letra sincronizada no catálogo: Grande é o Senhor — Adhemar.':status==='library'?'✅ Letra já cadastrada na sua biblioteca (12 frases sincronizadas).':'❌ Letra não encontrada no catálogo. Será preciso cadastrar.',
@@ -48,6 +48,14 @@ function handle(c,a){
    case 'tapfinish':S.tap={active:false,marked:0,total:0,nextLine:''};S.hasCues=true;S.recent.unshift({id:'NEW00000002',title:'Outra nova — Coral',lyrics:'sync'});return '✅ Salva na biblioteca.';
    case 'tapcancel':S.tap={active:false,marked:0,total:0,nextLine:''};return 'Marcação cancelada.';
    case 'audiolevel':return S.level===undefined?'0':S.level;
+   case 'setnext':{const [rep,...u]=a.split('|');const url=u.join('|');if(!/youtu/.test(url))return 'Esse link não é de um vídeo do YouTube.';if(S.next&&rep!=='1')return 'Já existe uma próxima preparada.';S.next=mkNext('LNK00000001','Vídeo colado','notfound');return 'Próxima preparada: vídeo LNK00000001.';}
+   case 'qadd':{const [kind,...v]=a.split('|');const val=v.join('|');if(kind==='url'&&!/youtu/.test(val))return 'Esse link não é de um vídeo do YouTube.';
+     if(!S.next){S.next=mkNext('Q'+Math.random().toString(36).slice(2,12),kind+':'+val,'notfound');return 'Próxima preparada: '+val+'.';}
+     S.queue.push({id:'Q'+S.queue.length,title:kind+':'+val});if(kind==='req')S.requests=S.requests.filter(r=>r.id!==val);return 'Na fila, posição '+S.queue.length+': '+val+'.';}
+   case 'qremove':S.queue.splice(parseInt(a),1);return 'Tirada da fila.';
+   case 'qclear':S.queue=[];return 'Fila limpa.';
+   case 'autoadvance':S.autoAdvance=!S.autoAdvance;return S.autoAdvance?'Ligado: a próxima música toca sozinha quando a atual terminar.':'Desligado.';
+   case 'lyricsfetch':S.lastFetch=a;return '📝 Texto encontrado no Vagalume: Santo — Fernandinho. ✅ Letra salva (8 linhas).';
    default:return 'Comando desconhecido.';
   }
 }
@@ -243,6 +251,41 @@ ok((S.audioClosed||0)>=1,'ao desligar a conexão de áudio é fechada (o PC deix
 S.pin='0000'; await page.click('#audiobtn'); await page.waitForFunction(()=>document.getElementById('st').textContent.includes('O áudio parou'),null,{timeout:4000});
 ok((await text('st')).includes('PIN incorreto')&&(await text('audiobtn')).includes('DESLIGADO'),'PIN errado no áudio: avisa e fica desligado'); S.pin='1234';
 await page.evaluate(()=>{localStorage.setItem('lyra-pin','1234');pin='1234';show();});
+
+
+// 12d) link colado, fila, tocar sozinha, buscar texto
+S.next=null; S.queue=[]; S.requests=[{id:'rq1',name:'Pedido um',group:'Jovens',videoId:'REQ00000011',lyrics:'🟡 Letra só em texto'}]; S.now={title:'Tocando — X',state:'tocando',line:'linha',nextLine:'outra'}; S.hasCues=false; S.hasText=false; S.tap={active:false,marked:0,total:0,nextLine:''};
+await page.waitForFunction(()=>document.getElementById('nextempty').style.display!=='none',null,{timeout:6000});
+await page.fill('#nl','isso não é link'); await page.click('text=▶ Como próxima'); await page.waitForTimeout(400);
+ok((await text('st')).includes('Esse link não é')&&(await page.inputValue('#nl'))==='isso não é link','link inválido: avisa e mantém o texto digitado');
+await page.fill('#nl','https://youtu.be/abcdefghijk'); dialogs.length=0; await page.click('text=▶ Como próxima'); await page.waitForTimeout(500);
+ok(lastCall('setnext')[1]==='0|https://youtu.be/abcdefghijk'&&dialogs.length===0,'link vira a próxima (sem próxima antes: sem confirmação)');
+ok((await page.inputValue('#nl'))==='','campo do link é limpo depois de usar');
+await page.waitForFunction(()=>document.getElementById('nextbody').style.display==='block'); ok(true,'a próxima aparece no cartão');
+await page.fill('#nl','https://youtu.be/zzzzzzzzzzz'); dialogs.length=0; await page.click('text=▶ Como próxima'); await page.waitForTimeout(500);
+ok(dialogs.some(d=>d.includes('Trocar a próxima'))&&lastCall('setnext')[1]==='1|https://youtu.be/zzzzzzzzzzz','com próxima já preparada: pede confirmação e troca');
+await page.fill('#nl','https://youtu.be/qqqqqqqqqqq'); await page.click('text=➕ Na fila'); await page.waitForTimeout(500);
+ok(lastCall('qadd')[1]==='url|https://youtu.be/qqqqqqqqqqq','➕ Na fila envia o link');
+await page.waitForFunction(()=>document.getElementById('queuecard').style.display==='block',null,{timeout:6000});
+ok((await text('queuehead')).includes('(1)')&&(await text('queuelist')).includes('1. url:https://youtu.be/qqqqqqqqqqq'),'fila aparece com a música');
+await page.locator('#reqlist button:has-text("Fila")').first().click(); await page.waitForTimeout(400);
+ok(lastCall('qadd')[1]==='req|rq1','pedido ➕ Fila');
+await page.waitForFunction(()=>document.getElementById('queuehead').textContent.includes('(2)'),null,{timeout:6000}); ok(true,'fila com 2 músicas');
+await page.click('#liblist button:has-text("Fila")').catch(()=>{});
+await page.fill('#lq','santo'); await page.click('text=🔍 Buscar'); await page.waitForSelector('#liblist .item');
+await page.locator('#liblist button:has-text("Fila")').first().click(); await page.waitForTimeout(400); ok(lastCall('qadd')[1]==='LIB00000001'.replace(/^/,'lib|'),'biblioteca ➕ Fila');
+await page.locator('#queuelist button:has-text("✖")').first().click(); await page.waitForTimeout(500); ok(lastCall('qremove')[1]==='0','✖ tira da fila');
+dialogs.length=0; await page.click('text=🗑 Limpar fila'); await page.waitForTimeout(500); ok(dialogs.some(d=>d.includes('Limpar a fila'))&&lastCall('qclear')!==undefined,'limpar fila pede confirmação');
+await page.waitForFunction(()=>document.getElementById('queuecard').style.display==='none',null,{timeout:6000}); ok(true,'fila vazia some');
+// tocar a próxima sozinha
+ok((await text('advbtn')).includes('DESLIGADO'),'tocar sozinha começa desligado'); await page.click('#advbtn'); await page.waitForFunction(()=>document.getElementById('advbtn').textContent.includes('LIGADO')&&!document.getElementById('advbtn').textContent.includes('DESLIGADO'),null,{timeout:6000}); ok(true,'ligar tocar sozinha');
+// buscar texto automático (só com chave)
+ok(!(await page.isVisible('#fetchbtn'))&&!(await page.isVisible('#b-fetch-now')),'sem chave do Vagalume: botões de buscar texto escondidos');
+S.canFetchText=true; await page.waitForFunction(()=>document.getElementById('fetchbtn').style.display==='block'&&document.getElementById('b-fetch-now').style.display==='block',null,{timeout:6000}); ok(true,'com chave: botões de buscar texto aparecem (próxima e música atual)');
+await page.fill('#nt','Santo'); await page.fill('#na','Fernandinho'); await page.click('#fetchbtn'); await page.waitForTimeout(500);
+ok(lastCall('lyricsfetch')[1]==='next|Santo\nFernandinho'&&(await text('st')).includes('Vagalume'),'buscar texto da próxima envia música e intérprete');
+await page.click('#b-fetch-now'); await page.waitForTimeout(500); ok(lastCall('lyricsfetch')[1]==='now|','buscar texto da música que toca');
+S.canFetchText=false; S.hasCues=true; S.next=null; S.queue=[];
 
 // 13) PIN trocado no computador: volta a pedir
 S.pin='7777'; await page.click('#t-live'); await page.waitForFunction(()=>document.getElementById('pinbox').style.display==='block',null,{timeout:6000});

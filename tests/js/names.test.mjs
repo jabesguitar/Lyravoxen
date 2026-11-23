@@ -144,4 +144,23 @@ es=estimateStarts(st,240,30); ok(Math.abs(es[0]-30)<1e-9,'estimativa: 1ª estrof
 es=estimateStarts(st,100,500); ok(es[0]<=50,'estimativa: instante absurdo é limitado a metade da música');
 ok(estimateStarts([],200).length===0&&estimateStarts(st,0).length===0,'estimativa: sem estrofes ou sem duração = vazio');
 
+
+// ---------- Vagalume: leitura da resposta
+function cleanLyricsText(text){return cleanLyrics(text);}
+const nameMatch=(typed,found)=>nameScore(normalize(cleanTitle(typed)),normalize(found));
+function vagParse(json,typed){let d;try{d=JSON.parse(json);}catch(e){return {found:false,message:'Resposta inesperada do Vagalume (confira a chave).'};}
+ const str=(o,n)=>o&&typeof o==='object'&&typeof o[n]==='string'?o[n]:'';const type=str(d,'type');
+ if(!Array.isArray(d.mus)||!d.mus.length)return {found:false,message:(type==='notfound'||type==='song_notfound')?'O Vagalume não tem essa música.':'Resposta inesperada do Vagalume (confira a chave).'};
+ const first=d.mus[0],name=str(first,'name'),text=str(first,'text');
+ if(!text.trim())return {found:false,message:'sem texto'}; if(nameMatch(typed,name)<3)return {found:false,message:'O Vagalume achou outra música ('+name+'). Confira os nomes.'};
+ const cleaned=cleanLyricsText(text); const lines=cleaned.split('\n').filter(x=>x.trim()).length; if(!(lines>=4&&cleaned.length>=80))return {found:false,message:'curto'};
+ return {found:true,track:name,artist:str(d.art,'name'),text:cleaned};}
+const body='Estátuas e cofres\ne paredes pintadas\nNinguém sabe o que aconteceu\nÉ só uma criança\nque quer ser feliz e não sabe\nde onde vem a dor';
+let v=vagParse(JSON.stringify({type:'exact',art:{name:'Legião Urbana'},mus:[{name:'Pais e Filhos',text:body}]}),'Pais e Filhos'); ok(v.found&&v.artist==='Legião Urbana'&&v.text.includes('Estátuas e cofres'),'vagalume: resposta exata');
+ok(!vagParse('{"type":"notfound"}','Santo').found&&vagParse('{"type":"song_notfound"}','Santo').message.includes('não tem'),'vagalume: música inexistente');
+ok(!vagParse(JSON.stringify({type:'aprox',mus:[{name:'Outra Coisa',text:body}]}),'Pais e Filhos').found,'vagalume: outro nome é recusado');
+ok(vagParse(JSON.stringify({type:'aprox',mus:[{name:'Pais e Filhos - Ao Vivo',text:body}]}),'Pais e Filhos (Playback)').found,'vagalume: sufixo aceito e "Playback" digitado é ignorado');
+ok(!vagParse('não é json','x').found&&!vagParse(JSON.stringify({type:'exact',mus:[{name:'X',text:'curto'}]}),'X').found,'vagalume: json inválido e texto curto');
+ok(vagParse(JSON.stringify({type:'exact',mus:[{name:'Santo',text:'[Refrão]\nC G Am\n'+body}]}),'Santo').text.indexOf('[Refrão]')<0,'vagalume: o texto passa pela limpeza (rótulos e cifras saem)');
+
 console.log(`nomes e limpeza de letra: ${pass} ok, ${fail} falhas`); process.exit(fail?1:0);

@@ -1890,6 +1890,7 @@ public partial class MainWindow : Window
                         PlayNextButton.IsEnabled = false;
                         NextTrackText.Text = "Pesquise e prepare a próxima música.";
                         RefreshNextLyricsPreview();
+                        PromoteQueue(); // a primeira da fila vira a próxima
                         StatusText.Text = "Próxima música carregada e player confirmado.";
                     }
                     else
@@ -1904,7 +1905,12 @@ public partial class MainWindow : Window
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
                 Dispatcher.Invoke(() =>
                 {
-                    if (playerState == 0) EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                    if (playerState == 0)
+                    {
+                        var firstEnd = !_playbackEnded;
+                        EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                        if (firstEnd) MaybeAutoAdvance();
+                    }
                     else StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : "YouTube aguardando.";
                 });
                 return;
@@ -1931,7 +1937,11 @@ public partial class MainWindow : Window
                 if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando. Nenhuma letra sincronizada foi carregada.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>
-                    EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente."));
+                {
+                    var firstEnd = !_playbackEnded;
+                    EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                    if (firstEnd) MaybeAutoAdvance();
+                });
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
             var cueIndex = FindActiveCue(seconds);
@@ -2071,6 +2081,8 @@ public partial class MainWindow : Window
             _holyricsEnabled = preferences.HolyricsEnabled ?? true;
             _selectedProjectionBackgroundPath = preferences.ProjectionBackgroundPath;
             HolyricsEnabledBox.IsChecked = _holyricsEnabled;
+            _autoAdvance = preferences.AutoAdvance ?? false;
+            AutoAdvanceBox.IsChecked = _autoAdvance;
             _maxProjectionLines = Math.Clamp(preferences.MaxLines ?? 4, 1, 10);
             SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
@@ -2118,6 +2130,7 @@ public partial class MainWindow : Window
         public bool? HolyricsEnabled { get; set; } = true;
         public string? ProjectionBackgroundPath { get; set; }
         public string? NextVideoUrl { get; set; }
+        public bool? AutoAdvance { get; set; }
     }
 
     private void SaveNextVideoPreference()

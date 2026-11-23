@@ -1,4 +1,3 @@
-using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -278,6 +277,7 @@ textarea{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-rad
   <div class="suggest" id="nolyrics" style="display:none">
    <div class="dim" id="nolyricstxt"></div>
    <button class="main" id="b-paste-now" onclick="openPaste('now')">✎ Colar a letra desta música</button>
+   <button id="b-fetch-now" class="gap" style="display:none" onclick="fetchText('now')">📝 Buscar o texto automaticamente</button>
    <div class="row"><button id="b-estimate" onclick="act('estimate')">⏱ Estimar tempos</button><button class="main" id="b-tapstart" onclick="act('tapstart')">👆 Marcar por toque</button></div>
   </div>
   <div class="suggest" id="tappanel" style="display:none">
@@ -308,14 +308,23 @@ textarea{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-rad
    </div>
    <div class="dim" id="rejectedtxt" style="display:none">Sugestão descartada. Corrija os nomes abaixo e verifique de novo, ou crie a letra.</div>
    <button id="createbtn" class="gap" onclick="openPaste('next')">✎ Criar letra (colar o texto)</button>
+   <button id="fetchbtn" class="gap" style="display:none" onclick="fetchText('next')">📝 Buscar o texto automaticamente</button>
    <input id="nt" placeholder="Música (use o microfone do teclado)" autocomplete="off">
    <input id="na" placeholder="Autor / intérprete" autocomplete="off">
    <div class="row"><button onclick="swapNames()">⇄ Trocar campos</button><button onclick="fixNames()">✨ Corrigir nomes</button></div>
    <button onclick="nextCheck()">🔎 Verificar com estes nomes</button>
    <div class="row"><button class="main" id="playbtn" onclick="playNext()">⏭ Tocar próxima</button><button onclick="act('reqnext')">📥 Pedido → próxima</button></div>
+   <button id="advbtn" class="gap" onclick="act('autoadvance')">⏩ Tocar a próxima sozinha ao terminar: DESLIGADO</button>
   </div>
  </div>
 
+ <div class="card"><h2>🔗 Colar link do YouTube</h2>
+  <input id="nl" placeholder="Cole o link do vídeo" inputmode="url" autocapitalize="none" autocomplete="off">
+  <div class="row"><button class="main" onclick="useLink(false)">▶ Como próxima</button><button onclick="useLink(true)">➕ Na fila</button></div>
+ </div>
+ <div class="card" id="queuecard" style="display:none"><h2 id="queuehead">📋 Fila</h2><div id="queuelist"></div>
+  <button class="gap" onclick="ask('qclear','Limpar a fila inteira?')">🗑 Limpar fila</button>
+ </div>
  <div class="card"><h2 id="reqhead">📥 Pedidos</h2><div id="reqlist" class="dim">Nenhum pedido na lista.</div></div>
 
  <div class="card"><h2>🕘 Últimas músicas salvas</h2><div id="recentlist" class="dim">Nenhuma música salva ainda.</div></div>
@@ -415,6 +424,18 @@ async function pollLevel(){
  }catch(e){}
 }
 setInterval(pollLevel,1000);
+function fetchText(t){act('lyricsfetch',t+'|'+(t==='next'?($('nt').value.trim()+'\n'+$('na').value.trim()):''),true);}
+async function useLink(queue){
+ var url=$('nl').value.trim();
+ if(!url){$('st').textContent='Cole o link do vídeo primeiro.';return;}
+ if(queue){await act('qadd','url|'+url);}
+ else{
+  var has=live&&live.next;
+  if(has&&!confirm('Trocar a próxima música preparada por este vídeo?')){return;}
+  await act('setnext',(has?'1':'0')+'|'+url);
+ }
+ if(($('st').textContent||'').indexOf('Esse link')!==0){$('nl').value='';}
+}
 function swapNames(){var a=$('nt').value;$('nt').value=$('na').value;$('na').value=a;$('st').textContent='Campos trocados. Toque em Verificar para procurar a letra.';}
 function fixNames(){act('fixnames',undefined,true);}
 function openPaste(t){pasteTarget=t;$('pastehint').textContent=t==='now'?'Cole a letra da música que está tocando agora.':'Cole a letra da próxima música.';$('pastepanel').style.display='block';$('pastebox').focus();}
@@ -435,9 +456,9 @@ function fillRows(box,key,list,emptyText,build){
 function libRow(m){
  var row=el('div','item'),t=el('div','t',m.title);
  t.appendChild(el('small','',m.lyrics==='sync'?'✅ letra sincronizada':m.lyrics==='text'?'🟡 letra só em texto':'❌ sem letra'));
- var b1=el('button','small','Próxima'),b2=el('button','small main','▶ Tocar já');
- b1.onclick=function(){pickLib(m.id,false);};b2.onclick=function(){pickLib(m.id,true);};
- row.appendChild(t);row.appendChild(b1);row.appendChild(b2);return row;
+ var b1=el('button','small','Próxima'),bq=el('button','small','➕ Fila'),b2=el('button','small main','▶ Tocar já');
+ b1.onclick=function(){pickLib(m.id,false);};bq.onclick=function(){act('qadd','lib|'+m.id);};b2.onclick=function(){pickLib(m.id,true);};
+ row.appendChild(t);row.appendChild(b1);row.appendChild(bq);row.appendChild(b2);return row;
 }
 function pickReq(id){
  var has=live&&live.next;
@@ -485,10 +506,23 @@ function render(s){
  fillRows($('reqlist'),'req',s.requests,'Nenhum pedido na lista.',function(r){
   var row=el('div','item'),t=el('div','t',r.name+(r.group?' — '+r.group:''));
   t.appendChild(el('small','',r.lyrics||''));
-  var b=el('button','small main','Preparar');b.onclick=function(){pickReq(r.id);};
-  row.appendChild(t);row.appendChild(b);return row;
+  var b=el('button','small main','Preparar'),bq=el('button','small','➕ Fila');b.onclick=function(){pickReq(r.id);};bq.onclick=function(){act('qadd','req|'+r.id);};
+  row.appendChild(t);row.appendChild(b);row.appendChild(bq);return row;
  });
  fillRows($('recentlist'),'recent',s.recent,'Nenhuma música salva ainda.',libRow);
+ var q=s.queue||[];
+ $('queuecard').style.display=q.length?'block':'none';
+ $('queuehead').textContent='📋 Fila ('+q.length+')';
+ fillRows($('queuelist'),'queue',q,'',function(m){
+  var row=el('div','item'),t=el('div','t',(m.i+1)+'. '+m.title);
+  t.appendChild(el('small','',m.lyrics||''));
+  var b=el('button','small warn','✖');b.onclick=function(){act('qremove',String(m.i));};
+  row.appendChild(t);row.appendChild(b);return row;
+ });
+ $('advbtn').textContent='⏩ Tocar a próxima sozinha ao terminar: '+(s.autoAdvance?'LIGADO':'DESLIGADO');
+ $('advbtn').className=s.autoAdvance?'main gap':'gap';
+ $('b-fetch-now').style.display=(s.canFetchText&&!now.hasText&&now.state!=='parada')?'block':'none';
+ $('fetchbtn').style.display=(s.canFetchText&&nx&&nx.status!=='library')?'block':'none';
  // música tocando sem letra com tempos: colar / estimar / marcar por toque
  var tap=s.tap||{},playing=now.state!=='parada';
  $('nolyrics').style.display=(playing&&!now.hasCues&&!tap.active)?'block':'none';

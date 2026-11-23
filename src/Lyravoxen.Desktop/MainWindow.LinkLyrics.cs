@@ -145,6 +145,23 @@ public partial class MainWindow
                 : await LyricsPreviewService.CheckAsync(videoId, _library);
             if (token != _linkCheckToken || _currentVideo?.VideoId != videoId) return;
 
+            // Catálogo sem a música: tenta o texto no Vagalume (se houver chave), para pelo menos ter a letra em texto.
+            if (preview.Availability is LyricsAvailability.NotFound && _lyricSources.VagalumeKey.Length > 0 && track.Length > 0 && artist.Length > 0)
+            {
+                LinkLyricsStatusText.Text = "🔎 Procurando o texto no Vagalume…";
+                var vagalume = await FetchVagalumeTextAsync(track, artist);
+                if (token != _linkCheckToken || _currentVideo?.VideoId != videoId) return;
+                if (vagalume.Found)
+                    preview = new LyricsPreview
+                    {
+                        Availability = LyricsAvailability.PlainOnly,
+                        FoundTrack = vagalume.Track,
+                        FoundArtist = vagalume.Artist,
+                        Preview = LyricsPreviewService.FirstLines(vagalume.Text.Split('\n')),
+                        PlainText = vagalume.Text
+                    };
+            }
+
             var found = preview.Availability is LyricsAvailability.Synced or LyricsAvailability.PlainOnly;
             var lines = preview.Preview.Length > 0 ? "\n" + string.Join(" / ", preview.Preview.Split('\n').Take(3)) : "";
             LinkLyricsStatusText.Text = preview.Availability == LyricsAvailability.NotFound
@@ -263,6 +280,12 @@ public partial class MainWindow
             if (_currentCatalogLyrics is { } found && !string.IsNullOrWhiteSpace(found.PlainText))
                 text = LyricsTextCleaner.Clean(found.PlainText);
             text ??= ClipboardLyricsOrNull();
+            if (text is null && _lyricSources.VagalumeKey.Length > 0 && MusicTrackBox.Text.Trim().Length > 0 && MusicArtistBox.Text.Trim().Length > 0)
+            {
+                StatusText.Text = "🔎 Buscando o texto da letra no Vagalume…";
+                var vagalume = await FetchVagalumeTextAsync(MusicTrackBox.Text.Trim(), MusicArtistBox.Text.Trim());
+                if (vagalume.Found) text = vagalume.Text;
+            }
             if (text is null)
             {
                 StatusText.Text = "Ainda sem letra: abri as fontes de pesquisa. Copie a letra (Ctrl+C) e clique de novo em ⚡ Cadastro rápido.";

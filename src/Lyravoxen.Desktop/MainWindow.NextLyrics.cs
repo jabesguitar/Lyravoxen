@@ -377,7 +377,10 @@ public partial class MainWindow
             requestCount = _requests.Count,
             requests,
             tap = BuildTapState(),
-            recent = BuildRecentSaved()
+            recent = BuildRecentSaved(),
+            queue = BuildQueueJson(),
+            autoAdvance = _autoAdvance,
+            canFetchText = _lyricSources.VagalumeKey.Length > 0
         });
     }
 }

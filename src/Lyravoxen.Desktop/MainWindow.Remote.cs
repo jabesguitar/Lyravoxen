@@ -77,6 +77,12 @@ public partial class MainWindow
                         _audioMonitor.EnsureStarted();
                         return _audioMonitor.Running ? _audioMonitor.Level.ToString() : "ERR:" + (_audioMonitor.LastError.Length > 0 ? _audioMonitor.LastError : "captura desligada");
                     case "clearlive": return ClearLiveProjectionForRemote();
+                    case "setnext": return SetNextFromUrlForRemote(argument);
+                    case "qadd": return QueueAddForRemote(argument);
+                    case "qremove": return QueueRemoveForRemote(argument);
+                    case "qclear": return QueueClearForRemote();
+                    case "autoadvance": return ToggleAutoAdvanceForRemote();
+                    case "lyricsfetch": return await LyricsFetchForRemoteAsync(argument);
                     case "nextreject": return RejectNextLyricsForRemote();
                     case "fixnames": return await FixNextNamesForRemoteAsync();
                     case "lyricsnext": return LyricsTextForNextFromRemote(argument);
