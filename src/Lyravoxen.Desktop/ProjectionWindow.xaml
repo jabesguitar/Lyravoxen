@@ -4,10 +4,16 @@
  Title="Lyravoxen — Projeção" Width="1280" Height="720"
  WindowStartupLocation="Manual" WindowStyle="None" Background="#080D12">
  <Grid>
+  <Image x:Name="BackgroundImage" Stretch="UniformToFill" Visibility="Collapsed" IsHitTestVisible="False"/>
   <StackPanel x:Name="OverlayPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
    <TextBlock x:Name="OverlayTitle" Text="LYRAVOXEN" Foreground="#26C6B8" FontSize="48" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center"/>
    <TextBlock x:Name="OverlaySubtitle" Text="" Foreground="#F2F6F8" FontSize="24" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,18,0,0"/>
   </StackPanel>
+  <Grid x:Name="BibleVersePanel" Visibility="Collapsed" Margin="90">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+   <TextBlock x:Name="BibleReferenceDisplay" Grid.Row="0" Foreground="#26C6B8" FontSize="34" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,34"/>
+   <TextBlock x:Name="BibleVerseDisplay" Grid.Row="1" Foreground="White" FontSize="48" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center"/>
+  </Grid>
   <TextBlock x:Name="LyricDisplay" Text=""
    Foreground="White" FontSize="48" FontWeight="SemiBold"
    TextAlignment="Center" TextWrapping="Wrap"

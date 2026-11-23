@@ -9,5 +9,20 @@
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LyricCue.cs" Link="LyricCue.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Models/CueTimeline.cs" Link="CueTimeline.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LiveLyricsMatcher.cs" Link="LiveLyricsMatcher.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/AutoSyncPlanner.cs" Link="AutoSyncPlanner.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/BibleReferenceParser.cs" Link="BibleReferenceParser.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/VoiceBibleReferenceParser.cs" Link="VoiceBibleReferenceParser.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/TapSyncPlanner.cs" Link="TapSyncPlanner.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/LibraryFolder.cs" Link="LibraryFolder.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsPreviewService.cs" Link="LyricsPreviewService.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/TrackTitleParser.cs" Link="TrackTitleParser.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsTextCleaner.cs" Link="LyricsTextCleaner.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/VagalumeLyricsService.cs" Link="VagalumeLyricsService.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsSourceSettings.cs" Link="LyricsSourceSettings.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/AppLog.cs" Link="AppLog.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/SongRequestStore.cs" Link="SongRequestStore.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/WhatsAppSettings.cs" Link="WhatsAppSettings.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/OfflineRequestForm.cs" Link="OfflineRequestForm.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/CloudWorker.cs" Link="CloudWorker.cs" />
   </ItemGroup>
 </Project>

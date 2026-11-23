@@ -20,5 +20,9 @@ public sealed class LibraryVideo
     public bool IsOffline { get; set; }
     public string? LocalPath { get; set; }
     public string? Format { get; set; }
+    // Full editable lyric saved independently from its optional timing cues.
+    public string FullLyrics { get; set; } = "";
     public List<LyricCue> Cues { get; set; } = new();
+    /// <summary>Quando a letra/sincronia foi salva pela última vez (para mostrar as músicas salvas mais recentes).</summary>
+    public DateTime SavedAt { get; set; }
 }
