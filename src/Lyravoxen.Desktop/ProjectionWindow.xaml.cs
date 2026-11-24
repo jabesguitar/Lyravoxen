@@ -1,4 +1,6 @@
+using System.IO;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using Forms = System.Windows.Forms;
 using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 
@@ -26,16 +28,38 @@ public partial class ProjectionWindow : Window
 
         Show();
         WindowState = WindowState.Maximized;
+        Topmost = true;
+        Activate();
         return output?.DeviceName;
+    }
+
+    public void SetBackgroundImage(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            BackgroundImage.Source = null;
+            BackgroundImage.Visibility = Visibility.Collapsed;
+            return;
+        }
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.UriSource = new Uri(path, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
+        BackgroundImage.Source = bitmap;
+        BackgroundImage.Visibility = Visibility.Visible;
     }
 
     private const double BaseFontSize = 48;
     private string _themeName = "Noturno";
     private int _maxLines = 4;
     private string _lastLyric = "";
+    private string _lastBibleReference = "";
+    private string _lastBibleText = "";
     private ProjectionDisplayMode _displayMode = ProjectionDisplayMode.Lyric;
 
-    private enum ProjectionDisplayMode { Lyric, Standby, Ending, Blank }
+    private enum ProjectionDisplayMode { Lyric, Bible, Standby, Ending, Blank }
 
     public void SetTheme(string theme)
     {
@@ -51,6 +75,9 @@ public partial class ProjectionWindow : Window
             : System.Windows.Media.Colors.White;
         Background = new System.Windows.Media.SolidColorBrush(background);
         LyricDisplay.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
+        BibleVerseDisplay.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
+        BibleReferenceDisplay.Foreground = new System.Windows.Media.SolidColorBrush(
+            theme == "Âmbar" ? System.Windows.Media.Color.FromRgb(255, 184, 77) : System.Windows.Media.Color.FromRgb(38, 198, 184));
         OverlayTitle.Foreground = new System.Windows.Media.SolidColorBrush(
             theme == "Âmbar" ? System.Windows.Media.Color.FromRgb(255, 184, 77) : System.Windows.Media.Color.FromRgb(38, 198, 184));
         OverlaySubtitle.Foreground = new System.Windows.Media.SolidColorBrush(foreground);
@@ -66,15 +93,31 @@ public partial class ProjectionWindow : Window
     {
         _lastLyric = text ?? "";
         _displayMode = ProjectionDisplayMode.Lyric;
+        BibleVersePanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Visible;
         OverlayPanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Text = LimitLines(_lastLyric, _maxLines);
         UpdateTextLayout(LyricDisplay.Text);
     }
 
+    public void ShowBibleVerse(string reference, string verseText)
+    {
+        _lastBibleReference = reference ?? "";
+        _lastBibleText = verseText ?? "";
+        _displayMode = ProjectionDisplayMode.Bible;
+        OverlayPanel.Visibility = Visibility.Collapsed;
+        LyricDisplay.Visibility = Visibility.Collapsed;
+        BibleVersePanel.Visibility = Visibility.Visible;
+        BibleReferenceDisplay.Text = _lastBibleReference;
+        BibleVerseDisplay.Text = _lastBibleText;
+        var length = _lastBibleText.Length;
+        BibleVerseDisplay.FontSize = length > 520 ? 34 : length > 360 ? 38 : length > 240 ? 42 : 48;
+    }
+
     public void ShowStandby()
     {
         _displayMode = ProjectionDisplayMode.Standby;
+        BibleVersePanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "LYRAVOXEN";
         OverlaySubtitle.Text = "A apresentação começará em instantes";
@@ -84,6 +127,7 @@ public partial class ProjectionWindow : Window
     public void ShowEnding()
     {
         _displayMode = ProjectionDisplayMode.Ending;
+        BibleVersePanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Collapsed;
         OverlayTitle.Text = "Obrigado pela presença";
         OverlaySubtitle.Text = "Que Deus abençoe a todos";
@@ -94,6 +138,7 @@ public partial class ProjectionWindow : Window
     public void ClearDisplay()
     {
         _displayMode = ProjectionDisplayMode.Blank;
+        BibleVersePanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Text = "";
         OverlayPanel.Visibility = Visibility.Collapsed;
         LyricDisplay.Visibility = Visibility.Visible;
@@ -114,6 +159,9 @@ public partial class ProjectionWindow : Window
                 break;
             case ProjectionDisplayMode.Blank:
                 ClearDisplay();
+                break;
+            case ProjectionDisplayMode.Bible:
+                ShowBibleVerse(_lastBibleReference, _lastBibleText);
                 break;
             default:
                 ShowLyric(_lastLyric);
@@ -169,8 +217,9 @@ public partial class ProjectionWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
-            ClearDisplay();
+            Close();
             e.Handled = true;
+            return;
         }
         base.OnKeyDown(e);
     }

@@ -16,7 +16,9 @@ namespace Lyravoxen;
 
 public partial class MainWindow : Window
 {
+    private ProjectionWindow? _projection;
     private string _currentProjectedLyric = "";
+    private string? _selectedProjectionBackgroundPath;
     private int _maxProjectionLines = 4;
     private long _holyricsUpdateVersion;
     private readonly object _holyricsQueueSync = new();
@@ -25,7 +27,19 @@ public partial class MainWindow : Window
     private List<string> _manualDraftLines = new();
     private readonly List<LyricCue> _manualDraftCues = new();
     private LiveAudioTranscriptionService? _liveRecognition;
+    private readonly BibleReaderService _bibleReader = new();
+    private IReadOnlyList<BibleBook> _bibleCatalog = Array.Empty<BibleBook>();
+    private readonly Dictionary<int, BibleBook> _bibleLocalMap = new();
+    private List<BibleVerseItem> _bibleVerses = new();
+    private BibleReference? _bibleTypedReference;
+    private bool _bibleUiUpdating;
+    private bool _bibleSourceChosenByUser;
+    private int _bibleLoadVersion;
     private bool _automaticLyricsActive;
+    // Letra salva antes de a música tocar: a sincronização começa sozinha no primeiro play.
+    private bool _autoSyncPending;
+    // Resultados seguidos sem casar com a letra; alarga a busca para o reconhecimento não travar.
+    private int _unmatchedTranscriptBlocks;
     private readonly StringBuilder _liveTranscriptBuffer = new();
     private int _manualDraftIndex;
     private bool _manualDraftActive;
@@ -54,6 +68,7 @@ public partial class MainWindow : Window
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
+    private bool _holyricsEnabled = true;
     private readonly string _playerFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Player");
     private readonly string _historyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "video-history.json");
     private readonly string _libraryFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "library.json");
@@ -64,8 +79,19 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeBackup();
+        InitializeRemote();
+        InitializeRequests();
+        InitializeNextLyrics();
+        InitializeHelp();
         LoadHistory();
         LoadLibrary();
+        Closing += async (_, _) =>
+        {
+            if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
+            _micService?.Dispose();
+            _micService = null;
+        };
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
         Loaded += async (_, _) =>
         {
@@ -81,6 +107,7 @@ public partial class MainWindow : Window
                 }
                 await InitializeBrowserViewAsync(YoutubeSearchView);
                 LoadPreferences();
+                await LoadBibleCatalogAsync();
                 YoutubeSearchView.CoreWebView2.Navigate("https://www.youtube.com/");
                 _searchWebViewReady = true;
                 StatusText.Text = "Player pronto. Use a aba Próxima música para pesquisar e preparar a próxima faixa.";
@@ -88,6 +115,628 @@ public partial class MainWindow : Window
             }
             catch (Exception ex) { StatusText.Text = "Não foi possível iniciar o WebView2: " + ex.Message; }
         };
+    }
+
+    // ====================================================================== Central Bíblica
+    private sealed record BibleSourceOption(bool IsHolyrics, string Id, string Title, string Note);
+
+    private sealed record BibleVerseItem(int Chapter, int Number, string Text);
+
+    private Task LoadBibleCatalogAsync()
+    {
+        // Livros e capítulos vêm da tabela interna: a tela funciona mesmo sem internet.
+        var view = new System.Windows.Data.ListCollectionView(BibleReferenceParser.Books.ToList());
+        view.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(BibleBookInfo.Testament)));
+        BibleBooksList.ItemsSource = view;
+        RebuildBibleSources(null);
+        SetBibleStatus("Digite uma referência (ex.: Jo 3:16) ou escolha o livro, o capítulo e o versículo.");
+        BibleBooksList.SelectedItem = BibleReferenceParser.Books[0];
+        _ = LoadBibleLocalCatalogAsync();
+        _ = RefreshBibleHolyricsVersionsAsync(showErrors: false);
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadBibleLocalCatalogAsync()
+    {
+        try
+        {
+            _bibleCatalog = await _bibleReader.GetBooksAsync();
+            BuildLocalBibleBookMap();
+            var current = SelectedBibleVerses();
+            await ReloadBibleChapterTextAsync(current.FirstOrDefault()?.Number, current.Count > 1 ? (int?)current[^1].Number : null);
+        }
+        catch (Exception ex)
+        {
+            SetBibleStatus("Textos locais indisponíveis sem conexão inicial. A projeção pelo Holyrics continua funcionando. (" + ex.Message + ")");
+        }
+    }
+
+    // Liga a tabela interna de livros ao catálogo do leitor local, sem confiar só no nome do livro.
+    private void BuildLocalBibleBookMap()
+    {
+        _bibleLocalMap.Clear();
+        var catalog = _bibleCatalog;
+        if (catalog.Count == 0) return;
+
+        var parsed = new int[catalog.Count];
+        for (var i = 0; i < catalog.Count; i++)
+            parsed[i] = BibleReferenceParser.TryParseReference(catalog[i].Name + " 1")?.Book.Number ?? 0;
+
+        var recognised = parsed.Count(n => n > 0);
+        var inOrder = catalog.Count == BibleReferenceParser.Books.Count;
+        if (inOrder)
+        {
+            var agree = Enumerable.Range(0, catalog.Count).Count(i => parsed[i] == i + 1);
+            inOrder = recognised > 0 && agree >= recognised * 0.85;
+        }
+
+        if (inOrder)
+        {
+            for (var i = 0; i < catalog.Count; i++)
+                if (catalog[i].Chapters == BibleReferenceParser.Books[i].Chapters)
+                    _bibleLocalMap[i + 1] = catalog[i];
+            return;
+        }
+
+        foreach (var group in Enumerable.Range(0, catalog.Count)
+                     .Where(i => parsed[i] > 0)
+                     .GroupBy(i => parsed[i])
+                     .Where(g => g.Count() == 1))
+        {
+            var index = group.First();
+            if (catalog[index].Chapters == BibleReferenceParser.Books[group.Key - 1].Chapters)
+                _bibleLocalMap[group.Key] = catalog[index];
+        }
+    }
+
+    private BibleBook? ResolveLocalBibleBook(BibleBookInfo book)
+        => _bibleLocalMap.TryGetValue(book.Number, out var local) ? local : null;
+
+    private void SetBibleStatus(string message, bool alsoGlobal = false)
+    {
+        BibleStatusText.Text = message;
+        Services.AppLog.Info("[bíblia] " + message);
+        if (alsoGlobal) StatusText.Text = message;
+    }
+
+    private void RebuildBibleSources(IReadOnlyList<HolyricsClient.BibleVersionInfo>? holyricsVersions)
+    {
+        var previous = BibleSourceBox.SelectedItem as BibleSourceOption;
+        var options = new List<BibleSourceOption>();
+        if (holyricsVersions is not null)
+        {
+            var arc = holyricsVersions.FirstOrDefault(v => string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase));
+            if (arc is not null)
+                options.Add(new BibleSourceOption(true, arc.Version, "Almeida Revista e Corrigida (ARC) — Holyrics", ""));
+            foreach (var version in holyricsVersions
+                         .Where(v => !string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase))
+                         .OrderBy(v => v.Title, StringComparer.CurrentCultureIgnoreCase))
+                options.Add(new BibleSourceOption(true, version.Version, version.Title + " — Holyrics", ""));
+        }
+
+        foreach (var local in BibleReaderService.FreePortugueseVersions)
+            options.Add(new BibleSourceOption(false, local.Slug, local.Name + " — local", local.License));
+
+        // Enquanto você não escolher manualmente, a ARC do Holyrics (se instalada) é a versão padrão.
+        BibleSourceOption? selected = null;
+        if (_bibleSourceChosenByUser && previous is not null)
+            selected = options.FirstOrDefault(o => o.IsHolyrics == previous.IsHolyrics && string.Equals(o.Id, previous.Id, StringComparison.Ordinal));
+        selected ??= options.FirstOrDefault();
+
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleSourceBox.ItemsSource = options;
+            BibleSourceBox.SelectedItem = selected;
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        UpdateBibleSourceNote();
+
+        if (previous is null || selected is null || previous.IsHolyrics != selected.IsHolyrics ||
+            !string.Equals(previous.Id, selected.Id, StringComparison.Ordinal))
+        {
+            var current = SelectedBibleVerses();
+            _ = ReloadBibleChapterTextAsync(current.FirstOrDefault()?.Number, current.Count > 1 ? (int?)current[^1].Number : null);
+        }
+    }
+
+    private void UpdateBibleSourceNote()
+    {
+        if (BibleSourceBox.SelectedItem is not BibleSourceOption source)
+        {
+            BibleSourceNoteText.Text = "";
+            BibleCopyrightText.Text = "";
+            return;
+        }
+
+        BibleSourceNoteText.Text = source.IsHolyrics
+            ? "Texto original do Holyrics (" + source.Title + "). O Lyravoxen escolhe o versículo e o Holyrics exibe."
+            : "Projeção na tela própria do Lyravoxen.";
+        BibleCopyrightText.Text = source.IsHolyrics
+            ? "A Bíblia precisa estar instalada e licenciada no Holyrics."
+            : source.Note;
+    }
+
+    private async void RefreshHolyricsBibleVersions_Click(object sender, RoutedEventArgs e)
+        => await RefreshBibleHolyricsVersionsAsync(showErrors: true);
+
+    private async Task RefreshBibleHolyricsVersionsAsync(bool showErrors)
+    {
+        if (!_holyrics.IsConfigured)
+        {
+            if (showErrors)
+                SetBibleStatus("Conecte o Holyrics (aba Ao vivo) para usar a ARC e as demais versões instaladas nele.", true);
+            return;
+        }
+
+        try
+        {
+            SetBibleStatus("Consultando as Bíblias instaladas no Holyrics...");
+            var versions = await _holyrics.GetBibleVersionsAsync();
+            RebuildBibleSources(versions);
+            var hasArc = versions.Any(v => string.Equals(v.Version, "pt_arc", StringComparison.OrdinalIgnoreCase));
+            SetBibleStatus(hasArc
+                ? versions.Count + " versões no Holyrics. ARC pronta para projetar."
+                : versions.Count + " versões no Holyrics, mas a ARC (pt_arc) não está instalada nele.", showErrors);
+        }
+        catch (Exception ex)
+        {
+            if (showErrors)
+                SetBibleStatus("Falha ao consultar o Holyrics: " + ex.Message, true);
+            else
+                SetBibleStatus("Holyrics não respondeu. Use o botão ↻ Holyrics quando ele estiver aberto.");
+        }
+    }
+
+    private void BibleSourceBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_bibleUiUpdating || BibleSourceBox.SelectedItem is null) return;
+        _bibleSourceChosenByUser = true;
+        UpdateBibleSourceNote();
+        var current = SelectedBibleVerses();
+        _ = ReloadBibleChapterTextAsync(current.FirstOrDefault()?.Number, current.Count > 1 ? (int?)current[^1].Number : null);
+    }
+
+    private void BibleBooksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_bibleUiUpdating || BibleBooksList.SelectedItem is not BibleBookInfo book) return;
+        _bibleTypedReference = null;
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleChaptersList.ItemsSource = Enumerable.Range(1, book.Chapters).ToList();
+            BibleChaptersList.SelectedItem = 1;
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        _ = ReloadBibleChapterTextAsync();
+    }
+
+    private void BibleChaptersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_bibleUiUpdating || BibleChaptersList.SelectedItem is not int) return;
+        _bibleTypedReference = null;
+        _ = ReloadBibleChapterTextAsync();
+    }
+
+    private void BibleVersesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_bibleUiUpdating) return;
+        UpdateBiblePreview();
+    }
+
+    private async void BibleVersesList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => await ProjectBibleSelectionAsync();
+
+    private async void BibleVersesList_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        e.Handled = true;
+        await ProjectBibleSelectionAsync();
+    }
+
+    private async void BibleSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        e.Handled = true;
+        ExpandTypedBookPrefix();
+        await LocateBibleReferenceAsync(project: true);
+    }
+
+    private async void BibleLocate_Click(object sender, RoutedEventArgs e)
+        => await LocateBibleReferenceAsync(project: false);
+
+    private async Task LocateBibleReferenceAsync(bool project)
+    {
+        var text = BibleSearchBox.Text.Trim();
+        if (text.Length == 0) return;
+
+        var parsed = BibleReferenceParser.TryParseReference(text, allowBookOnly: true);
+        if (parsed is null)
+        {
+            SetBibleStatus("Não entendi “" + text + "”. Exemplos: João 3:16 · Sl 23 · 1 Co 13:4-7 · Gênesis 1");
+            return;
+        }
+
+        _bibleTypedReference = parsed.VerseStart.HasValue ? parsed : null;
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleBooksList.SelectedItem = parsed.Book;
+            BibleBooksList.ScrollIntoView(parsed.Book);
+            BibleChaptersList.ItemsSource = Enumerable.Range(1, parsed.Book.Chapters).ToList();
+            BibleChaptersList.SelectedItem = parsed.Chapter;
+            BibleChaptersList.ScrollIntoView(parsed.Chapter);
+            BibleSearchBox.Text = parsed.ToString();
+            BibleSearchBox.SelectAll();
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        await ReloadBibleChapterTextAsync(parsed.VerseStart, parsed.VerseEnd);
+        if (project && parsed.VerseStart.HasValue) await ProjectBibleSelectionAsync();
+    }
+
+    private async Task ReloadBibleChapterTextAsync(int? selectVerseStart = null, int? selectVerseEnd = null)
+    {
+        if (BibleBooksList.SelectedItem is not BibleBookInfo book || BibleChaptersList.SelectedItem is not int chapter) return;
+
+        var requestId = Interlocked.Increment(ref _bibleLoadVersion);
+        var source = BibleSourceBox.SelectedItem as BibleSourceOption;
+        // Com a Bíblia do Holyrics, o texto é do Holyrics: aqui só aparece a numeração dos versículos.
+        var numbersOnly = source is { IsHolyrics: true };
+        ApplyBibleVerseLayout(numbersOnly);
+        var previewVersion = source is { IsHolyrics: false }
+            ? BibleReaderService.FreePortugueseVersions.FirstOrDefault(v => v.Slug == source.Id) ?? BibleReaderService.FreePortugueseVersions[0]
+            : BibleReaderService.FreePortugueseVersions[0];
+
+        _bibleUiUpdating = true;
+        try
+        {
+            _bibleVerses = new List<BibleVerseItem>();
+            BibleVersesList.ItemsSource = null;
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        UpdateBiblePreview();
+
+        var local = ResolveLocalBibleBook(book);
+        if (local is null)
+        {
+            SetBibleStatus(_bibleCatalog.Count == 0
+                ? "Carregando o catálogo de textos... Pelo Holyrics já dá para projetar digitando a referência."
+                : "Texto local indisponível para " + book.Name + ". Digite a referência e projete pelo Holyrics.");
+            return;
+        }
+
+        SetBibleStatus("Carregando " + book.Name + " " + chapter + "...");
+        try
+        {
+            var result = await _bibleReader.GetChapterAsync(previewVersion.Slug, local, chapter);
+            if (requestId != _bibleLoadVersion) return;
+
+            var verses = result.Verses.Select((text, index) => new BibleVerseItem(chapter, index + 1, numbersOnly ? "" : text)).ToList();
+            _bibleUiUpdating = true;
+            try
+            {
+                _bibleVerses = verses;
+                BibleVersesList.ItemsSource = _bibleVerses;
+            }
+            finally
+            {
+                _bibleUiUpdating = false;
+            }
+
+            if (selectVerseStart.HasValue) SelectBibleVerses(selectVerseStart.Value, selectVerseEnd);
+            else UpdateBiblePreview();
+
+            SetBibleStatus(book.Name + " " + chapter + " · " + verses.Count + " versículos" +
+                           (numbersOnly ? " · o texto vem do Holyrics" : " · texto: " + previewVersion.Name));
+            if (!string.IsNullOrWhiteSpace(result.Copyright) && source is { IsHolyrics: false })
+                BibleCopyrightText.Text = result.Copyright;
+        }
+        catch (Exception ex)
+        {
+            if (requestId != _bibleLoadVersion) return;
+            SetBibleStatus("Não foi possível carregar o texto de " + book.Name + " " + chapter + " (" + ex.Message +
+                           "). Você ainda pode projetar digitando a referência.");
+        }
+    }
+
+    private void ApplyBibleVerseLayout(bool numbersOnly)
+    {
+        BibleVersesList.ItemsPanel = (ItemsPanelTemplate)BibleWorkspaceTab.FindResource(numbersOnly ? "BibleVerseGridPanel" : "BibleVerseListPanel");
+        BibleVersesList.ItemTemplate = (DataTemplate)BibleWorkspaceTab.FindResource(numbersOnly ? "BibleVerseNumberTemplate" : "BibleVerseTextTemplate");
+    }
+
+    private void SelectBibleVerses(int start, int? end)
+    {
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleVersesList.SelectedItems.Clear();
+            if (_bibleVerses.Count > 0)
+            {
+                var first = start == int.MaxValue ? _bibleVerses.Count : Math.Clamp(start, 1, _bibleVerses.Count);
+                var last = end.HasValue ? Math.Clamp(end.Value, first, _bibleVerses.Count) : first;
+                foreach (var verse in _bibleVerses.Where(v => v.Number >= first && v.Number <= last))
+                    BibleVersesList.SelectedItems.Add(verse);
+                var anchor = _bibleVerses.FirstOrDefault(v => v.Number == first);
+                if (anchor is not null) BibleVersesList.ScrollIntoView(anchor);
+            }
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        UpdateBiblePreview();
+    }
+
+    private List<BibleVerseItem> SelectedBibleVerses()
+        => BibleVersesList.SelectedItems.OfType<BibleVerseItem>().OrderBy(v => v.Number).ToList();
+
+    private static string ComposeBibleText(IReadOnlyList<BibleVerseItem> verses)
+        => string.Join(" ", verses.Select(v => verses.Count > 1 ? v.Number + " " + v.Text : v.Text));
+
+    private BibleReference? GetBibleSelectionReference()
+    {
+        if (BibleBooksList.SelectedItem is not BibleBookInfo book || BibleChaptersList.SelectedItem is not int chapter) return null;
+
+        var selected = SelectedBibleVerses();
+        if (selected.Count > 0)
+        {
+            var end = selected[^1].Number > selected[0].Number ? (int?)selected[^1].Number : null;
+            return new BibleReference(book, chapter, selected[0].Number, end);
+        }
+
+        var typed = _bibleTypedReference;
+        if (typed is not null && typed.Book.Number == book.Number && typed.Chapter == chapter) return typed;
+        return new BibleReference(book, chapter, null, null);
+    }
+
+    private void UpdateBiblePreview()
+    {
+        var reference = GetBibleSelectionReference();
+        if (reference is null)
+        {
+            BiblePreviewReferenceText.Text = "Nenhum versículo selecionado";
+            BiblePreviewVerseText.Text = "Digite uma referência ou escolha livro, capítulo e versículo.";
+            return;
+        }
+
+        BiblePreviewReferenceText.Text = reference.ToString();
+        var selected = SelectedBibleVerses();
+        if (BibleSourceBox.SelectedItem is BibleSourceOption { IsHolyrics: true } holyricsSource)
+            BiblePreviewVerseText.Text = reference.VerseStart.HasValue
+                ? "O Holyrics vai exibir este versículo em " + holyricsSource.Title + "."
+                : "Escolha um versículo na lista ao lado.";
+        else if (selected.Count > 0)
+            BiblePreviewVerseText.Text = ComposeBibleText(selected);
+        else if (reference.VerseStart.HasValue)
+            BiblePreviewVerseText.Text = "Prévia do texto indisponível agora. O telão ainda pode projetar esta referência.";
+        else
+            BiblePreviewVerseText.Text = "Escolha um versículo na lista ao lado.";
+    }
+
+    private async void BiblePrevious_Click(object sender, RoutedEventArgs e) => await StepBibleVerseAsync(-1);
+
+    private async void BibleNext_Click(object sender, RoutedEventArgs e) => await StepBibleVerseAsync(1);
+
+    // Anterior/Próximo andam um versículo (atravessando capítulos) e já projetam.
+    private async Task StepBibleVerseAsync(int direction)
+    {
+        if (BibleBooksList.SelectedItem is not BibleBookInfo book || BibleChaptersList.SelectedItem is not int chapter) return;
+        if (_bibleVerses.Count == 0)
+        {
+            SetBibleStatus("Sem texto carregado para andar de versículo em versículo. Digite a próxima referência.");
+            return;
+        }
+
+        var selected = SelectedBibleVerses();
+        int target;
+        if (selected.Count == 0) target = direction > 0 ? 1 : _bibleVerses.Count;
+        else target = (direction > 0 ? selected[^1].Number : selected[0].Number) + direction;
+
+        if (target >= 1 && target <= _bibleVerses.Count)
+        {
+            SelectBibleVerses(target, null);
+            await ProjectBibleSelectionAsync();
+            return;
+        }
+
+        var nextChapter = chapter + direction;
+        if (nextChapter < 1 || nextChapter > book.Chapters)
+        {
+            SetBibleStatus(direction > 0 ? "Fim de " + book.Name + "." : "Início de " + book.Name + ".");
+            return;
+        }
+
+        _bibleTypedReference = null;
+        _bibleUiUpdating = true;
+        try
+        {
+            BibleChaptersList.SelectedItem = nextChapter;
+            BibleChaptersList.ScrollIntoView(nextChapter);
+        }
+        finally
+        {
+            _bibleUiUpdating = false;
+        }
+
+        await ReloadBibleChapterTextAsync(direction > 0 ? 1 : int.MaxValue, null);
+        await ProjectBibleSelectionAsync();
+    }
+
+    private async void ProjectBibleSelection_Click(object sender, RoutedEventArgs e) => await ProjectBibleSelectionAsync();
+
+    private async Task ProjectBibleSelectionAsync()
+    {
+        var reference = GetBibleSelectionReference();
+        if (reference is null || !reference.VerseStart.HasValue)
+        {
+            SetBibleStatus("Escolha um versículo (ou digite a referência) antes de projetar.");
+            return;
+        }
+
+        if (BibleSourceBox.SelectedItem is not BibleSourceOption source)
+        {
+            SetBibleStatus("Escolha a versão da Bíblia.");
+            return;
+        }
+
+        var referenceText = reference.ToString();
+        if (source.IsHolyrics)
+        {
+            if (!_holyricsEnabled)
+            {
+                SetBibleStatus("Ative a integração com o Holyrics (aba Ao vivo) para projetar a " + source.Title + ".", true);
+                return;
+            }
+
+            try
+            {
+                await _holyrics.ShowBibleVerseAsync(referenceText, source.Id);
+                SetBibleStatus("Projetado no Holyrics: " + referenceText + " — " + source.Title, true);
+                _ = BringToFrontAsync();
+            }
+            catch (Exception ex)
+            {
+                SetBibleStatus("Não foi possível projetar no Holyrics: " + ex.Message, true);
+            }
+
+            return;
+        }
+
+        var selected = SelectedBibleVerses();
+        if (selected.Count == 0)
+        {
+            SetBibleStatus("Esta versão ainda não tem o texto carregado. Conecte-se à internet uma vez para guardá-lo.", true);
+            return;
+        }
+
+        try
+        {
+            var outputDevice = EnsureProjectionWindow();
+            _projection!.ShowBibleVerse(referenceText, ComposeBibleText(selected));
+            _projection.Activate();
+            SetBibleStatus("Enviado para a projeção própria: " + referenceText +
+                           (string.IsNullOrWhiteSpace(outputDevice) ? "" : " | Monitor: " + outputDevice), true);
+        }
+        catch (Exception ex)
+        {
+            SetBibleStatus("Não foi possível abrir a tela de projeção: " + ex.Message, true);
+        }
+    }
+
+    private void ClearBibleProjection_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Fecha a tela própria de verdade: some o fundo e aparece a área de trabalho do computador.
+            if (_projection is { IsVisible: true }) _projection.Close();
+        }
+        catch (Exception ex)
+        {
+            SetBibleStatus("Falha ao fechar a projeção própria: " + ex.Message);
+        }
+
+        if (_holyricsEnabled && _holyrics.IsConfigured)
+            _ = ObserveHolyricsQueueAsync(QueueHolyricsCloseProjectionAsync());
+        SetBibleStatus("Telão limpo.", true);
+    }
+
+    private void OpenLocalProjection_Click(object sender, RoutedEventArgs e)
+    {
+        if (_projection is { IsVisible: true })
+        {
+            _projection.Close();
+            LocalProjectionToggleButton.Content = "Abrir projeção própria";
+            StatusText.Text = "Projeção própria fechada. O Lyravoxen continua aberto.";
+            return;
+        }
+
+        EnsureProjectionWindow();
+        LocalProjectionToggleButton.Content = "Fechar projeção própria";
+        StatusText.Text = "Projeção própria aberta. Pressione ESC ou use Fechar projeção própria para sair.";
+    }
+
+    private string? EnsureProjectionWindow()
+    {
+        if (_projection is null || !_projection.IsVisible)
+        {
+            _projection = new ProjectionWindow();
+            _projection.Closed += (_, _) =>
+            {
+                if (LocalProjectionToggleButton is not null)
+                    LocalProjectionToggleButton.Content = "Abrir projeção própria";
+            };
+        }
+        var outputDevice = _projection.ShowOnOutputDisplay();
+        _projection.SetMaxLines(_maxProjectionLines);
+        _projection.SetBackgroundImage(_selectedProjectionBackgroundPath);
+        _projection.ShowLyric(_currentProjectedLyric);
+        return outputDevice;
+    }
+
+    private void SelectProjectionBackground_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Escolha um fundo de projeção",
+            Filter = "Imagens (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            var extension = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            if (extension is not ".jpg" and not ".jpeg" and not ".png")
+                throw new InvalidDataException("Use uma imagem JPG ou PNG.");
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Lyravoxen", "ProjectionBackgrounds");
+            Directory.CreateDirectory(folder);
+            var target = Path.Combine(folder, "background-" + Guid.NewGuid().ToString("N") + extension);
+            File.Copy(dialog.FileName, target, false);
+            _selectedProjectionBackgroundPath = target;
+            EnsureProjectionWindow();
+            _projection!.SetBackgroundImage(target);
+            SaveProjectionBackgroundPreference(target);
+            StatusText.Text = "Fundo personalizado aplicado à projeção.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Não foi possível aplicar o fundo: " + ex.Message;
+            System.Windows.MessageBox.Show(this, ex.Message, "Fundo de projeção", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void SaveProjectionBackgroundPreference(string path)
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            current.ProjectionBackgroundPath = path;
+            Directory.CreateDirectory(Path.GetDirectoryName(_preferencesFile)!);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex) { StatusText.Text = "Fundo aplicado, mas a preferência não pôde ser salva: " + ex.Message; }
     }
 
     private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
@@ -217,20 +866,6 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
     }
 
-    private void CopyCurrentVideoLink_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentVideo?.IsOffline == true)
-        {
-            StatusText.Text = "A música atual é um arquivo offline e não possui link do YouTube.";
-            return;
-        }
-        var url = _currentVideo?.Url;
-        if (string.IsNullOrWhiteSpace(url)) url = YoutubeUrlBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(url)) { StatusText.Text = "Carregue uma música antes de copiar o link."; return; }
-        try { System.Windows.Clipboard.SetText(url); StatusText.Text = "Link da música atual copiado."; }
-        catch (Exception ex) { StatusText.Text = "Não foi possível copiar o link: " + ex.Message; }
-    }
-
     private void YoutubeSearchRefresh_Click(object sender, RoutedEventArgs e)
     {
         var view = ActiveBrowserView;
@@ -258,6 +893,7 @@ public partial class MainWindow : Window
         NextTrackText.Text = "Próxima faixa preparada (" + videoId + "). A música atual continua tocando até você selecionar Tocar próxima.";
         PlayNextButton.IsEnabled = true;
         StatusText.Text = "Próxima música preparada sem interromper a reprodução atual.";
+        RefreshNextLyricsPreview();
     }
 
     private async void PlayNextPrepared_Click(object sender, RoutedEventArgs e)
@@ -298,6 +934,7 @@ public partial class MainWindow : Window
                 await StopAutoRecognitionAsync(savePartial: true);
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
+            _autoSyncPending = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
@@ -328,8 +965,11 @@ public partial class MainWindow : Window
             if (string.IsNullOrWhiteSpace(_currentVideo.Composer)) _currentVideo.Composer = historyMetadata?.Composer ?? "";
             if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = historyMetadata?.Artist ?? "";
             MusicTrackBox.Text = _currentVideo.TrackName;
-            MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
+            ManualLyricsBox.Text = _currentVideo.FullLyrics ?? "";
+            ManualSyncProgressText.Text = string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)
+                ? "Esta música ainda não tem letra completa salva."
+                : "Letra completa carregada da biblioteca. Edite se necessário e salve para atualizar.";
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
@@ -392,7 +1032,7 @@ public partial class MainWindow : Window
             ManualLyricsBox.Text = lyricsToEdit;
         WorkspaceTabs.SelectedItem = ManualSyncTab;
         ManualLyricsBox.Focus();
-        StatusText.Text = "Modo Criar / editar letra aberto. Cole ou ajuste a letra; depois use Controles manuais para marcar os tempos e associar as frases à música atual.";
+        StatusText.Text = "Cadastro de letra aberto. Cole a letra completa, salve e inicie o reconhecimento automático com a música tocando.";
     }
 
     private async void SearchLyrics_Click(object sender, RoutedEventArgs e)
@@ -407,16 +1047,8 @@ public partial class MainWindow : Window
         await TryLoadAutomaticLyricsAsync(track, artist);
     }
 
-    private async void OpenLyricsSourceSearches_Click(object sender, RoutedEventArgs e)
+    private async Task OpenLyricsSourceSearchesAsync(string track, string artist)
     {
-        var track = MusicTrackBox.Text.Trim();
-        var artist = MusicArtistBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(track))
-        {
-            System.Windows.MessageBox.Show("Informe ao menos o título da música. Para hinos, use Harpa Cristã como intérprete quando for o caso.", "Outras fontes de letras", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
         var searchTerms = string.IsNullOrWhiteSpace(artist) ? "\"" + track + "\"" : "\"" + track + "\" \"" + artist + "\"";
         var sources = new[]
         {
@@ -424,7 +1056,13 @@ public partial class MainWindow : Window
             (Name: "Vagalume", Domain: "vagalume.com.br"),
             (Name: "Letras.mus.br", Domain: "letras.mus.br"),
             (Name: "Ouvir Música", Domain: "ouvirmusica.com.br"),
-            (Name: "Harpa Cristã", Domain: ""),
+            (Name: "Letras.com", Domain: "letras.com"),
+            (Name: "Harpa Cristã — O Gospel", Domain: "ogospel.com.br/harpa-crista"),
+            (Name: "Harpa Cristã — mBíblia", Domain: "mbiblia.com.br/harpa"),
+            (Name: "Harpa Cristã — Hinos da Harpa", Domain: "hinosdaharpa.com.br"),
+            (Name: "Hinoteca", Domain: "hinoteca.com.br"),
+            (Name: "Letra Sonora", Domain: "letrasonora.com.br"),
+            (Name: "Glow Bible — Hinário", Domain: "glowbible.org/hinario"),
             (Name: "Busca ampla", Domain: "")
         };
 
@@ -434,8 +1072,8 @@ public partial class MainWindow : Window
         {
             try
             {
-                var query = source.Name == "Harpa Cristã"
-                    ? searchTerms + " \"Harpa Cristã\" hino letra"
+                var query = source.Name.StartsWith("Harpa Cristã", StringComparison.Ordinal)
+                    ? "site:" + source.Domain + " " + searchTerms + " letra hino"
                     : string.IsNullOrWhiteSpace(source.Domain)
                         ? searchTerms + " letra música hino louvor"
                         : "site:" + source.Domain + " " + searchTerms;
@@ -472,7 +1110,83 @@ public partial class MainWindow : Window
         WorkspaceTabs.SelectedIndex = 2;
         if (firstSourceTab is not null)
             BrowserTabs.SelectedItem = firstSourceTab;
-        StatusText.Text = "Pesquisas abertas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Harpa Cristã e busca ampla. As abas de cada fonte são reutilizadas para evitar acúmulo. Confira a letra e importe o LRC/SRT para sincronizar.";
+        StatusText.Text = "Não encontrei uma letra sincronizada no catálogo. Abri pesquisas internas em Cifra Club, Vagalume, Letras.mus.br, Ouvir Música, Letras.com e catálogos de hinos. Copie a letra encontrada e use Cadastrar letra para salvar e sincronizar.";
+    }
+
+    private async void SaveFullLyrics_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentVideo is null)
+        {
+            StatusText.Text = "Carregue primeiro a música na aba Ao vivo para vincular e salvar esta letra.";
+            WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+        var fullLyrics = ManualLyricsBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(fullLyrics))
+        {
+            StatusText.Text = "Cole ou digite a letra completa antes de salvar.";
+            return;
+        }
+        var lyricsChanged = !string.Equals(_currentVideo.FullLyrics?.Trim(), fullLyrics, StringComparison.Ordinal);
+        _currentVideo.FullLyrics = fullLyrics;
+        SaveCurrentFullLyrics();
+        ManualSyncProgressText.Text = "Letra completa salva e vinculada a esta música. Você poderá reutilizá-la nas próximas reproduções.";
+        StatusText.Text = "Letra completa salva na biblioteca local para: " + MusicTrackBox.Text;
+
+        // Letra nova (ou música ainda sem tempos): sincroniza sozinha, sem outro clique.
+        if (lyricsChanged || _cues.Count == 0)
+        {
+            try { await BeginAutomaticSyncAfterSaveAsync(lyricsChanged); }
+            catch (Exception ex) { StatusText.Text = "Letra salva, mas a sincronização automática não pôde iniciar: " + ex.Message; }
+        }
+    }
+
+    private async Task BeginAutomaticSyncAfterSaveAsync(bool lyricsChanged)
+    {
+        if (_liveRecognition is not null)
+        {
+            // Reconhecimento já ativo com a mesma letra: nada a refazer.
+            if (!lyricsChanged) return;
+            await StopAutoRecognitionAsync(savePartial: false);
+        }
+
+        var isPlaying = _isLocalAudioPlaying || _lastPlayerState == 1;
+        if (!isPlaying)
+        {
+            _autoSyncPending = true;
+            ManualSyncProgressText.Text = "Letra salva. A sincronização começa sozinha assim que a música tocar.";
+            StatusText.Text = "Letra salva. Dê play na música: a sincronização e a projeção começam automaticamente.";
+            return;
+        }
+
+        if (!_isLocalAudioPlaying && _lastKnownPlaybackSeconds > 15)
+        {
+            var restart = System.Windows.MessageBox.Show(
+                "A música já está em " + TimeSpan.FromSeconds(_lastKnownPlaybackSeconds).ToString(@"mm\:ss") +
+                ".\n\nPara sincronizar a letra inteira, é melhor começar do início.\n\nReiniciar a música agora?",
+                "Sincronizar letra", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (restart == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(
+                        "typeof player !== 'undefined' && player && typeof player.seekTo === 'function' ? player.seekTo(0, true) : null");
+                    _lastKnownPlaybackSeconds = 0;
+                    await Task.Delay(400);
+                }
+                catch (Exception ex) { StatusText.Text = "Não foi possível reiniciar a música: " + ex.Message; }
+            }
+        }
+
+        await StartAutoRecognitionAsync();
+    }
+
+    private void SaveCurrentFullLyrics()
+    {
+        if (_currentVideo is null) return;
+        _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+        // PersistCurrentCues also creates the synchronized-library entry when this is the first save.
+        PersistCurrentCues();
     }
 
     private async void ToggleAutoRecognition_Click(object sender, RoutedEventArgs e)
@@ -482,6 +1196,14 @@ public partial class MainWindow : Window
             await StopAutoRecognitionAsync(savePartial: true);
             return;
         }
+
+        _autoSyncPending = false;
+        await StartAutoRecognitionAsync();
+    }
+
+    private async Task StartAutoRecognitionAsync()
+    {
+        if (_liveRecognition is not null) return;
 
         if (_currentVideo is null || (!_isLocalAudioPlaying && _lastPlayerState != 1))
         {
@@ -501,9 +1223,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+        SaveCurrentFullLyrics();
         _manualDraftLines = lines;
         _manualDraftCues.Clear();
         _liveTranscriptBuffer.Clear();
+        _unmatchedTranscriptBlocks = 0;
         _manualDraftIndex = 0;
         _automaticLyricsActive = true;
         _manualDraftActive = false;
@@ -511,7 +1236,7 @@ public partial class MainWindow : Window
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
         ManualCurrentLineText.Text = _manualDraftLines[0];
-        ManualSyncProgressText.Text = "Reconhecimento automático preparado: aguardando a voz cantar a primeira frase.";
+        ManualSyncProgressText.Text = "Letra salva. Reconhecimento preparado: aguardando o áudio cantar a primeira frase.";
         ProjectionPreviewText.Text = "Aguardando reconhecimento da primeira frase...";
         NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[0];
         _ = ClearHolyricsForLiveDraftAsync();
@@ -558,31 +1283,42 @@ public partial class MainWindow : Window
             if (_liveTranscriptBuffer.Length > 0) _liveTranscriptBuffer.Append(' ');
             _liveTranscriptBuffer.Append(e.Transcript);
 
+            // Aceita a próxima frase ou uma das duas seguintes quando a transcrição vier agrupada.
+            // Se o reconhecimento ficar preso (várias transcrições sem casar), a busca é alargada
+            // gradualmente, com exigência de confiança maior para frases mais distantes.
+            // O avanço é sempre para frente; nunca volta a projetar uma frase anterior.
+            var lookAhead = _unmatchedTranscriptBlocks >= 6 ? 12 : _unmatchedTranscriptBlocks >= 3 ? 6 : 2;
             var match = LiveLyricsMatcher.FindNextLine(
                 _manualDraftLines, _manualDraftIndex, _liveTranscriptBuffer.ToString(),
-                out var confidence, 0.78);
+                out var confidence, 0.78, lookAhead);
 
-            // Só aceita a próxima linha em ordem. Nunca pula versos por uma transcrição ambígua.
-            if (match != _manualDraftIndex)
+            if (match < _manualDraftIndex)
             {
+                _unmatchedTranscriptBlocks++;
                 if (_liveTranscriptBuffer.Length > 600)
                     _liveTranscriptBuffer.Remove(0, _liveTranscriptBuffer.Length - 400);
-                ManualSyncProgressText.Text = $"Ouvindo e comparando com a próxima frase... confiança {confidence:P0}.";
+                ManualSyncProgressText.Text = $"Comparando o áudio com a letra salva... confiança {confidence:P0}.";
                 return;
             }
 
+            _unmatchedTranscriptBlocks = 0;
             _liveTranscriptBuffer.Clear();
-            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 1.0);
-            if (_manualDraftCues.Count > 0)
-                estimatedSeconds = Math.Max(estimatedSeconds, _manualDraftCues[^1].Seconds + 0.05);
+            var matchedIndex = match;
+            var estimatedSeconds = Math.Max(0, e.AudioStartSeconds + 0.5);
+            double? lastCueSeconds = _manualDraftCues.Count > 0 ? _manualDraftCues[^1].Seconds : null;
 
-            var cue = new LyricCue { Seconds = estimatedSeconds, Text = _manualDraftLines[_manualDraftIndex] };
-            _manualDraftCues.Add(cue);
-            _manualDraftIndex++;
+            // Frases puladas pelo reconhecimento continuam na letra sincronizada (com tempos estimados).
+            var plannedCues = AutoSyncPlanner.CreateCuesForMatch(
+                _manualDraftLines, _manualDraftIndex, matchedIndex, lastCueSeconds, estimatedSeconds);
+            if (plannedCues.Count == 0) return;
+            _manualDraftCues.AddRange(plannedCues);
+            var cue = plannedCues[^1];
+            estimatedSeconds = cue.Seconds;
+            _manualDraftIndex = matchedIndex + 1;
 
+            // Mesmo caminho da reprodução normal: prévia, janela de projeção própria e Holyrics.
             var block = CueTimeline.BuildProjectionBlock(_manualDraftCues, _manualDraftCues.Count - 1, _maxProjectionLines);
-            _currentProjectedLyric = block;
-            ProjectionPreviewText.Text = block;
+            PublishProjectionOnly(block);
             QueueHolyricsUpdate(block);
 
             SecondsBox.Text = estimatedSeconds.ToString("0.00", CultureInfo.InvariantCulture);
@@ -596,7 +1332,8 @@ public partial class MainWindow : Window
             else
             {
                 ManualCurrentLineText.Text = "Todas as frases foram reconhecidas. Sincronização concluída.";
-                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} frases reconhecidas e sincronizadas.";
+                NextProjectionPreviewText.Text = "Próxima: —";
+                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} trechos identificados e sincronizados. Letra e tempos salvos na biblioteca.";
                 _ = StopAutoRecognitionAsync(savePartial: true);
             }
         }));
@@ -620,6 +1357,11 @@ public partial class MainWindow : Window
             _cues.AddRange(CueTimeline.Normalize(_manualDraftCues));
             RefreshCueList();
             PersistCurrentCues();
+            if (_currentVideo is not null)
+            {
+                _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+                SaveCurrentFullLyrics();
+            }
             _lastAutomaticCue = -1;
         }
 
@@ -794,13 +1536,16 @@ public partial class MainWindow : Window
             }
             if (searchItems.Count == 0)
             {
-                StatusText.Text = "O catálogo de letras não retornou resultados. Você pode abrir as outras fontes ou criar a sincronização ao vivo.";
+                StatusText.Text = "O catálogo automático não encontrou a letra. Abrindo outras fontes de pesquisa...";
+                await OpenLyricsSourceSearchesAsync(trackName, artistName);
                 return;
             }
 
             var wantedTrack = NormalizeMusicText(trackName);
             var wantedArtist = NormalizeMusicText(artistName);
             var candidates = new List<(double Score, double LyricMatch, string Track, string Artist, string Album, List<LyricCue> Cues)>();
+            // Letras do catálogo que existem só como texto, sem tempos (usadas se não houver versão sincronizada).
+            var plainCandidates = new List<(double Score, string Track, string Artist, string Album, string Text)>();
             foreach (var item in searchItems)
             {
                 var foundTrack = item.TryGetProperty("trackName", out var tp) ? tp.GetString() ?? "" : "";
@@ -819,6 +1564,15 @@ public partial class MainWindow : Window
                     ContainsMusicPhrase(wantedArtist, normArtist);
                 if (!trackMatches)
                     continue;
+                if (expectedLyrics is null &&
+                    item.TryGetProperty("plainLyrics", out var plainElement) && plainElement.ValueKind == JsonValueKind.String &&
+                    !string.IsNullOrWhiteSpace(plainElement.GetString()))
+                {
+                    var plainText = plainElement.GetString()!.Replace("\r\n", "\n").Trim();
+                    if (plainText.Count(ch => ch == '\n') >= 3)
+                        plainCandidates.Add((100d - (normTrack == wantedTrack ? 0 : 12) - (artistMatches ? 0 : 35),
+                            foundTrack, foundArtist, foundAlbum, plainText));
+                }
                 if (!item.TryGetProperty("syncedLyrics", out var synced) || synced.ValueKind != JsonValueKind.String)
                     continue;
                 var lrc = synced.GetString();
@@ -854,23 +1608,42 @@ public partial class MainWindow : Window
                     if (noTimedMatch.Choice == MusicMatchChoice.Create)
                         OpenManualLyricsEditor(expectedLyrics);
                     else if (noTimedMatch.Choice == MusicMatchChoice.Yes)
-                        OpenLyricsSourceSearches_Click(this, new RoutedEventArgs());
+                        await OpenLyricsSourceSearchesAsync(trackName, artistName);
                     else
                         StatusText.Text = "A sincronização atual foi preservada. Você pode iniciar a marcação ao vivo quando quiser.";
                     return;
                 }
 
-                var noMatchDialog = new MusicMatchDialog(
-                    "Não encontrei esta letra sincronizada",
-                    "Música: " + trackName + "\nAutor / intérprete: " + artistName +
-                    "\n\nNão há uma versão temporizada compatível no catálogo online nem na biblioteca local.\n\nSim: abrir outras fontes de pesquisa.\nNão: deixar para depois.\nCriar: cadastrar a letra e marcar os tempos manualmente.") { Owner = this };
-                noMatchDialog.ShowDialog();
-                if (noMatchDialog.Choice == MusicMatchChoice.Create)
-                    OpenManualLyricsEditor();
-                else if (noMatchDialog.Choice == MusicMatchChoice.Yes)
-                    OpenLyricsSourceSearches_Click(this, new RoutedEventArgs());
-                else
-                    StatusText.Text = "Nenhuma letra foi alterada. Você pode pesquisar novamente ou criar a letra quando quiser.";
+                if (plainCandidates.Count > 0)
+                {
+                    var plain = plainCandidates.OrderByDescending(candidate => candidate.Score).First();
+                    var plainPreview = string.Join(Environment.NewLine, plain.Text.Split('\n').Take(10));
+                    var plainAlbum = string.IsNullOrWhiteSpace(plain.Album) ? "" : "\nÁlbum: " + plain.Album;
+                    var plainDialog = new MusicMatchDialog(
+                        "Encontrei a letra, mas sem tempos",
+                        "Vídeo carregado: " + (_currentVideo?.Title ?? "") +
+                        "\nFaixa encontrada: " + plain.Track + "\nAutor / intérprete: " + plain.Artist + plainAlbum +
+                        "\n\nPrévia da letra:\n" + plainPreview +
+                        "\n\nSim: colocar esta letra na caixa, salvar e sincronizar com a música.\nNão: não usar.\nCriar: só colocar a letra na caixa para eu revisar antes.") { Owner = this };
+                    plainDialog.ShowDialog();
+                    if (plainDialog.Choice == MusicMatchChoice.Yes)
+                    {
+                        OpenManualLyricsEditor(plain.Text);
+                        SaveFullLyrics_Click(this, new RoutedEventArgs());
+                    }
+                    else if (plainDialog.Choice == MusicMatchChoice.Create)
+                    {
+                        OpenManualLyricsEditor(plain.Text);
+                    }
+                    else
+                    {
+                        StatusText.Text = "Letra do catálogo não aplicada.";
+                    }
+                    return;
+                }
+
+                StatusText.Text = "Não encontrei uma letra sincronizada para esta música. Abrindo automaticamente os catálogos alternativos...";
+                await OpenLyricsSourceSearchesAsync(trackName, artistName);
                 return;
             }
 
@@ -942,14 +1715,28 @@ public partial class MainWindow : Window
         if (_currentVideo?.VideoId == videoId)
         {
             _currentVideo.Title = displayTitle;
-            // Preserve metadata corrected by the user; use YouTube oEmbed only as a first suggestion.
-            if (string.IsNullOrWhiteSpace(_currentVideo.TrackName))
-                _currentVideo.TrackName = title;
-            if (string.IsNullOrWhiteSpace(_currentVideo.Artist))
-                _currentVideo.Artist = author;
+            _currentRawTitle = title;
+            _currentRawChannel = author;
+            // Nomes digitados/corrigidos pelo usuário são preservados. Só o que ainda é o título inteiro do YouTube
+            // ("Intérprete - Música (Playback)") é separado automaticamente em intérprete e título da música.
+            ParsedTrack? pendingNames = null;
+            if (!title.StartsWith("Vídeo do YouTube", StringComparison.Ordinal))
+            {
+                if (TrackTitleParser.LooksUncorrected(_currentVideo.TrackName, title))
+                {
+                    var parsed = TrackTitleParser.Parse(title, author, KnownArtists());
+                    _currentVideo.TrackName = parsed.Track;
+                    _currentVideo.Artist = parsed.Artist;
+                    if (!parsed.Confident) pendingNames = parsed;
+                }
+                else if (string.IsNullOrWhiteSpace(_currentVideo.Artist))
+                    _currentVideo.Artist = TrackTitleParser.CleanChannel(author);
+            }
             MusicTrackBox.Text = _currentVideo.TrackName;
-            MusicComposerBox.Text = _currentVideo.Composer;
             MusicArtistBox.Text = _currentVideo.Artist;
+            _urlHintFor = videoId;
+            if (pendingNames is not null) _ = RefineNamesAsync(videoId, pendingNames);
+            else _ = CheckCurrentVideoLyricsAsync(videoId);
         }
         if (!saveToHistory) return;
 
@@ -958,12 +1745,11 @@ public partial class MainWindow : Window
         {
             existing.Title = displayTitle;
             existing.TrackName = MusicTrackBox.Text.Trim();
-            existing.Composer = MusicComposerBox.Text.Trim();
             existing.Artist = MusicArtistBox.Text.Trim();
             existing.Url = url;
             existing.LastUsed = DateTime.Now;
         }
-        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = url, LastUsed = DateTime.Now });
+        else _history.Insert(0, new VideoHistoryItem { VideoId = videoId, Title = displayTitle, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = url, LastUsed = DateTime.Now });
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
         SaveHistory();
         RefreshHistory();
@@ -1103,6 +1889,8 @@ public partial class MainWindow : Window
                         SaveNextVideoPreference();
                         PlayNextButton.IsEnabled = false;
                         NextTrackText.Text = "Pesquise e prepare a próxima música.";
+                        RefreshNextLyricsPreview();
+                        PromoteQueue(); // a primeira da fila vira a próxima
                         StatusText.Text = "Próxima música carregada e player confirmado.";
                     }
                     else
@@ -1117,7 +1905,12 @@ public partial class MainWindow : Window
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
                 Dispatcher.Invoke(() =>
                 {
-                    if (playerState == 0) EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                    if (playerState == 0)
+                    {
+                        var firstEnd = !_playbackEnded;
+                        EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                        if (firstEnd) MaybeAutoAdvance();
+                    }
                     else StatusText.Text = playerState == 1 ? "YouTube tocando." : playerState == 2 ? "YouTube pausado." : "YouTube aguardando.";
                 });
                 return;
@@ -1132,10 +1925,23 @@ public partial class MainWindow : Window
             if (state != _lastPlayerState)
             {
                 _lastPlayerState = state;
+                if (state == 1 && _autoSyncPending)
+                {
+                    _autoSyncPending = false;
+                    Dispatcher.BeginInvoke(new Action(async () =>
+                    {
+                        try { await StartAutoRecognitionAsync(); }
+                        catch (Exception ex) { StatusText.Text = "Não foi possível iniciar a sincronização automática: " + ex.Message; }
+                    }));
+                }
                 if (state == 1) Dispatcher.Invoke(() => StatusText.Text = !_playerReady ? "YouTube tocando; aguardando confirmação do player." : _cues.Count > 0 ? "YouTube tocando. Sincronização de letras ativa." : "YouTube tocando. Nenhuma letra sincronizada foi carregada.");
                 else if (state == 2) Dispatcher.Invoke(() => StatusText.Text = "YouTube pausado.");
                 else if (state == 0) Dispatcher.Invoke(() =>
-                    EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente."));
+                {
+                    var firstEnd = !_playbackEnded;
+                    EndPlayback("Reprodução do YouTube finalizada. Projeção encerrada automaticamente.");
+                    if (firstEnd) MaybeAutoAdvance();
+                });
             }
             if (state != 1 || _cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
             var cueIndex = FindActiveCue(seconds);
@@ -1149,6 +1955,7 @@ public partial class MainWindow : Window
 
     private void QueueHolyricsUpdate(string text)
     {
+        if (!_holyricsEnabled) return;
         var version = Interlocked.Increment(ref _holyricsUpdateVersion);
         lock (_holyricsQueueSync)
         {
@@ -1201,6 +2008,51 @@ public partial class MainWindow : Window
     }
 
 
+    private async void HolyricsEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingPreferences || HolyricsEnabledBox is null) return;
+        var enabled = HolyricsEnabledBox.IsChecked == true;
+        if (_holyricsEnabled == enabled) return;
+        _holyricsEnabled = enabled;
+        Interlocked.Increment(ref _holyricsUpdateVersion);
+        SaveHolyricsEnabledPreference(enabled);
+
+        if (!enabled)
+        {
+            try
+            {
+                if (_holyrics.IsConfigured)
+                    await QueueHolyricsCloseQuickAsync();
+                StatusText.Text = "Integração Holyrics desativada. A apresentação rápida foi fechada; o programa Holyrics continua aberto.";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = "Integração desativada, mas o fechamento não foi confirmado: " + ex.Message;
+            }
+            return;
+        }
+
+        StatusText.Text = "Integração Holyrics ativada.";
+        if (!string.IsNullOrWhiteSpace(_currentProjectedLyric))
+            QueueHolyricsUpdate(_currentProjectedLyric);
+    }
+
+    private void SaveHolyricsEnabledPreference(bool enabled)
+    {
+        try
+        {
+            var current = File.Exists(_preferencesFile)
+                ? JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile)) ?? new()
+                : new ProjectionPreferences();
+            current.HolyricsEnabled = enabled;
+            Directory.CreateDirectory(Path.GetDirectoryName(_preferencesFile)!);
+            var temp = _preferencesFile + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, _preferencesFile, true);
+        }
+        catch (Exception ex) { StatusText.Text = "Não foi possível salvar o estado do Holyrics: " + ex.Message; }
+    }
+
     private async void HolyricsSettings_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new HolyricsSettingsWindow(_holyrics) { Owner = this };
@@ -1213,6 +2065,7 @@ public partial class MainWindow : Window
         if (LineCountBox?.SelectedItem is not ComboBoxItem item ||
             !int.TryParse(item.Content?.ToString(), out var count)) return;
         _maxProjectionLines = Math.Clamp(count, 1, 10);
+        _projection?.SetMaxLines(_maxProjectionLines);
         if (!_loadingPreferences) SavePreferences(count);
         RefreshCurrentProjectionBlock();
     }
@@ -1225,6 +2078,11 @@ public partial class MainWindow : Window
             var preferences = JsonSerializer.Deserialize<ProjectionPreferences>(File.ReadAllText(_preferencesFile));
             if (preferences is null) return;
             _loadingPreferences = true;
+            _holyricsEnabled = preferences.HolyricsEnabled ?? true;
+            _selectedProjectionBackgroundPath = preferences.ProjectionBackgroundPath;
+            HolyricsEnabledBox.IsChecked = _holyricsEnabled;
+            _autoAdvance = preferences.AutoAdvance ?? false;
+            AutoAdvanceBox.IsChecked = _autoAdvance;
             _maxProjectionLines = Math.Clamp(preferences.MaxLines ?? 4, 1, 10);
             SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
@@ -1269,7 +2127,10 @@ public partial class MainWindow : Window
     private sealed class ProjectionPreferences
     {
         public int? MaxLines { get; set; } = 4;
+        public bool? HolyricsEnabled { get; set; } = true;
+        public string? ProjectionBackgroundPath { get; set; }
         public string? NextVideoUrl { get; set; }
+        public bool? AutoAdvance { get; set; }
     }
 
     private void SaveNextVideoPreference()
@@ -1294,14 +2155,17 @@ public partial class MainWindow : Window
 
     private async void ExitProjection_Click(object sender, RoutedEventArgs e)
     {
+        // A saída local nunca depende de o Holyrics estar conectado ou responder.
         try
         {
+            if (_projection is { IsVisible: true }) _projection.Close();
+            LocalProjectionToggleButton.Content = "Abrir projeção própria";
             await QueueHolyricsCloseProjectionAsync();
-            StatusText.Text = "Projeção do Holyrics encerrada. O Lyravoxen permanece aberto para a próxima música.";
+            StatusText.Text = "Projeção própria e apresentação do Holyrics encerradas. O Lyravoxen permanece aberto.";
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Não foi possível encerrar a projeção do Holyrics: " + ex.Message;
+            StatusText.Text = "Projeção própria encerrada. O Holyrics não confirmou o fechamento: " + ex.Message;
         }
     }
 
@@ -1318,6 +2182,7 @@ public partial class MainWindow : Window
         _currentProjectedLyric = safeText;
         if (ProjectionPreviewText is not null)
             ProjectionPreviewText.Text = string.IsNullOrWhiteSpace(safeText) ? "Aguardando a próxima frase..." : safeText;
+        if (_projection is { IsVisible: true }) _projection.ShowLyric(safeText);
         var activeIndex = _manualProjectionMode ? _manualCueIndex : _lastAutomaticCue;
         var nextIndex = activeIndex + 1;
         if (NextProjectionPreviewText is not null)
@@ -1631,6 +2496,9 @@ public partial class MainWindow : Window
 
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        // Voz (F4), confirmação da Bíblia e marcação por toque têm prioridade sobre os demais atalhos.
+        if (HandleVoiceAndTapKeys(e)) return;
+
         // Não interceptar atalhos enquanto o operador digita ou navega no navegador incorporado.
         if (e.OriginalSource is System.Windows.Controls.TextBox or
             System.Windows.Controls.ComboBox or
@@ -1718,7 +2586,6 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.TrackName = MusicTrackBox.Text.Trim();
-        _currentVideo.Composer = MusicComposerBox.Text.Trim();
         _currentVideo.Artist = MusicArtistBox.Text.Trim();
         UpdateCurrentHistoryMetadata();
         SaveCurrentVideoMetadata();
@@ -1730,7 +2597,6 @@ public partial class MainWindow : Window
         var item = _history.FirstOrDefault(entry => entry.VideoId == _currentVideo.VideoId);
         if (item is null) return;
         item.TrackName = MusicTrackBox.Text.Trim();
-        item.Composer = MusicComposerBox.Text.Trim();
         item.Artist = MusicArtistBox.Text.Trim();
         item.LastUsed = DateTime.Now;
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
@@ -1752,6 +2618,7 @@ public partial class MainWindow : Window
             saved.Composer = _currentVideo.Composer;
             saved.Artist = _currentVideo.Artist;
             saved.Url = _currentVideo.Url;
+            saved.FullLyrics = _currentVideo.FullLyrics;
         }
         SaveLibrary();
         RefreshLibrarySongs();
@@ -1761,7 +2628,6 @@ public partial class MainWindow : Window
     {
         if (_currentVideo is null) return;
         _currentVideo.TrackName = MusicTrackBox.Text.Trim();
-        _currentVideo.Composer = MusicComposerBox.Text.Trim();
         _currentVideo.Artist = MusicArtistBox.Text.Trim();
         UpdateCurrentHistoryMetadata();
         _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
@@ -1794,6 +2660,8 @@ public partial class MainWindow : Window
                 IsOffline = _currentVideo.IsOffline,
                 LocalPath = _currentVideo.LocalPath,
                 Format = _currentVideo.Format,
+                FullLyrics = _currentVideo.FullLyrics,
+                SavedAt = DateTime.Now,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         }
@@ -1801,11 +2669,13 @@ public partial class MainWindow : Window
         {
             foreach (var saved in savedItems)
             {
+                saved.SavedAt = DateTime.Now;
                 saved.Title = _currentVideo.Title;
                 saved.TrackName = _currentVideo.TrackName;
                 saved.Composer = _currentVideo.Composer;
                 saved.Artist = _currentVideo.Artist;
                 saved.Url = _currentVideo.Url;
+                saved.FullLyrics = _currentVideo.FullLyrics;
                 saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
             }
         }
@@ -1950,16 +2820,17 @@ public partial class MainWindow : Window
         if (video is null)
             folder.Videos.Add(new LibraryVideo
             {
-                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Composer = MusicComposerBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
+                VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
+                FullLyrics = _currentVideo.FullLyrics,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
             });
         else
         {
             video.Title = _currentVideo.Title;
             video.TrackName = MusicTrackBox.Text.Trim();
-            video.Composer = MusicComposerBox.Text.Trim();
             video.Artist = MusicArtistBox.Text.Trim();
             video.Url = _currentVideo.Url;
+            video.FullLyrics = _currentVideo.FullLyrics;
             video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         }
         SaveLibrary();
@@ -2030,8 +2901,11 @@ public partial class MainWindow : Window
             _audioTimer.Start();
             _currentVideo = video;
             MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
-            MusicComposerBox.Text = video.Composer;
             MusicArtistBox.Text = video.Artist;
+            ManualLyricsBox.Text = video.FullLyrics ?? "";
+            ManualSyncProgressText.Text = string.IsNullOrWhiteSpace(video.FullLyrics)
+                ? "Esta música ainda não tem letra completa salva."
+                : "Letra completa carregada da biblioteca.";
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(video.Cues));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
