@@ -45,7 +45,9 @@ public partial class MainWindow
             {
                 Handler = HandleRemoteCommandAsync,
                 RequestHandler = HandleSongRequestAsync,
-                AudioStreamer = _audioMonitor.StreamAsync
+                AudioStreamer = _audioMonitor.StreamAsync,
+                QrPng = MakeQrPngBytes,
+                OnlineLink = () => _whatsApp.OnlineRequestLink
             };
             _remote.Start();
             AppLog.Info("Controle remoto ativo na porta " + _remote.Port);
@@ -73,6 +75,7 @@ public partial class MainWindow
                     case "nextcheck": return await CheckNextLyricsFromRemoteAsync(argument);
                     case "nextconfirm": return ConfirmNextLyrics();
                     case "livejson": return BuildLiveJson();
+                    case "onlinelink": return _whatsApp.OnlineRequestLink;
                     case "audiolevel":
                         _audioMonitor.EnsureStarted();
                         return _audioMonitor.Running ? _audioMonitor.Level.ToString() : "ERR:" + (_audioMonitor.LastError.Length > 0 ? _audioMonitor.LastError : "captura desligada");
@@ -100,6 +103,7 @@ public partial class MainWindow
                         NextCue_Click(this, new RoutedEventArgs());
                         return StatusText.Text;
                     case "auto":
+                        ReopenProjectionAfterLiveClear();
                         ResumeAutomaticProjection_Click(this, new RoutedEventArgs());
                         return "Projeção automática retomada.";
                     case "vol":
@@ -122,8 +126,8 @@ public partial class MainWindow
                         break;
                     case "next": await StepBibleVerseAsync(1); break;
                     case "prev": await StepBibleVerseAsync(-1); break;
-                    case "chnext": await ChangeBibleChapterAsync(1); break;
-                    case "chprev": await ChangeBibleChapterAsync(-1); break;
+                    case "chnext": await ChangeBibleChapterForRemoteAsync(1); break;
+                    case "chprev": await ChangeBibleChapterForRemoteAsync(-1); break;
                     case "project": await ProjectBibleSelectionAsync(); break;
                     case "clear": ClearBibleProjection_Click(this, new RoutedEventArgs()); break;
                     case "state": break;
@@ -187,6 +191,37 @@ public partial class MainWindow
         var result = (await YoutubePlayer.CoreWebView2.ExecuteScriptAsync(script)).Trim('"');
         if (result == "sem player") return "O player ainda não está pronto.";
         return command == "seek" ? "Posição ajustada (" + argument + " s)." : result;
+    }
+
+    /// <summary>QR code em PNG de um endereço (null se não der para gerar).</summary>
+    private static byte[]? MakeQrPngBytes(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        try
+        {
+            using var generator = new QRCodeGenerator();
+            using var data = generator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+            return new PngByteQRCode(data).GetGraphic(8);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha ao gerar o QR code", ex);
+            return null;
+        }
+    }
+
+    /// <summary>QR code de um endereço como imagem para a tela do computador.</summary>
+    private static BitmapImage? MakeQrImage(string url)
+    {
+        var png = MakeQrPngBytes(url);
+        if (png is null) return null;
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.StreamSource = new MemoryStream(png);
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
     }
 
     private static System.Windows.Media.Brush Hex(string color) =>

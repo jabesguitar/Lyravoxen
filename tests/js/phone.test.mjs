@@ -48,6 +48,9 @@ function handle(c,a){
    case 'tapfinish':S.tap={active:false,marked:0,total:0,nextLine:''};S.hasCues=true;S.recent.unshift({id:'NEW00000002',title:'Outra nova — Coral',lyrics:'sync'});return '✅ Salva na biblioteca.';
    case 'tapcancel':S.tap={active:false,marked:0,total:0,nextLine:''};return 'Marcação cancelada.';
    case 'audiolevel':return S.level===undefined?'0':S.level;
+   case 'onlinelink':return 'https://lyravoxen-pedidos.ferkt319.workers.dev/pedido';
+   case 'chnext':S.chapter=(S.chapter||3)+1;return 'João '+S.chapter+':1 projetado.';
+   case 'chprev':S.chapter=(S.chapter||3)-1;return 'João '+S.chapter+':1 projetado.';
    case 'setnext':{const [rep,...u]=a.split('|');const url=u.join('|');if(!/youtu/.test(url))return 'Esse link não é de um vídeo do YouTube.';if(S.next&&rep!=='1')return 'Já existe uma próxima preparada.';S.next=mkNext('LNK00000001','Vídeo colado','notfound');return 'Próxima preparada: vídeo LNK00000001.';}
    case 'qadd':{const [kind,...v]=a.split('|');const val=v.join('|');if(kind==='url'&&!/youtu/.test(val))return 'Esse link não é de um vídeo do YouTube.';
      if(!S.next){S.next=mkNext('Q'+Math.random().toString(36).slice(2,12),kind+':'+val,'notfound');return 'Próxima preparada: '+val+'.';}
@@ -62,6 +65,11 @@ function handle(c,a){
 const server=http.createServer((req,res)=>{
   const u=new URL(req.url,'http://x');
   if(u.pathname==='/'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});return res.end(page_html);}
+  if(u.pathname==='/qr.png'){
+    if(u.searchParams.get('pin')!==S.pin){res.writeHead(401);return res.end('no');}
+    S.qrRequested=(S.qrRequested||0)+1;
+    res.writeHead(200,{'content-type':'image/png'});return res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==','base64'));
+  }
   if(u.pathname==='/audio'){
     if(u.searchParams.get('pin')!==S.pin){res.writeHead(401,{'content-type':'application/json'});return res.end(JSON.stringify({ok:false,error:'PIN incorreto.'}));}
     res.writeHead(200,{'content-type':'application/octet-stream'}); S.audioOpen=(S.audioOpen||0)+1; S.phase=S.phase||0;
@@ -286,6 +294,27 @@ await page.fill('#nt','Santo'); await page.fill('#na','Fernandinho'); await page
 ok(lastCall('lyricsfetch')[1]==='next|Santo\nFernandinho'&&(await text('st')).includes('Vagalume'),'buscar texto da próxima envia música e intérprete');
 await page.click('#b-fetch-now'); await page.waitForTimeout(500); ok(lastCall('lyricsfetch')[1]==='now|','buscar texto da música que toca');
 S.canFetchText=false; S.hasCues=true; S.next=null; S.queue=[];
+
+
+// 12e) corrigir: capítulo da Bíblia, limpar telão como na Bíblia, busca no topo, QR dos pedidos online
+await page.click('#t-bible'); S.chapter=3;
+await page.click('text=Capítulo ▶'); await page.waitForTimeout(400); ok(lastCall('chnext')!==undefined&&(await text('st')).includes('João 4:1 projetado'),'Capítulo ▶ chega ao computador e mostra o resultado');
+await page.click('text=◀ Capítulo'); await page.waitForTimeout(400); ok(lastCall('chprev')!==undefined&&(await text('st')).includes('João 3:1 projetado'),'◀ Capítulo funciona');
+await page.click('#t-live');
+const order=await page.evaluate(()=>{const a=document.getElementById('liblist'),b=document.getElementById('nowline');return !!(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);});
+ok(order,'busca na biblioteca fica ACIMA do cartão "No telão agora"');
+const order2=await page.evaluate(()=>{const a=document.getElementById('recentlist'),b=document.getElementById('nowline');return !!(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);});
+ok(order2,'últimas salvas também ficam no topo');
+ok((await page.locator('#p-live .card').first().textContent()).includes('Buscar na biblioteca'),'a busca é o primeiro cartão da aba Ao vivo');
+dialogs.length=0; await page.click('text=🧹 Limpar telão'); await page.waitForTimeout(400);
+ok(dialogs.some(d=>d.includes('Limpar o telão')),'limpar telão (Ao vivo) continua pedindo confirmação'); ok(lastCall('clearlive')!==undefined,'limpar telão chama o computador');
+await page.click('#autobtn').catch(()=>{});
+// QR
+await page.click('text=📲 QR code dos pedidos online'); await page.waitForFunction(()=>document.getElementById('qrover').style.display==='block');
+ok((await text('qrlink')).includes('lyravoxen-pedidos.ferkt319.workers.dev/pedido'),'o link dos pedidos online aparece junto do QR code');
+await page.waitForFunction(()=>document.getElementById('qrimg').complete&&document.getElementById('qrimg').naturalWidth>0); ok((S.qrRequested||0)>=1,'a imagem do QR code é pedida ao computador (com o PIN)');
+await page.click('#qrover'); await page.waitForFunction(()=>document.getElementById('qrover').style.display==='none'); ok(true,'tocar fecha o QR code');
+S.pin='0000'; await page.click('text=📲 QR code dos pedidos online'); await page.waitForTimeout(500); ok((await page.evaluate(()=>document.getElementById('qrover').style.display))!=='block','PIN errado: o QR code NÃO abre (e nada fica por cima da tela)'); S.pin='1234'; await page.evaluate(()=>{localStorage.setItem('lyra-pin','1234');pin='1234';show();});
 
 // 13) PIN trocado no computador: volta a pedir
 S.pin='7777'; await page.click('#t-live'); await page.waitForFunction(()=>document.getElementById('pinbox').style.display==='block',null,{timeout:6000});

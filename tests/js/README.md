@@ -10,4 +10,6 @@ PW_MODULES=/caminho/node_modules/ node phone.test.mjs   # aba Ao vivo do celular
 node audio.test.mjs         # matemática da captura de áudio (mono + 24 kHz + nível), porte do AudioMonitorService
 python3 extract_patterns.py && node parsers.test.mjs && node names.test.mjs   # regex reais do C# aplicadas a conversas do WhatsApp, títulos de vídeo e limpeza de letras
 ```
+Antes de entregar C#: `python3 tests/csharp_lint.py` (usings e membros que não existem), `python3 tests/csharp_scopes.py` (nomes repetidos; alertas em arquivos antigos são falsos positivos) e `python3 tests/help_coverage.py` (Ajuda).
+
 `build.mjs` é uma cópia em JavaScript de `OfflineRequestForm.Build` e `CloudWorker.Build`: se mudar o C#, atualize-a.

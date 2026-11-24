@@ -216,17 +216,18 @@ public partial class MainWindow
             }));
         }
 
-        if (_whatsApp.CloudUrl.Length > 0)
+        // Link dos pedidos pela internet (qualquer rede) com QR code para a pessoa apontar a câmera.
+        var cloudLink = _whatsApp.OnlineRequestLink;
+        _requestsPanel.Children.Add(RequestText("Pedidos pela internet (funciona em qualquer rede) — aponte a câmera para o QR code:", 13, true));
+        var qrImage = MakeQrImage(cloudLink);
+        if (qrImage is not null)
+            _requestsPanel.Children.Add(new System.Windows.Controls.Image { Source = qrImage, Width = 190, Height = 190, HorizontalAlignment = System.Windows.HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 4) });
+        _requestsPanel.Children.Add(new System.Windows.Controls.TextBox { Text = cloudLink, IsReadOnly = true, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
+        _requestsPanel.Children.Add(RequestButton("Copiar link da internet", () =>
         {
-            var cloudLink = _whatsApp.CloudUrl + "/pedido";
-            _requestsPanel.Children.Add(RequestText("Link de pedidos pela internet (funciona em qualquer rede):", 13, true));
-            _requestsPanel.Children.Add(new System.Windows.Controls.TextBox { Text = cloudLink, IsReadOnly = true, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            _requestsPanel.Children.Add(RequestButton("Copiar link da internet", () =>
-            {
-                try { System.Windows.Clipboard.SetText(cloudLink); StatusText.Text = "Link copiado: " + cloudLink; }
-                catch (Exception ex) { StatusText.Text = "Não foi possível copiar: " + ex.Message; }
-            }));
-        }
+            try { System.Windows.Clipboard.SetText(cloudLink); StatusText.Text = "Link copiado: " + cloudLink; }
+            catch (Exception ex) { StatusText.Text = "Não foi possível copiar: " + ex.Message; }
+        }));
 
         var groupInfo = !string.IsNullOrEmpty(_whatsApp.GroupLink) || !string.IsNullOrEmpty(_whatsApp.GroupName)
             ? "Pelo WhatsApp — grupo: " + (string.IsNullOrEmpty(_whatsApp.GroupName) ? "(sem nome)" : _whatsApp.GroupName)

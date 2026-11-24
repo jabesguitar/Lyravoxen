@@ -10,16 +10,37 @@ public partial class MainWindow
     private string? _nextRejectedVideoId;
     private readonly AudioMonitorService _audioMonitor = new();
 
+    private bool _reopenProjectionAfterClear;
+
+    /// <summary>Mesma ação do "Limpar telão" da Bíblia (fecha a tela própria e limpa o Holyrics), mais congelar a letra automática
+    /// para ela não voltar sozinha. "Voltar ao automático" reabre a tela própria e retoma.</summary>
     private string ClearLiveProjectionForRemote()
     {
         if (_tapActive) return "A marcação por toque está ativa. Conclua ou cancele antes de limpar o telão.";
-        // Congela a projeção automática (senão a próxima frase voltaria sozinha) e limpa o telão.
+        _reopenProjectionAfterClear = _projection is { IsVisible: true };
         _manualProjectionMode = true;
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
         PublishProjectionOnly("");
-        _ = ClearHolyricsForLiveDraftAsync();
-        return "Telão limpo. Toque em \"Voltar ao automático\" para retomar a letra.";
+        ClearBibleProjection_Click(this, new RoutedEventArgs());
+        return "Telão do PC limpo. Toque em \"Voltar ao automático\" para retomar a letra.";
+    }
+
+    private void ReopenProjectionAfterLiveClear()
+    {
+        if (!_reopenProjectionAfterClear) return;
+        _reopenProjectionAfterClear = false;
+        EnsureProjectionWindow();
+        LocalProjectionToggleButton.Content = "Fechar projeção própria";
+    }
+
+    /// <summary>Capítulo anterior/próximo pelo celular: além de trocar o capítulo, projeta o versículo 1 (como o passo de versículo).</summary>
+    private async Task ChangeBibleChapterForRemoteAsync(int direction)
+    {
+        var bookBefore = BibleBooksList.SelectedItem;
+        await ChangeBibleChapterAsync(direction);
+        if (!ReferenceEquals(bookBefore, BibleBooksList.SelectedItem)) await Task.Delay(700); // mudou de livro: espera carregar o capítulo
+        await ProjectBibleSelectionAsync();
     }
 
     private string RejectNextLyricsForRemote()

@@ -25,6 +25,12 @@ internal sealed class WhatsAppSettings
     /// <summary>Buscar os pedidos da internet sozinho, a cada 20 segundos.</summary>
     public bool CloudAuto { get; set; } = true;
 
+    /// <summary>Serviço de pedidos online já publicado (usado para o QR code quando o endereço ainda não foi cadastrado).</summary>
+    public const string DefaultCloudUrl = "https://lyravoxen-pedidos.ferkt319.workers.dev";
+
+    /// <summary>Link público da página de pedidos pela internet (o que vai no QR code).</summary>
+    public string OnlineRequestLink => (CloudUrl.Length > 0 ? CloudUrl : DefaultCloudUrl) + "/pedido";
+
     /// <summary>Endereço onde o formulário envia o pedido (vazio = sem nuvem).</summary>
     public string SendUrl => CloudUrl.Length > 0 ? CloudUrl + "/enviar" : "";
 

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -20,6 +21,10 @@ internal sealed class RemoteControlServer : IDisposable
     public Func<string, string, Task<(bool Ok, string Message)>>? RequestHandler { get; set; }
     /// <summary>Transmite o som do PC ao celular (PCM 16 bits, mono, 24 kHz) até a conexão fechar.</summary>
     public Func<Stream, CancellationToken, Task>? AudioStreamer { get; set; }
+    /// <summary>Gera o QR code (PNG) de um texto/endereço; usado pela página do celular.</summary>
+    public Func<string, byte[]?>? QrPng { get; set; }
+    /// <summary>Link da página de pedidos pela internet, mostrado no celular junto do QR code.</summary>
+    public Func<string>? OnlineLink { get; set; }
 
     private readonly Dictionary<string, Queue<DateTime>> _submissions = new();
 
@@ -145,6 +150,24 @@ internal sealed class RemoteControlServer : IDisposable
                     return;
                 }
 
+                if (path == "/qr.png")
+                {
+                    if (!query.TryGetValue("pin", out var qrPin) || qrPin != Pin || QrPng is null)
+                    {
+                        await WriteAsync(stream, 401, "text/plain; charset=utf-8", "PIN incorreto", timeout.Token);
+                        return;
+                    }
+                    var png = QrPng(OnlineLink?.Invoke() ?? "");
+                    if (png is null)
+                    {
+                        await WriteAsync(stream, 500, "text/plain; charset=utf-8", "Sem QR", timeout.Token);
+                        return;
+                    }
+                    var qrHead = "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nCache-Control: no-store\r\nContent-Length: " + png.Length + "\r\nConnection: close\r\n\r\n";
+                    await stream.WriteAsync(Encoding.ASCII.GetBytes(qrHead), timeout.Token);
+                    await stream.WriteAsync(png, timeout.Token);
+                    return;
+                }
                 if (path == "/audio")
                 {
                     if (!query.TryGetValue("pin", out var audioPin) || audioPin != Pin)
@@ -262,8 +285,15 @@ textarea{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-rad
 <div class="row"><button class="main" onclick="savePin()">Entrar</button></div></div>
 <div id="app" style="display:none">
 <div class="tabs"><button id="t-bible" class="main" onclick="tab('bible')">📖 Bíblia</button><button id="t-live" onclick="tab('live')">▶ Ao vivo</button></div>
+<button class="gap" style="margin-bottom:4px" onclick="showQr()">📲 QR code dos pedidos online</button>
 
 <div id="p-live" style="display:none">
+ <div class="card"><h2>📚 Buscar na biblioteca</h2>
+  <input id="lq" placeholder="Nome da música ou autor" autocomplete="off" onkeydown="if(event.key==='Enter')libSearch()">
+  <button onclick="libSearch()">🔍 Buscar</button>
+  <div id="liblist" class="dim"></div>
+ </div>
+ <div class="card"><h2>🕘 Últimas músicas salvas</h2><div id="recentlist" class="dim">Nenhuma música salva ainda.</div></div>
  <div class="card"><h2>🎬 No telão agora</h2>
   <div class="slide big" id="nowline">Nenhuma música tocando</div>
   <div class="dim" id="nowinfo"></div>
@@ -327,12 +357,6 @@ textarea{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-rad
  </div>
  <div class="card"><h2 id="reqhead">📥 Pedidos</h2><div id="reqlist" class="dim">Nenhum pedido na lista.</div></div>
 
- <div class="card"><h2>🕘 Últimas músicas salvas</h2><div id="recentlist" class="dim">Nenhuma música salva ainda.</div></div>
- <div class="card"><h2>📚 Buscar na biblioteca</h2>
-  <input id="lq" placeholder="Nome da música ou autor" autocomplete="off" onkeydown="if(event.key==='Enter')libSearch()">
-  <button onclick="libSearch()">🔍 Buscar</button>
-  <div id="liblist" class="dim"></div>
- </div>
 </div>
 
 <div id="p-bible">
@@ -342,6 +366,12 @@ textarea{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-rad
 <div class="row"><button onclick="cmd('chprev')">◀ Capítulo</button><button onclick="cmd('chnext')">Capítulo ▶</button></div>
 </div>
 <div id="st"></div></div>
+<div id="qrover" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:20;text-align:center;padding:6vh 14px 0" onclick="this.style.display='none'">
+ <div style="color:#fff;font-size:18px;margin-bottom:12px">Aponte a câmera de outro celular para este QR code</div>
+ <img id="qrimg" alt="QR code" style="width:78vw;max-width:420px;background:#fff;padding:12px;border-radius:12px">
+ <div id="qrlink" style="color:#9fd9d1;font-size:14px;margin-top:14px;word-break:break-all"></div>
+ <div style="color:#8fa1b3;font-size:13px;margin-top:10px">Toque em qualquer lugar para fechar</div>
+</div>
 <script>
 var pin='';try{pin=localStorage.getItem('lyra-pin')||'';}catch(e){}
 var curTab='bible',holdUntil=0,lastNextId='',lastNamesRev=-1,live=null,pasteTarget='next',sigs={},aud={on:false,ctx:null,ctl:null,next:0,rate:24000,chunks:0,dropped:0};
@@ -435,6 +465,15 @@ async function useLink(queue){
   await act('setnext',(has?'1':'0')+'|'+url);
  }
  if(($('st').textContent||'').indexOf('Esse link')!==0){$('nl').value='';}
+}
+async function showQr(){
+ try{
+  var j=await api('onlinelink');
+  if(!j.ok||!j.status){$('st').textContent=j.error||'Não foi possível abrir o QR code.';return;}
+  $('qrlink').textContent=j.status;
+  $('qrimg').src='/qr.png?pin='+encodeURIComponent(pin)+'&t='+Date.now();
+  $('qrover').style.display='block';
+ }catch(e){$('st').textContent='Não foi possível abrir o QR code.';}
 }
 function swapNames(){var a=$('nt').value;$('nt').value=$('na').value;$('na').value=a;$('st').textContent='Campos trocados. Toque em Verificar para procurar a letra.';}
 function fixNames(){act('fixnames',undefined,true);}
