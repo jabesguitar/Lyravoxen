@@ -131,3 +131,12 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Não foram alterados arquivos de lógica funcional nem o CSS do controle remoto nesta etapa.
 - Estado: alteração enviada à branch `redesign/brand-visual-layer`; ainda precisa executar Windows Build e conferir visualmente o modo claro no EXE. O usuário ainda não realizou testes funcionais.
 - Próxima ação: executar Windows Build; se ficar verde, abrir o EXE, alternar para modo claro e enviar capturas para validar contraste antes de qualquer outro ajuste.
+
+
+### Contraste da prévia de letras no modo claro — 25/11/2026
+- Usuário enviou captura da aba Ao vivo em uso e apontou que as letras da prévia/projeção ficavam brancas sobre uma superfície branca no modo claro, dificultando a leitura.
+- A captura evidencia principalmente o texto da prévia da letra, não a barra de progresso do microfone da Central Bíblica. O ajuste foi limitado aos textos de prévia identificados no XAML.
+- Commit `eacecfce36e83c0b93eee05d29ca7c3b70d43864` em `src/Lyravoxen.Desktop/MainWindow.xaml`: os textos `ProjectionPreviewText`, suas duas visualizações vinculadas e `BiblePreviewVerseText` passaram de `Brush_FFFFFF` para `Brush_F2F6F8`, recurso dinâmico que permanece claro no tema escuro e assume azul-marinho no tema claro.
+- Nenhuma lógica de sincronização, reprodução ou projeção foi modificada.
+- Estado: commit enviado à branch `redesign/brand-visual-layer`; falta Windows Build e validação visual do modo claro/escuro. O usuário ainda não confirmou o resultado.
+- Próxima ação: executar Windows Build e verificar a legibilidade da prévia ao vivo e da prévia bíblica nos dois temas.
