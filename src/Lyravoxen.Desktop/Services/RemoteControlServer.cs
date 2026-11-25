@@ -266,8 +266,11 @@ internal sealed class RemoteControlServer : IDisposable
 :root{color-scheme:dark;--navy:#06152f;--panel:#0b2450;--panel2:#0a1d3d;--cyan:#00d9f5;--cyan2:#24bfe5;--violet:#873cff;--gold:#f3c928;--text:#f2f6fb;--muted:#a9bfdc;--line:#214c79;--danger:#a83d58}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -15%,#123c72 0%,#081d40 38%,var(--navy) 78%);color:var(--text);padding:16px 14px 130px}
-.brandbar{max-width:760px;margin:0 auto 18px;display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(0,217,245,.28);border-radius:18px;background:linear-gradient(135deg,rgba(10,39,81,.96),rgba(6,21,47,.94));box-shadow:0 12px 34px rgba(0,0,0,.24)}
-.brandbar img{width:66px;height:66px;object-fit:contain;border-radius:50%;background:#06152f;flex:0 0 auto}
+.brandbar{position:relative;overflow:hidden;max-width:760px;margin:0 auto 18px;display:flex;align-items:center;gap:12px;padding:18px 20px;min-height:94px;border:1px solid rgba(0,217,245,.28);border-radius:18px;background:linear-gradient(135deg,rgba(10,39,81,.96),rgba(6,21,47,.94));box-shadow:0 12px 34px rgba(0,0,0,.24)}
+.brandbar:before{content:"";position:absolute;right:14px;top:50%;transform:translateY(-50%);width:190px;height:190px;background:url('/brand.png') center/contain no-repeat;opacity:.105;pointer-events:none}
+.brandbar>*{position:relative;z-index:1}
+body:before{content:"";position:fixed;right:-90px;bottom:-110px;width:min(72vw,520px);height:min(72vw,520px);background:url('/brand.png') center/contain no-repeat;opacity:.035;pointer-events:none;z-index:0}
+body>*{position:relative;z-index:1}
 .brandname{font-size:20px;font-weight:800;letter-spacing:.035em;line-height:1.1;color:#fff}
 .brandname span{color:var(--cyan)}
 .brandtag{display:block;margin-top:5px;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--muted)}
@@ -310,10 +313,9 @@ textarea{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px so
 #pinbox:before{content:"ACESSO PROTEGIDO";display:block;color:var(--cyan);font-size:10px;letter-spacing:.18em;font-weight:800;margin-bottom:7px}
 #app{max-width:760px;margin:0 auto}
 @media(min-width:760px){body{padding-top:24px}.card{padding:16px}.brandbar{margin-bottom:22px}}
-@media(max-width:390px){.brandbar{gap:9px;padding:10px}.brandbar img{width:54px;height:54px}.brandname{font-size:17px}.networktag{font-size:8px;padding:5px 7px}.row3{gap:6px}.row3 button{font-size:13px;padding:11px 5px}}
+@media(max-width:390px){.brandbar{gap:9px;padding:12px;min-height:76px}.brandbar:before{width:130px;height:130px;right:2px}.brandname{font-size:17px}.networktag{font-size:8px;padding:5px 7px}.row3{gap:6px}.row3 button{font-size:13px;padding:11px 5px}}
 </style></head><body>
 <header class="brandbar">
- <img src="/brand.png" alt="Logomarca Lyravoxen">
  <div><div class="brandname">Lyra<span>voxen</span></div><small class="brandtag">CONTROLE REMOTO</small></div>
  <span class="networktag">REDE LOCAL</span>
 </header>
