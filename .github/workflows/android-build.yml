@@ -43,7 +43,11 @@ jobs:
         working-directory: android
         run: gradle tasks --no-daemon
 
-      - name: Assemble debug APK
+      - name: 1 - Compile Android layout and Kotlin sources
+        working-directory: android
+        run: gradle :app:processDebugResources :app:compileDebugKotlin --no-daemon
+
+      - name: 2 - Generate debug APK
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon
 
