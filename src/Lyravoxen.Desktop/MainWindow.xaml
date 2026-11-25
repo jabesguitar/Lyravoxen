@@ -308,7 +308,6 @@
         </Border>
        </Grid>
       </TabItem>
-</TabItem>
             <TabItem Header="Histórico de vídeos">
        <Grid Margin="8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.72*"/><ColumnDefinition Width="1.18*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
@@ -340,7 +339,6 @@
         </Border>
        </Grid>
       </TabItem>
-</TabItem>
             <TabItem Header="Biblioteca">
        <Grid Margin="8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.78*"/><ColumnDefinition Width="1.12*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
@@ -386,7 +384,6 @@
         </Border>
        </Grid>
       </TabItem>
-</TabItem>
      </TabControl>
     </Border>
    </Grid>
