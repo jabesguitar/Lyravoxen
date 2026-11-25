@@ -3,14 +3,14 @@
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
  Title="Lyravoxen | Estúdio de Letras" Height="860" Width="1440" MinHeight="600" MinWidth="900" WindowState="Maximized" FontFamily="Segoe UI" SnapsToDevicePixels="True" UseLayoutRounding="True"
- WindowStyle="SingleBorderWindow" ResizeMode="CanResize" WindowStartupLocation="CenterScreen" Background="{StaticResource Bg}">
+ WindowStyle="SingleBorderWindow" ResizeMode="CanResize" WindowStartupLocation="CenterScreen" Background="{DynamicResource Bg}">
  <Window.Resources>
   <Style TargetType="{x:Type Button}">
-   <Setter Property="Foreground" Value="#F2F6F8"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/>
    <Setter Property="Background">
-    <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#174A78" Offset="0"/><GradientStop Color="#0D2A50" Offset="1"/></LinearGradientBrush></Setter.Value>
+    <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="{DynamicResource Color_174A78}" Offset="0"/><GradientStop Color="{DynamicResource Color_0D2A50}" Offset="1"/></LinearGradientBrush></Setter.Value>
    </Setter>
-   <Setter Property="BorderBrush" Value="#267DA8"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Brush_267DA8}"/>
    <Setter Property="BorderThickness" Value="1.2"/>
    <Setter Property="Padding" Value="13,8"/>
    <Setter Property="Margin" Value="4"/>
@@ -24,7 +24,7 @@
       <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
      </Border>
      <ControlTemplate.Triggers>
-      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="BorderBrush" Value="#00E5FF"/><Setter TargetName="B" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="13" ShadowDepth="0" Opacity="0.28"/></Setter.Value></Setter></Trigger>
+      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="BorderBrush" Value="#00E5FF"/><Setter TargetName="B" Property="Effect"><Setter.Value><DropShadowEffect Color="{DynamicResource Color_00D9F5}" BlurRadius="13" ShadowDepth="0" Opacity="0.28"/></Setter.Value></Setter></Trigger>
       <Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#087F9E"/><Setter TargetName="B" Property="BorderBrush" Value="#6CF2FF"/></Trigger>
       <Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.42"/></Trigger>
      </ControlTemplate.Triggers>
@@ -32,37 +32,37 @@
    </Setter>
   </Style>
   <Style TargetType="{x:Type TextBox}">
-   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#071A3B"/>
-   <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/><Setter Property="Background" Value="{DynamicResource Brush_071A3B}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Brush_245B88}"/><Setter Property="BorderThickness" Value="1"/>
    <Setter Property="Padding" Value="10,8"/><Setter Property="Margin" Value="3"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TextBox}">
     <Border x:Name="T" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
      <ScrollViewer x:Name="PART_ContentHost" Margin="1"/>
     </Border>
     <ControlTemplate.Triggers>
-     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="T" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="T" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="10" ShadowDepth="0" Opacity="0.20"/></Setter.Value></Setter></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="T" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="T" Property="Effect"><Setter.Value><DropShadowEffect Color="{DynamicResource Color_00D9F5}" BlurRadius="10" ShadowDepth="0" Opacity="0.20"/></Setter.Value></Setter></Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
   <Style TargetType="{x:Type ComboBox}">
    <Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="3"/>
-   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#071A3B"/>
-   <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/><Setter Property="Background" Value="{DynamicResource Brush_071A3B}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Brush_245B88}"/><Setter Property="BorderThickness" Value="1"/>
    <Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="38"/>
    <Setter Property="VerticalContentAlignment" Value="Center"/>
    <Setter Property="Template">
     <Setter.Value><ControlTemplate TargetType="{x:Type ComboBox}">
      <Grid>
-      <Border x:Name="ComboSurface" Background="#071A3B" BorderBrush="#245B88" BorderThickness="1" CornerRadius="10">
+      <Border x:Name="ComboSurface" Background="{DynamicResource Brush_071A3B}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="10">
        <Grid>
         <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,3,34,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
         <ToggleButton x:Name="DropDownToggle" Focusable="False" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" Width="30">
-         <TextBlock Text="⌄" Foreground="#00D9F5" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+         <TextBlock Text="⌄" Foreground="{DynamicResource Brush_00D9F5}" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
         </ToggleButton>
        </Grid>
       </Border>
       <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-       <Border Background="#0B2450" BorderBrush="#00D9F5" BorderThickness="1" CornerRadius="10" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+       <Border Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00D9F5}" BorderThickness="1" CornerRadius="10" MaxHeight="{TemplateBinding MaxDropDownHeight}">
         <ScrollViewer Margin="3" SnapsToDevicePixels="True">
          <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
         </ScrollViewer>
@@ -70,31 +70,31 @@
       </Popup>
      </Grid>
      <ControlTemplate.Triggers>
-      <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="ComboSurface" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="ComboSurface" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="9" ShadowDepth="0" Opacity="0.18"/></Setter.Value></Setter></Trigger>
+      <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="ComboSurface" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="ComboSurface" Property="Effect"><Setter.Value><DropShadowEffect Color="{DynamicResource Color_00D9F5}" BlurRadius="9" ShadowDepth="0" Opacity="0.18"/></Setter.Value></Setter></Trigger>
       <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ComboSurface" Property="Opacity" Value="0.45"/></Trigger>
      </ControlTemplate.Triggers>
     </ControlTemplate></Setter.Value>
    </Setter>
   </Style>
   <Style TargetType="{x:Type ComboBoxItem}">
-   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#0B2450"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/><Setter Property="Background" Value="{DynamicResource Brush_0B2450}"/>
    <Setter Property="Padding" Value="10,8"/><Setter Property="FontSize" Value="13"/>
    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
    <Style.Triggers>
-    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#123A66"/><Setter Property="Foreground" Value="#00D9F5"/></Trigger>
-    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#087F9E"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
+    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="{DynamicResource Brush_123A66}"/><Setter Property="Foreground" Value="{DynamicResource Brush_00D9F5}"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource Brush_087F9E}"/><Setter Property="Foreground" Value="{DynamicResource Brush_FFFFFF}"/></Trigger>
    </Style.Triggers>
   </Style>
   <Style TargetType="{x:Type CheckBox}">
-   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#123A66"/>
-   <Setter Property="BorderBrush" Value="#6B9DBA"/><Setter Property="Padding" Value="8,6"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/><Setter Property="Background" Value="{DynamicResource Brush_123A66}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Brush_6B9DBA}"/><Setter Property="Padding" Value="8,6"/>
    <Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="Bold"/>
    <Setter Property="VerticalContentAlignment" Value="Center"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type CheckBox}">
     <Grid Background="Transparent" MinHeight="32">
      <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-     <Border x:Name="CheckSurface" Grid.Column="0" Width="24" Height="24" CornerRadius="7" BorderThickness="2" BorderBrush="{TemplateBinding BorderBrush}" Background="#071A3B" VerticalAlignment="Center">
-      <TextBlock x:Name="CheckGlyph" Text="✓" FontSize="17" FontWeight="Black" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+     <Border x:Name="CheckSurface" Grid.Column="0" Width="24" Height="24" CornerRadius="7" BorderThickness="2" BorderBrush="{TemplateBinding BorderBrush}" Background="{DynamicResource Brush_071A3B}" VerticalAlignment="Center">
+      <TextBlock x:Name="CheckGlyph" Text="✓" FontSize="17" FontWeight="Black" Foreground="{DynamicResource Brush_FFFFFF}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
      </Border>
      <ContentPresenter Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
     </Grid>
@@ -108,7 +108,7 @@
   <Style x:Key="SubTabItemStyle" TargetType="{x:Type TabItem}">
    <Setter Property="MinHeight" Value="38"/><Setter Property="Padding" Value="15,7"/><Setter Property="Margin" Value="3,2,3,6"/>
    <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
-   <Setter Property="Foreground" Value="#DCEBFA"/><Setter Property="Background" Value="#102D52"/><Setter Property="BorderBrush" Value="#245B88"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_DCEBFA}"/><Setter Property="Background" Value="{DynamicResource Brush_102D52}"/><Setter Property="BorderBrush" Value="{DynamicResource Brush_245B88}"/>
   </Style>
   <Style TargetType="{x:Type TabItem}">
    <Setter Property="MinHeight" Value="38"/>
@@ -116,9 +116,9 @@
    <Setter Property="Margin" Value="3,2,3,6"/>
    <Setter Property="FontSize" Value="12"/>
    <Setter Property="FontWeight" Value="SemiBold"/>
-   <Setter Property="Foreground" Value="#C7DDF2"/>
-   <Setter Property="Background" Value="#102D52"/>
-   <Setter Property="BorderBrush" Value="#245B88"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_C7DDF2}"/>
+   <Setter Property="Background" Value="{DynamicResource Brush_102D52}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Brush_245B88}"/>
    <Setter Property="Template">
     <Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
      <Border x:Name="SubTabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="11" Padding="{TemplateBinding Padding}">
@@ -128,8 +128,8 @@
       <Trigger Property="IsSelected" Value="True">
        <Setter TargetName="SubTabBorder" Property="Background" Value="#0B5478"/>
        <Setter TargetName="SubTabBorder" Property="BorderBrush" Value="#00D9F5"/>
-       <Setter TargetName="SubTabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="12" ShadowDepth="0" Opacity="0.22"/></Setter.Value></Setter>
-       <Setter Property="Foreground" Value="#FFFFFF"/>
+       <Setter TargetName="SubTabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="{DynamicResource Color_00D9F5}" BlurRadius="12" ShadowDepth="0" Opacity="0.22"/></Setter.Value></Setter>
+       <Setter Property="Foreground" Value="{DynamicResource Brush_FFFFFF}"/>
       </Trigger>
       <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SubTabBorder" Property="BorderBrush" Value="#38CDEB"/></Trigger>
      </ControlTemplate.Triggers>
@@ -137,19 +137,19 @@
    </Setter>
   </Style>
   <Style TargetType="{x:Type ListBox}">
-   <Setter Property="Background" Value="#071A3B"/><Setter Property="Foreground" Value="#F2F6F8"/>
-   <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="5"/>
+   <Setter Property="Background" Value="{DynamicResource Brush_071A3B}"/><Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource Brush_245B88}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="5"/>
   </Style>
   <Style TargetType="{x:Type ListBoxItem}">
    <Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="2"/>
-   <Setter Property="Foreground" Value="#EAF3FF"/><Setter Property="Background" Value="Transparent"/>
+   <Setter Property="Foreground" Value="{DynamicResource Brush_EAF3FF}"/><Setter Property="Background" Value="Transparent"/>
    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ListBoxItem}">
     <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
      <ContentPresenter/>
     </Border>
     <ControlTemplate.Triggers>
-     <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#123A66"/><Setter Property="Foreground" Value="#00D9F5"/></Trigger>
+     <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#123A66"/><Setter Property="Foreground" Value="{DynamicResource Brush_00D9F5}"/></Trigger>
      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#00D9F5"/></Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
@@ -157,159 +157,151 @@
  </Window.Resources>
  <Grid Margin="12,8,12,10">
   <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="420" Height="420" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,28,35" Stretch="Uniform" Opacity="0.045" IsHitTestVisible="False"/>
- <TabControl x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
+ <TabControl x:Name="WorkspaceTabs" Background="{DynamicResource Bg}" BorderThickness="0" TabStripPlacement="Top">
   <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}">
-  <Setter Property="MinHeight" Value="44"/><Setter Property="Padding" Value="19,9"/><Setter Property="Margin" Value="4,3,4,7"/><Setter Property="Cursor" Value="Hand"/>
+  <Setter Property="MinHeight" Value="52"/><Setter Property="Padding" Value="12,7"/><Setter Property="Margin" Value="4,3,4,8"/><Setter Property="Cursor" Value="Hand"/>
   <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="Bold"/>
-  <Setter Property="Foreground" Value="#F5F7FF"/>
-  <Setter Property="Background">
-   <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#315E9D" Offset="0"/><GradientStop Color="#28346F" Offset="1"/></LinearGradientBrush></Setter.Value>
-  </Setter>
-  <Setter Property="BorderBrush" Value="#6489D5"/>
+  <Setter Property="Foreground" Value="{DynamicResource Brush_F2F6F8}"/>
+  <Setter Property="Background"><Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="{DynamicResource Color_174A78}" Offset="0"/><GradientStop Color="{DynamicResource Color_0D2A50}" Offset="1"/></LinearGradientBrush></Setter.Value></Setter>
+  <Setter Property="BorderBrush" Value="{DynamicResource Brush_267DA8}"/>
   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
-   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1.4" CornerRadius="11" Padding="{TemplateBinding Padding}">
-    <Grid>
-     <Border x:Name="TabAccent" Height="3" VerticalAlignment="Top" HorizontalAlignment="Stretch" CornerRadius="2" Background="#F5C75E" Margin="9,0,9,0" Opacity="0"/>
-     <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </Grid>
+   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1.5" CornerRadius="27" Padding="{TemplateBinding Padding}">
+    <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
    </Border>
    <ControlTemplate.Triggers>
-    <Trigger Property="IsMouseOver" Value="True">
-     <Setter TargetName="TabBorder" Property="Background">
-      <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#477FC2" Offset="0"/><GradientStop Color="#39458D" Offset="1"/></LinearGradientBrush></Setter.Value>
-     </Setter>
-     <Setter TargetName="TabBorder" Property="BorderBrush" Value="#A8C7FF"/>
-     <Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#4C8DFF" BlurRadius="13" ShadowDepth="0" Opacity="0.34"/></Setter.Value></Setter>
-    </Trigger>
+    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="BorderBrush" Value="{DynamicResource Brush_00D9F5}"/><Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="{DynamicResource Color_00D9F5}" BlurRadius="13" ShadowDepth="0" Opacity="0.28"/></Setter.Value></Setter></Trigger>
     <Trigger Property="IsSelected" Value="True">
-     <Setter TargetName="TabBorder" Property="Background">
-      <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#13C8E4" Offset="0"/><GradientStop Color="#1764C7" Offset="0.58"/><GradientStop Color="#493EAA" Offset="1"/></LinearGradientBrush></Setter.Value>
-     </Setter>
-     <Setter TargetName="TabBorder" Property="BorderBrush" Value="#F5C75E"/>
-     <Setter TargetName="TabBorder" Property="BorderThickness" Value="1.8"/>
-     <Setter TargetName="TabAccent" Property="Opacity" Value="1"/>
-     <Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#13C8E4" BlurRadius="19" ShadowDepth="0" Opacity="0.52"/></Setter.Value></Setter>
-     <Setter Property="Foreground" Value="#FFFFFF"/>
+     <Setter TargetName="TabBorder" Property="Background"><Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="{DynamicResource Color_00D9F5}" Offset="0"/><GradientStop Color="{DynamicResource Color_087F9E}" Offset="0.55"/><GradientStop Color="{DynamicResource Color_1764C7}" Offset="1"/></LinearGradientBrush></Setter.Value></Setter>
+     <Setter TargetName="TabBorder" Property="BorderBrush" Value="#FFFFFF"/><Setter TargetName="TabBorder" Property="BorderThickness" Value="2"/>
+     <Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="{DynamicResource Color_00D9F5}" BlurRadius="18" ShadowDepth="0" Opacity="0.42"/></Setter.Value></Setter>
+     <Setter Property="Foreground" Value="{DynamicResource Brush_FFFFFF}"/>
     </Trigger>
     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="TabBorder" Property="Opacity" Value="0.5"/></Trigger>
    </ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter>
- </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo">
+ </Style></TabControl.ItemContainerStyle><TabItem><TabItem.Header>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <Border Width="29" Height="29" CornerRadius="15" Background="{DynamicResource Brush_0BAFC4}" BorderBrush="{DynamicResource Brush_FFFFFF}" BorderThickness="1.5" Margin="0,0,8,0">
+      <TextBlock Text="▶" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="14" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <TextBlock Text="Ao vivo" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+    </StackPanel>
+   </TabItem.Header>
    <Grid Margin="14">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <DockPanel Grid.Row="0" Margin="4,0,4,8">
-     <StackPanel><TextBlock Text="PAINEL AO VIVO" Foreground="{StaticResource Accent}" FontSize="18" FontWeight="Bold"/><TextBlock Text="Reprodução, sincronização e projeção" Foreground="{StaticResource TextMuted}" FontSize="11"/></StackPanel>
-     <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+     <StackPanel><TextBlock Text="PAINEL AO VIVO" Foreground="{DynamicResource Accent}" FontSize="18" FontWeight="Bold"/><TextBlock Text="Reprodução, sincronização e projeção" Foreground="{DynamicResource TextMuted}" FontSize="11"/></StackPanel>
+     <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
     </DockPanel>
-    <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="14" Padding="8" Margin="0,0,0,8">
+    <Border Grid.Row="1" Background="{DynamicResource Panel}" CornerRadius="14" Padding="8" Margin="0,0,0,8">
      <WrapPanel VerticalAlignment="Center">
-      <TextBlock Text="MÚSICA" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="5,0,3,0" VerticalAlignment="Center"/>
+      <TextBlock Text="MÚSICA" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="5,0,3,0" VerticalAlignment="Center"/>
       <TextBox x:Name="YoutubeUrlBox" Width="225" MinHeight="38" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube" TextChanged="YoutubeUrlBox_TextChanged"/>
-      <Button x:Name="LoadYoutubeButton" Content="▶ Carregar YouTube" Click="LoadYoutube_Click" Background="#087F9E"/>
+      <Button x:Name="LoadYoutubeButton" Content="▶ Carregar YouTube" Click="LoadYoutube_Click" Background="{DynamicResource Brush_087F9E}"/>
       <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
-      <TextBlock Text="INTEGRAÇÃO" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
-      <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#087F9E" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
-      <CheckBox x:Name="HolyricsEnabledBox" Content="Holyrics ativo" IsChecked="True" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,5,4,5" Checked="HolyricsEnabled_Changed" Unchecked="HolyricsEnabled_Changed" ToolTip="Desativar interrompe o envio e fecha a apresentação rápida, sem encerrar o Holyrics"/>
+      <TextBlock Text="INTEGRAÇÃO" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
+      <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="{DynamicResource Brush_087F9E}" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
+      <CheckBox x:Name="HolyricsEnabledBox" Content="Holyrics ativo" IsChecked="True" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="8,5,4,5" Checked="HolyricsEnabled_Changed" Unchecked="HolyricsEnabled_Changed" ToolTip="Desativar interrompe o envio e fecha a apresentação rápida, sem encerrar o Holyrics"/>
       <Button Content="📱 Controle pelo celular" Click="Remote_Click" ToolTip="Controlar a aba Bíblia pelo celular (QR code e PIN)"/>
-      <TextBlock Text="PROJEÇÃO" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
+      <TextBlock Text="PROJEÇÃO" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
       <Button x:Name="LocalProjectionToggleButton" Content="Abrir projeção própria" Click="OpenLocalProjection_Click" ToolTip="Abrir ou fechar a tela independente de projeção"/>
       <Button Content="Escolher fundo" Click="SelectProjectionBackground_Click" ToolTip="Importar um fundo JPG ou PNG para a projeção própria"/>
-      <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a projeção própria e a apresentação atual do Holyrics"/>
-      <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
-      <TextBlock Text="FERRAMENTAS" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
+      <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="{DynamicResource Brush_8C3B3B}" ToolTip="Fechar a projeção própria e a apresentação atual do Holyrics"/>
+      <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="{DynamicResource Brush_8C3B3B}" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
+      <TextBlock Text="FERRAMENTAS" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
       <Button Content="🩺 Diagnóstico" Click="Diagnostics_Click" ToolTip="Confere Holyrics, permissões, microfone, monitores e internet"/>
       <Button Content="☁ Backup" Click="Backup_Click" ToolTip="Backup da biblioteca em uma pasta (OneDrive, Google Drive, pendrive) e restauração"/>
       <Button x:Name="RequestsButton" Content="📥 Pedidos (0)" Click="Requests_Click" ToolTip="Músicas enviadas pelas pessoas pelo link de pedidos"/>
       <Button x:Name="PinTopButton" Content="📌 Fixar à frente" Click="PinTop_Click" ToolTip="Mantém o Lyravoxen sempre à frente (útil contra a janela Apresentação Rápida do Holyrics)"/>
       <Button Content="📋 Relatório" Click="Report_Click" ToolTip="Copia o relatório de uso e erros para colar na conversa"/>
-      <TextBlock x:Name="UrlLyricsHintText" Width="230" Foreground="#B8CAD5" FontSize="10" FontWeight="SemiBold" TextWrapping="Wrap" Margin="6,3" VerticalAlignment="Center"/>
+      <TextBlock x:Name="UrlLyricsHintText" Width="230" Foreground="{DynamicResource Brush_B8CAD5}" FontSize="10" FontWeight="SemiBold" TextWrapping="Wrap" Margin="6,3" VerticalAlignment="Center"/>
      </WrapPanel>
     </Border>
     <Grid Grid.Row="2">
      <Grid.ColumnDefinitions><ColumnDefinition Width="0.78*"/><ColumnDefinition Width="1.22*"/></Grid.ColumnDefinitions>
-     <Border Grid.Column="0" Background="#07172C" CornerRadius="14" Padding="8" Margin="0,0,8,0">
+     <Border Grid.Column="0" Background="{DynamicResource Brush_07172C}" CornerRadius="14" Padding="8" Margin="0,0,8,0">
       <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-       <TextBlock Text="REPRODUÇÃO — YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8" FontWeight="Bold" FontSize="11"/>
+       <TextBlock Text="REPRODUÇÃO — YOUTUBE" Foreground="{DynamicResource TextMuted}" Margin="8" FontWeight="Bold" FontSize="11"/>
        <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1" MinHeight="220"/>
        <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
       </Grid>
      </Border>
-     <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="14" Padding="8" Margin="0" MinHeight="390">
-<TabControl x:Name="SyncTabs" Background="{StaticResource Panel}" BorderThickness="0" MinHeight="370">
+     <Border Grid.Column="1" Background="{DynamicResource Panel}" CornerRadius="14" Padding="8" Margin="0" MinHeight="390">
+<TabControl x:Name="SyncTabs" Background="{DynamicResource Panel}" BorderThickness="0" MinHeight="370">
       <TabItem Header="Sincronização">
        <Grid Margin="4" MinHeight="340">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.36*"/><ColumnDefinition Width="0.64*"/></Grid.ColumnDefinitions>
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,8,0">
          <StackPanel>
-          <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,8"/>
-          <TextBlock Text="INTÉRPRETE" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,5,0,0"/>
+          <TextBlock Text="SINCRONIZAÇÃO DA LETRA" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="14" Margin="4,4,4,8"/>
+          <TextBlock Text="INTÉRPRETE" FontSize="9" Foreground="{DynamicResource TextMuted}" Margin="4,5,0,0"/>
           <TextBox x:Name="MusicArtistBox" Height="34" FontSize="11" Padding="6,4" ToolTip="Intérprete" LostFocus="MusicMetadata_LostFocus" Margin="2"/>
-          <TextBlock Text="TÍTULO DA MÚSICA" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,5,0,0"/>
+          <TextBlock Text="TÍTULO DA MÚSICA" FontSize="9" Foreground="{DynamicResource TextMuted}" Margin="4,5,0,0"/>
           <TextBox x:Name="MusicTrackBox" Height="34" FontSize="11" Padding="6,4" ToolTip="Título da música" LostFocus="MusicMetadata_LostFocus" Margin="2"/>
-          <Button Content="Buscar letra" Click="SearchLyrics_Click" Background="#087F9E"/>
+          <Button Content="Buscar letra" Click="SearchLyrics_Click" Background="{DynamicResource Brush_087F9E}"/>
           <Button Content="✨ Corrigir nomes" Click="FixNames_Click" Margin="3" ToolTip="Separa intérprete e título a partir do título do vídeo e tira Playback, Legendado, Ao vivo etc."/>
-          <TextBlock x:Name="LinkLyricsStatusText" Foreground="#F2F6F8" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,8"/>
-          <Button x:Name="UseCatalogLyricsButton" Content="Usar esta letra" Click="UseCatalogLyrics_Click" Visibility="Collapsed" Background="#087F9E" HorizontalAlignment="Stretch" Padding="14,6" Margin="2,4"/>
-          <TextBlock Text="LINHAS NA PROJEÇÃO" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="4,10,0,0"/>
+          <TextBlock x:Name="LinkLyricsStatusText" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,8"/>
+          <Button x:Name="UseCatalogLyricsButton" Content="Usar esta letra" Click="UseCatalogLyrics_Click" Visibility="Collapsed" Background="{DynamicResource Brush_087F9E}" HorizontalAlignment="Stretch" Padding="14,6" Margin="2,4"/>
+          <TextBlock Text="LINHAS NA PROJEÇÃO" Foreground="{DynamicResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="4,10,0,0"/>
           <ComboBox x:Name="LineCountBox" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox>
-          <TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5,7"/>
+          <TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" FontSize="10" Margin="5,7"/>
          </StackPanel>
         </ScrollViewer>
         <Grid Grid.Column="1">
          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <TextBlock Text="PRÉVIA AO VIVO — O QUE ESTÁ SENDO PROJETADO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="5,5,5,9" TextWrapping="Wrap"/>
-         <Border Grid.Row="1" Background="#020A18" BorderBrush="#00AFCB" BorderThickness="1.5" CornerRadius="14" Padding="18" MinHeight="290" ClipToBounds="True" VerticalAlignment="Stretch">
+         <TextBlock Text="PRÉVIA AO VIVO — O QUE ESTÁ SENDO PROJETADO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="5,5,5,9" TextWrapping="Wrap"/>
+         <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1.5" CornerRadius="14" Padding="18" MinHeight="290" ClipToBounds="True" VerticalAlignment="Stretch">
           <Grid>
            <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
-           <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#FFFFFF" FontSize="30" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="12" MinHeight="90"/>
+           <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="{DynamicResource Brush_FFFFFF}" FontSize="30" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="12" MinHeight="90"/>
           </Grid>
          </Border>
-         <TextBlock x:Name="NextProjectionPreviewText" Grid.Row="2" Text="Próxima: —" Foreground="#B8CAD5" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,2"/>
+         <TextBlock x:Name="NextProjectionPreviewText" Grid.Row="2" Text="Próxima: —" Foreground="{DynamicResource Brush_B8CAD5}" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,2"/>
         </Grid>
        </Grid>
       </TabItem>
             <TabItem x:Name="ManualControlsTab" Header="Controles manuais">
        <Grid Margin="8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.92*"/><ColumnDefinition Width="1.02*"/><ColumnDefinition Width="1.06*"/></Grid.ColumnDefinitions>
-        <Border Grid.Column="0" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="13" Padding="8" Margin="0,0,8,0">
+        <Border Grid.Column="0" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="13" Padding="8" Margin="0,0,8,0">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-          <TextBlock Text="FRASES SINCRONIZADAS" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
-          <ListBox x:Name="CueList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="CueList_SelectionChanged"/>
+          <TextBlock Text="FRASES SINCRONIZADAS" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
+          <ListBox x:Name="CueList" Grid.Row="1" Background="{DynamicResource Brush_071A3B}" Foreground="{DynamicResource Brush_F2F6F8}" BorderBrush="{DynamicResource Brush_245B88}" SelectionChanged="CueList_SelectionChanged"/>
          </Grid>
         </Border>
-        <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="13" Padding="9" Margin="0,0,8,0">
+        <Border Grid.Column="1" Background="{DynamicResource Panel}" CornerRadius="13" Padding="9" Margin="0,0,8,0">
          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
-          <TextBlock Text="COMANDOS DA LETRA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
+          <TextBlock Text="COMANDOS DA LETRA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
           <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
            <Button Grid.Column="0" Content="◀ Anterior" Click="PreviousCue_Click"/>
            <Button Grid.Column="1" Content="Próxima ▶" Click="NextCue_Click"/>
           </Grid>
-          <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#087F9E"/>
+          <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="{DynamicResource Brush_087F9E}"/>
           <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
           <Button Content="Editar selecionada" Click="EditCue_Click"/>
           <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
           <Button Content="Excluir frase" Click="DeleteCue_Click"/>
           <Button Content="↑ / ↓ Reordenar" Click="MoveCue_Click"/>
-          <Border Height="1" Background="#245B88" Margin="4,9"/>
-          <TextBlock Text="TEMPO E FRASE" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,5,4,3"/>
+          <Border Height="1" Background="{DynamicResource Brush_245B88}" Margin="4,9"/>
+          <TextBlock Text="TEMPO E FRASE" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,5,4,3"/>
           <TextBox x:Name="SecondsBox" Text="0" ToolTip="Tempo em segundos"/>
           <TextBox x:Name="LyricTextBox" ToolTip="Digite a frase da letra" MinHeight="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"/>
           <Button Content="Adicionar tempo" Click="AddCue_Click"/>
-          <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="#087F9E"/>
-          <TextBlock Text="Para antecipar a projeção, marque cerca de 1,5 segundo antes de a frase começar. O horário registrado não será alterado automaticamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
+          <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="{DynamicResource Brush_087F9E}"/>
+          <TextBlock Text="Para antecipar a projeção, marque cerca de 1,5 segundo antes de a frase começar. O horário registrado não será alterado automaticamente." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
           <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
          </StackPanel></ScrollViewer>
         </Border>
-        <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="13" Padding="10">
+        <Border Grid.Column="2" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="13" Padding="10">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
-          <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="11" Padding="12" ClipToBounds="True">
+          <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
+          <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="11" Padding="12" ClipToBounds="True">
            <Grid>
             <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
-            <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="#FFFFFF" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
+            <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
            </Grid>
           </Border>
-          <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,8,4,2"/>
+          <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,8,4,2"/>
          </Grid>
         </Border>
        </Grid>
@@ -317,30 +309,30 @@
             <TabItem Header="Histórico de vídeos">
        <Grid Margin="8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.72*"/><ColumnDefinition Width="1.18*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
-        <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="13" Padding="10" Margin="0,0,8,0">
+        <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="13" Padding="10" Margin="0,0,8,0">
          <StackPanel>
-          <TextBlock Text="PESQUISAR HISTÓRICO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="13" Margin="2,4,2,8"/>
+          <TextBlock Text="PESQUISAR HISTÓRICO" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="13" Margin="2,4,2,8"/>
           <TextBox x:Name="HistorySearchBox" VerticalContentAlignment="Center" ToolTip="Pesquisar pelo título do vídeo" TextChanged="HistorySearch_TextChanged"/>
-          <Button Content="⌕ Pesquisar" Click="HistorySearch_Click" Background="#087F9E"/>
-          <TextBlock Text="Selecione uma música na lista central para conferir os dados e carregá-la novamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
+          <Button Content="⌕ Pesquisar" Click="HistorySearch_Click" Background="{DynamicResource Brush_087F9E}"/>
+          <TextBlock Text="Selecione uma música na lista central para conferir os dados e carregá-la novamente." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
          </StackPanel>
         </Border>
-        <Border Grid.Column="1" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="13" Padding="8" Margin="0,0,8,0">
+        <Border Grid.Column="1" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="13" Padding="8" Margin="0,0,8,0">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-          <TextBlock Text="MÚSICAS UTILIZADAS" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
-          <ListBox x:Name="HistoryList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
+          <TextBlock Text="MÚSICAS UTILIZADAS" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
+          <ListBox x:Name="HistoryList" Grid.Row="1" Background="{DynamicResource Brush_071A3B}" Foreground="{DynamicResource Brush_F2F6F8}" BorderBrush="{DynamicResource Brush_245B88}" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
          </Grid>
         </Border>
-        <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="13" Padding="12">
+        <Border Grid.Column="2" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="13" Padding="12">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <TextBlock Text="MÚSICA SELECIONADA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,3,3,10"/>
-          <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="11" Padding="14">
+          <TextBlock Text="MÚSICA SELECIONADA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,3,3,10"/>
+          <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="11" Padding="14">
            <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="{Binding SelectedItem.Title, ElementName=HistoryList}" Foreground="#FFFFFF" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
-            <TextBlock Text="Selecione um registro no histórico para visualizar o título desta faixa." Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,12,4,0"/>
+            <TextBlock Text="{Binding SelectedItem.Title, ElementName=HistoryList}" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+            <TextBlock Text="Selecione um registro no histórico para visualizar o título desta faixa." Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,12,4,0"/>
            </StackPanel>
           </Border>
-          <TextBlock Grid.Row="2" Text="O histórico mantém os nomes cadastrados para facilitar a reutilização das músicas." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,2"/>
+          <TextBlock Grid.Row="2" Text="O histórico mantém os nomes cadastrados para facilitar a reutilização das músicas." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,2"/>
          </Grid>
         </Border>
        </Grid>
@@ -348,10 +340,10 @@
             <TabItem Header="Biblioteca">
        <Grid Margin="8">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.78*"/><ColumnDefinition Width="1.12*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
-        <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="13" Padding="9" Margin="0,0,8,0">
+        <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="13" Padding="9" Margin="0,0,8,0">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <TextBlock Text="PASTAS E COLEÇÕES" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,8"/>
-          <ListBox x:Name="LibraryFolderList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
+          <TextBlock Text="PASTAS E COLEÇÕES" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,8"/>
+          <ListBox x:Name="LibraryFolderList" Grid.Row="1" Background="{DynamicResource Brush_071A3B}" Foreground="{DynamicResource Brush_F2F6F8}" BorderBrush="{DynamicResource Brush_245B88}" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
           <StackPanel Grid.Row="2">
            <Button Content="＋ Criar pasta" Click="CreateFolder_Click"/>
            <Button Content="Renomear" Click="RenameFolder_Click"/>
@@ -359,16 +351,16 @@
           </StackPanel>
          </Grid>
         </Border>
-        <Border Grid.Column="1" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="13" Padding="9" Margin="0,0,8,0">
+        <Border Grid.Column="1" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="13" Padding="9" Margin="0,0,8,0">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
           <StackPanel Grid.Row="0">
-           <TextBlock Text="MÚSICAS DA COLEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,5"/>
+           <TextBlock Text="MÚSICAS DA COLEÇÃO" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,5"/>
            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
             <TextBox x:Name="LibrarySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar nesta pasta" TextChanged="LibrarySearch_TextChanged"/>
             <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
            </Grid>
           </StackPanel>
-          <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
+          <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="{DynamicResource Brush_071A3B}" Foreground="{DynamicResource Brush_F2F6F8}" BorderBrush="{DynamicResource Brush_245B88}" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
           <StackPanel Grid.Row="2">
            <Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/>
            <Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click"/>
@@ -376,16 +368,16 @@
           </StackPanel>
          </Grid>
         </Border>
-        <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="13" Padding="12">
+        <Border Grid.Column="2" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="13" Padding="12">
          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <TextBlock Text="FAIXA DA BIBLIOTECA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,3,3,10"/>
-          <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="11" Padding="14">
+          <TextBlock Text="FAIXA DA BIBLIOTECA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,3,3,10"/>
+          <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="11" Padding="14">
            <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="{Binding SelectedItem.Title, ElementName=LibrarySongList}" Foreground="#FFFFFF" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
-            <TextBlock Text="Selecione uma faixa na lista para conferir o registro da biblioteca." Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,12,4,0"/>
+            <TextBlock Text="{Binding SelectedItem.Title, ElementName=LibrarySongList}" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+            <TextBlock Text="Selecione uma faixa na lista para conferir o registro da biblioteca." Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,12,4,0"/>
            </StackPanel>
           </Border>
-          <TextBlock Grid.Row="2" Text="Organize as músicas por pastas e mantenha faixas disponíveis para reutilização e reprodução offline." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,2"/>
+          <TextBlock Grid.Row="2" Text="Organize as músicas por pastas e mantenha faixas disponíveis para reutilização e reprodução offline." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,2"/>
          </Grid>
         </Border>
        </Grid>
@@ -393,85 +385,99 @@
      </TabControl>
      </Border>
     </Grid>
-    <TextBlock Grid.Row="3" x:Name="StatusText" Text="Pronto. Cole um link do YouTube para começar." Foreground="{StaticResource TextMuted}" Margin="6,8,0,0"/>
+    <TextBlock Grid.Row="3" x:Name="StatusText" Text="Pronto. Cole um link do YouTube para começar." Foreground="{DynamicResource TextMuted}" Margin="6,8,0,0"/>
    </Grid>
   </TabItem>
-<TabItem x:Name="ManualSyncTab" Header="Cadastrar letra">
+<TabItem x:Name="ManualSyncTab"><TabItem.Header>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <Border Width="29" Height="29" CornerRadius="15" Background="{DynamicResource Brush_E94F9B}" BorderBrush="{DynamicResource Brush_FFFFFF}" BorderThickness="1.5" Margin="0,0,8,0">
+      <TextBlock Text="♫" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="14" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <TextBlock Text="Cadastrar letras" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+    </StackPanel>
+   </TabItem.Header>
     <Grid Margin="14">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <StackPanel Grid.Row="0" Margin="4,0,4,10">
-      <TextBlock Text="CADASTRAR LETRA PARA ESTA MÚSICA" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold"/>
-      <TextBlock Text="Cole a letra completa, uma frase por linha. As ferramentas ficam na lateral e a prévia da projeção ao lado do editor." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+      <TextBlock Text="CADASTRAR LETRA PARA ESTA MÚSICA" Foreground="{DynamicResource Accent}" FontSize="20" FontWeight="Bold"/>
+      <TextBlock Text="Cole a letra completa, uma frase por linha. As ferramentas ficam na lateral e a prévia da projeção ao lado do editor." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
      </StackPanel>
      <Grid Grid.Row="1">
       <Grid.ColumnDefinitions><ColumnDefinition Width="246"/><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="0.88*"/></Grid.ColumnDefinitions>
-      <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
+      <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
        <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
-         <TextBlock Text="FERRAMENTAS DA LETRA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,7"/>
+         <TextBlock Text="FERRAMENTAS DA LETRA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,7"/>
          <Button Content="📋 Colar e limpar letra" Click="PasteCleanLyrics_Click" ToolTip="Cola o que você copiou, tira cifras, [Refrão], créditos e links e separa as estrofes"/>
          <Button Content="🔎 Buscar texto da letra" Click="FetchLyricsText_Click" ToolTip="Busca o texto da letra pelo intérprete e título, no Vagalume (precisa da chave gratuita)"/>
          <Button Content="⚙ Fonte de letras" Click="LyricSource_Click" ToolTip="Chave gratuita do Vagalume para buscar o texto da letra automaticamente"/>
          <Button Content="⏱ Estimar tempos (rascunho)" Click="EstimateTimings_Click" ToolTip="Distribui as estrofes pela duração da música em segundos. Se a música estiver tocando, o instante atual vira o começo da 1ª estrofe. Depois ajuste com Frase ◀/▶ ou marque por toque"/>
-         <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="#087F9E" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque"/>
-         <Border Height="1" Background="#245B88" Margin="4,10"/>
-         <Button Content="Salvar e sincronizar" Click="SaveFullLyrics_Click" Background="#087F9E" Height="42" FontSize="14"/>
-         <Button x:Name="AutoRecognitionButton" Content="Iniciar reconhecimento automático" Click="ToggleAutoRecognition_Click" Background="#087F9E" Height="42" FontSize="13"/>
-         <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra e clique em Salvar e sincronizar." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="5,6"/>
-         <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o reconhecimento da música..." Foreground="#F2F6F8" TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Margin="5,2"/>
-         <Border Height="1" Background="#245B88" Margin="4,10"/>
-         <TextBlock Text="MARCAÇÃO POR TOQUE — PLAYBACK" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" TextWrapping="Wrap"/>
-         <TextBlock Text="Separe estrofes por uma linha em branco. Toque quando cada estrofe começar; Backspace desfaz a última marca." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,5,3,7"/>
-         <Button x:Name="TapStartButton" Content="Iniciar marcação por toque" Click="TapStart_Click" Background="#087F9E"/>
-         <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="#087F9E" MinHeight="42" FontWeight="Bold"/>
+         <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="{DynamicResource Brush_087F9E}" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque"/>
+         <Border Height="1" Background="{DynamicResource Brush_245B88}" Margin="4,10"/>
+         <Button Content="Salvar e sincronizar" Click="SaveFullLyrics_Click" Background="{DynamicResource Brush_087F9E}" Height="42" FontSize="14"/>
+         <Button x:Name="AutoRecognitionButton" Content="Iniciar reconhecimento automático" Click="ToggleAutoRecognition_Click" Background="{DynamicResource Brush_087F9E}" Height="42" FontSize="13"/>
+         <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra e clique em Salvar e sincronizar." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" FontSize="11" Margin="5,6"/>
+         <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o reconhecimento da música..." Foreground="{DynamicResource Brush_F2F6F8}" TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Margin="5,2"/>
+         <Border Height="1" Background="{DynamicResource Brush_245B88}" Margin="4,10"/>
+         <TextBlock Text="MARCAÇÃO POR TOQUE — PLAYBACK" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" TextWrapping="Wrap"/>
+         <TextBlock Text="Separe estrofes por uma linha em branco. Toque quando cada estrofe começar; Backspace desfaz a última marca." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="3,5,3,7"/>
+         <Button x:Name="TapStartButton" Content="Iniciar marcação por toque" Click="TapStart_Click" Background="{DynamicResource Brush_087F9E}"/>
+         <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="{DynamicResource Brush_087F9E}" MinHeight="42" FontWeight="Bold"/>
          <Button x:Name="TapUndoButton" Content="Desfazer (Backspace)" Click="TapUndo_Click" IsEnabled="False"/>
          <Button x:Name="TapFinishButton" Content="Concluir e salvar" Click="TapFinish_Click" IsEnabled="False"/>
          <Button x:Name="TapCancelButton" Content="Cancelar" Click="TapCancel_Click" IsEnabled="False"/>
-         <TextBlock x:Name="TapProgressText" Text="Pronto para marcar." Foreground="#F2F6F8" FontSize="11" TextWrapping="Wrap" Margin="4,5"/>
+         <TextBlock x:Name="TapProgressText" Text="Pronto para marcar." Foreground="{DynamicResource Brush_F2F6F8}" FontSize="11" TextWrapping="Wrap" Margin="4,5"/>
        </StackPanel></ScrollViewer>
       </Border>
-      <Border Grid.Column="1" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="14" Padding="10" Margin="0,0,8,0">
+      <Border Grid.Column="1" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="14" Padding="10" Margin="0,0,8,0">
        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <TextBlock Text="LETRA COMPLETA — UMA FRASE POR LINHA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
+        <TextBlock Text="LETRA COMPLETA — UMA FRASE POR LINHA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
         <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="16" Padding="16" VerticalContentAlignment="Top" ToolTip="Letra completa: mantenha cada frase em uma linha. As estrofes em branco podem separar partes da música."/>
        </Grid>
       </Border>
-      <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="14" Padding="10">
+      <Border Grid.Column="2" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="14" Padding="10">
        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
-        <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="12" Padding="12" ClipToBounds="True">
+        <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
+        <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="12" Padding="12" ClipToBounds="True">
          <Grid>
           <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.07" Stretch="Uniform" IsHitTestVisible="False"/>
-          <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="#FFFFFF" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
+          <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
          </Grid>
         </Border>
-        <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,9,4,2"/>
+        <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,9,4,2"/>
        </Grid>
       </Border>
      </Grid>
     </Grid>
    </TabItem>
-  <TabItem Header="＋ Próxima música">
+  <TabItem x:Name="NextMusicTab"><TabItem.Header>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <Border Width="29" Height="29" CornerRadius="15" Background="{DynamicResource Brush_397CE8}" BorderBrush="{DynamicResource Brush_FFFFFF}" BorderThickness="1.5" Margin="0,0,8,0">
+      <TextBlock Text="▶|" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="14" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <TextBlock Text="Próxima música" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+    </StackPanel>
+   </TabItem.Header>
    <Grid Margin="10">
     <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-    <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
+    <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
      <ScrollViewer VerticalScrollBarVisibility="Auto">
       <StackPanel>
-       <Border Background="#0B2D56" BorderBrush="#00BFD8" BorderThickness="1.2" CornerRadius="11" Padding="8" Margin="1,1,1,8">
+       <Border Background="{DynamicResource Brush_0B2D56}" BorderBrush="{DynamicResource Brush_00BFD8}" BorderThickness="1.2" CornerRadius="11" Padding="8" Margin="1,1,1,8">
         <StackPanel>
-         <TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="3,1,3,4"/>
-         <TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="3,1,3,3"/>
-         <TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="3,2,3,4" MaxHeight="58"/>
-         <CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima automaticamente" Foreground="{StaticResource TextMuted}" Margin="3,3" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/>
-         <Button Content="▶ Preparar próxima" Click="PrepareNext_Click" Background="#087F9E" MinHeight="36"/>
+         <TextBlock Text="PRÓXIMA MÚSICA" Foreground="{DynamicResource Accent}" FontSize="13" FontWeight="Bold" Margin="3,1,3,4"/>
+         <TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="3,1,3,3"/>
+         <TextBlock x:Name="NextLyricsText" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="3,2,3,4" MaxHeight="58"/>
+         <CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima automaticamente" Foreground="{DynamicResource TextMuted}" Margin="3,3" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/>
+         <Button Content="▶ Preparar próxima" Click="PrepareNext_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="36"/>
          <Grid Margin="0,1,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <Button Grid.Column="0" Content="✓ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#087F9E" MinHeight="35" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/>
+          <Button Grid.Column="0" Content="✓ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="35" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/>
           <Button Grid.Column="1" Content="⌕ Verificar letra" Click="VerifyNextLyrics_Click" MinHeight="35" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/>
          </Grid>
         </StackPanel>
        </Border>
-       <TextBlock Text="PESQUISAR MÚSICA" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="4,2,4,5"/>
+       <TextBlock Text="PESQUISAR MÚSICA" Foreground="{DynamicResource Accent}" FontSize="13" FontWeight="Bold" Margin="4,2,4,5"/>
        <TextBox x:Name="YoutubeSearchBox" MinHeight="40" TextWrapping="Wrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
-       <Button Content="🔎 Pesquisar" Click="YoutubeSearch_Click" Background="#087F9E" MinHeight="35"/>
+       <Button Content="🔎 Pesquisar" Click="YoutubeSearch_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="35"/>
        <Grid Margin="0,1,0,3"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Button Grid.Column="0" Content="◀ Voltar" Click="YoutubeSearchBack_Click" MinHeight="34"/>
         <Button Grid.Column="1" Content="Avançar ▶" Click="YoutubeSearchForward_Click" MinHeight="34"/>
@@ -480,7 +486,7 @@
         <Button Grid.Column="0" Content="↻ Atualizar" Click="YoutubeSearchRefresh_Click" MinHeight="34"/>
         <Button Grid.Column="1" Content="Copiar link" Click="CopyBrowserLink_Click" MinHeight="34" ToolTip="Copiar o endereço da página aberta nesta aba"/>
        </Grid>
-       <TextBlock Text="FONTES DE PESQUISA" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,7,5,3"/>
+       <TextBlock Text="FONTES DE PESQUISA" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,7,5,3"/>
        <WrapPanel>
         <Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click" MinHeight="34"/>
         <Button Content="G Google" Tag="google" Click="OpenQuickSite_Click" MinHeight="34"/>
@@ -493,21 +499,28 @@
       </StackPanel>
      </ScrollViewer>
     </Border>
-    <Border Grid.Column="1" Background="#07172C" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="16" Padding="10" MinWidth="420">
+    <Border Grid.Column="1" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="16" Padding="10" MinWidth="420">
      <Grid>
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
       <DockPanel Grid.Row="0" Margin="5,3,5,8">
-       <TextBlock Text="NAVEGADOR E PRÉVIA DE PESQUISA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-       <TextBlock Text="Use as abas para alternar entre fontes" Foreground="{StaticResource TextMuted}" FontSize="10" DockPanel.Dock="Right" VerticalAlignment="Center"/>
+       <TextBlock Text="NAVEGADOR E PRÉVIA DE PESQUISA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+       <TextBlock Text="Use as abas para alternar entre fontes" Foreground="{DynamicResource TextMuted}" FontSize="10" DockPanel.Dock="Right" VerticalAlignment="Center"/>
       </DockPanel>
-      <TabControl x:Name="BrowserTabs" Grid.Row="1" Background="#07172C" BorderThickness="0" MinHeight="400" SelectionChanged="BrowserTabs_SelectionChanged">
+      <TabControl x:Name="BrowserTabs" Grid.Row="1" Background="{DynamicResource Brush_07172C}" BorderThickness="0" MinHeight="400" SelectionChanged="BrowserTabs_SelectionChanged">
        <TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem>
       </TabControl>
      </Grid>
     </Border>
    </Grid>
   </TabItem>
-  <TabItem Header="✦ Bíblia" x:Name="BibleWorkspaceTab">
+  <TabItem x:Name="BibleWorkspaceTab"><TabItem.Header>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <Border Width="29" Height="29" CornerRadius="15" Background="{DynamicResource Brush_8B4DE8}" BorderBrush="{DynamicResource Brush_FFFFFF}" BorderThickness="1.5" Margin="0,0,8,0">
+      <TextBlock Text="✝" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="14" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <TextBlock Text="Bíblia" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+    </StackPanel>
+   </TabItem.Header>
    <TabItem.Resources>
     <ItemsPanelTemplate x:Key="BibleVerseGridPanel">
      <WrapPanel/>
@@ -538,11 +551,11 @@
     </Grid.RowDefinitions>
 
     <StackPanel Grid.Row="0" Margin="4,0,4,10">
-     <TextBlock Text="CENTRAL BÍBLICA" Foreground="{StaticResource Accent}" FontSize="23" FontWeight="Bold"/>
-     <TextBlock Text="Digite ou escolha o versículo, confira a prévia e projete no Holyrics ou na projeção própria." Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,3,0,0"/>
+     <TextBlock Text="CENTRAL BÍBLICA" Foreground="{DynamicResource Accent}" FontSize="23" FontWeight="Bold"/>
+     <TextBlock Text="Digite ou escolha o versículo, confira a prévia e projete no Holyrics ou na projeção própria." Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,3,0,0"/>
     </StackPanel>
 
-    <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="10,8" Margin="0,0,0,10">
+    <Border Grid.Row="1" Background="{DynamicResource Panel}" CornerRadius="12" Padding="10,8" Margin="0,0,0,10">
      <Grid>
       <Grid.RowDefinitions>
        <RowDefinition Height="Auto"/>
@@ -556,7 +569,7 @@
        <ColumnDefinition Width="Auto"/>
       </Grid.ColumnDefinitions>
       <StackPanel Grid.Column="0">
-       <TextBlock Text="VERSÃO" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="5,0,0,0"/>
+       <TextBlock Text="VERSÃO" Foreground="{DynamicResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="5,0,0,0"/>
        <ComboBox x:Name="BibleSourceBox" Width="360" MinHeight="38" SelectionChanged="BibleSourceBox_SelectionChanged" ToolTip="A ARC vem do Holyrics. As versões marcadas como local usam a projeção própria.">
         <ComboBox.ItemTemplate>
          <DataTemplate>
@@ -567,18 +580,18 @@
       </StackPanel>
       <Button Grid.Column="1" Content="↻ Holyrics" Click="RefreshHolyricsBibleVersions_Click" VerticalAlignment="Bottom" MinHeight="38" Margin="8,0,0,0" ToolTip="Buscar as Bíblias instaladas no Holyrics"/>
       <StackPanel Grid.Column="2" Margin="12,0,0,0">
-       <TextBlock Text="REFERÊNCIA — Enter localiza · Ctrl+Enter projeta · ex.: Jo 3:16, Sl 23, 1 Co 13:4-7" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="5,0,0,0"/>
+       <TextBlock Text="REFERÊNCIA — Enter localiza · Ctrl+Enter projeta · ex.: Jo 3:16, Sl 23, 1 Co 13:4-7" Foreground="{DynamicResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="5,0,0,0"/>
        <TextBox x:Name="BibleSearchBox" MinHeight="38" FontSize="18" FontWeight="SemiBold" VerticalContentAlignment="Center" KeyDown="BibleSearchBox_KeyDown" TextChanged="BibleSearchBox_TextChanged"/>
       </StackPanel>
-      <Button Grid.Column="3" Content="Localizar" Click="BibleLocate_Click" Background="#087F9E" VerticalAlignment="Bottom" MinHeight="38" Padding="20,6" Margin="8,0,0,0"/>
+      <Button Grid.Column="3" Content="Localizar" Click="BibleLocate_Click" Background="{DynamicResource Brush_087F9E}" VerticalAlignment="Bottom" MinHeight="38" Padding="20,6" Margin="8,0,0,0"/>
       <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,10,0,0">
-       <TextBlock Text="MICROFONE" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,8,0"/>
+       <TextBlock Text="MICROFONE" Foreground="{DynamicResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,8,0"/>
        <ComboBox x:Name="BibleMicDeviceBox" Width="300" MinHeight="36" Loaded="BibleMicDeviceBox_Loaded" SelectionChanged="BibleMicDeviceBox_SelectionChanged" ToolTip="Escolha o microfone ou a interface de áudio externa"/>
        <Button Content="↻" Click="RefreshMicDevices_Click" MinHeight="36" MinWidth="36" Margin="6,0,0,0" ToolTip="Procurar microfones e interfaces de áudio conectados"/>
-       <Button x:Name="BibleMicButton" Content="🎙 Segure para falar (F4)" PreviewMouseLeftButtonDown="BibleMicButton_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BibleMicButton_PreviewMouseLeftButtonUp" Background="#087F9E" MinHeight="36" Padding="18,6" Margin="12,0,0,0" ToolTip="Segure o botão (ou a tecla F4), fale a referência e solte. Ex.: João três dezesseis"/>
-       <ProgressBar x:Name="BibleMicLevelBar" Width="150" Height="10" Minimum="0" Maximum="1" Value="0" Foreground="#00D9F5" Background="#071A3B" BorderThickness="0" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip="Nível do microfone: deve se mover quando você fala"/>
+       <Button x:Name="BibleMicButton" Content="🎙 Segure para falar (F4)" PreviewMouseLeftButtonDown="BibleMicButton_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BibleMicButton_PreviewMouseLeftButtonUp" Background="{DynamicResource Brush_087F9E}" MinHeight="36" Padding="18,6" Margin="12,0,0,0" ToolTip="Segure o botão (ou a tecla F4), fale a referência e solte. Ex.: João três dezesseis"/>
+       <ProgressBar x:Name="BibleMicLevelBar" Width="150" Height="10" Minimum="0" Maximum="1" Value="0" Foreground="{DynamicResource Brush_00D9F5}" Background="{DynamicResource Brush_071A3B}" BorderThickness="0" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip="Nível do microfone: deve se mover quando você fala"/>
       </StackPanel>
-      <Border x:Name="BibleVoiceConfirmPanel" Grid.Row="2" Grid.ColumnSpan="4" Visibility="Collapsed" Background="#071A3B" BorderBrush="#00D9F5" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0">
+      <Border x:Name="BibleVoiceConfirmPanel" Grid.Row="2" Grid.ColumnSpan="4" Visibility="Collapsed" Background="{DynamicResource Brush_071A3B}" BorderBrush="{DynamicResource Brush_00D9F5}" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0">
        <Grid>
         <Grid.ColumnDefinitions>
          <ColumnDefinition Width="*"/>
@@ -586,10 +599,10 @@
          <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" VerticalAlignment="Center">
-         <TextBlock x:Name="BibleVoiceHeardText" Foreground="#F2F6F8" FontSize="17" FontWeight="Bold" TextWrapping="Wrap"/>
-         <TextBlock x:Name="BibleVoiceHintText" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+         <TextBlock x:Name="BibleVoiceHeardText" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="17" FontWeight="Bold" TextWrapping="Wrap"/>
+         <TextBlock x:Name="BibleVoiceHintText" Foreground="{DynamicResource TextMuted}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
         </StackPanel>
-        <Button x:Name="BibleVoiceConfirmButton" Grid.Column="1" Content="✔ Projetar (Enter)" Click="BibleVoiceConfirm_Click" Background="#087F9E" MinHeight="38" Padding="18,6" Margin="10,0,0,0"/>
+        <Button x:Name="BibleVoiceConfirmButton" Grid.Column="1" Content="✔ Projetar (Enter)" Click="BibleVoiceConfirm_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="38" Padding="18,6" Margin="10,0,0,0"/>
         <Button Grid.Column="2" Content="✖ Descartar (Esc)" Click="BibleVoiceDiscard_Click" MinHeight="38" Padding="14,6" Margin="6,0,0,0"/>
        </Grid>
       </Border>
@@ -605,14 +618,14 @@
      </Grid.ColumnDefinitions>
 
      <DockPanel Grid.Column="0" Margin="0,0,8,0">
-      <TextBlock DockPanel.Dock="Top" Text="LIVROS" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
+      <TextBlock DockPanel.Dock="Top" Text="LIVROS" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
       <ListBox x:Name="BibleBooksList" FontSize="14" SelectionChanged="BibleBooksList_SelectionChanged">
        <ListBox.GroupStyle>
         <GroupStyle>
          <GroupStyle.HeaderTemplate>
           <DataTemplate>
-           <Border Background="#123A66" CornerRadius="5" Padding="8,5" Margin="0,6,0,3">
-            <TextBlock Text="{Binding Name}" Foreground="#00D9F5" FontSize="11" FontWeight="Bold"/>
+           <Border Background="{DynamicResource Brush_123A66}" CornerRadius="5" Padding="8,5" Margin="0,6,0,3">
+            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Brush_00D9F5}" FontSize="11" FontWeight="Bold"/>
            </Border>
           </DataTemplate>
          </GroupStyle.HeaderTemplate>
@@ -627,7 +640,7 @@
      </DockPanel>
 
      <DockPanel Grid.Column="1" Margin="0,0,8,0">
-      <TextBlock DockPanel.Dock="Top" Text="CAPÍTULOS" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
+      <TextBlock DockPanel.Dock="Top" Text="CAPÍTULOS" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
       <ListBox x:Name="BibleChaptersList" FontSize="14" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="BibleChaptersList_SelectionChanged">
        <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
@@ -643,34 +656,34 @@
      </DockPanel>
 
      <DockPanel Grid.Column="2" Margin="0,0,8,0">
-      <TextBlock DockPanel.Dock="Top" Text="VERSÍCULOS — Ctrl ou Shift para vários · Enter ou duplo clique projeta" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
+      <TextBlock DockPanel.Dock="Top" Text="VERSÍCULOS — Ctrl ou Shift para vários · Enter ou duplo clique projeta" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,0,0,5"/>
       <ListBox x:Name="BibleVersesList" FontSize="15" SelectionMode="Extended" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="BibleVersesList_SelectionChanged" MouseDoubleClick="BibleVersesList_MouseDoubleClick" KeyDown="BibleVersesList_KeyDown">
       </ListBox>
      </DockPanel>
 
-     <Border Grid.Column="3" Background="{StaticResource Panel}" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="16" Padding="12" MinWidth="360">
+     <Border Grid.Column="3" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="16" Padding="12" MinWidth="360">
       <Grid>
        <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
        </Grid.RowDefinitions>
-       <TextBlock Grid.Row="0" x:Name="BiblePreviewReferenceText" Text="Nenhum versículo selecionado" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"/>
-       <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,10,0,10" ClipToBounds="True">
+       <TextBlock Grid.Row="0" x:Name="BiblePreviewReferenceText" Text="Nenhum versículo selecionado" Foreground="{DynamicResource Accent}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"/>
+       <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,10,0,10" ClipToBounds="True">
         <Grid>
          <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
          <ScrollViewer VerticalScrollBarVisibility="Auto">
-          <TextBlock x:Name="BiblePreviewVerseText" Text="Digite uma referência ou escolha livro, capítulo e versículo." Foreground="#FFFFFF" FontSize="20" TextWrapping="Wrap" LineHeight="29" Margin="4"/>
+          <TextBlock x:Name="BiblePreviewVerseText" Text="Digite uma referência ou escolha livro, capítulo e versículo." Foreground="{DynamicResource Brush_FFFFFF}" FontSize="20" TextWrapping="Wrap" LineHeight="29" Margin="4"/>
          </ScrollViewer>
         </Grid>
        </Border>
        <Grid Grid.Row="2">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <TextBlock x:Name="BibleSourceNoteText" Grid.Row="0" Foreground="{StaticResource TextMuted}" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,3"/>
+        <TextBlock x:Name="BibleSourceNoteText" Grid.Row="0" Foreground="{DynamicResource TextMuted}" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,3"/>
         <UniformGrid Grid.Row="1" Columns="4">
          <Button Content="◀ Anterior" Click="BiblePrevious_Click" MinHeight="38" Margin="2"/>
          <Button Content="Próximo ▶" Click="BibleNext_Click" MinHeight="38" Margin="2"/>
-         <Button Content="Projetar" Click="ProjectBibleSelection_Click" Background="#087F9E" MinHeight="38" FontWeight="Bold" Margin="2"/>
+         <Button Content="Projetar" Click="ProjectBibleSelection_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="38" FontWeight="Bold" Margin="2"/>
          <Button Content="Limpar telão" Click="ClearBibleProjection_Click" MinHeight="38" Margin="2"/>
         </UniformGrid>
        </Grid>
@@ -679,14 +692,15 @@
     </Grid>
 
     <StackPanel Grid.Row="3" Margin="4,8,4,0">
-     <TextBlock x:Name="BibleStatusText" Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap"/>
-     <TextBlock x:Name="BibleCopyrightText" Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,2,0,0"/>
+     <TextBlock x:Name="BibleStatusText" Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap"/>
+     <TextBlock x:Name="BibleCopyrightText" Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,2,0,0"/>
     </StackPanel>
    </Grid>
   </TabItem>
 </TabControl>
   <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="48" Height="48" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,8,0" Stretch="Uniform" Opacity="0.92" IsHitTestVisible="False">
-   <Image.Effect><DropShadowEffect Color="#13C8E4" BlurRadius="18" ShadowDepth="0" Opacity="0.62"/></Image.Effect>
+   <Image.Effect><DropShadowEffect Color="{DynamicResource Color_13C8E4}" BlurRadius="18" ShadowDepth="0" Opacity="0.62"/></Image.Effect>
   </Image>
+   <Button x:Name="ThemeToggleButton" Content="☀" Width="42" Height="38" Padding="4" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,58,0" Click="ThemeToggle_Click" ToolTip="Alternar entre modo claro e modo escuro" Panel.ZIndex="10"/>
  </Grid>
 </Window>
