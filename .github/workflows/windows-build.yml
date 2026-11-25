@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main]
+    branches: [main, redesign/brand-visual-layer]
   pull_request:
     branches: [main]
   workflow_dispatch:
