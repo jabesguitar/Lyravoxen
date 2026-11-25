@@ -51,3 +51,12 @@ Logomarca aprovada como referência visual pelo usuário em 25/11/2026: lira bra
 - O projeto foi configurado para a splash horizontal Windows.
 - Os dois arquivos PNG ainda precisam ser enviados pelo usuário à pasta Assets antes do build.
 - Ainda não foi validada uma compilação nem teste manual nesta etapa.
+
+
+## Controle remoto por IP — atualização de 25/11/2026
+- O usuário solicitou que a interface web de controle remoto na rede local acompanhe a identidade visual da splash/logo.
+- Redesenho visual aplicado em `Services/RemoteControlServer.cs`: cabeçalho com logomarca, paleta azul-marinho/ciano/azul/violeta e detalhes dourados, cartões, campos, botões e adaptação a telas móveis.
+- Foi adicionada a rota GET `/brand.png`, servindo o PNG da marca a partir de `AppContext.BaseDirectory/Assets/Lyravoxen_Icone_App_1024.png`.
+- O PNG foi incluído no `.csproj` com `CopyToOutputDirectory="PreserveNewest"`.
+- Os IDs HTML, funções JavaScript, chamadas `/api`, `/audio`, `/qr.png`, `/pedido`, PIN e comandos existentes foram mantidos; não houve alteração intencional de protocolo ou comportamento funcional.
+- Estado: alterações registradas na branch; compilação e teste visual do controle remoto ainda pendentes.
