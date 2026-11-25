@@ -267,9 +267,9 @@ internal sealed class RemoteControlServer : IDisposable
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -15%,#123c72 0%,#081d40 38%,var(--navy) 78%);color:var(--text);padding:16px 14px 130px}
 .brandbar{position:relative;overflow:hidden;max-width:760px;margin:0 auto 18px;display:flex;align-items:center;gap:12px;padding:18px 20px;min-height:94px;border:1px solid rgba(0,217,245,.28);border-radius:18px;background:linear-gradient(135deg,rgba(10,39,81,.96),rgba(6,21,47,.94));box-shadow:0 12px 34px rgba(0,0,0,.24)}
-.brandbar:before{content:"";position:absolute;right:14px;top:50%;transform:translateY(-50%);width:190px;height:190px;background:url('/brand.png') center/contain no-repeat;opacity:.105;pointer-events:none}
+.brandbar:before{content:"";position:absolute;right:4px;top:50%;transform:translateY(-50%);width:230px;height:230px;background:url('/brand.png') center/contain no-repeat;opacity:.17;mix-blend-mode:screen;pointer-events:none}
 .brandbar>*{position:relative;z-index:1}
-body:before{content:"";position:fixed;right:-90px;bottom:-110px;width:min(72vw,520px);height:min(72vw,520px);background:url('/brand.png') center/contain no-repeat;opacity:.035;pointer-events:none;z-index:0}
+body:before{content:"";position:fixed;right:-90px;bottom:-110px;width:min(72vw,560px);height:min(72vw,560px);background:url('/brand.png') center/contain no-repeat;opacity:.055;mix-blend-mode:screen;pointer-events:none;z-index:0}
 body>*{position:relative;z-index:1}
 .brandname{font-size:20px;font-weight:800;letter-spacing:.035em;line-height:1.1;color:#fff}
 .brandname span{color:var(--cyan)}
