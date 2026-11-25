@@ -262,59 +262,131 @@
         </Grid>
        </Grid>
       </TabItem>
-      <TabItem x:Name="ManualControlsTab" Header="Controles manuais">
-       <Grid Margin="4"><Grid.ColumnDefinitions><ColumnDefinition Width="0.56*"/><ColumnDefinition Width="0.44*"/></Grid.ColumnDefinitions>
-        <ListBox x:Name="CueList" Grid.Column="0" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="8,2,2,2">
-         <StackPanel>
+            <TabItem x:Name="ManualControlsTab" Header="Controles manuais">
+       <Grid Margin="8">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="0.92*"/><ColumnDefinition Width="1.02*"/><ColumnDefinition Width="1.06*"/></Grid.ColumnDefinitions>
+        <Border Grid.Column="0" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="13" Padding="8" Margin="0,0,8,0">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <TextBlock Text="FRASES SINCRONIZADAS" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
+          <ListBox x:Name="CueList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="CueList_SelectionChanged"/>
+         </Grid>
+        </Border>
+        <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="13" Padding="9" Margin="0,0,8,0">
+         <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
           <TextBlock Text="COMANDOS DA LETRA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
-          <Button Content="◀ Anterior" Click="PreviousCue_Click"/>
-          <Button Content="Próxima ▶" Click="NextCue_Click"/>
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+           <Button Grid.Column="0" Content="◀ Anterior" Click="PreviousCue_Click"/>
+           <Button Grid.Column="1" Content="Próxima ▶" Click="NextCue_Click"/>
+          </Grid>
           <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#087F9E"/>
           <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
           <Button Content="Editar selecionada" Click="EditCue_Click"/>
           <Button Content="Atualizar frase" Click="UpdateCue_Click"/>
           <Button Content="Excluir frase" Click="DeleteCue_Click"/>
           <Button Content="↑ / ↓ Reordenar" Click="MoveCue_Click"/>
-          <TextBlock Text="TEMPO E FRASE" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,12,4,3"/>
+          <Border Height="1" Background="#245B88" Margin="4,9"/>
+          <TextBlock Text="TEMPO E FRASE" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,5,4,3"/>
           <TextBox x:Name="SecondsBox" Text="0" ToolTip="Tempo em segundos"/>
-          <TextBox x:Name="LyricTextBox" ToolTip="Digite a frase da letra" MinHeight="54" AcceptsReturn="True" TextWrapping="Wrap"/>
+          <TextBox x:Name="LyricTextBox" ToolTip="Digite a frase da letra" MinHeight="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"/>
           <Button Content="Adicionar tempo" Click="AddCue_Click"/>
           <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="#087F9E"/>
           <TextBlock Text="Para antecipar a projeção, marque cerca de 1,5 segundo antes de a frase começar. O horário registrado não será alterado automaticamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
           <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
+         </StackPanel></ScrollViewer>
+        </Border>
+        <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="13" Padding="10">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
+          <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="11" Padding="12" ClipToBounds="True">
+           <Grid>
+            <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
+            <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="#FFFFFF" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
+           </Grid>
+          </Border>
+          <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,8,4,2"/>
+         </Grid>
+        </Border>
+       </Grid>
+      </TabItem>
+</TabItem>
+            <TabItem Header="Histórico de vídeos">
+       <Grid Margin="8">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="0.72*"/><ColumnDefinition Width="1.18*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
+        <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="13" Padding="10" Margin="0,0,8,0">
+         <StackPanel>
+          <TextBlock Text="PESQUISAR HISTÓRICO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="13" Margin="2,4,2,8"/>
+          <TextBox x:Name="HistorySearchBox" VerticalContentAlignment="Center" ToolTip="Pesquisar pelo título do vídeo" TextChanged="HistorySearch_TextChanged"/>
+          <Button Content="⌕ Pesquisar" Click="HistorySearch_Click" Background="#087F9E"/>
+          <TextBlock Text="Selecione uma música na lista central para conferir os dados e carregá-la novamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
          </StackPanel>
-        </ScrollViewer>
+        </Border>
+        <Border Grid.Column="1" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="13" Padding="8" Margin="0,0,8,0">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <TextBlock Text="MÚSICAS UTILIZADAS" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,4,4,8"/>
+          <ListBox x:Name="HistoryList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
+         </Grid>
+        </Border>
+        <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="13" Padding="12">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="MÚSICA SELECIONADA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,3,3,10"/>
+          <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="11" Padding="14">
+           <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding SelectedItem.Title, ElementName=HistoryList}" Foreground="#FFFFFF" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+            <TextBlock Text="Selecione um registro no histórico para visualizar o título desta faixa." Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,12,4,0"/>
+           </StackPanel>
+          </Border>
+          <TextBlock Grid.Row="2" Text="O histórico mantém os nomes cadastrados para facilitar a reutilização das músicas." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,2"/>
+         </Grid>
+        </Border>
        </Grid>
       </TabItem>
-      <TabItem Header="Histórico de vídeos">
-       <Grid Margin="4"><Grid.ColumnDefinitions><ColumnDefinition Width="0.32*"/><ColumnDefinition Width="0.68*"/></Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0" Margin="4">
-         <TextBlock Text="PESQUISAR HISTÓRICO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="13" Margin="2,4,2,8"/>
-         <TextBox x:Name="HistorySearchBox" VerticalContentAlignment="Center" ToolTip="Pesquisar pelo título do vídeo" TextChanged="HistorySearch_TextChanged"/>
-         <Button Content="⌕ Pesquisar" Click="HistorySearch_Click"/>
-         <TextBlock Text="Selecione um título para carregar novamente o vídeo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
-        </StackPanel>
-        <ListBox x:Name="HistoryList" Grid.Column="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" Margin="4" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
+</TabItem>
+            <TabItem Header="Biblioteca">
+       <Grid Margin="8">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="0.78*"/><ColumnDefinition Width="1.12*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
+        <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="13" Padding="9" Margin="0,0,8,0">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="PASTAS E COLEÇÕES" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,8"/>
+          <ListBox x:Name="LibraryFolderList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
+          <StackPanel Grid.Row="2">
+           <Button Content="＋ Criar pasta" Click="CreateFolder_Click"/>
+           <Button Content="Renomear" Click="RenameFolder_Click"/>
+           <Button Content="Excluir" Click="DeleteFolder_Click"/>
+          </StackPanel>
+         </Grid>
+        </Border>
+        <Border Grid.Column="1" Background="#07172C" BorderBrush="#245B88" BorderThickness="1" CornerRadius="13" Padding="9" Margin="0,0,8,0">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <StackPanel Grid.Row="0">
+           <TextBlock Text="MÚSICAS DA COLEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,5"/>
+           <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+            <TextBox x:Name="LibrarySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar nesta pasta" TextChanged="LibrarySearch_TextChanged"/>
+            <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
+           </Grid>
+          </StackPanel>
+          <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
+          <StackPanel Grid.Row="2">
+           <Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/>
+           <Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click"/>
+           <Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/>
+          </StackPanel>
+         </Grid>
+        </Border>
+        <Border Grid.Column="2" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="13" Padding="12">
+         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="FAIXA DA BIBLIOTECA" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,3,3,10"/>
+          <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="11" Padding="14">
+           <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding SelectedItem.Title, ElementName=LibrarySongList}" Foreground="#FFFFFF" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+            <TextBlock Text="Selecione uma faixa na lista para conferir o registro da biblioteca." Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,12,4,0"/>
+           </StackPanel>
+          </Border>
+          <TextBlock Grid.Row="2" Text="Organize as músicas por pastas e mantenha faixas disponíveis para reutilização e reprodução offline." Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,2"/>
+         </Grid>
+        </Border>
        </Grid>
       </TabItem>
-      <TabItem Header="Biblioteca">
-       <Grid Margin="4"><Grid.ColumnDefinitions><ColumnDefinition Width="0.34*"/><ColumnDefinition Width="0.66*"/></Grid.ColumnDefinitions>
-        <Grid Grid.Column="0" Margin="4,0,8,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <TextBlock Text="PASTAS E COLEÇÕES" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,8"/>
-         <ListBox x:Name="LibraryFolderList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
-         <StackPanel Grid.Row="2"><Button Content="＋ Criar pasta" Click="CreateFolder_Click"/><Button Content="Renomear" Click="RenameFolder_Click"/><Button Content="Excluir" Click="DeleteFolder_Click"/></StackPanel>
-        </Grid>
-        <Grid Grid.Column="1" Margin="8,0,4,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <StackPanel Grid.Row="0"><TextBlock Text="MÚSICAS DA COLEÇÃO" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="12" Margin="4,4,4,5"/><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
-          <TextBox x:Name="LibrarySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar nesta pasta" TextChanged="LibrarySearch_TextChanged"/>
-          <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
-         </Grid></StackPanel>
-         <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
-         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click"/><Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/></StackPanel>
-        </Grid>
-       </Grid>
-      </TabItem>
+</TabItem>
      </TabControl>
     </Border>
    </Grid>
