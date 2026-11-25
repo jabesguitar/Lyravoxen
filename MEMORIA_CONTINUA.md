@@ -113,3 +113,15 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - A referência de design enviada pelo usuário foi usada como inspiração de composição (círculo com ícone + corpo cápsula), sem copiar os rótulos/cores exatos do exemplo.
 - Estado: commits da implementação foram aplicados em sequência no branch; ainda falta executar o workflow Windows Build e testar visualmente o modo claro/escuro no Windows e no celular. A alternância do controle remoto foi validada por inspeção estática do HTML/CSS/JS; nenhuma compilação ou teste em dispositivo foi executado nesta etapa.
 - Próxima ação: executar o workflow somente após o usuário confirmar que terminou de solicitar mudanças visuais; se verde, baixar o artefato e revisar ambas as aparências. Não iniciar testes de funcionalidade até o usuário autorizar.
+
+
+### Início da versão Android nativa — 25/11/2026
+- Solicitação aprovada pelo usuário: desenvolver a versão Android completa do Lyravoxen, com APK próprio, mantendo a identidade visual e as funcionalidades previstas. O Android deve ser projeto separado e não deve interferir no WPF/Windows.
+- Criada branch isolada: `feature/android-foundation`, baseada em `redesign/brand-visual-layer`. A branch Windows não foi mesclada nem alterada por esta etapa.
+- Estrutura inicial criada em `/android`: Gradle Kotlin DSL, Android Gradle Plugin 8.7.3, Kotlin 2.0.21, Jetpack Compose, compileSdk 35, minSdk 26, JDK 17; Manifesto, recursos, ícone adaptativo vetorial e cinco áreas de navegação (Ao vivo, Letras, Próxima, Bíblia e Ajuda).
+- Criado modo claro/escuro com preferência persistida localmente no Android.
+- Criado cliente HTTP opcional para comandos já existentes do controle remoto Windows, usando endereço IP e PIN. A conexão é complementar; a aplicação Android deve funcionar sem computador conectado.
+- Criado workflow independente `.github/workflows/android-build.yml` para compilar APK debug e publicar o artefato `Lyravoxen-Android-APK-debug`. O workflow Windows não foi alterado.
+- Documentação: `android/README.md` e `docs/ANDROID_ARCHITECTURE.md` descrevem arquitetura, etapas e limites.
+- Importante: esta entrega é a fundação de interface/CI/conectividade, não a versão Android completa. Player YouTube, biblioteca e banco local, sincronização real, reconhecimento, Bíblia local, prévia/projeção Android e operação independente ainda não foram implementados. O APK ainda não foi compilado nem testado em aparelho.
+- Próxima ação: executar o workflow **Android APK build** na branch `feature/android-foundation`, corrigir eventuais erros de compilação e só então instalar o APK debug para validar ícone, abertura, navegação e temas. Depois avançar em lotes funcionais até paridade definida.
