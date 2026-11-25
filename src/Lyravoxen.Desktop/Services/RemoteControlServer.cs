@@ -316,7 +316,7 @@ textarea{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px so
 @media(max-width:390px){.brandbar{gap:9px;padding:12px;min-height:76px}.brandbar:before{width:130px;height:130px;right:2px}.brandname{font-size:17px}.networktag{font-size:8px;padding:5px 7px}.row3{gap:6px}.row3 button{font-size:13px;padding:11px 5px}}
 
 /* Tema claro: preserva hierarquia, contraste e identidade do controle. */
-body.theme-light{background:radial-gradient(ellipse at 50% -15%,#e5f2fa 0%,#f4f8fc 65%,#eaf2f8 100%);color:#17324d}
+body.theme-light{color-scheme:light;background:radial-gradient(ellipse at 50% -15%,#e5f2fa 0%,#f4f8fc 65%,#eaf2f8 100%);color:#17324d}
 body.theme-light .brandbar{background:linear-gradient(135deg,#ffffff,#e4f1f8);border-color:#9bc9dc;box-shadow:0 10px 28px rgba(35,80,110,.12)}
 body.theme-light .brandname{color:#17324d}
 body.theme-light .brandtag,body.theme-light .dim{color:#536d83}
