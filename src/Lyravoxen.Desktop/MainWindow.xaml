@@ -253,7 +253,7 @@
          <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1.5" CornerRadius="14" Padding="18" MinHeight="290" ClipToBounds="True" VerticalAlignment="Stretch">
           <Grid>
            <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
-           <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="{DynamicResource Brush_FFFFFF}" FontSize="30" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="12" MinHeight="90"/>
+           <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="{DynamicResource Brush_F2F6F8}" FontSize="30" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="12" MinHeight="90"/>
           </Grid>
          </Border>
          <TextBlock x:Name="NextProjectionPreviewText" Grid.Row="2" Text="Próxima: —" Foreground="{DynamicResource Brush_B8CAD5}" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,2"/>
@@ -298,7 +298,7 @@
           <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="11" Padding="12" ClipToBounds="True">
            <Grid>
             <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
-            <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
+            <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
            </Grid>
           </Border>
           <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,8,4,2"/>
@@ -673,7 +673,7 @@
         <Grid>
          <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
          <ScrollViewer VerticalScrollBarVisibility="Auto">
-          <TextBlock x:Name="BiblePreviewVerseText" Text="Digite uma referência ou escolha livro, capítulo e versículo." Foreground="{DynamicResource Brush_FFFFFF}" FontSize="20" TextWrapping="Wrap" LineHeight="29" Margin="4"/>
+          <TextBlock x:Name="BiblePreviewVerseText" Text="Digite uma referência ou escolha livro, capítulo e versículo." Foreground="{DynamicResource Brush_F2F6F8}" FontSize="20" TextWrapping="Wrap" LineHeight="29" Margin="4"/>
          </ScrollViewer>
         </Grid>
        </Border>
