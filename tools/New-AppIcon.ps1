@@ -6,9 +6,9 @@ $artifactDir = Join-Path $PSScriptRoot "..\artifacts"
 New-Item -ItemType Directory -Force $projectAssets, $artifactDir | Out-Null
 
 # Use the approved Lyravoxen brand artwork instead of drawing a generic placeholder.
-$brandPng = Join-Path $projectAssets "Lyravoxen-Brand.png"
+$brandPng = Join-Path $projectAssets "Lyravoxen_Icone_App_1024.png"
 if (-not (Test-Path $brandPng)) {
-  throw "Missing approved brand icon: $brandPng. Add Lyravoxen-Brand.png to src/Lyravoxen.Desktop/Assets."
+  throw "Missing approved brand icon: $brandPng. Add Lyravoxen_Icone_App_1024.png to src/Lyravoxen.Desktop/Assets."
 }
 
 $size = 256
