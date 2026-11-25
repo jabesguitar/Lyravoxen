@@ -27,32 +27,48 @@ Logomarca aprovada como referência visual pelo usuário em 25/11/2026: lira bra
 - Windows 10/11: plataforma atual e prioridade do redesign.
 - Android APK: etapa futura; exige implementação/adaptação Android própria. Não tratar a splash vertical como substituta automática de uma tela nativa responsiva.
 
-## Arquivos de marca preparados fora do repositório
-- Lyravoxen_Icone_App_1024.png (deve ser enviado ao repositório como src/Lyravoxen.Desktop/Assets/Lyravoxen-Brand.png)
-- LyravoxenSplash_Windows_1920x1080.png (deve ser enviado como src/Lyravoxen.Desktop/Assets/LyravoxenSplash_Windows.png)
-- Lyravoxen_SplashScreen_Logo_Oficial_1080x1920.png (reservada para futura versão Android)
-- Lyravoxen.ico (gerado automaticamente pelo script de build a partir da imagem aprovada)
+## Arquivos e identidade visual
+- Fonte do ícone aprovado: `src/Lyravoxen.Desktop/Assets/Lyravoxen_Icone_App_1024.png`.
+- Ícone Windows: `Assets/Lyravoxen.ico`, gerado por `tools/New-AppIcon.ps1`.
+- Splash Windows compacta: `Assets/LyravoxenSplash_Compact.png`, gerada por `tools/New-Splash.ps1` em 520 × 460 px.
+- Splash vertical 1080 × 1920 permanece reservada para futura versão Android; não é usada como splash do Windows.
+- A imagem da marca é copiada para a saída do Windows e carregada pelo controle remoto em `/brand.png`.
 
-## Próximos passos
-1. Enviar a imagem quadrada aprovada para src/Lyravoxen.Desktop/Assets/Lyravoxen-Brand.png.
-2. Enviar a splash horizontal Windows para src/Lyravoxen.Desktop/Assets/LyravoxenSplash_Windows.png.
-3. O script tools/New-AppIcon.ps1 gera Lyravoxen.ico a partir da imagem aprovada; o .csproj já aponta para esse ICO.
-4. O .csproj usa o item WPF SplashScreen para exibir a splash automaticamente durante a inicialização.
-5. Aplicar os tokens visuais gradualmente às telas WPF, preservando nomes x:Name, bindings, Click handlers e eventos.
-6. Compilar e executar os testes existentes.
-7. Testar manualmente reprodução, sincronização, histórico, biblioteca, projeção própria e integração Holyrics.
-8. Revisar a branch antes de qualquer merge em main.
+## Escopo do redesign desktop
+- Aba Ao vivo: manter player, URL, comandos Holyrics, diagnóstico, backup, pedidos, celular, projeção e abas internas; aplicar cartões, cabeçalho de marca, controles arredondados e ciano neon.
+- Cadastrar letra: manter área de texto, cadastro rápido, busca, sincronização e marcação por toque; padronizar abas, botões, campos e seletores.
+- Próxima música: manter navegador interno, abas, sites de referência, preparar/confirmar/verificar letra; padronizar superfícies e navegação.
+- Central Bíblica: preservar livros, capítulos, versículos, referência, microfone e comandos de projeção; aplicar os mesmos estilos.
+- Ajuda: janela separada agora usa fundo escuro, tipografia clara, cartões e botões coerentes com a marca.
+- Abas internas Sincronização, Controles manuais, Histórico de vídeos e Biblioteca recebem o mesmo estilo de abas e componentes.
+- A imagem do cabeçalho WPF usa URI `pack://siteoforigin` para carregar o PNG copiado junto ao executável.
+
+## Regra de preservação
+- Não modificar handlers/eventos, serviços de reprodução, sincronização, biblioteca, histórico, YouTube, Holyrics, Bíblia, projeção ou persistência durante o redesign.
+- Preservar nomes `x:Name`, bindings, eventos, IDs HTML, funções JavaScript, rotas e parâmetros de API.
+- Mudanças visuais ficam em XAML, CSS/HTML de apresentação, recursos e scripts de geração de assets.
+- Trabalhar somente em `redesign/brand-visual-layer`; não mesclar em `main` antes de revisão e testes do usuário.
+
+## Histórico da etapa — 25/11/2026
+1. Usuário aprovou a marca circular Lyravoxen (lira/equalizador ciano, azul e violeta, ondas e nome em branco/ciano com detalhe amarelo).
+2. Usuário enviou o ícone PNG 1024, o ICO e as artes de splash para `src/Lyravoxen.Desktop/Assets`.
+3. Workflow Windows #644 compilou com sucesso antes das alterações mais recentes do controle remoto e do redesign abrangente.
+4. Capturas do usuário mostraram que o executável testado ainda tinha visual antigo e a splash estava grande demais; o usuário pediu para concluir o redesign antes dos testes funcionais.
+5. Controle remoto por IP recebeu nova identidade visual; captura posterior mostrou o cabeçalho, mas a imagem da marca não carregou.
+6. Corrigido o framing HTTP CRLF da rota `/brand.png`; a rota serve o PNG da pasta `Assets`.
+7. Criado `tools/New-Splash.ps1` para gerar uma splash compacta de 520 × 460 px, com o ícone, o nome Lyravoxen e a frase “LETRAS PARA O SEU LOUVOR”.
+8. Workflow `windows-build.yml` agora gera a splash compacta antes de publicar; o `.csproj` aponta para `LyravoxenSplash_Compact.png`.
+9. `MainWindow.xaml`: abas internas, botões, campos, seletores e cabeçalho receberam estilos arredondados/neon; a imagem do cabeçalho foi ajustada para carregar o PNG copiado na pasta de saída.
+10. `App.xaml`: fundo e painéis receberam gradientes azul-noite.
+11. `MainWindow.Help.cs`: janela de ajuda recebeu o tema escuro e botões coordenados.
 
 ## Estado atual
-- Branch isolada: redesign/brand-visual-layer
-- Alteração já realizada: tokens de cor compartilhados em App.xaml.
-- Nenhuma funcionalidade foi intencionalmente alterada.
-- O gerador de ícone foi ajustado para usar a arte aprovada, em vez do ícone genérico anterior.
-- O projeto foi configurado para a splash horizontal Windows.
-- Os dois arquivos PNG ainda precisam ser enviados pelo usuário à pasta Assets antes do build.
-- Ainda não foi validada uma compilação nem teste manual nesta etapa.
-
-
+- Branch: `redesign/brand-visual-layer`.
+- Implementação visual aplicada no código, mas ainda não recompilada após as alterações acima.
+- O usuário ainda não iniciou os testes funcionais; os testes devem ocorrer somente depois que todas as telas e o controle remoto estiverem com a identidade visual correta.
+- Próxima ação: executar Windows build na branch, corrigir qualquer erro de compilação e então conferir as telas e o controle remoto visualmente.
+- Depois da validação visual, o usuário fará uma rodada única de testes funcionais; somente após aprovação considerar merge em `main`.
+ 
 ## Controle remoto por IP — atualização de 25/11/2026
 - O usuário solicitou que a interface web de controle remoto na rede local acompanhe a identidade visual da splash/logo.
 - Redesenho visual aplicado em `Services/RemoteControlServer.cs`: cabeçalho com logomarca, paleta azul-marinho/ciano/azul/violeta e detalhes dourados, cartões, campos, botões e adaptação a telas móveis.
