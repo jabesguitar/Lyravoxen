@@ -26,5 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <SplashScreen Include="Assets\LyravoxenSplash_Windows_1920x1080.png" />
+    <Content Include="Assets\Lyravoxen_Icone_App_1024.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
