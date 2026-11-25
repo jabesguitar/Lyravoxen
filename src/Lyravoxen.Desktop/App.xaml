@@ -3,12 +3,12 @@
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  StartupUri="MainWindow.xaml">
  <Application.Resources>
-  <SolidColorBrush x:Key="Bg" Color="#101923"/>
-  <SolidColorBrush x:Key="Panel" Color="#192735"/>
-  <SolidColorBrush x:Key="Accent" Color="#39D6C5"/>
-  <SolidColorBrush x:Key="TextMuted" Color="#A8BAC5"/>
+  <SolidColorBrush x:Key="Bg" Color="#06152F"/>
+  <SolidColorBrush x:Key="Panel" Color="#0B2450"/>
+  <SolidColorBrush x:Key="Accent" Color="#00D9F5"/>
+  <SolidColorBrush x:Key="TextMuted" Color="#B5C8E7"/>
   <Style TargetType="Button">
-   <Setter Property="Background" Value="#244052"/>
+   <Setter Property="Background" Value="#123A66"/>
    <Setter Property="Foreground" Value="#F2F6F8"/>
    <Setter Property="BorderThickness" Value="0"/>
    <Setter Property="Padding" Value="14,9"/>
@@ -17,9 +17,9 @@
    <Setter Property="FontSize" Value="13"/>
   </Style>
   <Style TargetType="TextBox">
-   <Setter Property="Background" Value="#0D151D"/>
+   <Setter Property="Background" Value="#071A3B"/>
    <Setter Property="Foreground" Value="#F2F6F8"/>
-   <Setter Property="BorderBrush" Value="#355064"/>
+   <Setter Property="BorderBrush" Value="#245B88"/>
    <Setter Property="Padding" Value="10"/>
    <Setter Property="Margin" Value="4"/>
   </Style>
