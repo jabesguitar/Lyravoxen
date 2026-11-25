@@ -34,4 +34,4 @@
 - [x] Compilação automatizada Windows x64
 - [ ] Instalador Windows x64
 - [ ] Testes no i5-3470 e Xeon E5-2689
-- [ ] Aplicativo Android complementar (projeto separado)
+- [x] Fundação Android separada (Kotlin/Compose), ícone, navegação, temas e workflow de APK debug\n- [ ] Paridade funcional Android: player, biblioteca, sincronização, Bíblia e projeção
