@@ -48,8 +48,8 @@ public partial class MainWindow
         var page = GetHelpPage(tab);
         _helpWindow?.Close();
 
-        var text = Hex("#1A2430");
-        var muted = Hex("#4A5A6B");
+        var text = Hex("#F2F6F8");
+        var muted = Hex("#B5C8E7");
         var stack = new System.Windows.Controls.StackPanel { Margin = new Thickness(18) };
         stack.Children.Add(new System.Windows.Controls.TextBlock
         {
@@ -73,7 +73,11 @@ public partial class MainWindow
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = text,
-                Margin = new Thickness(0, 0, 0, 4),
+                Background = Hex("#0B2450"),
+                BorderBrush = Hex("#245B88"),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(10, 7, 10, 7),
+                Margin = new Thickness(0, 0, 0, 6),
                 Content = new System.Windows.Controls.TextBlock
                 {
                     Text = item.Text, FontSize = 13, FontWeight = FontWeights.Normal, TextWrapping = TextWrapping.Wrap,
@@ -84,7 +88,7 @@ public partial class MainWindow
             stack.Children.Add(expander);
         }
 
-        var toggle = new System.Windows.Controls.Button { Content = "Abrir tudo", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0) };
+        var toggle = new System.Windows.Controls.Button { Content = "Abrir tudo", Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 0), Background = Hex("#123A66"), Foreground = Hex("#F2F6F8"), BorderBrush = Hex("#00D9F5"), BorderThickness = new Thickness(1) };
         var opened = false;
         toggle.Click += (_, _) =>
         {
@@ -92,7 +96,7 @@ public partial class MainWindow
             foreach (var expander in expanders) expander.IsExpanded = opened;
             toggle.Content = opened ? "Recolher tudo" : "Abrir tudo";
         };
-        var close = new System.Windows.Controls.Button { Content = "Fechar", Padding = new Thickness(20, 6, 20, 6), IsCancel = true, IsDefault = true };
+        var close = new System.Windows.Controls.Button { Content = "Fechar", Padding = new Thickness(20, 8, 20, 8), IsCancel = true, IsDefault = true, Background = Hex("#087F9E"), Foreground = Hex("#FFFFFF"), BorderBrush = Hex("#00D9F5"), BorderThickness = new Thickness(1) };
 
         var buttons = new System.Windows.Controls.StackPanel
         {
@@ -115,7 +119,7 @@ public partial class MainWindow
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Width = 580,
             Height = 640,
-            Background = Hex("#F5F7FA"),
+            Background = Hex("#06152F"),
             Content = dock
         };
         close.Click += (_, _) => window.Close();
