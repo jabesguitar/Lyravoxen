@@ -122,3 +122,12 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Commits: correção de código `86c7a03212e30b38ea96eed00c8365396b16528d`; gatilho do workflow `be99a23c6ec36a5e23ec60aa099d80407ee2720b`.
 - Estado: correção enviada; nova execução do Windows Build deve iniciar pelo push. Ainda não há resultado de compilação posterior à correção. Avisos CS8602/CS4014 anteriores não eram erros bloqueantes e não foram alterados nesta correção.
 - Próxima ação: acompanhar a execução do Windows Build na branch `redesign/brand-visual-layer`. Se ficar verde, baixar o artefato Windows e seguir depois para o workflow Android separadamente.
+
+
+### Refinamento de legibilidade do modo claro — 25/11/2026
+- Usuário informou que a aparência geral do Windows EXE ficou boa, mas o modo claro estava pouco inteligível nas capturas das abas Ao vivo, Cadastrar letra, Próxima música e Central Bíblica.
+- Escopo confirmado: ajustar somente cores/contraste do modo claro; preservar modo escuro, estrutura, abas, layout e funcionalidades.
+- Commit `fc4e5627c9c36911af353f5002adc1cfb1103525` em `src/Lyravoxen.Desktop/App.xaml.cs`: refinou os tons claros dos painéis e superfícies, escureceu bordas/contornos e textos secundários, e aumentou a distinção entre áreas, mantendo o fundo geral claro e os acentos ciano/azul.
+- Não foram alterados arquivos de lógica funcional nem o CSS do controle remoto nesta etapa.
+- Estado: alteração enviada à branch `redesign/brand-visual-layer`; ainda precisa executar Windows Build e conferir visualmente o modo claro no EXE. O usuário ainda não realizou testes funcionais.
+- Próxima ação: executar Windows Build; se ficar verde, abrir o EXE, alternar para modo claro e enviar capturas para validar contraste antes de qualquer outro ajuste.
