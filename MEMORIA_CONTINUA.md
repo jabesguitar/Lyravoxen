@@ -54,3 +54,13 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Removidos somente os dois atributos `CharacterSpacing`; textos, cores, tamanhos e demais estilos foram preservados.
 - Commit da correção: `c37bf76` (`Remove unsupported WPF CharacterSpacing attributes`).
 - Próxima ação: executar novamente o workflow Windows build na branch `redesign/brand-visual-layer`. Ainda não há confirmação de compilação após esta correção.
+
+
+### Redefinição de layout — 25/11/2026
+- Usuário pediu redistribuição de botões e visualizações nas abas Ao vivo, Cadastrar letra, Próxima música e Bíblia, sem mexer nas funções; logomarca integrada ao fundo em vez de avatar/botão.
+- Commit `44e9393`: reorganizou XAML: cabeçalho com watermark, abas principais com estilo mais destacado, maior espaço para prévia ao vivo, cadastro com ferramentas à esquerda/editor vertical ao centro/prévia à direita, próxima música com rail de pesquisa à esquerda e navegador à direita, Bíblia com painel de prévia maior.
+- Commit `cb0fd7c`: ajustou ordem dos elementos no Grid do cabeçalho para compatibilidade WPF.
+- Commit `68bd44d`: transformou área de leitura da Bíblia em tela escura de prévia com watermark discreta.
+- Commit `4896298`: controle remoto usa logomarca como watermark CSS no cabeçalho e fundo, sem avatar/imagem inline.
+- Verificação estática: XAML com 76 nomes x:Name sem duplicatas, 105 eventos e tags balanceadas. Ainda precisa compilar.
+- Pendência: executar Windows Build na branch `redesign/brand-visual-layer`; não baixar nem iniciar testes funcionais antes de confirmar build verde.
