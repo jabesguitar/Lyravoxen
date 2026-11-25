@@ -16,22 +16,22 @@ public partial class App : System.Windows.Application
     private static readonly IReadOnlyDictionary<string, string> LightColors = new Dictionary<string, string>
     {
         ["F2F6F8"] = "#17324D",
-        ["174A78"] = "#DCEAF5",
-        ["0D2A50"] = "#C7DDED",
-        ["267DA8"] = "#75A6C5",
+        ["174A78"] = "#D5E5F0",
+        ["0D2A50"] = "#C5D9E8",
+        ["267DA8"] = "#6F9BB8",
         ["00E5FF"] = "#008DA8",
         ["00D9F5"] = "#008DA8",
         ["087F9E"] = "#087F9E",
         ["6CF2FF"] = "#007E99",
         ["071A3B"] = "#FFFFFF",
-        ["245B88"] = "#A8C3D5",
-        ["0B2450"] = "#EAF2F8",
-        ["123A66"] = "#DCEAF5",
-        ["FFFFFF"] = "#17324D",
+        ["245B88"] = "#8AA8BE",
+        ["0B2450"] = "#E5EEF5",
+        ["123A66"] = "#D5E5F0",
+        ["FFFFFF"] = "#FFFFFF",
         ["6B9DBA"] = "#7896AB",
-        ["DCEBFA"] = "#24445C",
-        ["102D52"] = "#D7E6F0",
-        ["C7DDF2"] = "#35536B",
+        ["DCEBFA"] = "#29465E",
+        ["102D52"] = "#D6E5F0",
+        ["C7DDF2"] = "#29465E",
         ["0B5478"] = "#D7EAF4",
         ["38CDEB"] = "#007E99",
         ["EAF3FF"] = "#24445C",
@@ -69,10 +69,10 @@ public partial class App : System.Windows.Application
             resources["Color_" + pair.Key] = color;
             resources["Brush_" + pair.Key] = new SolidColorBrush(color);
         }
-        resources["Bg"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#F4F8FC" : "#06152F"));
-        resources["Panel"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#E5EFF7" : "#0B2450"));
+        resources["Bg"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#F4F7FB" : "#06152F"));
+        resources["Panel"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#E1EBF4" : "#0B2450"));
         resources["Accent"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#007F9B" : "#00D9F5"));
-        resources["TextMuted"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#536D83" : "#B5C8E7"));
+        resources["TextMuted"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#465F75" : "#B5C8E7"));
         if (persist)
         {
             try
