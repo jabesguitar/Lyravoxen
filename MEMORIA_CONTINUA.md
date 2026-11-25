@@ -99,3 +99,17 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Preservados nomes x:Name e manipuladores/eventos dos controles existentes, inclusive PrepareNext_Click, ConfirmNextLyrics_Click, VerifyNextLyrics_Click, AutoAdvanceBox_Changed e os eventos de navegação. Não houve alteração intencional em C# nem em lógica de pesquisa/preparação. A remoção foi somente dos quatro botões de atalho na interface desta aba; não removeu código de suporte nem fontes do restante do app.
 - Verificação estática: XML balanceado; 77 nomes x:Name únicos; manipuladores preservados. Ainda não equivale a compilação nem teste funcional.
 - Próxima ação: executar Windows Build na branch `redesign/brand-visual-layer`; após sucesso, conferir se a coluna lateral exibe os comandos de próxima música na resolução do usuário e então seguir para os testes integrados quando ele aprovar.
+
+
+### Identidade das abas e temas claro/escuro — 25/11/2026
+- Solicitação do usuário: redesenhar as cinco abas principais (Ao vivo, Cadastro de letras, Próxima música, Bíblia e Ajuda) inspiradas na referência enviada: botão cápsula com ícone circular integrado à esquerda, cores distintas e destaque visual da aba ativa. Também solicitou modo claro e escuro tanto no aplicativo Windows quanto no controle remoto via IP; a aparência atual permanece como modo escuro padrão e o seletor deve ser discreto e identificável.
+- Implementação no branch \`redesign/brand-visual-layer\`:
+  - \`MainWindow.xaml\`: abas principais passaram a usar cabeçalho composto com ícone circular e rótulo; estilo global das abas foi redesenhado para cápsula, com gradiente e brilho na aba selecionada. Adicionado botão discreto de alternância de tema no canto superior direito. Cores de interface foram convertidas para recursos dinâmicos, permitindo troca de paleta em tempo de execução.
+  - \`App.xaml.cs\`: criada paleta clara e método \`App.SetTheme\`; tema é persistido em \`%LOCALAPPDATA%/Lyravoxen/theme-mode.txt\`, iniciando em escuro se não houver preferência.
+  - \`MainWindow.xaml.cs\`: botão \`ThemeToggle_Click\` conectado e ícone/tooltip inicializados de acordo com a preferência carregada.
+  - \`MainWindow.Help.cs\`: aba Ajuda recebeu o mesmo padrão de ícone circular; janela de ajuda adapta cores ao tema selecionado.
+  - \`Services/RemoteControlServer.cs\`: botão discreto sol/lua adicionado ao controle via IP; tema claro tem overrides de cartões, campos, botões, prévia e status; preferência fica no \`localStorage\` do navegador do celular e é reaplicada ao abrir a página.
+- Cores de ícones: Ao vivo turquesa, Cadastro de letras rosa, Próxima música azul, Bíblia violeta e Ajuda violeta. A aba ativa recebe gradiente ciano/azul e brilho para ser facilmente identificada.
+- A referência de design enviada pelo usuário foi usada como inspiração de composição (círculo com ícone + corpo cápsula), sem copiar os rótulos/cores exatos do exemplo.
+- Estado: commits da implementação foram aplicados em sequência no branch; ainda falta executar o workflow Windows Build e testar visualmente o modo claro/escuro no Windows e no celular. A alternância do controle remoto foi validada por inspeção estática do HTML/CSS/JS; nenhuma compilação ou teste em dispositivo foi executado nesta etapa.
+- Próxima ação: executar o workflow somente após o usuário confirmar que terminou de solicitar mudanças visuais; se verde, baixar o artefato e revisar ambas as aparências. Não iniciar testes de funcionalidade até o usuário autorizar.
