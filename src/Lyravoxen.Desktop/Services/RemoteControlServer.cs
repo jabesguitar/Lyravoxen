@@ -127,6 +127,21 @@ internal sealed class RemoteControlServer : IDisposable
                     return;
                 }
 
+                if (path == "/brand.png")
+                {
+                    var brandPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Lyravoxen_Icone_App_1024.png");
+                    if (!File.Exists(brandPath))
+                    {
+                        await WriteAsync(stream, 404, "text/plain; charset=utf-8", "Logomarca indisponível", timeout.Token);
+                        return;
+                    }
+                    var brandBytes = await File.ReadAllBytesAsync(brandPath, timeout.Token);
+                    var brandHead = "HTTP/1.1 200 OK\\r\\nContent-Type: image/png\\r\\nCache-Control: no-store\\r\\nContent-Length: " + brandBytes.Length + "\\r\\nConnection: close\\r\\n\\r\\n";
+                    await stream.WriteAsync(Encoding.ASCII.GetBytes(brandHead), timeout.Token);
+                    await stream.WriteAsync(brandBytes, timeout.Token);
+                    return;
+                }
+
                 if (path == "/pedido")
                 {
                     await WriteAsync(stream, 200, "text/html; charset=utf-8", RequestPageHtml, timeout.Token);
@@ -247,40 +262,61 @@ internal sealed class RemoteControlServer : IDisposable
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Lyravoxen</title>
-<style>
-:root{color-scheme:dark}
-body{margin:0;font-family:system-ui,sans-serif;background:#0b1117;color:#e8eef4;padding:14px}
-h1{font-size:18px;margin:0 0 12px;color:#6fd6c8}
-input{width:100%;box-sizing:border-box;font-size:18px;padding:12px;border-radius:12px;border:1px solid #2b3a4a;background:#131b24;color:#e8eef4;margin:5px 0}
-button{font-size:17px;padding:14px;border:0;border-radius:12px;background:#1d2a38;color:#e8eef4;width:100%}
-button.main{background:#176e68}button.warn{background:#8c3b3b}button.small{font-size:14px;padding:9px 10px;width:auto}
+<style> 
+:root{color-scheme:dark;--navy:#06152f;--panel:#0b2450;--panel2:#0a1d3d;--cyan:#00d9f5;--cyan2:#24bfe5;--violet:#873cff;--gold:#f3c928;--text:#f2f6fb;--muted:#a9bfdc;--line:#214c79;--danger:#a83d58}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -15%,#123c72 0%,#081d40 38%,var(--navy) 78%);color:var(--text);padding:16px 14px 130px}
+.brandbar{max-width:760px;margin:0 auto 18px;display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(0,217,245,.28);border-radius:18px;background:linear-gradient(135deg,rgba(10,39,81,.96),rgba(6,21,47,.94));box-shadow:0 12px 34px rgba(0,0,0,.24)}
+.brandbar img{width:66px;height:66px;object-fit:contain;border-radius:50%;background:#06152f;flex:0 0 auto}
+.brandname{font-size:20px;font-weight:800;letter-spacing:.035em;line-height:1.1;color:#fff}
+.brandname span{color:var(--cyan)}
+.brandtag{display:block;margin-top:5px;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--muted)}
+.networktag{margin-left:auto;align-self:center;padding:6px 9px;border:1px solid rgba(0,217,245,.3);border-radius:999px;color:var(--cyan);font-size:9px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
+input{width:100%;font-size:17px;padding:13px 14px;border-radius:12px;border:1px solid #28517d;background:#071a38;color:var(--text);margin:6px 0;outline:none}
+input:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,217,245,.12)}
+input::placeholder,textarea::placeholder{color:#829bbd}
+button{font:600 15px system-ui,sans-serif;padding:13px 14px;border:1px solid #28517d;border-radius:12px;background:linear-gradient(180deg,#153b69,#102d55);color:var(--text);width:100%;min-height:46px;box-shadow:0 4px 12px rgba(0,0,0,.16);transition:filter .15s,border-color .15s,transform .15s}
+button:active{transform:translateY(1px);filter:brightness(1.12)}
+button.main{background:linear-gradient(135deg,#00bcd9,#0879bd);border-color:#31dff5;color:#04172d;font-weight:800}
+button.warn{background:linear-gradient(135deg,#8f3150,#61243f);border-color:#b44b68;color:#fff}
+button.small{font-size:13px;padding:9px 10px;width:auto;min-height:36px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0}
 body{padding-bottom:120px}
-#st{position:fixed;left:10px;right:10px;bottom:10px;z-index:5;font-size:14px;color:#e8eef4;background:#16212c;border:1px solid #2f4357;border-radius:12px;padding:10px 12px;max-height:38vh;overflow:auto;white-space:pre-wrap;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#st{position:fixed;left:10px;right:10px;bottom:10px;z-index:5;font-size:14px;color:var(--text);background:rgba(7,26,56,.97);border:1px solid rgba(0,217,245,.35);border-radius:14px;padding:12px 14px;max-height:38vh;overflow:auto;white-space:pre-wrap;box-shadow:0 8px 28px rgba(0,0,0,.45)}
 #st:empty{display:none}
-.card{background:#0f171f;border:1px solid #1f2d3b;border-radius:14px;padding:10px;margin:10px 0}
-.card h2{font-size:14px;margin:0 0 8px;color:#8fa1b3;font-weight:600}
-.slide{background:#000;border:1px solid #243342;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;color:#fff;line-height:1.25;white-space:pre-wrap;overflow:hidden}
+.card{background:linear-gradient(145deg,rgba(12,39,79,.96),rgba(7,26,56,.97));border:1px solid rgba(49,113,164,.55);border-radius:17px;padding:13px;margin:12px 0;box-shadow:0 8px 24px rgba(0,0,0,.17)}
+.card h2{font-size:13px;margin:0 0 10px;color:#8feaff;font-weight:750;letter-spacing:.035em}
+.slide{background:#020a18;border:1px solid #28517d;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;color:#fff;line-height:1.25;white-space:pre-wrap;overflow:hidden}
 .slide.big{aspect-ratio:16/9;font-size:22px;font-weight:700}
-.slide.mini{min-height:96px;max-height:150px;font-size:15px;color:#dfe9f0}
-.dim{font-size:13px;color:#8fa1b3;margin:6px 0}
-textarea{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-radius:12px;border:1px solid #2b3a4a;background:#131b24;color:#e8eef4;margin:5px 0}
-.tapbig{font-size:30px;padding:38px 0;background:#176e68;margin:8px 0;font-weight:700}
+.slide.mini{min-height:96px;max-height:150px;font-size:15px;color:#dfeeff}
+.dim{font-size:13px;color:var(--muted);margin:6px 0}
+textarea{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px solid #28517d;background:#071a38;color:var(--text);margin:5px 0}
+.tapbig{font-size:30px;padding:38px 0;background:linear-gradient(135deg,#00cfe9,#0879bd);border-color:#46e9f7;color:#04172d;margin:8px 0;font-weight:850}
 .gap{margin-top:10px}
-.vubox{height:14px;background:#0b1117;border:1px solid #243342;border-radius:8px;overflow:hidden;margin:8px 0}
-#vu{height:100%;width:0;background:linear-gradient(90deg,#1f9d6b,#d6c04a,#d65a4a);transition:width .25s}
+.vubox{height:14px;background:#06152f;border:1px solid #28517d;border-radius:8px;overflow:hidden;margin:8px 0}
+#vu{height:100%;width:0;background:linear-gradient(90deg,#00d9f5,#287cff,#873cff);transition:width .25s}
 .mini-head{display:flex;gap:10px;align-items:center;margin-bottom:8px}
-.mini-head img{width:96px;height:54px;object-fit:cover;border-radius:8px;background:#000}
+.mini-head img{width:96px;height:54px;object-fit:cover;border-radius:8px;background:#020a18}
 .mini-head b{font-size:16px}
-.suggest{background:#10261f;border:1px solid #1f5a49;border-radius:12px;padding:10px;margin:8px 0}
-.item{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid #1f2d3b;padding:8px 0}
+.suggest{background:rgba(0,174,210,.09);border:1px solid rgba(0,217,245,.32);border-radius:13px;padding:10px;margin:8px 0}
+.item{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid rgba(49,113,164,.35);padding:9px 0}
 .item:first-child{border-top:0}
 .item .t{flex:1;font-size:15px}
-.item .t small{display:block;color:#8fa1b3;font-size:12px}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.item .t small{display:block;color:var(--muted);font-size:12px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px}
+.tabs button{font-weight:750}
+#pinbox{max-width:760px;margin:0 auto 14px;padding:16px;border:1px solid rgba(0,217,245,.28);border-radius:17px;background:rgba(8,29,62,.9)}
+#pinbox:before{content:"ACESSO PROTEGIDO";display:block;color:var(--cyan);font-size:10px;letter-spacing:.18em;font-weight:800;margin-bottom:7px}
+#app{max-width:760px;margin:0 auto}
+@media(min-width:760px){body{padding-top:24px}.card{padding:16px}.brandbar{margin-bottom:22px}}
+@media(max-width:390px){.brandbar{gap:9px;padding:10px}.brandbar img{width:54px;height:54px}.brandname{font-size:17px}.networktag{font-size:8px;padding:5px 7px}.row3{gap:6px}.row3 button{font-size:13px;padding:11px 5px}}
 </style></head><body>
-<h1>Lyravoxen · Controle</h1>
+<header class="brandbar">
+ <img src="/brand.png" alt="Logomarca Lyravoxen">
+ <div><div class="brandname">Lyra<span>voxen</span></div><small class="brandtag">CONTROLE REMOTO</small></div>
+ <span class="networktag">REDE LOCAL</span>
+</header>
 <div id="pinbox"><input id="pin" inputmode="numeric" placeholder="PIN mostrado no computador" autocomplete="off">
 <div class="row"><button class="main" onclick="savePin()">Entrar</button></div></div>
 <div id="app" style="display:none">
