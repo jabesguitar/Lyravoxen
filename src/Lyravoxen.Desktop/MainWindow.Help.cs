@@ -48,8 +48,8 @@ public partial class MainWindow
         var page = GetHelpPage(tab);
         _helpWindow?.Close();
 
-        var text = Hex("#F2F6F8");
-        var muted = Hex("#B5C8E7");
+        var text = Hex(App.IsLightTheme ? "#17324D" : "#F2F6F8");
+        var muted = Hex(App.IsLightTheme ? "#536D83" : "#B5C8E7");
         var stack = new System.Windows.Controls.StackPanel { Margin = new Thickness(18) };
         stack.Children.Add(new System.Windows.Controls.TextBlock
         {
@@ -73,8 +73,8 @@ public partial class MainWindow
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = text,
-                Background = Hex("#0B2450"),
-                BorderBrush = Hex("#245B88"),
+                Background = Hex(App.IsLightTheme ? "#EAF2F8" : "#0B2450"),
+                BorderBrush = Hex(App.IsLightTheme ? "#A8C3D5" : "#245B88"),
                 BorderThickness = new Thickness(1),
                 Padding = new Thickness(10, 7, 10, 7),
                 Margin = new Thickness(0, 0, 0, 6),
@@ -119,7 +119,7 @@ public partial class MainWindow
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Width = 580,
             Height = 640,
-            Background = Hex("#06152F"),
+            Background = Hex(App.IsLightTheme ? "#F4F8FC" : "#06152F"),
             Content = dock
         };
         close.Click += (_, _) => window.Close();
