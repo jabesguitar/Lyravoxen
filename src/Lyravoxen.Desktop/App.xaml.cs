@@ -1,6 +1,8 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using MediaColor = System.Windows.Media.Color;
+using MediaColorConverter = System.Windows.Media.ColorConverter;
 using Lyravoxen.Services;
 
 namespace Lyravoxen;
@@ -63,14 +65,14 @@ public partial class App : System.Windows.Application
         foreach (var pair in LightColors)
         {
             var selected = light ? pair.Value : "#" + pair.Key;
-            var color = (Color)ColorConverter.ConvertFromString(selected);
+            var color = (MediaColor)MediaColorConverter.ConvertFromString(selected);
             resources["Color_" + pair.Key] = color;
             resources["Brush_" + pair.Key] = new SolidColorBrush(color);
         }
-        resources["Bg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(light ? "#F4F8FC" : "#06152F"));
-        resources["Panel"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(light ? "#E5EFF7" : "#0B2450"));
-        resources["Accent"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(light ? "#007F9B" : "#00D9F5"));
-        resources["TextMuted"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(light ? "#536D83" : "#B5C8E7"));
+        resources["Bg"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#F4F8FC" : "#06152F"));
+        resources["Panel"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#E5EFF7" : "#0B2450"));
+        resources["Accent"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#007F9B" : "#00D9F5"));
+        resources["TextMuted"] = new SolidColorBrush((MediaColor)MediaColorConverter.ConvertFromString(light ? "#536D83" : "#B5C8E7"));
         if (persist)
         {
             try
