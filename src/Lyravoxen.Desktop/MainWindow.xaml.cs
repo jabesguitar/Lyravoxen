@@ -79,6 +79,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ThemeToggleButton.Content = App.IsLightTheme ? "☾" : "☀";
+        ThemeToggleButton.ToolTip = App.IsLightTheme ? "Mudar para modo escuro" : "Mudar para modo claro";
         InitializeBackup();
         InitializeRemote();
         InitializeRequests();
