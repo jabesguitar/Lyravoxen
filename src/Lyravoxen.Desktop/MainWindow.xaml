@@ -5,63 +5,122 @@
  Title="Lyravoxen | Estúdio de Letras" Height="860" Width="1440" MinHeight="600" MinWidth="900" WindowState="Maximized" FontFamily="Segoe UI" SnapsToDevicePixels="True" UseLayoutRounding="True"
  WindowStyle="SingleBorderWindow" ResizeMode="CanResize" WindowStartupLocation="CenterScreen" Background="{StaticResource Bg}">
  <Window.Resources>
-  <Style TargetType="{x:Type Button}"><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="Background" Value="#243E50"/><Setter Property="BorderBrush" Value="#36566A"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="10,6"/><Setter Property="Margin" Value="2"/><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type Button}"><Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#31566A"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#176E68"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.42"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-  <Style TargetType="{x:Type TextBox}"><Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#0D151D"/><Setter Property="BorderBrush" Value="#355064"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="3"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TextBox}"><Border x:Name="T" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7"><ScrollViewer x:Name="PART_ContentHost" Margin="1"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="T" Property="BorderBrush" Value="#26C6B8"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+  <Style TargetType="{x:Type Button}">
+   <Setter Property="Foreground" Value="#F2F6F8"/>
+   <Setter Property="Background">
+    <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#174A78" Offset="0"/><GradientStop Color="#0D2A50" Offset="1"/></LinearGradientBrush></Setter.Value>
+   </Setter>
+   <Setter Property="BorderBrush" Value="#1D719B"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Padding" Value="12,8"/>
+   <Setter Property="Margin" Value="3"/>
+   <Setter Property="FontSize" Value="12"/>
+   <Setter Property="FontWeight" Value="SemiBold"/>
+   <Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Template">
+    <Setter.Value><ControlTemplate TargetType="{x:Type Button}">
+     <Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+      <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <ControlTemplate.Triggers>
+      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="B" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="13" ShadowDepth="0" Opacity="0.28"/></Setter.Value></Setter></Trigger>
+      <Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#087F9E"/><Setter TargetName="B" Property="BorderBrush" Value="#6CF2FF"/></Trigger>
+      <Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.42"/></Trigger>
+     </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value>
+   </Setter>
+  </Style>
+  <Style TargetType="{x:Type TextBox}">
+   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#071A3B"/>
+   <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Padding" Value="10,8"/><Setter Property="Margin" Value="3"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TextBox}">
+    <Border x:Name="T" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+     <ScrollViewer x:Name="PART_ContentHost" Margin="1"/>
+    </Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="T" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="T" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="10" ShadowDepth="0" Opacity="0.20"/></Setter.Value></Setter></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style TargetType="{x:Type ComboBox}">
    <Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="3"/>
-   <Setter Property="Foreground" Value="#142330"/><Setter Property="Background" Value="#EAF1F5"/>
-   <Setter Property="BorderBrush" Value="#527184"/><Setter Property="BorderThickness" Value="1.2"/>
+   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#071A3B"/>
+   <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/>
    <Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="38"/>
    <Setter Property="VerticalContentAlignment" Value="Center"/>
   </Style>
   <Style TargetType="{x:Type ComboBoxItem}">
-   <Setter Property="Foreground" Value="#142330"/><Setter Property="Background" Value="#F4F7F9"/>
+   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#0B2450"/>
    <Setter Property="Padding" Value="10,8"/><Setter Property="FontSize" Value="13"/>
    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
    <Style.Triggers>
-    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#D8E8EE"/><Setter Property="Foreground" Value="#102A38"/></Trigger>
-    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#176E68"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
+    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#123A66"/><Setter Property="Foreground" Value="#00D9F5"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#087F9E"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
    </Style.Triggers>
   </Style>
   <Style TargetType="{x:Type CheckBox}">
-   <Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="Background" Value="#243E50"/>
-   <Setter Property="BorderBrush" Value="#9BB5C4"/><Setter Property="Padding" Value="8,6"/>
+   <Setter Property="Foreground" Value="#F2F6F8"/><Setter Property="Background" Value="#123A66"/>
+   <Setter Property="BorderBrush" Value="#6B9DBA"/><Setter Property="Padding" Value="8,6"/>
    <Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="Bold"/>
    <Setter Property="VerticalContentAlignment" Value="Center"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type CheckBox}">
     <Grid Background="Transparent" MinHeight="32">
      <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-     <Border x:Name="CheckSurface" Grid.Column="0" Width="24" Height="24" CornerRadius="5" BorderThickness="2" BorderBrush="{TemplateBinding BorderBrush}" Background="#07121A" VerticalAlignment="Center">
+     <Border x:Name="CheckSurface" Grid.Column="0" Width="24" Height="24" CornerRadius="7" BorderThickness="2" BorderBrush="{TemplateBinding BorderBrush}" Background="#071A3B" VerticalAlignment="Center">
       <TextBlock x:Name="CheckGlyph" Text="✓" FontSize="17" FontWeight="Black" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
      </Border>
      <ContentPresenter Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
     </Grid>
     <ControlTemplate.Triggers>
-     <Trigger Property="IsChecked" Value="True"><Setter TargetName="CheckSurface" Property="Background" Value="#087F70"/><Setter TargetName="CheckSurface" Property="BorderBrush" Value="#65F0D8"/><Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible"/></Trigger>
-     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CheckSurface" Property="BorderBrush" Value="#65F0D8"/></Trigger>
-     <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.75"/></Trigger>
+     <Trigger Property="IsChecked" Value="True"><Setter TargetName="CheckSurface" Property="Background" Value="#087F9E"/><Setter TargetName="CheckSurface" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CheckSurface" Property="BorderBrush" Value="#00D9F5"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.65"/></Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
   <Style x:Key="SubTabItemStyle" TargetType="{x:Type TabItem}">
    <Setter Property="MinHeight" Value="38"/><Setter Property="Padding" Value="15,7"/><Setter Property="Margin" Value="3,2,3,6"/>
    <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
-   <Setter Property="Foreground" Value="#DCE8EF"/><Setter Property="Background" Value="#203746"/><Setter Property="BorderBrush" Value="#426276"/>
-   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
-    <Border x:Name="SubTabSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
-     <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+   <Setter Property="Foreground" Value="#DCEBFA"/><Setter Property="Background" Value="#102D52"/><Setter Property="BorderBrush" Value="#245B88"/>
+  </Style>
+  <Style TargetType="{x:Type ListBox}">
+   <Setter Property="Background" Value="#071A3B"/><Setter Property="Foreground" Value="#F2F6F8"/>
+   <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="5"/>
+  </Style>
+  <Style TargetType="{x:Type ListBoxItem}">
+   <Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="2"/>
+   <Setter Property="Foreground" Value="#EAF3FF"/><Setter Property="Background" Value="Transparent"/>
+   <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ListBoxItem}">
+    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+     <ContentPresenter/>
     </Border>
     <ControlTemplate.Triggers>
-     <Trigger Property="IsSelected" Value="True"><Setter TargetName="SubTabSurface" Property="Background" Value="#176E68"/><Setter TargetName="SubTabSurface" Property="BorderBrush" Value="#43D6C4"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
-     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SubTabSurface" Property="Background" Value="#31566A"/></Trigger>
+     <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#123A66"/><Setter Property="Foreground" Value="#00D9F5"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#00D9F5"/></Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
-  <Style TargetType="{x:Type ListBox}"><Setter Property="Background" Value="#0D151D"/><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="BorderBrush" Value="#2B4557"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="4"/></Style>
-  <Style TargetType="{x:Type ListBoxItem}"><Setter Property="Padding" Value="8,6"/><Setter Property="Margin" Value="1"/><Setter Property="Foreground" Value="#EAF3F7"/><Setter Property="Background" Value="Transparent"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#1B4652"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#203746"/></Trigger></Style.Triggers></Style>
  </Window.Resources>
- <Grid Margin="8,10,8,8">
- <TabControl x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
+ <Grid Margin="12,10,12,10">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+  <Border Grid.Row="0" Background="#0B2450" BorderBrush="#1D719B" BorderThickness="1" CornerRadius="16" Padding="10,7" Margin="0,0,0,8">
+   <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Border Width="48" Height="48" CornerRadius="13" Background="#06152F" BorderBrush="#00D9F5" BorderThickness="1">
+     <Image Source="Assets/Lyravoxen_Icone_App_1024.png" Stretch="Uniform" Margin="2"/>
+    </Border>
+    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+     <TextBlock Text="Lyravoxen" Foreground="#F2F6F8" FontSize="20" FontWeight="Bold"/>
+     <TextBlock Text="ESTÚDIO DE LETRAS  ·  LETRAS PARA O SEU LOUVOR" Foreground="#B5C8E7" FontSize="9" FontWeight="SemiBold" CharacterSpacing="95"/>
+    </StackPanel>
+    <Border Grid.Column="2" CornerRadius="10" BorderBrush="#245B88" BorderThickness="1" Padding="11,6" VerticalAlignment="Center">
+     <TextBlock Text="WINDOWS" Foreground="#00D9F5" FontSize="10" FontWeight="Bold" CharacterSpacing="100"/>
+    </Border>
+   </Grid>
+  </Border>
+ <TabControl Grid.Row="1" x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
   <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}">
   <Setter Property="MinHeight" Value="40"/><Setter Property="Padding" Value="16,8"/><Setter Property="Margin" Value="3,2,3,5"/>
   <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
@@ -72,14 +131,14 @@
     <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
    </Border>
    <ControlTemplate.Triggers>
-    <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#176E68"/><Setter TargetName="TabBorder" Property="BorderBrush" Value="#2BC7B5"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#087F9E"/><Setter TargetName="TabBorder" Property="BorderBrush" Value="#2BC7B5"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#29495A"/></Trigger>
    </ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter>
  </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo"><Grid Margin="14">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Grid.Row="0" Margin="4,0,4,10">
-   <StackPanel><TextBlock Text="LYRAVOXEN" Foreground="{StaticResource Accent}" FontSize="24" FontWeight="Bold"/><TextBlock Text="Música em sintonia com palavras." Foreground="{StaticResource TextMuted}" FontSize="12"/></StackPanel>
+   <StackPanel><TextBlock Text="PAINEL AO VIVO" Foreground="{StaticResource Accent}" FontSize="18" FontWeight="Bold"/><TextBlock Text="Reprodução, sincronização e projeção" Foreground="{StaticResource TextMuted}" FontSize="11"/></StackPanel>
    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
   </DockPanel>
   <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="12" Padding="7" Margin="0,0,0,10">
@@ -87,7 +146,7 @@
     <TextBox x:Name="YoutubeUrlBox" Width="280" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube" TextChanged="YoutubeUrlBox_TextChanged"/>
     <Button x:Name="LoadYoutubeButton" Content="Carregar YouTube" Click="LoadYoutube_Click"/>
     <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
-    <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#176E68" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
+    <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#087F9E" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
     <Button Content="🩺 Diagnóstico" Click="Diagnostics_Click" ToolTip="Confere Holyrics, permissões, microfone, monitores e internet"/>
     <Button Content="☁ Backup" Click="Backup_Click" ToolTip="Backup da biblioteca em uma pasta (OneDrive, Google Drive, pendrive) e restauração"/>
     <Button x:Name="RequestsButton" Content="📥 Pedidos (0)" Click="Requests_Click" ToolTip="Músicas enviadas pelas pessoas pelo link de pedidos"/>
@@ -104,7 +163,7 @@
    </StackPanel>
   </Border>
   <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="0.62*"/><ColumnDefinition Width="1.38*"/></Grid.ColumnDefinitions>
-   <Border Grid.Column="0" Background="#080D12" CornerRadius="12" Padding="8" Margin="0,0,8,0">
+   <Border Grid.Column="0" Background="#07172C" CornerRadius="12" Padding="8" Margin="0,0,8,0">
     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <TextBlock Text="REPRODUÇÃO — PLAYER OFICIAL DO YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8"/>
      <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1"/>
@@ -120,19 +179,19 @@
         <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1.4*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0"><TextBlock Text="INTÉRPRETE" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/><TextBox x:Name="MusicArtistBox" Height="30" FontSize="11" Padding="6,4" ToolTip="Intérprete" LostFocus="MusicMetadata_LostFocus" Margin="2"/></StackPanel>
         <StackPanel Grid.Column="1"><TextBlock Text="TÍTULO DA MÚSICA" FontSize="9" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/><TextBox x:Name="MusicTrackBox" Height="30" FontSize="11" Padding="6,4" ToolTip="Título da música" LostFocus="MusicMetadata_LostFocus" Margin="2"/></StackPanel>
-        <Button Grid.Column="2" Content="Buscar letra" Click="SearchLyrics_Click" Background="#176E68" Margin="2,13,2,2" Padding="12,4"/>
+        <Button Grid.Column="2" Content="Buscar letra" Click="SearchLyrics_Click" Background="#087F9E" Margin="2,13,2,2" Padding="12,4"/>
         <Button Grid.Column="3" Content="✨ Corrigir nomes" Click="FixNames_Click" Margin="2,13,4,2" Padding="12,4" ToolTip="Separa intérprete e título a partir do título do vídeo e tira Playback, Legendado, Ao vivo etc."/>
        </Grid>
        <StackPanel Grid.Row="2" Margin="4,0,4,6">
         <TextBlock x:Name="LinkLyricsStatusText" Foreground="#F2F6F8" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"/>
-        <Button x:Name="UseCatalogLyricsButton" Content="Usar esta letra" Click="UseCatalogLyrics_Click" Visibility="Collapsed" Background="#176E68" HorizontalAlignment="Left" Padding="14,6" Margin="0,6,0,0"/>
+        <Button x:Name="UseCatalogLyricsButton" Content="Usar esta letra" Click="UseCatalogLyrics_Click" Visibility="Collapsed" Background="#087F9E" HorizontalAlignment="Left" Padding="14,6" Margin="0,6,0,0"/>
        </StackPanel>
        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,0,4,8"><TextBlock Text="Linhas:" Foreground="#F2F6F8" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,5,0"/><ComboBox x:Name="LineCountBox" Width="64" SelectedIndex="3" SelectionChanged="LineCount_SelectionChanged"><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/><ComboBoxItem Content="10"/></ComboBox><TextBlock Text="A aparência do telão é controlada pelo Holyrics." Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,5,0"/></StackPanel>
-       <Border Grid.Row="4" Background="#132533" BorderBrush="#3D657A" BorderThickness="1.5" CornerRadius="10" Padding="12" Margin="4,2,4,6">
+       <Border Grid.Row="4" Background="#102C4C" BorderBrush="#1D719B" BorderThickness="1.5" CornerRadius="10" Padding="12" Margin="4,2,4,6">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
          <TextBlock Text="PRÉVIA AO VIVO — O QUE ESTÁ SENDO PROJETADO" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="2,0,2,8"/>
          <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxHeight="760">
-          <Border Width="1280" Height="720" Background="#080D12" BorderBrush="#6B8798" BorderThickness="2" CornerRadius="8" Padding="64" MinWidth="800">
+          <Border Width="1280" Height="720" Background="#07172C" BorderBrush="#6B8798" BorderThickness="2" CornerRadius="8" Padding="64" MinWidth="800">
            <TextBlock x:Name="ProjectionPreviewText" Text="Aguardando uma frase sincronizada..." Foreground="#F2F6F8" FontSize="58" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center"/>
           </Border>
          </Viewbox>
@@ -143,11 +202,11 @@
      </TabItem>
      <TabItem x:Name="ManualControlsTab" Header="Controles manuais">
       <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-       <ListBox x:Name="CueList" Grid.Row="0" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
+       <ListBox x:Name="CueList" Grid.Row="0" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="CueList_SelectionChanged" Margin="4"/>
        <UniformGrid Grid.Row="1" Columns="4" Margin="2,2,2,4">
         <Button Content="◀ Anterior" Click="PreviousCue_Click"/>
         <Button Content="Próxima ▶" Click="NextCue_Click"/>
-        <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#176E68"/>
+        <Button Content="Projetar selecionada" Click="ProjectSelectedCue_Click" Background="#087F9E"/>
         <Button Content="Modo automático" Click="ResumeAutomaticProjection_Click"/>
        </UniformGrid>
        <UniformGrid Grid.Row="2" Columns="4" Margin="2,2,2,4">
@@ -162,7 +221,7 @@
          <TextBox x:Name="LyricTextBox" Grid.Column="1" ToolTip="Digite a frase da letra"/>
          <Button Grid.Column="2" Content="Adicionar tempo" Click="AddCue_Click"/>
         </Grid>
-        <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="#176E68"/>
+        <Button Content="Marcar frase no tempo atual" Click="MarkCueAtCurrentTime_Click" Background="#087F9E"/>
         <TextBlock Text="Para antecipar a projeção, marque cerca de 1,5 segundo antes de a frase começar. O horário registrado não será alterado automaticamente." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="5,3"/>
         <Button Content="Importar letra sincronizada (.LRC / .SRT)" Click="ImportLyrics_Click" Margin="0,6,0,0"/>
        </StackPanel>
@@ -175,7 +234,7 @@
         <TextBox x:Name="HistorySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar pelo título do vídeo" TextChanged="HistorySearch_TextChanged"/>
         <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar histórico" Click="HistorySearch_Click"/>
        </Grid>
-       <ListBox x:Name="HistoryList" Grid.Row="2" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="4" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
+       <ListBox x:Name="HistoryList" Grid.Row="2" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" Margin="4" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
        <TextBlock Grid.Row="3" Text="Selecione um título para carregar novamente o vídeo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
       </Grid>
      </TabItem>
@@ -184,7 +243,7 @@
        <TextBlock Text="MINHAS COLEÇÕES" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
        <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="0.85*"/><ColumnDefinition Width="1.15*"/></Grid.ColumnDefinitions>
         <Grid Grid.Column="0" Margin="4,0,8,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <ListBox x:Name="LibraryFolderList" Grid.Row="0" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
+         <ListBox x:Name="LibraryFolderList" Grid.Row="0" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
          <Button Grid.Row="1" Content="＋ Criar pasta" Click="CreateFolder_Click" Margin="0,8,0,0"/>
          <Grid Grid.Row="2" Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
           <Button Grid.Column="0" Content="Renomear" Click="RenameFolder_Click"/>
@@ -196,7 +255,7 @@
           <TextBox x:Name="LibrarySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar nesta pasta" TextChanged="LibrarySearch_TextChanged"/>
           <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
          </Grid>
-         <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
+         <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#071A3B" Foreground="#F2F6F8" BorderBrush="#245B88" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
          <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/><Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" Margin="0,5,0,0" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/></StackPanel>
         </Grid>
        </Grid>
@@ -218,14 +277,14 @@
      <Button Content="🔎 Buscar texto da letra" Click="FetchLyricsText_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Busca o texto da letra pelo intérprete e título, no Vagalume (precisa da chave gratuita)"/>
      <Button Content="⚙ Fonte de letras" Click="LyricSource_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Chave gratuita do Vagalume para buscar o texto da letra automaticamente"/>
      <Button Content="⏱ Estimar tempos (rascunho)" Click="EstimateTimings_Click" Padding="14,6" Margin="0,0,6,0" ToolTip="Distribui as estrofes pela duração da música em segundos. Se a música estiver tocando, o instante atual vira o começo da 1ª estrofe. Depois ajuste com Frase ◀/▶ ou marque por toque"/>
-     <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="#176E68" Padding="14,6" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque"/>
+     <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="#087F9E" Padding="14,6" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque"/>
     </WrapPanel>
    </StackPanel>
    <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="15" Padding="14" VerticalContentAlignment="Top" ToolTip="Letra completa: mantenha cada frase em uma linha. As estrofes em branco podem separar partes da música."/>
    <Grid Grid.Row="2" Margin="0,10,0,0">
     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-    <Button Grid.Column="0" Content="Salvar e sincronizar" Click="SaveFullLyrics_Click" Background="#176E68" Height="42" FontSize="14" Padding="18,8"/>
-    <Button x:Name="AutoRecognitionButton" Grid.Column="1" Content="Iniciar reconhecimento automático" Click="ToggleAutoRecognition_Click" Background="#176E68" Height="42" FontSize="14" Padding="18,8"/>
+    <Button Grid.Column="0" Content="Salvar e sincronizar" Click="SaveFullLyrics_Click" Background="#087F9E" Height="42" FontSize="14" Padding="18,8"/>
+    <Button x:Name="AutoRecognitionButton" Grid.Column="1" Content="Iniciar reconhecimento automático" Click="ToggleAutoRecognition_Click" Background="#087F9E" Height="42" FontSize="14" Padding="18,8"/>
     <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
      <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra e clique em Salvar e sincronizar." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" FontSize="12"/>
      <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o reconhecimento da música..." Foreground="#F2F6F8" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold" Margin="0,3,0,0"/>
@@ -236,8 +295,8 @@
      <TextBlock Text="MARCAÇÃO POR TOQUE — para músicas playback (sem voz)" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold"/>
      <TextBlock Text="Separe as estrofes por uma linha em branco. Com a música tocando, toque no botão (ou aperte Espaço) quando cada estrofe começar; Backspace desfaz a última marca. Um toque a mais depois da última estrofe conclui e salva." Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,8"/>
      <WrapPanel>
-      <Button x:Name="TapStartButton" Content="Iniciar marcação por toque" Click="TapStart_Click" Background="#176E68" MinHeight="38" Padding="16,6" Margin="0,0,6,4"/>
-      <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="#176E68" MinHeight="38" MinWidth="250" Padding="16,6" FontWeight="Bold" Margin="0,0,6,4"/>
+      <Button x:Name="TapStartButton" Content="Iniciar marcação por toque" Click="TapStart_Click" Background="#087F9E" MinHeight="38" Padding="16,6" Margin="0,0,6,4"/>
+      <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="#087F9E" MinHeight="38" MinWidth="250" Padding="16,6" FontWeight="Bold" Margin="0,0,6,4"/>
       <Button x:Name="TapUndoButton" Content="Desfazer (Backspace)" Click="TapUndo_Click" IsEnabled="False" MinHeight="38" Padding="14,6" Margin="0,0,6,4"/>
       <Button x:Name="TapFinishButton" Content="Concluir e salvar" Click="TapFinish_Click" IsEnabled="False" MinHeight="38" Padding="14,6" Margin="0,0,6,4"/>
       <Button x:Name="TapCancelButton" Content="Cancelar" Click="TapCancel_Click" IsEnabled="False" MinHeight="38" Padding="14,6" Margin="0,0,0,4"/>
@@ -259,11 +318,11 @@
      <Button Grid.Column="5" Content="Copiar link" Click="CopyBrowserLink_Click" ToolTip="Copiar o endereço da página aberta nesta aba"/>
     </Grid>
    </Border>
-   <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="PESQUISA E FONTES DE LETRAS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="14,6"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="14,6" Margin="6,0,0,0"/></DockPanel><WrapPanel Grid.Row="1" Margin="2,0,2,8"><Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click"/><Button Content="G Google" Tag="google" Click="OpenQuickSite_Click"/><Button Content="♫ Cifra Club" Tag="cifraclub" Click="OpenQuickSite_Click"/><Button Content="V Vagalume" Tag="vagalume" Click="OpenQuickSite_Click"/><Button Content="L Letras.mus.br" Tag="letras" Click="OpenQuickSite_Click"/><Button Content="♪ Ouvir Música" Tag="ouvir" Click="OpenQuickSite_Click"/><Button Content="✝ Harpa Cristã" Tag="harpa" Click="OpenQuickSite_Click"/></WrapPanel><TabControl x:Name="BrowserTabs" Grid.Row="2" Background="#080D12" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
+   <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6"><TextBlock Text="PESQUISA E FONTES DE LETRAS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="6,0,12,0"/><Button Content="＋ Nova aba" Click="NewBrowserTab_Click" Padding="14,6"/><Button Content="Fechar aba" Click="CloseBrowserTab_Click" Padding="14,6" Margin="6,0,0,0"/></DockPanel><WrapPanel Grid.Row="1" Margin="2,0,2,8"><Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click"/><Button Content="G Google" Tag="google" Click="OpenQuickSite_Click"/><Button Content="♫ Cifra Club" Tag="cifraclub" Click="OpenQuickSite_Click"/><Button Content="V Vagalume" Tag="vagalume" Click="OpenQuickSite_Click"/><Button Content="L Letras.mus.br" Tag="letras" Click="OpenQuickSite_Click"/><Button Content="♪ Ouvir Música" Tag="ouvir" Click="OpenQuickSite_Click"/><Button Content="✝ Harpa Cristã" Tag="harpa" Click="OpenQuickSite_Click"/></WrapPanel><TabControl x:Name="BrowserTabs" Grid.Row="2" Background="#07172C" BorderThickness="0" SelectionChanged="BrowserTabs_SelectionChanged"><TabItem Header="YouTube 1"><wv2:WebView2 x:Name="YoutubeSearchView"/></TabItem></TabControl></Grid>
    <Border Grid.Row="2" Background="{StaticResource Panel}" CornerRadius="10" Padding="10" Margin="0,10,0,0">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
      <StackPanel><TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontWeight="Bold"/><TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"/><TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,8,0,0" MaxHeight="150"/><CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima sozinha quando a música terminar" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/></StackPanel>
-     <StackPanel Grid.Column="1"><Button Content="Preparar próxima" Click="PrepareNext_Click" Background="#176E68"/><Button Content="✅ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#176E68" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/><Button Content="🔎 Verificar letra" Click="VerifyNextLyrics_Click" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/></StackPanel>
+     <StackPanel Grid.Column="1"><Button Content="Preparar próxima" Click="PrepareNext_Click" Background="#087F9E"/><Button Content="✅ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#087F9E" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/><Button Content="🔎 Verificar letra" Click="VerifyNextLyrics_Click" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/></StackPanel>
     </Grid>
    </Border>
   </Grid>
@@ -330,15 +389,15 @@
        <TextBlock Text="REFERÊNCIA — Enter localiza · Ctrl+Enter projeta · ex.: Jo 3:16, Sl 23, 1 Co 13:4-7" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="5,0,0,0"/>
        <TextBox x:Name="BibleSearchBox" MinHeight="38" FontSize="18" FontWeight="SemiBold" VerticalContentAlignment="Center" KeyDown="BibleSearchBox_KeyDown" TextChanged="BibleSearchBox_TextChanged"/>
       </StackPanel>
-      <Button Grid.Column="3" Content="Localizar" Click="BibleLocate_Click" Background="#176E68" VerticalAlignment="Bottom" MinHeight="38" Padding="20,6" Margin="8,0,0,0"/>
+      <Button Grid.Column="3" Content="Localizar" Click="BibleLocate_Click" Background="#087F9E" VerticalAlignment="Bottom" MinHeight="38" Padding="20,6" Margin="8,0,0,0"/>
       <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,10,0,0">
        <TextBlock Text="MICROFONE" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,8,0"/>
        <ComboBox x:Name="BibleMicDeviceBox" Width="300" MinHeight="36" Loaded="BibleMicDeviceBox_Loaded" SelectionChanged="BibleMicDeviceBox_SelectionChanged" ToolTip="Escolha o microfone ou a interface de áudio externa"/>
        <Button Content="↻" Click="RefreshMicDevices_Click" MinHeight="36" MinWidth="36" Margin="6,0,0,0" ToolTip="Procurar microfones e interfaces de áudio conectados"/>
-       <Button x:Name="BibleMicButton" Content="🎙 Segure para falar (F4)" PreviewMouseLeftButtonDown="BibleMicButton_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BibleMicButton_PreviewMouseLeftButtonUp" Background="#176E68" MinHeight="36" Padding="18,6" Margin="12,0,0,0" ToolTip="Segure o botão (ou a tecla F4), fale a referência e solte. Ex.: João três dezesseis"/>
-       <ProgressBar x:Name="BibleMicLevelBar" Width="150" Height="10" Minimum="0" Maximum="1" Value="0" Foreground="#26C6B8" Background="#0D151D" BorderThickness="0" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip="Nível do microfone: deve se mover quando você fala"/>
+       <Button x:Name="BibleMicButton" Content="🎙 Segure para falar (F4)" PreviewMouseLeftButtonDown="BibleMicButton_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BibleMicButton_PreviewMouseLeftButtonUp" Background="#087F9E" MinHeight="36" Padding="18,6" Margin="12,0,0,0" ToolTip="Segure o botão (ou a tecla F4), fale a referência e solte. Ex.: João três dezesseis"/>
+       <ProgressBar x:Name="BibleMicLevelBar" Width="150" Height="10" Minimum="0" Maximum="1" Value="0" Foreground="#00D9F5" Background="#071A3B" BorderThickness="0" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip="Nível do microfone: deve se mover quando você fala"/>
       </StackPanel>
-      <Border x:Name="BibleVoiceConfirmPanel" Grid.Row="2" Grid.ColumnSpan="4" Visibility="Collapsed" Background="#0D151D" BorderBrush="#26C6B8" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0">
+      <Border x:Name="BibleVoiceConfirmPanel" Grid.Row="2" Grid.ColumnSpan="4" Visibility="Collapsed" Background="#071A3B" BorderBrush="#00D9F5" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0">
        <Grid>
         <Grid.ColumnDefinitions>
          <ColumnDefinition Width="*"/>
@@ -349,7 +408,7 @@
          <TextBlock x:Name="BibleVoiceHeardText" Foreground="#F2F6F8" FontSize="17" FontWeight="Bold" TextWrapping="Wrap"/>
          <TextBlock x:Name="BibleVoiceHintText" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
         </StackPanel>
-        <Button x:Name="BibleVoiceConfirmButton" Grid.Column="1" Content="✔ Projetar (Enter)" Click="BibleVoiceConfirm_Click" Background="#176E68" MinHeight="38" Padding="18,6" Margin="10,0,0,0"/>
+        <Button x:Name="BibleVoiceConfirmButton" Grid.Column="1" Content="✔ Projetar (Enter)" Click="BibleVoiceConfirm_Click" Background="#087F9E" MinHeight="38" Padding="18,6" Margin="10,0,0,0"/>
         <Button Grid.Column="2" Content="✖ Descartar (Esc)" Click="BibleVoiceDiscard_Click" MinHeight="38" Padding="14,6" Margin="6,0,0,0"/>
        </Grid>
       </Border>
@@ -371,8 +430,8 @@
         <GroupStyle>
          <GroupStyle.HeaderTemplate>
           <DataTemplate>
-           <Border Background="#16303D" CornerRadius="5" Padding="8,5" Margin="0,6,0,3">
-            <TextBlock Text="{Binding Name}" Foreground="#65F0D8" FontSize="11" FontWeight="Bold"/>
+           <Border Background="#123A66" CornerRadius="5" Padding="8,5" Margin="0,6,0,3">
+            <TextBlock Text="{Binding Name}" Foreground="#00D9F5" FontSize="11" FontWeight="Bold"/>
            </Border>
           </DataTemplate>
          </GroupStyle.HeaderTemplate>
@@ -429,7 +488,7 @@
          <Button Grid.Column="0" Content="◀ Anterior" Click="BiblePrevious_Click" MinHeight="40" Margin="0,0,3,0"/>
          <Button Grid.Column="1" Content="Próximo ▶" Click="BibleNext_Click" MinHeight="40" Margin="3,0,0,0"/>
         </Grid>
-        <Button Content="Projetar" Click="ProjectBibleSelection_Click" Background="#176E68" MinHeight="48" FontSize="16" FontWeight="Bold" Margin="0,0,0,6"/>
+        <Button Content="Projetar" Click="ProjectBibleSelection_Click" Background="#087F9E" MinHeight="48" FontSize="16" FontWeight="Bold" Margin="0,0,0,6"/>
         <Button Content="Limpar telão" Click="ClearBibleProjection_Click" MinHeight="38"/>
        </StackPanel>
       </Grid>
