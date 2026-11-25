@@ -314,9 +314,34 @@ textarea{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px so
 #app{max-width:760px;margin:0 auto}
 @media(min-width:760px){body{padding-top:24px}.card{padding:16px}.brandbar{margin-bottom:22px}}
 @media(max-width:390px){.brandbar{gap:9px;padding:12px;min-height:76px}.brandbar:before{width:130px;height:130px;right:2px}.brandname{font-size:17px}.networktag{font-size:8px;padding:5px 7px}.row3{gap:6px}.row3 button{font-size:13px;padding:11px 5px}}
+
+/* Tema claro: preserva hierarquia, contraste e identidade do controle. */
+body.theme-light{background:radial-gradient(ellipse at 50% -15%,#e5f2fa 0%,#f4f8fc 65%,#eaf2f8 100%);color:#17324d}
+body.theme-light .brandbar{background:linear-gradient(135deg,#ffffff,#e4f1f8);border-color:#9bc9dc;box-shadow:0 10px 28px rgba(35,80,110,.12)}
+body.theme-light .brandname{color:#17324d}
+body.theme-light .brandtag,body.theme-light .dim{color:#536d83}
+body.theme-light .networktag{color:#007f9b;border-color:#91c6d8}
+body.theme-light input,body.theme-light textarea{background:#fff;color:#17324d;border-color:#9bb8ca}
+body.theme-light input::placeholder,body.theme-light textarea::placeholder{color:#70899c}
+body.theme-light button{background:linear-gradient(180deg,#fff,#dceaf5);border-color:#91b5cb;color:#17324d;box-shadow:0 3px 10px rgba(35,80,110,.09)}
+body.theme-light button.main{background:linear-gradient(135deg,#21c5dc,#1685bc);border-color:#0b9bb8;color:#06243b}
+body.theme-light button.warn{background:linear-gradient(135deg,#bd5a73,#98405e);color:#fff}
+body.theme-light .card,body.theme-light #pinbox{background:linear-gradient(145deg,#fff,#e6f1f8);border-color:#b1cad9;box-shadow:0 7px 20px rgba(35,80,110,.08)}
+body.theme-light .card h2{color:#087f9e}
+body.theme-light .slide{background:#fff;border-color:#a9c4d5;color:#17324d}
+body.theme-light .slide.big{background:#fff;color:#17324d}
+body.theme-light #st{background:rgba(255,255,255,.97);color:#17324d;border-color:#9bc9dc;box-shadow:0 8px 24px rgba(35,80,110,.15)}
+body.theme-light .vubox{background:#e1edf5;border-color:#a9c4d5}
+body.theme-light .item{border-color:#c5d7e3}
+body.theme-light .item .t small{color:#647f93}
+body.theme-light .suggest{background:rgba(0,150,180,.07);border-color:rgba(0,127,155,.25)}
+body.theme-light .tabs button:not(.main){background:linear-gradient(180deg,#fff,#dceaf5);color:#17324d}
+.theme-toggle{width:auto;min-width:42px;min-height:36px;padding:7px 10px;border-radius:999px;font-size:14px;margin-left:auto;background:rgba(0,217,245,.08);border-color:rgba(0,217,245,.32);color:var(--cyan)}
+body.theme-light .theme-toggle{background:#fff;border-color:#9bc9dc;color:#087f9e}
 </style></head><body>
 <header class="brandbar">
  <div><div class="brandname">Lyra<span>voxen</span></div><small class="brandtag">CONTROLE REMOTO</small></div>
+ <button id="themeToggle" class="theme-toggle small" type="button" onclick="toggleTheme()" aria-label="Alternar tema">☀</button>
  <span class="networktag">REDE LOCAL</span>
 </header>
 <div id="pinbox"><input id="pin" inputmode="numeric" placeholder="PIN mostrado no computador" autocomplete="off">
@@ -412,6 +437,11 @@ textarea{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px so
 </div>
 <script>
 var pin='';try{pin=localStorage.getItem('lyra-pin')||'';}catch(e){}
+var themeMode='dark';
+function applyTheme(mode){themeMode=mode==='light'?'light':'dark';document.body.classList.toggle('theme-light',themeMode==='light');var b=$('themeToggle');if(b){b.textContent=themeMode==='light'?'☾':'☀';b.title=themeMode==='light'?'Mudar para modo escuro':'Mudar para modo claro';}try{localStorage.setItem('lyra-theme',themeMode);}catch(e){}}
+function toggleTheme(){applyTheme(themeMode==='dark'?'light':'dark');}
+try{themeMode=localStorage.getItem('lyra-theme')||'dark';}catch(e){}
+
 var curTab='bible',holdUntil=0,lastNextId='',lastNamesRev=-1,live=null,pasteTarget='next',sigs={},aud={on:false,ctx:null,ctl:null,next:0,rate:24000,chunks:0,dropped:0};
 function $(id){return document.getElementById(id);}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls){e.className=cls;}if(text!==undefined){e.textContent=text;}return e;}
