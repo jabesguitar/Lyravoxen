@@ -155,23 +155,12 @@
    </ControlTemplate></Setter.Value></Setter>
   </Style>
  </Window.Resources>
- <Grid Margin="12,10,12,10">
-  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-  <Image Grid.RowSpan="2" Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="420" Height="420" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,28,35" Stretch="Uniform" Opacity="0.045" IsHitTestVisible="False"/>
-  <Border Grid.Row="0" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="18" Padding="16,9" Margin="0,0,0,8" ClipToBounds="True">
-   <Grid>
-    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <Image Grid.ColumnSpan="2" Width="116" Height="116" Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Stretch="Uniform" Opacity="0.10" HorizontalAlignment="Right" VerticalAlignment="Center" IsHitTestVisible="False"/>
-    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0">
-     <TextBlock Text="Lyravoxen" Foreground="#F2F6F8" FontSize="22" FontWeight="Bold"/>
-     <TextBlock Text="ESTÚDIO DE LETRAS  ·  LETRAS PARA O SEU LOUVOR" Foreground="#B5C8E7" FontSize="9" FontWeight="SemiBold"/>
-    </StackPanel>
-    <Border Grid.Column="1" CornerRadius="10" BorderBrush="#245B88" BorderThickness="1" Padding="11,6" VerticalAlignment="Center" Background="#071A3B">
-     <TextBlock Text="WINDOWS" Foreground="#00D9F5" FontSize="10" FontWeight="Bold"/>
-    </Border>
-   </Grid>
-  </Border>
- <TabControl Grid.Row="1" x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
+ <Grid Margin="12,8,12,10">
+  <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="420" Height="420" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,28,35" Stretch="Uniform" Opacity="0.045" IsHitTestVisible="False"/>
+  <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="78" Height="78" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,10,0" Stretch="Uniform" Opacity="0.13" IsHitTestVisible="False">
+   <Image.Effect><DropShadowEffect Color="#00D9F5" BlurRadius="16" ShadowDepth="0" Opacity="0.28"/></Image.Effect>
+  </Image>
+ <TabControl x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
   <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}">
   <Setter Property="MinHeight" Value="44"/><Setter Property="Padding" Value="19,9"/><Setter Property="Margin" Value="4,3,4,7"/><Setter Property="Cursor" Value="Hand"/>
   <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
@@ -186,50 +175,48 @@
     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#29495A"/></Trigger>
    </ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter>
- </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo"><Grid Margin="14">
-   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-   <DockPanel Grid.Row="0" Margin="4,0,4,10">
-    <StackPanel><TextBlock Text="PAINEL AO VIVO" Foreground="{StaticResource Accent}" FontSize="18" FontWeight="Bold"/><TextBlock Text="Reprodução, sincronização e projeção" Foreground="{StaticResource TextMuted}" FontSize="11"/></StackPanel>
-    <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-   </DockPanel>
-   <Grid Grid.Row="1">
-    <Grid.ColumnDefinitions><ColumnDefinition Width="218"/><ColumnDefinition Width="0.88*"/><ColumnDefinition Width="1.38*"/></Grid.ColumnDefinitions>
-    <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="14" Padding="8" Margin="0,0,8,0">
-     <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <StackPanel>
-       <TextBlock Text="CONTROLES" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" Margin="5,3,5,7"/>
-       <TextBox x:Name="YoutubeUrlBox" MinHeight="38" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube" TextChanged="YoutubeUrlBox_TextChanged"/>
-       <Button x:Name="LoadYoutubeButton" Content="▶ Carregar YouTube" Click="LoadYoutube_Click" Background="#087F9E"/>
-       <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
-       <TextBlock Text="INTEGRAÇÕES" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,12,5,3"/>
-       <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#087F9E" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
-       <CheckBox x:Name="HolyricsEnabledBox" Content="Holyrics ativo" IsChecked="True" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,5,4,5" Checked="HolyricsEnabled_Changed" Unchecked="HolyricsEnabled_Changed" ToolTip="Desativar interrompe o envio e fecha a apresentação rápida, sem encerrar o Holyrics"/>
-       <Button Content="📱 Controle pelo celular" Click="Remote_Click" ToolTip="Controlar a aba Bíblia pelo celular (QR code e PIN)"/>
-       <TextBlock Text="PROJEÇÃO" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,12,5,3"/>
-       <Button x:Name="LocalProjectionToggleButton" Content="Abrir projeção própria" Click="OpenLocalProjection_Click" ToolTip="Abrir ou fechar a tela independente de projeção"/>
-       <Button Content="Escolher fundo" Click="SelectProjectionBackground_Click" ToolTip="Importar um fundo JPG ou PNG para a projeção própria"/>
-       <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a projeção própria e a apresentação atual do Holyrics"/>
-       <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
-       <TextBlock Text="FERRAMENTAS" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,12,5,3"/>
-       <Button Content="🩺 Diagnóstico" Click="Diagnostics_Click" ToolTip="Confere Holyrics, permissões, microfone, monitores e internet"/>
-       <Button Content="☁ Backup" Click="Backup_Click" ToolTip="Backup da biblioteca em uma pasta (OneDrive, Google Drive, pendrive) e restauração"/>
-       <Button x:Name="RequestsButton" Content="📥 Pedidos (0)" Click="Requests_Click" ToolTip="Músicas enviadas pelas pessoas pelo link de pedidos"/>
-       <Button x:Name="PinTopButton" Content="📌 Fixar à frente" Click="PinTop_Click" ToolTip="Mantém o Lyravoxen sempre à frente (útil contra a janela Apresentação Rápida do Holyrics)"/>
-       <Button Content="📋 Relatório" Click="Report_Click" ToolTip="Copia o relatório de uso e erros para colar na conversa"/>
-       <TextBlock x:Name="UrlLyricsHintText" Foreground="#B8CAD5" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" Margin="6,8,6,3"/>
-      </StackPanel>
-     </ScrollViewer>
+ </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo">
+   <Grid Margin="14">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <DockPanel Grid.Row="0" Margin="4,0,4,8">
+     <StackPanel><TextBlock Text="PAINEL AO VIVO" Foreground="{StaticResource Accent}" FontSize="18" FontWeight="Bold"/><TextBlock Text="Reprodução, sincronização e projeção" Foreground="{StaticResource TextMuted}" FontSize="11"/></StackPanel>
+     <TextBlock DockPanel.Dock="Right" Text="ESTÚDIO DE LETRAS  •  WINDOWS" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+    </DockPanel>
+    <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="14" Padding="8" Margin="0,0,0,8">
+     <WrapPanel VerticalAlignment="Center">
+      <TextBlock Text="MÚSICA" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="5,0,3,0" VerticalAlignment="Center"/>
+      <TextBox x:Name="YoutubeUrlBox" Width="225" MinHeight="38" VerticalContentAlignment="Center" ToolTip="Cole aqui o link do YouTube" TextChanged="YoutubeUrlBox_TextChanged"/>
+      <Button x:Name="LoadYoutubeButton" Content="▶ Carregar YouTube" Click="LoadYoutube_Click" Background="#087F9E"/>
+      <Button x:Name="PlayNextButton" Content="Tocar próxima" Click="PlayNextPrepared_Click" IsEnabled="False"/>
+      <TextBlock Text="INTEGRAÇÃO" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
+      <Button Content="Conectar Holyrics" Click="HolyricsSettings_Click" Background="#087F9E" ToolTip="Configurar endereço, porta e token e testar a conexão com o Holyrics"/>
+      <CheckBox x:Name="HolyricsEnabledBox" Content="Holyrics ativo" IsChecked="True" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,5,4,5" Checked="HolyricsEnabled_Changed" Unchecked="HolyricsEnabled_Changed" ToolTip="Desativar interrompe o envio e fecha a apresentação rápida, sem encerrar o Holyrics"/>
+      <Button Content="📱 Controle pelo celular" Click="Remote_Click" ToolTip="Controlar a aba Bíblia pelo celular (QR code e PIN)"/>
+      <TextBlock Text="PROJEÇÃO" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
+      <Button x:Name="LocalProjectionToggleButton" Content="Abrir projeção própria" Click="OpenLocalProjection_Click" ToolTip="Abrir ou fechar a tela independente de projeção"/>
+      <Button Content="Escolher fundo" Click="SelectProjectionBackground_Click" ToolTip="Importar um fundo JPG ou PNG para a projeção própria"/>
+      <Button Content="Sair da projeção" Click="ExitProjection_Click" Background="#8C3B3B" ToolTip="Fechar a projeção própria e a apresentação atual do Holyrics"/>
+      <Button Content="Encerrar música" Click="EndPlaybackManually_Click" Background="#8C3B3B" ToolTip="Parar a música e fechar a projeção no Lyravoxen e no Holyrics"/>
+      <TextBlock Text="FERRAMENTAS" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="9,0,3,0" VerticalAlignment="Center"/>
+      <Button Content="🩺 Diagnóstico" Click="Diagnostics_Click" ToolTip="Confere Holyrics, permissões, microfone, monitores e internet"/>
+      <Button Content="☁ Backup" Click="Backup_Click" ToolTip="Backup da biblioteca em uma pasta (OneDrive, Google Drive, pendrive) e restauração"/>
+      <Button x:Name="RequestsButton" Content="📥 Pedidos (0)" Click="Requests_Click" ToolTip="Músicas enviadas pelas pessoas pelo link de pedidos"/>
+      <Button x:Name="PinTopButton" Content="📌 Fixar à frente" Click="PinTop_Click" ToolTip="Mantém o Lyravoxen sempre à frente (útil contra a janela Apresentação Rápida do Holyrics)"/>
+      <Button Content="📋 Relatório" Click="Report_Click" ToolTip="Copia o relatório de uso e erros para colar na conversa"/>
+      <TextBlock x:Name="UrlLyricsHintText" Width="230" Foreground="#B8CAD5" FontSize="10" FontWeight="SemiBold" TextWrapping="Wrap" Margin="6,3" VerticalAlignment="Center"/>
+     </WrapPanel>
     </Border>
-    <Border Grid.Column="1" Background="#07172C" CornerRadius="14" Padding="8" Margin="0,0,8,0">
-     <Grid>
-      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-      <TextBlock Text="REPRODUÇÃO — YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8" FontWeight="Bold" FontSize="11"/>
-      <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1" MinHeight="220"/>
-      <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
-     </Grid>
-    </Border>
-    <Border Grid.Column="2" Background="{StaticResource Panel}" CornerRadius="14" Padding="8" Margin="0" MinHeight="390">
-     <TabControl x:Name="SyncTabs" Background="{StaticResource Panel}" BorderThickness="0" MinHeight="370">
+    <Grid Grid.Row="2">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="0.78*"/><ColumnDefinition Width="1.22*"/></Grid.ColumnDefinitions>
+     <Border Grid.Column="0" Background="#07172C" CornerRadius="14" Padding="8" Margin="0,0,8,0">
+      <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="REPRODUÇÃO — YOUTUBE" Foreground="{StaticResource TextMuted}" Margin="8" FontWeight="Bold" FontSize="11"/>
+       <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1" MinHeight="220"/>
+       <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
+      </Grid>
+     </Border>
+     <Border Grid.Column="1" Background="{StaticResource Panel}" CornerRadius="14" Padding="8" Margin="0" MinHeight="390">
+<TabControl x:Name="SyncTabs" Background="{StaticResource Panel}" BorderThickness="0" MinHeight="370">
       <TabItem Header="Sincronização">
        <Grid Margin="4" MinHeight="340">
         <Grid.ColumnDefinitions><ColumnDefinition Width="0.36*"/><ColumnDefinition Width="0.64*"/></Grid.ColumnDefinitions>
@@ -385,12 +372,12 @@
        </Grid>
       </TabItem>
      </TabControl>
-    </Border>
+     </Border>
+    </Grid>
+    <TextBlock Grid.Row="3" x:Name="StatusText" Text="Pronto. Cole um link do YouTube para começar." Foreground="{StaticResource TextMuted}" Margin="6,8,0,0"/>
    </Grid>
-   <TextBlock Grid.Row="2" x:Name="StatusText" Text="Pronto. Cole um link do YouTube para começar." Foreground="{StaticResource TextMuted}" Margin="6,8,0,0"/>
-  </Grid>
- </TabItem>
-  <TabItem x:Name="ManualSyncTab" Header="Cadastrar letra">
+  </TabItem>
+<TabItem x:Name="ManualSyncTab" Header="Cadastrar letra">
     <Grid Margin="14">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <StackPanel Grid.Row="0" Margin="4,0,4,10">
@@ -445,8 +432,8 @@
     </Grid>
    </TabItem>
   <TabItem Header="＋ Próxima música">
-   <Grid Margin="14">
-    <Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Grid Margin="10">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
      <ScrollViewer VerticalScrollBarVisibility="Auto">
       <StackPanel>
@@ -591,10 +578,10 @@
 
     <Grid Grid.Row="2">
      <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="205"/>
-      <ColumnDefinition Width="165"/>
-      <ColumnDefinition Width="*"/>
-      <ColumnDefinition Width="410"/>
+      <ColumnDefinition Width="170"/>
+      <ColumnDefinition Width="120"/>
+      <ColumnDefinition Width="1.12*"/>
+      <ColumnDefinition Width="1.0*"/>
      </Grid.ColumnDefinitions>
 
      <DockPanel Grid.Column="0" Margin="0,0,8,0">
@@ -657,19 +644,16 @@
          </ScrollViewer>
         </Grid>
        </Border>
-       <StackPanel Grid.Row="2">
-        <TextBlock x:Name="BibleSourceNoteText" Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,8"/>
-        <Grid Margin="0,0,0,6">
-         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="*"/>
-         </Grid.ColumnDefinitions>
-         <Button Grid.Column="0" Content="◀ Anterior" Click="BiblePrevious_Click" MinHeight="40" Margin="0,0,3,0"/>
-         <Button Grid.Column="1" Content="Próximo ▶" Click="BibleNext_Click" MinHeight="40" Margin="3,0,0,0"/>
-        </Grid>
-        <Button Content="Projetar" Click="ProjectBibleSelection_Click" Background="#087F9E" MinHeight="48" FontSize="16" FontWeight="Bold" Margin="0,0,0,6"/>
-        <Button Content="Limpar telão" Click="ClearBibleProjection_Click" MinHeight="38"/>
-       </StackPanel>
+       <Grid Grid.Row="2">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock x:Name="BibleSourceNoteText" Grid.Row="0" Foreground="{StaticResource TextMuted}" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,3"/>
+        <UniformGrid Grid.Row="1" Columns="4">
+         <Button Content="◀ Anterior" Click="BiblePrevious_Click" MinHeight="38" Margin="2"/>
+         <Button Content="Próximo ▶" Click="BibleNext_Click" MinHeight="38" Margin="2"/>
+         <Button Content="Projetar" Click="ProjectBibleSelection_Click" Background="#087F9E" MinHeight="38" FontWeight="Bold" Margin="2"/>
+         <Button Content="Limpar telão" Click="ClearBibleProjection_Click" MinHeight="38" Margin="2"/>
+        </UniformGrid>
+       </Grid>
       </Grid>
      </Border>
     </Grid>
