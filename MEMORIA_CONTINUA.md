@@ -47,3 +47,10 @@ Aplicativo Windows 10/11 para letras de músicas, sincronização e projeção c
 
 ## Próxima ação
 Orientar o usuário a executar o workflow Windows build na branch `redesign/brand-visual-layer` e enviar o resultado.
+
+### Correção de compilação — 25/11/2026
+- O Windows Build falhou em `MainWindow.xaml(168,127)` com MC3072: `CharacterSpacing` não existe no namespace WPF.
+- Inspecionado o arquivo: havia dois atributos não suportados, nas linhas do subtítulo do cabeçalho e do rótulo WINDOWS.
+- Removidos somente os dois atributos `CharacterSpacing`; textos, cores, tamanhos e demais estilos foram preservados.
+- Commit da correção: `c37bf76` (`Remove unsupported WPF CharacterSpacing attributes`).
+- Próxima ação: executar novamente o workflow Windows build na branch `redesign/brand-visual-layer`. Ainda não há confirmação de compilação após esta correção.
