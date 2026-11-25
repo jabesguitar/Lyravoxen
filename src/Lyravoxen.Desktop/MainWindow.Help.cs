@@ -15,7 +15,35 @@ public partial class MainWindow
 
     private void InitializeHelp()
     {
-        _helpTab = new System.Windows.Controls.TabItem { Header = "❓ Ajuda" };
+        _helpTab = new System.Windows.Controls.TabItem
+        {
+            Header = new System.Windows.Controls.StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                Children =
+                {
+                    new System.Windows.Controls.Border
+                    {
+                        Width = 29, Height = 29, CornerRadius = new CornerRadius(15),
+                        Background = Hex("#8B4DE8"), BorderBrush = Hex("#FFFFFF"),
+                        BorderThickness = new Thickness(1.5), Margin = new Thickness(0, 0, 8, 0),
+                        Child = new System.Windows.Controls.TextBlock
+                        {
+                            Text = "?", Foreground = Hex("#FFFFFF"), FontSize = 14,
+                            FontWeight = FontWeights.Black,
+                            HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                            VerticalAlignment = System.Windows.VerticalAlignment.Center
+                        }
+                    },
+                    new System.Windows.Controls.TextBlock
+                    {
+                        Text = "Ajuda", VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        FontSize = 12, FontWeight = FontWeights.Bold
+                    }
+                }
+            }
+        };
         WorkspaceTabs.Items.Add(_helpTab);
         _lastTab = WorkspaceTabs.SelectedItem;
         WorkspaceTabs.SelectionChanged += (_, e) =>
