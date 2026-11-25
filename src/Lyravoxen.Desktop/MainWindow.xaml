@@ -161,7 +161,7 @@
   <Border Grid.Row="0" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="18" Padding="16,9" Margin="0,0,0,8" ClipToBounds="True">
    <Grid>
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <Image Width="116" Height="116" Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Stretch="Uniform" Opacity="0.10" HorizontalAlignment="Right" VerticalAlignment="Center" IsHitTestVisible="False"/>
+    <Image Grid.ColumnSpan="2" Width="116" Height="116" Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Stretch="Uniform" Opacity="0.10" HorizontalAlignment="Right" VerticalAlignment="Center" IsHitTestVisible="False"/>
     <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0">
      <TextBlock Text="Lyravoxen" Foreground="#F2F6F8" FontSize="22" FontWeight="Bold"/>
      <TextBlock Text="ESTÚDIO DE LETRAS  ·  LETRAS PARA O SEU LOUVOR" Foreground="#B5C8E7" FontSize="9" FontWeight="SemiBold"/>
