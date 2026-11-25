@@ -27,4 +27,7 @@
   <ItemGroup>
     <SplashScreen Include="Assets\LyravoxenSplash.png" />
   </ItemGroup>
+  <ItemGroup>
+    <SplashScreen Include="Assets\\LyravoxenSplash_Windows.png" />
+  </ItemGroup>
 </Project>
