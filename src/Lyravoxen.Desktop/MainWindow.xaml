@@ -580,9 +580,14 @@
         <RowDefinition Height="Auto"/>
        </Grid.RowDefinitions>
        <TextBlock Grid.Row="0" x:Name="BiblePreviewReferenceText" Text="Nenhum versículo selecionado" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"/>
-       <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,10">
-        <TextBlock x:Name="BiblePreviewVerseText" Text="Digite uma referência ou escolha livro, capítulo e versículo." Foreground="#F2F6F8" FontSize="19" TextWrapping="Wrap" LineHeight="28"/>
-       </ScrollViewer>
+       <Border Grid.Row="1" Background="#020A18" BorderBrush="#245B88" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,10,0,10" ClipToBounds="True">
+        <Grid>
+         <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.055" Stretch="Uniform" IsHitTestVisible="False"/>
+         <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <TextBlock x:Name="BiblePreviewVerseText" Text="Digite uma referência ou escolha livro, capítulo e versículo." Foreground="#FFFFFF" FontSize="20" TextWrapping="Wrap" LineHeight="29" Margin="4"/>
+         </ScrollViewer>
+        </Grid>
+       </Border>
        <StackPanel Grid.Row="2">
         <TextBlock x:Name="BibleSourceNoteText" Foreground="{StaticResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,8"/>
         <Grid Margin="0,0,0,6">
