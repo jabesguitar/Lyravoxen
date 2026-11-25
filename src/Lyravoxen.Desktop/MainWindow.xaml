@@ -456,39 +456,40 @@
     <Border Grid.Column="0" Background="{StaticResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
      <ScrollViewer VerticalScrollBarVisibility="Auto">
       <StackPanel>
-       <TextBlock Text="PESQUISAR MÚSICA" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="4,4,4,7"/>
-       <TextBox x:Name="YoutubeSearchBox" MinHeight="42" TextWrapping="Wrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
-       <Button Content="🔎 Pesquisar" Click="YoutubeSearch_Click" Background="#087F9E"/>
-       <Grid Margin="0,3,0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="◀ Voltar" Click="YoutubeSearchBack_Click"/>
-        <Button Grid.Column="1" Content="Avançar ▶" Click="YoutubeSearchForward_Click"/>
+       <Border Background="#0B2D56" BorderBrush="#00BFD8" BorderThickness="1.2" CornerRadius="11" Padding="8" Margin="1,1,1,8">
+        <StackPanel>
+         <TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="3,1,3,4"/>
+         <TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="3,1,3,3"/>
+         <TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="3,2,3,4" MaxHeight="58"/>
+         <CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima automaticamente" Foreground="{StaticResource TextMuted}" Margin="3,3" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/>
+         <Button Content="▶ Preparar próxima" Click="PrepareNext_Click" Background="#087F9E" MinHeight="36"/>
+         <Grid Margin="0,1,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <Button Grid.Column="0" Content="✓ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#087F9E" MinHeight="35" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/>
+          <Button Grid.Column="1" Content="⌕ Verificar letra" Click="VerifyNextLyrics_Click" MinHeight="35" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/>
+         </Grid>
+        </StackPanel>
+       </Border>
+       <TextBlock Text="PESQUISAR MÚSICA" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="4,2,4,5"/>
+       <TextBox x:Name="YoutubeSearchBox" MinHeight="40" TextWrapping="Wrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
+       <Button Content="🔎 Pesquisar" Click="YoutubeSearch_Click" Background="#087F9E" MinHeight="35"/>
+       <Grid Margin="0,1,0,3"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Content="◀ Voltar" Click="YoutubeSearchBack_Click" MinHeight="34"/>
+        <Button Grid.Column="1" Content="Avançar ▶" Click="YoutubeSearchForward_Click" MinHeight="34"/>
        </Grid>
-       <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="↻ Atualizar" Click="YoutubeSearchRefresh_Click"/>
-        <Button Grid.Column="1" Content="Copiar link" Click="CopyBrowserLink_Click" ToolTip="Copiar o endereço da página aberta nesta aba"/>
+       <Grid Margin="0,0,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Content="↻ Atualizar" Click="YoutubeSearchRefresh_Click" MinHeight="34"/>
+        <Button Grid.Column="1" Content="Copiar link" Click="CopyBrowserLink_Click" MinHeight="34" ToolTip="Copiar o endereço da página aberta nesta aba"/>
        </Grid>
-       <TextBlock Text="FONTES DE LETRAS" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,12,5,4"/>
+       <TextBlock Text="FONTES DE PESQUISA" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,7,5,3"/>
        <WrapPanel>
-        <Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click"/>
-        <Button Content="G Google" Tag="google" Click="OpenQuickSite_Click"/>
-        <Button Content="♫ Cifra Club" Tag="cifraclub" Click="OpenQuickSite_Click"/>
-        <Button Content="V Vagalume" Tag="vagalume" Click="OpenQuickSite_Click"/>
-        <Button Content="L Letras.mus.br" Tag="letras" Click="OpenQuickSite_Click"/>
-        <Button Content="♪ Ouvir Música" Tag="ouvir" Click="OpenQuickSite_Click"/>
-        <Button Content="✝ Harpa Cristã" Tag="harpa" Click="OpenQuickSite_Click"/>
+        <Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click" MinHeight="34"/>
+        <Button Content="G Google" Tag="google" Click="OpenQuickSite_Click" MinHeight="34"/>
+        <Button Content="L Letras.mus.br" Tag="letras" Click="OpenQuickSite_Click" MinHeight="34"/>
        </WrapPanel>
-       <Grid Margin="0,5,0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="＋ Nova aba" Click="NewBrowserTab_Click"/>
-        <Button Grid.Column="1" Content="Fechar aba" Click="CloseBrowserTab_Click"/>
+       <Grid Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Content="＋ Nova aba" Click="NewBrowserTab_Click" MinHeight="34"/>
+        <Button Grid.Column="1" Content="Fechar aba" Click="CloseBrowserTab_Click" MinHeight="34"/>
        </Grid>
-       <Border Height="1" Background="#245B88" Margin="4,8"/>
-       <TextBlock Text="PRÓXIMA MÚSICA" Foreground="{StaticResource Accent}" FontSize="13" FontWeight="Bold" Margin="4,3,4,5"/>
-       <TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4"/>
-       <TextBlock x:Name="NextLyricsText" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="4,8,4,5" MaxHeight="170"/>
-       <CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima sozinha quando a música terminar" Foreground="{StaticResource TextMuted}" Margin="5,7" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/>
-       <Button Content="Preparar próxima" Click="PrepareNext_Click" Background="#087F9E"/>
-       <Button Content="✅ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="#087F9E" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/>
-       <Button Content="🔎 Verificar letra" Click="VerifyNextLyrics_Click" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/>
       </StackPanel>
      </ScrollViewer>
     </Border>
