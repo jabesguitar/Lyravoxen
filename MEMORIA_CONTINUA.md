@@ -67,3 +67,10 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 
 - Ajuste final do cabeçalho: commit `f672381` faz a logomarca ocupar a largura do cabeçalho como watermark discreta atrás do conteúdo, sem moldura/azulejo de ícone.
 - Estado atualizado: alterações visuais em XAML/CSS estão no GitHub; ainda aguardam Windows Build. Não afirmar que a compilação passou até o usuário executar o workflow.
+
+
+### Revisão das capturas adicionais — 25/11/2026
+- As capturas reais em 1366×768 mostraram que a primeira distribuição não estava suficientemente lateralizada: Cadastro de letra ficou com botões no topo, editor excessivamente horizontal e sem prévia visível; Próxima música deixou ações na faixa inferior; Bíblia precisava de prévia mais evidente.
+- Commit `a0898f4`: reorganização adicional de Cadastro de letra em trilho esquerdo de ferramentas/marcação e painel direito com editor vertical + prévia atual/próxima. Próxima música: área inferior em painel de status à esquerda e comandos à direita. Biblioteca: navegação/pesquisa à esquerda, seleção/edição e prévia ampliadas à direita. Histórico de vídeos: busca e lista em áreas separadas. Bíblia: prévia com tela escura à direita e controles no mesmo painel.
+- Verificação estática: 76 identificadores x:Name sem duplicatas, 105 eventos, tags balanceadas. Isso não é compilação.
+- Estado: alterações no GitHub, branch `redesign/brand-visual-layer`; aguardando Windows Build e inspeção visual em 1366×768.
