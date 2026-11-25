@@ -711,6 +711,7 @@ async function send(){
  }catch(e){$('st').textContent='Não foi possível enviar. Confira se está na mesma rede (Wi-Fi) do computador.';}
 }
 add();
+applyTheme(themeMode);
 </script></body></html>
 """;
 }
