@@ -10,20 +10,21 @@
    <Setter Property="Background">
     <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#174A78" Offset="0"/><GradientStop Color="#0D2A50" Offset="1"/></LinearGradientBrush></Setter.Value>
    </Setter>
-   <Setter Property="BorderBrush" Value="#1D719B"/>
-   <Setter Property="BorderThickness" Value="1"/>
-   <Setter Property="Padding" Value="12,8"/>
-   <Setter Property="Margin" Value="3"/>
+   <Setter Property="BorderBrush" Value="#267DA8"/>
+   <Setter Property="BorderThickness" Value="1.2"/>
+   <Setter Property="Padding" Value="13,8"/>
+   <Setter Property="Margin" Value="4"/>
    <Setter Property="FontSize" Value="12"/>
+   <Setter Property="MinHeight" Value="38"/>
    <Setter Property="FontWeight" Value="SemiBold"/>
    <Setter Property="Cursor" Value="Hand"/>
    <Setter Property="Template">
     <Setter.Value><ControlTemplate TargetType="{x:Type Button}">
-     <Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+     <Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="14" Padding="{TemplateBinding Padding}">
       <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
      </Border>
      <ControlTemplate.Triggers>
-      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="B" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="13" ShadowDepth="0" Opacity="0.28"/></Setter.Value></Setter></Trigger>
+      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="BorderBrush" Value="#00E5FF"/><Setter TargetName="B" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="13" ShadowDepth="0" Opacity="0.28"/></Setter.Value></Setter></Trigger>
       <Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#087F9E"/><Setter TargetName="B" Property="BorderBrush" Value="#6CF2FF"/></Trigger>
       <Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.42"/></Trigger>
      </ControlTemplate.Triggers>
@@ -84,6 +85,32 @@
    <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
    <Setter Property="Foreground" Value="#DCEBFA"/><Setter Property="Background" Value="#102D52"/><Setter Property="BorderBrush" Value="#245B88"/>
   </Style>
+  <Style TargetType="{x:Type TabItem}">
+   <Setter Property="MinHeight" Value="38"/>
+   <Setter Property="Padding" Value="14,7"/>
+   <Setter Property="Margin" Value="3,2,3,6"/>
+   <Setter Property="FontSize" Value="12"/>
+   <Setter Property="FontWeight" Value="SemiBold"/>
+   <Setter Property="Foreground" Value="#C7DDF2"/>
+   <Setter Property="Background" Value="#102D52"/>
+   <Setter Property="BorderBrush" Value="#245B88"/>
+   <Setter Property="Template">
+    <Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
+     <Border x:Name="SubTabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="11" Padding="{TemplateBinding Padding}">
+      <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <ControlTemplate.Triggers>
+      <Trigger Property="IsSelected" Value="True">
+       <Setter TargetName="SubTabBorder" Property="Background" Value="#0B5478"/>
+       <Setter TargetName="SubTabBorder" Property="BorderBrush" Value="#00D9F5"/>
+       <Setter TargetName="SubTabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="12" ShadowDepth="0" Opacity="0.22"/></Setter.Value></Setter>
+       <Setter Property="Foreground" Value="#FFFFFF"/>
+      </Trigger>
+      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SubTabBorder" Property="BorderBrush" Value="#38CDEB"/></Trigger>
+     </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value>
+   </Setter>
+  </Style>
   <Style TargetType="{x:Type ListBox}">
    <Setter Property="Background" Value="#071A3B"/><Setter Property="Foreground" Value="#F2F6F8"/>
    <Setter Property="BorderBrush" Value="#245B88"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="5"/>
@@ -105,7 +132,7 @@
  </Window.Resources>
  <Grid Margin="12,10,12,10">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-  <Border Grid.Row="0" Background="#0B2450" BorderBrush="#1D719B" BorderThickness="1" CornerRadius="16" Padding="10,7" Margin="0,0,0,8">
+  <Border Grid.Row="0" Background="#0B2450" BorderBrush="#00AFCB" BorderThickness="1" CornerRadius="18" Padding="10,7" Margin="0,0,0,8">
    <Grid>
     <Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Border Width="48" Height="48" CornerRadius="13" Background="#06152F" BorderBrush="#00D9F5" BorderThickness="1">
@@ -127,11 +154,11 @@
   <Setter Property="Foreground" Value="{StaticResource TextMuted}"/><Setter Property="Background" Value="#1A2B38"/>
   <Setter Property="BorderBrush" Value="#304B5C"/>
   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
-   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="9" Padding="{TemplateBinding Padding}">
+   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="{TemplateBinding Padding}">
     <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
    </Border>
    <ControlTemplate.Triggers>
-    <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#087F9E"/><Setter TargetName="TabBorder" Property="BorderBrush" Value="#2BC7B5"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#0B6488"/><Setter TargetName="TabBorder" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="13" ShadowDepth="0" Opacity="0.24"/></Setter.Value></Setter><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#29495A"/></Trigger>
    </ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter>
