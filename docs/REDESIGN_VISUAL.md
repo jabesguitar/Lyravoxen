@@ -76,3 +76,16 @@ Logomarca aprovada como referência visual pelo usuário em 25/11/2026: lira bra
 - O PNG foi incluído no `.csproj` com `CopyToOutputDirectory="PreserveNewest"`.
 - Os IDs HTML, funções JavaScript, chamadas `/api`, `/audio`, `/qr.png`, `/pedido`, PIN e comandos existentes foram mantidos; não houve alteração intencional de protocolo ou comportamento funcional.
 - Estado: alterações registradas na branch; compilação e teste visual do controle remoto ainda pendentes.
+
+
+## Redefinição de layout por áreas — 25/11/2026
+- Solicitação do usuário: redistribuir botões e áreas de navegação/visualização em todas as abas, sem alterar funcionalidades; destacar a prévia do que está sendo projetado; tornar o editor de letras mais vertical; deixar a logomarca integrada ao fundo, não dentro de um quadro/botão.
+- `MainWindow.xaml`: cabeçalho deixa de exibir o ícone dentro de um quadro e passa a usar a marca como watermark discreta; abas principais ficam maiores, arredondadas e com destaque ciano.
+- Ao vivo: coluna de controles lateral preservada, mais espaço horizontal para player e sincronização; painel de sincronização e área de prévia recebem alturas mínimas maiores e a tela de projeção fica mais destacada.
+- Cadastrar letra: reorganizado em três áreas — ferramentas na lateral esquerda, editor de texto alto no centro e prévia da projeção à direita. Os controles e seus eventos originais foram mantidos.
+- Próxima música: controles de pesquisa e preparação na lateral esquerda; navegador WebView2 destacado e ampliado à direita; eventos e nomes de controles preservados.
+- Central Bíblica: livros, capítulos e versículos continuam na área de navegação à esquerda; painel de prévia à direita ganhou moldura de tela escura, watermark discreta e maior largura; comandos Anterior/Próximo/Projetar/Limpar permanecem no painel.
+- Controle remoto: logomarca integrada como marca d'água no cabeçalho e no fundo da página via CSS, sem imagem de logotipo embutida como botão/avatar.
+- Verificação estática realizada no XAML: 76 nomes x:Name, sem duplicatas; 105 eventos declarados; aninhamento de tags validado. Isso não substitui compilação WPF.
+- Nenhum handler, nome x:Name, rota ou protocolo foi intencionalmente alterado. A compilação ainda está pendente.
+- Próxima ação: executar Windows Build na branch `redesign/brand-visual-layer`; corrigir qualquer erro de XAML/WPF antes de baixar e inspecionar a interface.
