@@ -64,3 +64,6 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Commit `4896298`: controle remoto usa logomarca como watermark CSS no cabeçalho e fundo, sem avatar/imagem inline.
 - Verificação estática: XAML com 76 nomes x:Name sem duplicatas, 105 eventos e tags balanceadas. Ainda precisa compilar.
 - Pendência: executar Windows Build na branch `redesign/brand-visual-layer`; não baixar nem iniciar testes funcionais antes de confirmar build verde.
+
+- Ajuste final do cabeçalho: commit `f672381` faz a logomarca ocupar a largura do cabeçalho como watermark discreta atrás do conteúdo, sem moldura/azulejo de ícone.
+- Estado atualizado: alterações visuais em XAML/CSS estão no GitHub; ainda aguardam Windows Build. Não afirmar que a compilação passou até o usuário executar o workflow.
