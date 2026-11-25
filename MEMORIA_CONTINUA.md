@@ -76,3 +76,10 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Estado: alterações no GitHub, branch `redesign/brand-visual-layer`; aguardando Windows Build e inspeção visual em 1366×768.
 
 - Correção do Windows Build após erro MC3000 (25/11/2026): o arquivo `src/Lyravoxen.Desktop/MainWindow.xaml` continha três tags de fechamento `</TabItem>` excedentes dentro de `SyncTabs`, após Controles manuais, Histórico de vídeos e Biblioteca. Commit `7114238` removeu apenas essas três tags; verificação estática confirmou tags XML balanceadas. A compilação ainda precisa ser executada novamente no GitHub Actions.
+
+
+### Refinamento visual solicitado após capturas — 25/11/2026
+- Usuário pediu: reduzir o cabeçalho/logo para apenas o símbolo em relevo discreto, liberar espaço de navegação na aba Próxima música, melhorar a área de prévia e distribuição da Central Bíblica e remover a rolagem vertical da coluna de controles da aba Ao vivo.
+- Commit `9c3e9b3` em `src/Lyravoxen.Desktop/MainWindow.xaml`: removeu a faixa alta do cabeçalho e manteve o símbolo como marca d'água discreta no canto superior direito; moveu controles de música, Holyrics, projeção e ferramentas para uma barra horizontal flexível na aba Ao vivo; redistribuiu player e painel de sincronização em duas colunas; reduziu o trilho lateral da aba Próxima música de 260 para 220 px; ampliou proporcionalmente as colunas de versículos e prévia da Bíblia e colocou navegação/projeção/limpar telão em uma faixa compacta horizontal.
+- Verificação estática após edição: tags XML balanceadas; 76 nomes x:Name sem duplicatas. Eventos Click/SelectionChanged/etc. foram preservados no XAML. Não houve alteração intencional em código C# nem em lógica de funcionalidades.
+- Estado: commit enviado para a branch de redesign; ainda precisa executar Windows Build. Depois de build verde, usuário deve conferir o encaixe da barra de controles em sua resolução e a área de prévia bíblica antes de iniciar testes funcionais.
