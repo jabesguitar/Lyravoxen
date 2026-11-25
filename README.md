@@ -42,4 +42,4 @@ O pacote portátil é publicado como self-contained para .NET 8; o WebView2 Runt
 - A busca automática consulta a biblioteca local e o LRCLIB por título e intérprete, com nova tentativa pelo título isolado. Quando não há letra temporizada, a opção Criar permite marcar cada frase ao vivo no áudio que já está tocando. A sincronização automática por reconhecimento de voz ainda não está implementada.
 - O CI valida publicação Windows x64 e testes automatizados da linha do tempo; não substitui teste físico com projetor, WebView2 e Holyrics.
 - Compatibilidade real ainda precisa ser validada nos computadores Intel Core i5-3470 e Xeon E5-2689.
-- APK Android exigiria um projeto separado.
+- A versão Android está em desenvolvimento no projeto separado `android/`, na branch `feature/android-foundation`. A fundação inicial e o workflow de APK debug estão criados; a paridade funcional ainda está pendente.
