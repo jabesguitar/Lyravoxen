@@ -89,3 +89,14 @@ Logomarca aprovada como referência visual pelo usuário em 25/11/2026: lira bra
 - Verificação estática realizada no XAML: 76 nomes x:Name, sem duplicatas; 105 eventos declarados; aninhamento de tags validado. Isso não substitui compilação WPF.
 - Nenhum handler, nome x:Name, rota ou protocolo foi intencionalmente alterado. A compilação ainda está pendente.
 - Próxima ação: executar Windows Build na branch `redesign/brand-visual-layer`; corrigir qualquer erro de XAML/WPF antes de baixar e inspecionar a interface.
+
+
+## Revisão das capturas adicionais — 25/11/2026
+- As capturas reais do usuário em 1366×768 mostraram que a reorganização anterior de Cadastro de letra não se refletiu corretamente: os comandos ficaram no topo, o editor continuou largo e a prévia lateral não apareceu; Próxima música também deixou os comandos de preparar faixa no rodapé em uma faixa muito horizontal; Bíblia precisava de uma tela de prévia mais evidente.
+- Novo commit `a0898f4`: Cadastro de letra foi refeito em duas colunas funcionais dentro do espaço útil: trilho esquerdo de ferramentas e marcação por toque; painel direito dividido em editor vertical e prévia grande da frase atual/próxima. Os nomes x:Name e eventos originais foram preservados, inclusive o campo ManualLyricsBox e controles de marcação.
+- Próxima música: a faixa de pesquisa, fontes, abas e navegação do navegador permanece como área de navegação; a região inferior foi redividida em painel de estado/execução à esquerda e painel de comandos à direita, para não deixar botões isolados em uma longa faixa.
+- Biblioteca: painel de navegação por pastas/músicas e pesquisa continua à esquerda; área de seleção/edição e prévia em painel maior à direita, mantendo eventos de seleção, edição, projeção e gerenciamento.
+- Histórico de vídeos: pesquisa e lista agora ocupam lados distintos, com a lista mais larga e comandos agrupados lateralmente.
+- Central Bíblica: preview segue à direita em tela escura, com os controles de navegação/projeção integrados no mesmo painel; a estrutura de livros/capítulos/versículos permanece à esquerda.
+- Verificação estática do XAML após o commit: 76 x:Name sem duplicatas, 105 eventos, tags balanceadas e âncoras dos previews/editor/controles existentes. Build ainda não executado.
+- Pendência: executar o workflow Windows Build na branch `redesign/brand-visual-layer` e inspecionar o ZIP resultante em 1366×768 antes de qualquer alteração funcional.
