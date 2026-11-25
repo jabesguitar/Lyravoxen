@@ -3014,4 +3014,13 @@ public partial class MainWindow : Window
             return song + performer + composer;
         }
     }
+
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e)
+    {
+        var useLight = !App.IsLightTheme;
+        App.SetTheme(useLight);
+        ThemeToggleButton.Content = useLight ? "☾" : "☀";
+        ThemeToggleButton.ToolTip = useLight ? "Mudar para modo escuro" : "Mudar para modo claro";
+    }
+
 }
