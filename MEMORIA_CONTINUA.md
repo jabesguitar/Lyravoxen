@@ -113,3 +113,12 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - A referência de design enviada pelo usuário foi usada como inspiração de composição (círculo com ícone + corpo cápsula), sem copiar os rótulos/cores exatos do exemplo.
 - Estado: commits da implementação foram aplicados em sequência no branch; ainda falta executar o workflow Windows Build e testar visualmente o modo claro/escuro no Windows e no celular. A alternância do controle remoto foi validada por inspeção estática do HTML/CSS/JS; nenhuma compilação ou teste em dispositivo foi executado nesta etapa.
 - Próxima ação: executar o workflow somente após o usuário confirmar que terminou de solicitar mudanças visuais; se verde, baixar o artefato e revisar ambas as aparências. Não iniciar testes de funcionalidade até o usuário autorizar.
+
+
+### Correção de compilação Windows — 25/11/2026
+- Erro recebido no workflow Windows: ambiguidade entre `System.Drawing.Color/ColorConverter` e `System.Windows.Media.Color/ColorConverter` em `App.xaml.cs` após a introdução do tema dinâmico.
+- Correção aplicada sem alterar a lógica visual: aliases explícitos `MediaColor` e `MediaColorConverter` apontam para `System.Windows.Media`, e as conversões de cores do WPF passaram a usar esses nomes inequívocos.
+- Atualizado `.github/workflows/windows-build.yml` para também executar automaticamente em push na branch `redesign/brand-visual-layer`, sem alterar o gatilho da branch `main` nem executar Windows Build na branch Android.
+- Commits: correção de código `86c7a03212e30b38ea96eed00c8365396b16528d`; gatilho do workflow `be99a23c6ec36a5e23ec60aa099d80407ee2720b`.
+- Estado: correção enviada; nova execução do Windows Build deve iniciar pelo push. Ainda não há resultado de compilação posterior à correção. Avisos CS8602/CS4014 anteriores não eram erros bloqueantes e não foram alterados nesta correção.
+- Próxima ação: acompanhar a execução do Windows Build na branch `redesign/brand-visual-layer`. Se ficar verde, baixar o artefato Windows e seguir depois para o workflow Android separadamente.
