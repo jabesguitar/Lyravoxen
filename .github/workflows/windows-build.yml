@@ -15,6 +15,9 @@ jobs:
       - name: Generate application icon
         shell: pwsh
         run: ./tools/New-AppIcon.ps1
+      - name: Generate compact Windows splash
+        shell: pwsh
+        run: ./tools/New-Splash.ps1
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
