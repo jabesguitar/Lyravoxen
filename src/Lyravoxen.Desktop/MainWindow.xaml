@@ -157,22 +157,41 @@
  </Window.Resources>
  <Grid Margin="12,8,12,10">
   <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="420" Height="420" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,28,35" Stretch="Uniform" Opacity="0.045" IsHitTestVisible="False"/>
-  <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="78" Height="78" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,10,0" Stretch="Uniform" Opacity="0.13" IsHitTestVisible="False">
-   <Image.Effect><DropShadowEffect Color="#00D9F5" BlurRadius="16" ShadowDepth="0" Opacity="0.28"/></Image.Effect>
-  </Image>
  <TabControl x:Name="WorkspaceTabs" Background="{StaticResource Bg}" BorderThickness="0" TabStripPlacement="Top">
   <TabControl.ItemContainerStyle><Style TargetType="{x:Type TabItem}">
   <Setter Property="MinHeight" Value="44"/><Setter Property="Padding" Value="19,9"/><Setter Property="Margin" Value="4,3,4,7"/><Setter Property="Cursor" Value="Hand"/>
-  <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/>
-  <Setter Property="Foreground" Value="{StaticResource TextMuted}"/><Setter Property="Background" Value="#102D52"/>
-  <Setter Property="BorderBrush" Value="#245B88"/>
+  <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="Bold"/>
+  <Setter Property="Foreground" Value="#F5F7FF"/>
+  <Setter Property="Background">
+   <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#315E9D" Offset="0"/><GradientStop Color="#28346F" Offset="1"/></LinearGradientBrush></Setter.Value>
+  </Setter>
+  <Setter Property="BorderBrush" Value="#6489D5"/>
   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type TabItem}">
-   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="{TemplateBinding Padding}">
-    <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+   <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1.4" CornerRadius="11" Padding="{TemplateBinding Padding}">
+    <Grid>
+     <Border x:Name="TabAccent" Height="3" VerticalAlignment="Top" HorizontalAlignment="Stretch" CornerRadius="2" Background="#F5C75E" Margin="9,0,9,0" Opacity="0"/>
+     <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
    </Border>
    <ControlTemplate.Triggers>
-    <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#087F9E"/><Setter TargetName="TabBorder" Property="BorderBrush" Value="#00D9F5"/><Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="13" ShadowDepth="0" Opacity="0.24"/></Setter.Value></Setter><Setter Property="Foreground" Value="#FFFFFF"/></Trigger>
-    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabBorder" Property="Background" Value="#29495A"/></Trigger>
+    <Trigger Property="IsMouseOver" Value="True">
+     <Setter TargetName="TabBorder" Property="Background">
+      <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#477FC2" Offset="0"/><GradientStop Color="#39458D" Offset="1"/></LinearGradientBrush></Setter.Value>
+     </Setter>
+     <Setter TargetName="TabBorder" Property="BorderBrush" Value="#A8C7FF"/>
+     <Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#4C8DFF" BlurRadius="13" ShadowDepth="0" Opacity="0.34"/></Setter.Value></Setter>
+    </Trigger>
+    <Trigger Property="IsSelected" Value="True">
+     <Setter TargetName="TabBorder" Property="Background">
+      <Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#13C8E4" Offset="0"/><GradientStop Color="#1764C7" Offset="0.58"/><GradientStop Color="#493EAA" Offset="1"/></LinearGradientBrush></Setter.Value>
+     </Setter>
+     <Setter TargetName="TabBorder" Property="BorderBrush" Value="#F5C75E"/>
+     <Setter TargetName="TabBorder" Property="BorderThickness" Value="1.8"/>
+     <Setter TargetName="TabAccent" Property="Opacity" Value="1"/>
+     <Setter TargetName="TabBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#13C8E4" BlurRadius="19" ShadowDepth="0" Opacity="0.52"/></Setter.Value></Setter>
+     <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Trigger>
+    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="TabBorder" Property="Opacity" Value="0.5"/></Trigger>
    </ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter>
  </Style></TabControl.ItemContainerStyle><TabItem Header="▶ Ao vivo">
@@ -665,5 +684,8 @@
    </Grid>
   </TabItem>
 </TabControl>
+  <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="48" Height="48" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,8,0" Stretch="Uniform" Opacity="0.92" IsHitTestVisible="False">
+   <Image.Effect><DropShadowEffect Color="#13C8E4" BlurRadius="18" ShadowDepth="0" Opacity="0.62"/></Image.Effect>
+  </Image>
  </Grid>
 </Window>
