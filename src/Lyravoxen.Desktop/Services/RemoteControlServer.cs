@@ -136,7 +136,7 @@ internal sealed class RemoteControlServer : IDisposable
                         return;
                     }
                     var brandBytes = await File.ReadAllBytesAsync(brandPath, timeout.Token);
-                    var brandHead = "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nCache-Control: no-store\r\nContent-Length: " + brandBytes.Length + "\\r\\nConnection: close\\r\\n\\r\\n";
+                    var brandHead = "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nCache-Control: no-store\r\nContent-Length: " + brandBytes.Length + "\r\nConnection: close\r\n\r\n";
                     await stream.WriteAsync(Encoding.ASCII.GetBytes(brandHead), timeout.Token);
                     await stream.WriteAsync(brandBytes, timeout.Token);
                     return;
