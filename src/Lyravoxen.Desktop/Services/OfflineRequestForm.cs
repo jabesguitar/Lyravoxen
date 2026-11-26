@@ -81,6 +81,7 @@ button.grp{background:#25508a}
 #st{margin-top:8px;font-size:15px;color:#6fd6c8}
 </style></head><body>
 <h1>__TITLE__</h1>
+<p class="hint">Para prevenir abusos, o serviço registra o IP público e o horário do pedido. O endereço MAC não é coletado.</p>
 
 <div id="plain">
 <p>Escreva uma música por linha, com o nome e o link (do YouTube, por exemplo). Depois toque no botão para enviar pelo WhatsApp.</p>
