@@ -463,3 +463,52 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 
 ### Próxima ação técnica
 Implementar em blocos pequenos na branch `feature/offline-library-on-redesign`, começando por arquitetura de mídia/validade e ação nos Pedidos, depois ajustes compactos de interface, proteção do navegador e Ajuda. Não reduzir player/editor/prévia/navegador. Gerar uma única compilação após concluir o bloco funcional e os testes automatizados, evitando builds intermediários.
+
+
+
+## 26/11/2026 — Primeira implementação integrada para rodada única de testes
+
+### Implementado nesta rodada (branch `feature/offline-library-on-redesign`)
+- `SongRequest` agora registra caminho local, ID do vídeo, validade e formato da cópia offline, mantendo compatibilidade com pedidos antigos por propriedades opcionais/default.
+- Cada cartão da janela Pedidos recebeu o botão **⬇ Baixar offline**. O fluxo permite escolher 5, 7, 14 ou 30 dias, selecionar MP3/WAV local autorizado, copiar o arquivo para `%LOCALAPPDATA%/Lyravoxen/Media`, associar ao pedido e ao ID exato do vídeo YouTube quando reconhecível, salvar em uma pasta “Pedidos offline” e exibir estado/validade no cartão.
+- O preparo de próxima música não associa mais cópias por título apenas; para pedido offline, exige correspondência do caminho local associado e valida ID de vídeo quando disponível, evitando trocar gravações/tons diferentes silenciosamente.
+- Painel de comandos de Cadastrar letras e Próxima música teve controles compactados e rolagem vertical desativada. A área de editor, prévia e navegador não teve suas definições de colunas alteradas intencionalmente; validar visualmente no build.
+- Ajuda atualizada para explicar importação, prazos, expiração, ação Baixar offline, ações da Biblioteca e limites reais do bloqueador de anúncios.
+- Corrigido atributo XAML duplicado detectado na revisão estática.
+
+### Limites explícitos desta implementação
+- **Não baixa/decodifica áudio diretamente do YouTube.** O botão nos Pedidos seleciona arquivo local MP3/WAV autorizado. O link e ID exatos ficam associados como referência. Isso não é download automático do vídeo nem reprodução offline extraída do YouTube.
+- A validade automática existente é verificada na inicialização do app via `CleanupExpiredOfflineCopies`; não foi adicionado serviço em background enquanto o app permanece aberto.
+- O botão Baixar offline atualmente exige seleção manual de arquivo no PC anfitrião. Ainda não há importação automática por URL de áudio remota, nem comando no celular para escolher arquivo do PC.
+- A UI compactada teve rolagem desativada e botões reduzidos; ainda depende de inspeção real em resolução e escala do monitor para confirmar que todos os controles cabem sem clipping.
+- O bloqueador continua filtrando domínios de terceiros; anúncios first-party/in-stream do YouTube não são garantidamente removidos.
+
+### Checklist atualizado
+**Feito**
+- [x] Campos de estado offline em pedidos.
+- [x] Botão Baixar offline na janela Pedidos (arquivo MP3/WAV autorizado).
+- [x] Escolha de validade 5/7/14/30 dias no fluxo do pedido.
+- [x] Associação do pedido com ID exato do vídeo, quando presente, e caminho do arquivo local.
+- [x] Estado e data de validade exibidos no pedido.
+- [x] Evitar correspondência por título isolado ao preparar cópia offline.
+- [x] Compactação inicial dos comandos em Cadastrar letras e Próxima música.
+- [x] Atualização inicial da Ajuda.
+- [x] Revisão estática de atributos duplicados no XAML.
+
+**Aguardando CI**
+- [ ] Build Windows x64 e testes automáticos.
+- [ ] Cobertura da Ajuda (`tests/help_coverage.py`).
+- [ ] Verificar compilação XAML e eventos dos botões.
+
+**Testar pelo usuário em uma única rodada depois do CI verde**
+- [ ] Biblioteca Offline → importar MP3/WAV → escolher 5/7/14/30 dias → confirmar arquivo na pasta e data.
+- [ ] Pedidos → pedido com link YouTube → Baixar offline → selecionar arquivo autorizado → conferir estado no cartão e pasta “Pedidos offline”.
+- [ ] Pedidos → preparar como próxima → confirmar que reproduz o arquivo local associado, sem confundir versões de mesmo título.
+- [ ] Fechar/reabrir o app após vencimento de teste → confirmar remoção apenas da mídia e preservação do registro/letra.
+- [ ] Cadastrar letras → todos os comandos visíveis sem rolagem; editor e prévia com mesmo espaço visual.
+- [ ] Próxima música → todos os comandos visíveis sem rolagem; navegador com área preservada.
+- [ ] Ajuda → conferir instruções e novidades.
+- [ ] Proteção → alternar ligada/desligada, permitir domínio e testar pesquisa/reprodução; registrar anúncios que persistem no próprio YouTube.
+
+### Próxima ação
+Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilação/testes antes de entregar. Não gerar outra compilação até consolidar correções e checks automatizados; não fazer merge em `main` sem aprovação.
