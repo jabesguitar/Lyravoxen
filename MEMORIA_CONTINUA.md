@@ -512,3 +512,25 @@ Implementar em blocos pequenos na branch `feature/offline-library-on-redesign`, 
 
 ### Próxima ação
 Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilação/testes antes de entregar. Não gerar outra compilação até consolidar correções e checks automatizados; não fazer merge em `main` sem aprovação.
+
+
+## 26/11/2026 — Correções após falhas de CI e preparação antecipada de pedidos
+
+### Diagnóstico confirmado nos logs
+- Foram consultadas as execuções recentes, não apenas uma.
+- Erros de XAML: atributo `MinHeight` duplicado na linha 350, em duas execuções iniciais. Corrigido no commit `157f8dc8283b84ab26e2939d80115fa635c026e5`.
+- Erro de compilação nas tentativas seguintes: `LibraryFolder` e `LibraryVideo` não encontrados em `MainWindow.Requests.cs`; os modelos estão no namespace `Lyravoxen.Models`. Corrigido com `using Lyravoxen.Models;` no commit `bf9fac68555475fb87504696b2edab73dee151ae`.
+- A execução de cobertura da Ajuda falhou numa versão intermediária; textos e comandos em falta foram adicionados, e a execução subsequente passou nessa etapa.
+- Não foi feita instalação local do usuário para diagnosticar; os erros foram identificados pelos logs do Actions.
+
+### Requisito confirmado pelo usuário: pré-baixar pedidos antes do evento
+- O usuário quer que os pedidos recebidos pelo site cheguem à aba Pedidos e possam ser preparados/baixados antecipadamente, antes do início do evento, para evitar falta de música durante a programação.
+- Implementação já iniciada: botão **⬇ Baixar offline** em cada pedido; permite escolher arquivo MP3/WAV local autorizado, escolher validade, guardar no PC anfitrião e associar ao pedido e ao ID do vídeo. O cartão mostra o estado da preparação.
+- Fluxo desejado: pedido recebido pelo site → aparece na aba Pedidos → operador clica Baixar offline/preparar antecipadamente → arquivo fica guardado e identificado para aquela gravação → na hora do evento, preparar como próxima/tocar a cópia certa.
+- Limite: a implementação atual seleciona arquivo local; não baixa áudio diretamente do YouTube. Não deve ser descrita como downloader automático do YouTube. A gravação exata deve ser preservada; não casar por título apenas.
+
+### Próxima etapa
+- Aguardar o CI do commit `bf9fac68555475fb87504696b2edab73dee151ae`.
+- Se o build passar, conferir fluxo completo de pedidos com cópia offline, associação ao pedido e preparação como próxima, e gerar um único pacote de testes.
+- Se falhar, ler os logs do run mais recente e corrigir antes de entregar.
+- Não fazer merge na `main` sem aprovação.
