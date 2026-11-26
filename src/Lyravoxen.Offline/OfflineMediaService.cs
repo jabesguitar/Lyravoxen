@@ -19,7 +19,7 @@ public sealed class OfflineMediaService
         _maxBytes = maxBytes;
         _resolveHost = resolveHost ?? ((host, token) => Dns.GetHostAddressesAsync(host, token));
         _http = handler is null
-            ? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }, true) { Timeout = TimeSpan.FromSeconds(45) }
+            ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, ConnectCallback = ConnectPublicAsync }, true) { Timeout = TimeSpan.FromSeconds(45) }
             : new HttpClient(handler, false) { Timeout = TimeSpan.FromSeconds(45) };
     }
 
@@ -93,6 +93,29 @@ public sealed class OfflineMediaService
             finally { if (File.Exists(temp)) File.Delete(temp); }
         }
         return new OfflineMediaResult(target, format, new FileInfo(target).Length, hash);
+    }
+
+    private async ValueTask<Stream> ConnectPublicAsync(SocketsHttpConnectionContext context, CancellationToken token)
+    {
+        var addresses = await _resolveHost(context.DnsEndPoint.Host, token);
+        if (addresses.Length == 0 || addresses.Any(address => !IsPublicAddress(address)))
+            throw new HttpRequestException("O domínio resolveu para um endereço local, privado ou não permitido.");
+        Exception? lastError = null;
+        foreach (var address in addresses)
+        {
+            var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                await socket.ConnectAsync(new IPEndPoint(address, context.DnsEndPoint.Port), token);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                socket.Dispose();
+            }
+        }
+        throw new HttpRequestException("Não foi possível conectar ao servidor de áudio.", lastError);
     }
 
     private async Task<HttpResponseMessage> SendPublicRequestAsync(Uri start, CancellationToken token)
