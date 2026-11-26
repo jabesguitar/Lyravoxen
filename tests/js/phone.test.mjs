@@ -99,6 +99,7 @@ ok(await page.isVisible('#pinbox')&&!(await page.isVisible('#app')),'pede o PIN'
 await page.fill('#pin','9999'); await page.click('text=Entrar'); await page.waitForTimeout(400);
 ok(await page.isVisible('#pinbox'),'PIN errado volta a pedir o PIN');
 await page.fill('#pin','1234'); await page.click('text=Entrar'); await page.waitForSelector('#app',{state:'visible'});
+await page.waitForFunction(()=>document.getElementById('st').textContent.includes('Bíblia'),null,{timeout:6000});
 ok((await text('st')).includes('Bíblia'),'PIN certo mostra o estado da Bíblia');
 
 // 2) aba Ao vivo vazia

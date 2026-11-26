@@ -202,3 +202,8 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 ### Correção detectada pelo teste da página móvel — 26/11/2026
 - O teste Playwright identificou que a primeira reorganização da aba Ao Vivo havia deixado de fora o painel auxiliar oculto `pastepanel`, usado pelo botão “Criar letra”. A causa foi reconstruir a área apenas com os cartões visíveis e não preservar esse painel.
 - Correção: reinserido o painel oculto original antes dos painéis recolhíveis, preservando seu HTML e identificadores. O teste móvel permanece habilitado para validar os fluxos completos, não apenas a ordem visual.
+
+
+### Ajuste de sincronização do teste mobile — 26/11/2026
+- Após preservar `pastepanel`, o teste Playwright passou pelos fluxos de pedido, biblioteca e controles (111 verificações OK), mas uma verificação inicial do status após digitar o PIN falhou por condição de corrida: o teste verificava o texto antes da resposta assíncrona de estado.
+- Ajuste apenas no teste: aguardar explicitamente o status “Bíblia” antes da asserção. A falha não indicou regressão de funcionalidade da aplicação; o teste deve ser repetido para confirmar.
