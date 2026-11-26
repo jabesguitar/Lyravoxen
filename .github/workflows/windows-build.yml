@@ -30,6 +30,8 @@ jobs:
         run: dotnet run --project tests/Lyravoxen.OfflineTests/Lyravoxen.OfflineTests.csproj -c Release
       - name: Check Help coverage
         run: python tests/help_coverage.py
+      - name: C# static checks
+        run: python tests/csharp_lint.py
       - name: Extract and test Cloudflare Worker
         working-directory: tests/js
         run: |
