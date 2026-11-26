@@ -50,14 +50,17 @@ ATUALIZAÇÃO PARA QUEM JÁ TEM O WORKER CRIADO
 - No Lyravoxen, abra Pedidos → Pedidos pela internet → "Gerar código do serviço (worker.js)".
 - No painel do Cloudflare, abra o Worker existente → "Edit code". Substitua o código antigo pelo novo worker.js e clique em "Deploy".
 - NÃO apague nem recrie o namespace KV PEDIDOS e NÃO troque o ADMIN_TOKEN. Assim os pedidos existentes permanecem salvos.
-- Esta atualização é necessária para o bloqueio de IPs pela internet; sem ela, o bloqueio continuará funcionando apenas para pedidos recebidos diretamente na rede local.
+- Esta atualização é necessária para registrar o IP público, mostrar o IP na lista e bloquear/desbloquear pela internet; sem ela, o bloqueio continuará funcionando apenas para pedidos recebidos diretamente na rede local.
+- O Worker atualizado limita cada IP a 5 envios por janela de 10 minutos e mantém o limite global de 150 pedidos pendentes.
+- O formulário informa às pessoas que o IP público e o horário são registrados para prevenção de abuso. Endereço MAC não é coletado nem pode ser identificado pelo site.
 
 COMO USAR
 - Divulgue o link  ENDEREÇO/pedido  (o Lyravoxen copia para você) ou mande o formulário .html gerado depois de salvar o endereço:
   a pessoa preenche e toca em "Enviar pedido ao operador"; o pedido entra na lista 📥 Pedidos em até ~1 minuto, de qualquer rede.
 - O Lyravoxen precisa estar aberto e com internet para buscar. Pedidos ficam no serviço por 12 horas; todos os computadores com o mesmo endereço e senha recebem os mesmos pedidos.
 - Segurança: quem tem o link pode enviar pedidos (só texto com link de música). Quem não tem a senha não consegue LER os pedidos.
-  Não mande a senha para ninguém e não coloque o arquivo da senha em grupos.
+  Não mande a senha para ninguém e não coloque o arquivo da senha em grupos. IPs bloqueados ficam na lista até desbloqueio manual.
+- O limite por IP usa KV e é uma proteção básica contra spam; para ataques coordenados ou muitas conexões simultâneas, complemente com uma regra Rate Limiting no painel Cloudflare.
 - Limites do plano gratuito (por dia): cerca de 1.000 gravações no armazenamento — dá para algumas centenas de pedidos por dia.
 """;
 
