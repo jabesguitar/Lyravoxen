@@ -174,3 +174,9 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Refinada a tecla Esc para fechar a janela de projeção própria (não apenas limpar o texto), atualizar o botão para “Abrir projeção própria” e enviar o fechamento ao Holyrics. A música continua tocando e o Lyravoxen permanece aberto.
 - Ajustado o fim de áudio offline para zerar o estado antigo do player YouTube antes de chamar o avanço automático, evitando que um estado de reprodução anterior impeça a troca.
 - Commit da consolidação anterior: `42efc9a44cad121b34142499ceaa8cd8b7c31605`. Ainda falta confirmar o workflow dessa revisão e executar os testes de integração da página/Worker.
+
+
+### Correção de compilação da gestão de bloqueios — 26/11/2026
+- Windows Build #662 (commit `42efc9a`) falhou com um único erro bloqueante: `MainWindow.Requests.cs(12,49) CS0103: Path não existe no contexto atual`.
+- Causa: o novo caminho do arquivo local de IPs bloqueados usava `Path`/ `Environment` sem importar `System.IO`; corrigido adicionando `using System.IO;` ao arquivo. Os demais itens no log eram avisos preexistentes/não bloqueantes.
+- Commit da correção: pendente de envio e novo Windows Build.
