@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '17 10 * * *'
 
 jobs:
   cloud-worker-tests:
@@ -20,6 +22,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: Setup .NET for offline media tests
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Test offline media service
+        run: dotnet run --project tests/Lyravoxen.OfflineTests/Lyravoxen.OfflineTests.csproj -c Release
       - name: Check Help coverage
         run: python tests/help_coverage.py
       - name: Extract and test Cloudflare Worker
