@@ -3095,7 +3095,7 @@ public partial class MainWindow : Window
         panel.Children.Add(artistBox);
         panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Letra completa", FontWeight = FontWeights.Bold });
         panel.Children.Add(lyricsBox);
-        var buttons = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var buttons = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
         var save = new System.Windows.Controls.Button { Content = "Salvar alterações", MinWidth = 130, Margin = new Thickness(4), Padding = new Thickness(10, 7, 10, 7) };
         var cancel = new System.Windows.Controls.Button { Content = "Cancelar", MinWidth = 90, Margin = new Thickness(4), Padding = new Thickness(10, 7, 10, 7) };
         buttons.Children.Add(cancel);
