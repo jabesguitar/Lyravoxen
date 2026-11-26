@@ -64,6 +64,7 @@ public partial class MainWindow : Window
     private bool _searchWebViewReady;
     private int _browserTabNumber = 1;
     private string? _nextVideoUrl;
+    private LibraryVideo? _nextOfflineVideo;
     private string? _pendingQueueVideoId;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
@@ -891,6 +892,7 @@ public partial class MainWindow : Window
             return;
         }
         _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
+        _nextOfflineVideo = null;
         SaveNextVideoPreference();
         NextTrackText.Text = "Próxima faixa preparada (" + videoId + "). A música atual continua tocando até você selecionar Tocar próxima.";
         PlayNextButton.IsEnabled = true;
@@ -900,6 +902,25 @@ public partial class MainWindow : Window
 
     private async void PlayNextPrepared_Click(object sender, RoutedEventArgs e)
     {
+        if (_nextOfflineVideo is { } offline)
+        {
+            if (string.IsNullOrWhiteSpace(offline.LocalPath) || !File.Exists(offline.LocalPath) ||
+                (offline.OfflineExpiresAt.HasValue && offline.OfflineExpiresAt.Value <= DateTime.Now))
+            {
+                _nextOfflineVideo = null;
+                PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
+                StatusText.Text = "A cópia offline preparada venceu ou não está disponível. Os dados da música continuam na biblioteca.";
+                return;
+            }
+            _nextOfflineVideo = null;
+            _nextVideoUrl = null;
+            SaveNextVideoPreference();
+            PlayNextButton.IsEnabled = false;
+            WorkspaceTabs.SelectedIndex = 0;
+            PlayLocalAudio(offline);
+            StatusText.Text = "Reproduzindo a cópia local autorizada: " + (offline.TrackName.Length > 0 ? offline.TrackName : offline.Title);
+            return;
+        }
         if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return;
         var url = _nextVideoUrl;
         var queuedVideoId = YouTubeLink.TryGetVideoId(url);
@@ -2089,6 +2110,7 @@ public partial class MainWindow : Window
             SelectComboItem(LineCountBox, _maxProjectionLines.ToString(CultureInfo.InvariantCulture));
             _nextVideoUrl = YouTubeLink.TryGetVideoId(preferences.NextVideoUrl) is { } queuedId
                 ? "https://www.youtube.com/watch?v=" + queuedId : null;
+            _nextOfflineVideo = null;
             PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
             NextTrackText.Text = _nextVideoUrl is null
                 ? "Pesquise e prepare a próxima música."

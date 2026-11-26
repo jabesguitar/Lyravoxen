@@ -342,6 +342,32 @@ public partial class MainWindow
 
     private void PrepareRequestAsNext(SongRequest request)
     {
+        var requestedName = LyricsPreviewService.Normalize(request.Name);
+        var offlineMatch = requestedName.Length == 0 ? null : _library.SelectMany(folder => folder.Videos)
+            .FirstOrDefault(video => video.IsOffline &&
+                !string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath) &&
+                (!video.OfflineExpiresAt.HasValue || video.OfflineExpiresAt.Value > DateTime.Now) &&
+                (LyricsPreviewService.Normalize(video.TrackName) == requestedName || LyricsPreviewService.Normalize(video.Title) == requestedName));
+        if (offlineMatch is not null)
+        {
+            if ((!string.IsNullOrWhiteSpace(_nextVideoUrl) || _nextOfflineVideo is not null) &&
+                System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                    "Já existe uma música preparada como próxima. Substituir por esta cópia offline?",
+                    "Lyravoxen", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+            _nextVideoUrl = null;
+            _nextOfflineVideo = offlineMatch;
+            SaveNextVideoPreference();
+            NextLyricsText.Text = "";
+            NextLyricsText.Visibility = Visibility.Collapsed;
+            NextTrackText.Text = "Próxima faixa offline preparada: " + (offlineMatch.TrackName.Length > 0 ? offlineMatch.TrackName : offlineMatch.Title) +
+                                 ". Será reproduzida localmente, sem internet, quando você tocar em Tocar próxima.";
+            PlayNextButton.IsEnabled = true;
+            StatusText.Text = "Pedido associado a uma cópia offline válida. A música atual continua tocando.";
+            RemoveRequest(request);
+            return;
+        }
+
         var videoId = YouTubeLink.TryGetVideoId(request.Url);
         if (videoId is null)
         {

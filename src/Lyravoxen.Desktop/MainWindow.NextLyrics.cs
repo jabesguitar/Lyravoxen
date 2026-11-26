@@ -239,6 +239,7 @@ public partial class MainWindow
         if (!string.IsNullOrWhiteSpace(_nextVideoUrl) && !replace)
             return (false, "Já existe uma próxima preparada. Escolha \"Trocar\" para substituí-la.");
         _nextVideoUrl = "https://www.youtube.com/watch?v=" + videoId;
+        _nextOfflineVideo = null;
         _nextHint = (videoId, label);
         _nextTyped = null;
         _nextRejectedVideoId = null;

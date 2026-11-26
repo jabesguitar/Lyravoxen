@@ -180,3 +180,10 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Windows Build #662 (commit `42efc9a`) falhou com um único erro bloqueante: `MainWindow.Requests.cs(12,49) CS0103: Path não existe no contexto atual`.
 - Causa: o novo caminho do arquivo local de IPs bloqueados usava `Path`/ `Environment` sem importar `System.IO`; corrigido adicionando `using System.IO;` ao arquivo. Os demais itens no log eram avisos preexistentes/não bloqueantes.
 - Commit da correção: pendente de envio e novo Windows Build.
+
+
+### Associação de pedidos a cópias offline — 26/11/2026
+- Ampliado o fluxo de pedidos: ao preparar uma música recebida, o Lyravoxen procura uma cópia offline válida na biblioteca pelo nome exato normalizado da música (campo do pedido comparado ao título/intérprete da faixa importada). Se encontrar arquivo local existente e dentro da validade, prepara essa cópia como próxima sem depender da internet; a reprodução só começa quando o operador aciona “Tocar próxima”.
+- Se não houver correspondência exata válida, o fluxo original do YouTube permanece intacto. A prévia antiga de letra da próxima é recolhida ao preparar uma faixa offline.
+- A preparação offline em memória ainda não é persistida para retomada após fechar o aplicativo e ainda não é exposta no JSON do controle remoto; a preparação e reprodução offline foram implementadas no fluxo da janela Pedidos do Windows. Esses pontos devem ser avaliados antes da entrega final.
+- Build Windows #664 (commit `5bf96d2`) avançou com compilação e teste de linha do tempo concluídos com sucesso; etapa de instalador ainda estava em execução no momento do registro. O erro CS0103 de `Path` foi corrigido com `using System.IO;`.

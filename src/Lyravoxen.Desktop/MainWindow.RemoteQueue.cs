@@ -161,13 +161,13 @@ public partial class MainWindow
     /// <summary>Chamado quando o player avisa que a música terminou sozinha (não quando você encerra).</summary>
     private void MaybeAutoAdvance()
     {
-        if (!_autoAdvance || string.IsNullOrWhiteSpace(_nextVideoUrl)) return;
+        if (!_autoAdvance || (string.IsNullOrWhiteSpace(_nextVideoUrl) && _nextOfflineVideo is null)) return;
         var token = ++_autoAdvanceToken;
         StatusText.Text = "A próxima música começa em 3 segundos…";
         Dispatcher.BeginInvoke(new Action(async () =>
         {
             await Task.Delay(3000);
-            if (token != _autoAdvanceToken || !_autoAdvance || string.IsNullOrWhiteSpace(_nextVideoUrl) || _lastPlayerState == 1) return;
+            if (token != _autoAdvanceToken || !_autoAdvance || (string.IsNullOrWhiteSpace(_nextVideoUrl) && _nextOfflineVideo is null) || _lastPlayerState == 1) return;
             PlayNextPrepared_Click(this, new RoutedEventArgs());
         }));
     }
