@@ -2877,13 +2877,19 @@ public partial class MainWindow : Window
         var filtered = string.IsNullOrWhiteSpace(search)
             ? songs
             : songs.Where(v => v.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (_selectedLibraryVideo is not null && !filtered.Contains(_selectedLibraryVideo))
+            _selectedLibraryVideo = null;
         _librarySelectionChanging = true;
         LibrarySongList.ItemsSource = null;
         LibrarySongList.ItemsSource = filtered;
         _librarySelectionChanging = false;
     }
 
-    private void LibraryFolder_SelectionChanged(object sender, SelectionChangedEventArgs e) => RefreshLibrarySongs();
+    private void LibraryFolder_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _selectedLibraryVideo = null;
+        RefreshLibrarySongs();
+    }
     private void LibrarySearch_TextChanged(object sender, TextChangedEventArgs e) => RefreshLibrarySongs();
     private void LibrarySearch_Click(object sender, RoutedEventArgs e) => RefreshLibrarySongs();
 
