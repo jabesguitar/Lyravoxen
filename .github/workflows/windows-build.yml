@@ -45,6 +45,13 @@ jobs:
         run: |
           npm install --prefix /tmp/lyravoxen-playwright playwright
           npx --yes --package=playwright playwright install --with-deps chromium
+      - name: Test public request form
+        working-directory: tests/js
+        env:
+          PW_MODULES: /tmp/lyravoxen-playwright/node_modules
+        run: |
+          python extract.py
+          node forms.test.mjs
       - name: Test mobile remote page
         working-directory: tests/js
         env:
