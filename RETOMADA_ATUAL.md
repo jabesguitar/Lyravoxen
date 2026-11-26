@@ -266,3 +266,82 @@ Projeto: `tests/Lyravoxen.OfflineTests`.
 
 ### Próxima ação
 Entregar ao usuário esta única compilação consolidada e o checklist manual final. Se os testes manuais forem aprovados, registrar a aprovação antes de considerar merge na `main`.
+
+
+## Revisão corretiva — Pedidos, Biblioteca Offline e anúncios — 26/11/2026
+
+### Solicitações do usuário
+- A aba Próxima música ainda mostra anúncios no início do vídeo.
+- Pedidos e Biblioteca Offline não estavam concluindo o fluxo esperado para links do YouTube; o usuário relatou dificuldade em baixar, salvar em pasta e renomear/organizar músicas.
+- Exibir IP/endereço de origem de quem usa o formulário público, com bloqueio e desbloqueio para reduzir spam/sabotagem.
+- Fazer uma única revisão ampla e uma única rodada manual, sem builds vazios intermediários.
+
+### Limites técnicos e de plataforma
+- Não implementar extração de áudio do YouTube nem contorno de anúncios/restrições. O player incorporado pode exibir anúncios servidos pela própria origem do YouTube; o bloqueador de domínios de terceiros não garante removê-los.
+- Para offline, são suportados: arquivo MP3/WAV local autorizado ou URL HTTPS direta que entregue o arquivo de áudio. URL de página do YouTube não é URL direta de áudio.
+- MAC não é disponibilizado ao servidor quando alguém acessa um site pela internet; o Worker pode registrar o IP público fornecido pelo Cloudflare. Não exibir campo MAC fictício.
+- O código do Worker foi atualizado na branch, mas o serviço em produção `lyravoxen-pedidos.ferkt319.workers.dev` não foi implantado por esta sessão: não há conexão autorizada com a conta Cloudflare. Para ativar IP/rate-limit na URL pública, é necessária uma implantação única do novo código pelo painel Cloudflare. Pedidos antigos, criados antes do Worker novo, podem não ter IP.
+
+### Implementações desta rodada
+- Worker Cloudflare:
+  - captura e armazena IP público `CF-Connecting-IP` junto com texto e horário do pedido;
+  - bloqueio/desbloqueio autenticado por IP via `/bloqueios`;
+  - limite básico de 5 envios por IP por janela de 10 minutos, além da fila global de até 150 pedidos;
+  - aviso no formulário sobre registro do IP público e horário para prevenção de abuso, esclarecendo que MAC não é coletado;
+  - documentação orienta a atualizar o Worker existente sem recriar KV ou trocar `ADMIN_TOKEN`.
+  - KV é eventualmente consistente; o rate-limit no Worker é proteção básica. Para ataques concorrentes/coordenados, complementar com regra Rate Limiting no Cloudflare.
+- App Pedidos:
+  - sincroniza a lista de bloqueios remotos quando abre a janela;
+  - exibe IP público por pedido quando o Worker atualizado o fornece;
+  - oferece Bloquear este IP / Desbloquear este IP e Atualizar bloqueios da internet;
+  - se IP vier vazio, avisa que o Worker público pode estar desatualizado;
+  - normaliza e valida endereços IP ao cadastrar bloqueios.
+- Biblioteca:
+  - importar URL direta que falhe agora oferece selecionar arquivo MP3/WAV local;
+  - colar URL do YouTube apresenta explicação e abre diretamente o seletor de arquivo autorizado;
+  - botão de importação continua aceitando múltiplos MP3/WAV;
+  - seleção de destino ao salvar pedido offline; não fixa tudo numa pasta genérica;
+  - novos comandos Mover para outra pasta e Remover desta pasta (o segundo preserva o arquivo de áudio);
+  - seletor permite criar nova pasta;
+  - busca inclui título, intérprete e compositor;
+  - renomear pasta valida nomes duplicados;
+  - adicionar vídeo atual à pasta usa identidade exata (ID do vídeo ou caminho da mídia offline), preservando metadados;
+  - SaveLibrary agora retorna sucesso/falha; operações críticas não exibem sucesso falso quando a persistência falha.
+- Ajuda atualizada para os novos botões e comportamento.
+
+### Validação final
+- Workflow: [45894030900](https://github.com/jabesguitar/Lyravoxen/actions/runs/45894030900)
+- SHA: `4f39f92562b6eb470b16be1d3513e9d1ecbe8543`
+- Branch: `feature/offline-library-on-redesign`
+- Job `cloud-worker-tests`: sucesso.
+  - Serviço offline: 21 verificações aprovadas (MP3/WAV, URL direta, deduplicação, SSRF, redirecionamentos, limite de tamanho, política de anúncios e expiração compartilhada).
+  - Worker: 44 testes aprovados, incluindo bloqueio/desbloqueio por IP e rate-limit.
+  - Ajuda: cobertura aprovada.
+  - C# static checks: aprovados.
+  - Formulário público em Chromium: 25 testes aprovados.
+  - Página mobile em Chromium: 112 testes aprovados.
+- Job `build`: sucesso.
+  - Ícone e splash: sucesso.
+  - Restore e `dotnet publish` Windows x64: sucesso.
+  - Cue timeline tests: sucesso.
+  - ZIP portátil: sucesso.
+  - Instalador Inno Setup: sucesso.
+  - Upload dos três artefatos: sucesso.
+- Artefatos gerados:
+  - `Lyravoxen-Windows-x64`: ID `15153435863`, 76,266,769 bytes.
+  - `Lyravoxen-Windows-x64-portable`: ID `15153276186`, 76,302,238 bytes.
+  - `Lyravoxen-Installer-Windows-x64`: ID `15153231348`, 53,845,674 bytes.
+  - Expiração prevista dos artefatos: 24/02/2027.
+- `main` continua no SHA `2051135a6e4915c13dda5730fa0248ed7dbcfe2f`; não foi alterada nem recebeu merge.
+
+### Limitações ainda abertas
+- Anúncios in-stream/first-party do YouTube continuam fora do alcance garantido do bloqueador; não prometer reprodução YouTube sem anúncios.
+- O Worker em produção precisa ser atualizado manualmente uma única vez para IP e bloqueios remotos aparecerem nos pedidos futuros.
+- Testes automatizados de mídia usam fixtures sintéticas e servidor HTTP controlado; reprodução real via WebView2/MediaElement e navegação real no PC anfitrião ainda exigem validação do usuário.
+- O pacote está pronto para uma única rodada manual no PC anfitrião; não pedir testes de builds intermediários.
+
+### Próxima ação
+1. Usuário instala a versão consolidada.
+2. Uma única implantação do Worker atualizado no Cloudflare, mantendo namespace KV e segredo existentes.
+3. Uma única rodada manual com MP3/WAV real, salvar/mover/renomear, pedido público com IP e navegação YouTube.
+4. Registrar os resultados antes de qualquer merge na `main`.
