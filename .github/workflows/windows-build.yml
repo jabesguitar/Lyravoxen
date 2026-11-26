@@ -2,9 +2,9 @@ name: Windows build
 
 on:
   push:
-    branches: [main, feature/integrated-bible-microphone-holyrics]
+    branches: [main, feature/integrated-bible-microphone-holyrics, feature/offline-library-workspace]
   pull_request:
-    branches: [main, fix/holyrics-connect-and-exit-projection]
+    branches: [main, fix/holyrics-connect-and-exit-projection, feature/offline-library-workspace]
   workflow_dispatch:
 
 jobs:
