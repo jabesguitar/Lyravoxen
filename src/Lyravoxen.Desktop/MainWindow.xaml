@@ -478,6 +478,11 @@
        <TextBlock Text="PESQUISAR MÚSICA" Foreground="{DynamicResource Accent}" FontSize="13" FontWeight="Bold" Margin="4,2,4,5"/>
        <TextBox x:Name="YoutubeSearchBox" MinHeight="40" TextWrapping="Wrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
        <Button Content="🔎 Pesquisar" Click="YoutubeSearch_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="35"/>
+       <Grid Margin="0,3,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Button x:Name="BrowserProtectionToggleButton" Grid.Column="0" Content="🛡 Proteção ligada" Click="BrowserProtectionToggle_Click" MinHeight="32" ToolTip="Ativar ou desativar o bloqueio de domínios de anúncios e rastreadores"/>
+        <Button Grid.Column="1" Content="Permitir neste site" Click="BrowserAllowSite_Click" MinHeight="32" ToolTip="Criar exceção para o domínio da aba atual"/>
+       </Grid>
+       <TextBlock x:Name="BrowserProtectionStatusText" Text="Carregando proteção..." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,0,4,4"/>
        <Grid Margin="0,1,0,3"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Button Grid.Column="0" Content="◀ Voltar" Click="YoutubeSearchBack_Click" MinHeight="34"/>
         <Button Grid.Column="1" Content="Avançar ▶" Click="YoutubeSearchForward_Click" MinHeight="34"/>
