@@ -3048,17 +3048,27 @@ public partial class MainWindow : Window
     {
         var existing = _library.SelectMany(f => f.Videos)
             .FirstOrDefault(v => v.IsOffline && string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
-        if (existing is not null)
+        var inFolder = folder.Videos.FirstOrDefault(v => v.IsOffline &&
+            string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
+        if (inFolder is not null)
         {
-            existing.OfflineExpiresAt = expires;
-            existing.SavedAt = DateTime.Now;
-            if (string.IsNullOrWhiteSpace(existing.Title)) existing.Title = title;
+            inFolder.OfflineExpiresAt = expires;
+            inFolder.SavedAt = DateTime.Now;
+            if (string.IsNullOrWhiteSpace(inFolder.Title)) inFolder.Title = title;
             return;
         }
         folder.Videos.Add(new LibraryVideo
         {
-            Title = title, TrackName = title, IsOffline = true, LocalPath = result.FilePath,
-            Format = result.Format, SavedAt = DateTime.Now, OfflineExpiresAt = expires
+            VideoId = existing?.VideoId ?? "",
+            Title = string.IsNullOrWhiteSpace(existing?.Title) ? title : existing.Title,
+            TrackName = string.IsNullOrWhiteSpace(existing?.TrackName) ? title : existing.TrackName,
+            Artist = existing?.Artist ?? "",
+            Composer = existing?.Composer ?? "",
+            Url = existing?.Url ?? "",
+            IsOffline = true, LocalPath = result.FilePath,
+            Format = result.Format, FullLyrics = existing?.FullLyrics ?? "",
+            Cues = existing?.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList() ?? new(),
+            SavedAt = DateTime.Now, OfflineExpiresAt = expires
         });
     }
 
