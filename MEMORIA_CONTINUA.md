@@ -140,3 +140,12 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Nenhuma lógica de sincronização, reprodução ou projeção foi modificada.
 - Estado: commit enviado à branch `redesign/brand-visual-layer`; falta Windows Build e validação visual do modo claro/escuro. O usuário ainda não confirmou o resultado.
 - Próxima ação: executar Windows Build e verificar a legibilidade da prévia ao vivo e da prévia bíblica nos dois temas.
+
+
+### Correção específica da prévia na aba Cadastrar Letras — 25/11/2026
+- Usuário confirmou que a prévia da aba Ao vivo passou a exibir as letras corretamente, mas a prévia da aba Cadastrar Letras continuava com texto branco sobre fundo branco no modo claro.
+- Causa identificada no XAML: o TextBlock de prévia da aba Cadastrar Letras tinha `Foreground="{DynamicResource Brush_FFFFFF}"` fixo, ao contrário do recurso dinâmico corrigido na aba Ao vivo.
+- Commit `eaf17f0bf612053e0cb6e80ab694a2b44a7cd87b` em `src/Lyravoxen.Desktop/MainWindow.xaml`: o texto vinculado a `ProjectionPreviewText` dentro da prévia de Cadastrar Letras agora usa `Brush_F2F6F8`, que se adapta ao tema (azul-marinho no claro e claro no escuro).
+- Nenhuma função, editor, sincronização ou projeção foi alterada.
+- Estado: alteração enviada à branch `redesign/brand-visual-layer`; falta compilar e conferir a tela Cadastrar Letras nos dois temas.
+- Próxima ação: executar Windows Build e validar a prévia na aba Cadastrar Letras.
