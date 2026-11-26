@@ -629,3 +629,17 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Build final: pendente até terminar a validação automatizada e executar a compilação Windows consolidada.
 - Teste manual do usuário: ainda não solicitado; será uma única rodada após entrega consolidada.
 - Próxima ação: concluir o run atual, executar build final Windows, corrigir falhas e registrar SHA, logs e artefatos reais em `RETOMADA_ATUAL.md`.
+
+
+### Fechamento da compilação consolidada — 26/11/2026
+- Workflow `45889091270`, SHA `76e1f018a9e84c65505de05064eb50534ae0cd86`, concluído com sucesso.
+- `cloud-worker-tests`: sucesso — 21 testes do serviço offline/políticas, cobertura da Ajuda, C# static checks, Worker e Playwright/mobile.
+- `build`: sucesso — `dotnet publish` Windows x64, timeline tests, ZIP portátil e instalador Inno Setup.
+- Artefatos:
+  - Windows x64: ID `15150797165`.
+  - Portable ZIP: ID `15150578815`.
+  - Instalador: ID `15150673234`.
+- Correção de build: referência WPF `HorizontalAlignment.Right` qualificada como `System.Windows.HorizontalAlignment.Right` após erro CS0176 na primeira tentativa; compilação subsequente passou.
+- A branch `main` foi consultada e permanece no SHA `2051135a6e4915c13dda5730fa0248ed7dbcfe2f`; não houve merge nem alteração nela.
+- Estado: pacote Windows consolidado disponível para uma única rodada manual. Ainda dependem de teste no PC anfitrião: reprodução offline real, navegação/ads em WebView2 real e inspeção visual em diferentes resoluções.
+- O agendamento diário foi escrito no YAML da branch, mas ainda não dispara até o workflow estar na branch padrão; manter `main` intacta sem autorização.
