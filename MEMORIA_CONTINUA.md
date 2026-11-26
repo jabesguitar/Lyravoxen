@@ -346,3 +346,16 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Integrar com a nova aba Biblioteca Offline e com a biblioteca física já existente; sem duplicar conteúdo.
 - UI: botão/ícone compacto no cartão do pedido, tanto na janela Pedidos do PC quanto na aba Pedidos do controle remoto. Não aumentar a área do player.
 - Estado: requisito aprovado para implementação; ainda não implementado nem testado. Incluir no checklist da rodada de desenvolvimento.
+
+
+### Decisão aprovada — automação máxima da Biblioteca Offline e preservação de versões exatas — 26/11/2026
+- Usuário escolheu explicitamente a Opção 3: automação máxima dentro das fontes permitidas.
+- Requisito adicional explícito: preservar as versões exatas dos hinos, inclusive gravações em tons abaixo (ex.: 1 tom, 1,5 tom, 2 tons ou 3 tons abaixo), playbacks e outras variantes.
+- Identidade de uma faixa offline não poderá ser determinada apenas pelo título/nome do hino. A associação deve priorizar o identificador exato do vídeo (por exemplo, ID do YouTube) e/ou identificador/hash do arquivo de áudio, mantendo metadados da versão/tonalidade quando disponíveis.
+- Não substituir automaticamente uma gravação por outra de mesmo título, nem considerar que versões em tonalidades diferentes são equivalentes.
+- Para links do YouTube, preservar o link e o ID exatos para reprodução online. Não extrair nem contornar restrições de download da plataforma.
+- Para contingência offline, automatizar a obtenção/ingestão somente de arquivos anexados, arquivos locais fornecidos pelo usuário/solicitante ou URLs diretas de áudio cujo download seja autorizado. Se o pedido tiver apenas link do YouTube e não houver arquivo correspondente autorizado, mostrar claramente “Offline não preparado/arquivo necessário”; manter a referência exata do vídeo.
+- A verificação automática dos pedidos deve procurar correspondência exata da versão, evitar duplicatas e registrar estado de preparação, validade e disponibilidade offline. A preparação poderá ser acionada pelo Windows ou controle remoto, sendo o PC anfitrião responsável pelo armazenamento.
+- A importação manual MP3/WAV continua disponível como alternativa complementar, sem ser removida.
+- Esta decisão aprova a direção de arquitetura e os requisitos, não significa que o recurso já esteja implementado, compilado ou testado.
+- Próxima etapa técnica: desenhar e implementar o modelo de identidade/versionamento de faixas e o fluxo de ingestão autorizada, integrados à Biblioteca existente e à nova área “Biblioteca Offline”, sem reduzir o player e sem reintroduzir rolagem para localizar comandos.
