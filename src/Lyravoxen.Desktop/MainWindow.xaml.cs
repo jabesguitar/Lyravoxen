@@ -746,7 +746,10 @@ public partial class MainWindow : Window
 
     private async Task InitializeBrowserViewAsync(Microsoft.Web.WebView2.Wpf.WebView2 view)
     {
+        await BrowserAdBlocker.InitializeAsync();
         await view.EnsureCoreWebView2Async();
+        BrowserAdBlocker.Attach(view.CoreWebView2);
+        RefreshBrowserProtectionStatus();
         view.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
         view.CoreWebView2.Settings.IsStatusBarEnabled = true;
         view.CoreWebView2.NavigationCompleted += (_, _) =>
@@ -754,6 +757,29 @@ public partial class MainWindow : Window
             if (ReferenceEquals(ActiveBrowserView, view) && view.Source is not null)
                 Dispatcher.Invoke(() => YoutubeSearchBox.Text = view.Source.ToString());
         };
+    }
+
+    private void RefreshBrowserProtectionStatus()
+    {
+        BrowserProtectionToggleButton.Content = BrowserAdBlocker.Enabled
+            ? "🛡 Proteção ligada"
+            : "Proteção desligada";
+        BrowserProtectionStatusText.Text = BrowserAdBlocker.Enabled
+            ? $"Proteção ativa · {BrowserAdBlocker.RuleCount:N0} regras · {BrowserAdBlocker.BlockedCount:N0} solicitações bloqueadas"
+            : "Proteção desativada para todas as abas";
+    }
+
+    private void BrowserProtectionToggle_Click(object sender, RoutedEventArgs e)
+    {
+        BrowserAdBlocker.Enabled = !BrowserAdBlocker.Enabled;
+        RefreshBrowserProtectionStatus();
+    }
+
+    private void BrowserAllowSite_Click(object sender, RoutedEventArgs e)
+    {
+        BrowserAdBlocker.AllowCurrentSite(ActiveBrowserView?.Source?.ToString());
+        StatusText.Text = "Exceção registrada para o domínio desta aba.";
+        RefreshBrowserProtectionStatus();
     }
 
     private async void NewBrowserTab_Click(object sender, RoutedEventArgs e)
