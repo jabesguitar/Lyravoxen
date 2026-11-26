@@ -97,6 +97,7 @@ public partial class MainWindow : Window
         Closing += async (_, _) =>
         {
             _offlineCleanupTimer.Stop();
+            _offlineMedia.Dispose();
             if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
             _micService?.Dispose();
             _micService = null;
