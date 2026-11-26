@@ -243,3 +243,11 @@
 - Correção aplicada nos dois arquivos: inclusão explícita de `using System.IO;`. O projeto usa implicit usings, mas a compilação do CI demonstrou que a referência não estava sendo resolvida nesses arquivos; a importação explícita remove a ambiguidade.
 - Não foram alterados métodos, lógica de áudio, servidor remoto ou comportamento funcional.
 - Próxima validação: aguardar novo CI após os commits corretivos e tratar apenas os próximos erros reais, caso apareçam.
+
+
+## 26/11/2026 — Correção de referências de arquivos na fila remota
+- Após corrigir `Stream` com `System.IO`, o CI avançou e reportou novos erros em `MainWindow.RemoteQueue.cs`: `File`, `Directory` e `Path` não reconhecidos nas linhas 148–155.
+- Causa: o arquivo parcial não importava `System.IO` apesar de usar operações de arquivo para salvar a preferência de avanço automático.
+- Correção: adicionado `using System.IO;` em `MainWindow.RemoteQueue.cs`. Nenhuma lógica de fila ou preferência foi alterada.
+- Avisos CS8602 e CS4014 em `MainWindow.xaml.cs` foram reportados como warnings, não bloqueiam esta compilação; não foram alterados para evitar mudanças fora do escopo.
+- Aguardar o próximo CI e tratar somente novos erros de compilação/teste.
