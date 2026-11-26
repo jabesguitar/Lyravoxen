@@ -16,9 +16,10 @@ internal static class BrowserAdBlocker
     private static readonly ConcurrentDictionary<string, byte> BlockedHosts = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, byte> AllowedHosts = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<CoreWebView2, byte> Attached = new();
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Lyravoxen", "browser-protection.json");
+    private static readonly string DataFolder = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen");
+    private static readonly string SettingsPath = Path.Combine(DataFolder, "browser-protection.json");
+    private static readonly string CachedHostsPath = Path.Combine(DataFolder, "browser-hosts.txt");
     private static readonly string HostsListUrl = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
     private static readonly string[] ProtectedHosts =
     {
@@ -46,12 +47,14 @@ internal static class BrowserAdBlocker
     public static int BlockedCount => Volatile.Read(ref _blockedCount);
     public static int RuleCount => BlockedHosts.Count;
 
-    public static async Task InitializeAsync()
+    public static Task InitializeAsync()
     {
         LoadSettings();
         foreach (var host in BuiltInBlockedHosts) BlockedHosts.TryAdd(host, 0);
+        LoadCachedHosts();
+        // Never delay browser startup for a network download; refresh rules in the background.
         _loadTask ??= LoadHostsListAsync();
-        await _loadTask;
+        return Task.CompletedTask;
     }
 
     public static void Attach(CoreWebView2 core)
@@ -110,7 +113,32 @@ internal static class BrowserAdBlocker
             using var response = await Http.GetAsync(HostsListUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
             var body = await response.Content.ReadAsStringAsync();
-            foreach (var raw in body.Split('\n'))
+            try
+            {
+                Directory.CreateDirectory(DataFolder);
+                File.WriteAllText(CachedHostsPath, body);
+            }
+            catch { }
+            ParseHosts(body);
+        }
+        catch
+        {
+            // Built-in and cached rules remain active when the public list cannot be downloaded.
+        }
+    }
+
+    private static void LoadCachedHosts()
+    {
+        try
+        {
+            if (File.Exists(CachedHostsPath)) ParseHosts(File.ReadAllText(CachedHostsPath));
+        }
+        catch { }
+    }
+
+    private static void ParseHosts(string body)
+    {
+        foreach (var raw in body.Split('\n'))
             {
                 var line = raw.Split('#')[0].Trim();
                 if (line.Length == 0) continue;
@@ -120,11 +148,6 @@ internal static class BrowserAdBlocker
                 if (host.Contains('.') && host.All(c => char.IsLetterOrDigit(c) || c is '.' or '-'))
                     if (!ProtectedHosts.Any(domain => IsHostOrChild(host, domain))) BlockedHosts.TryAdd(host, 0);
             }
-        }
-        catch
-        {
-            // Built-in rules remain active when the public list cannot be downloaded.
-        }
     }
 
     private sealed record Settings(bool Enabled, string[] AllowedHosts);
