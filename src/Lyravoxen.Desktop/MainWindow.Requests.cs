@@ -431,8 +431,8 @@ public partial class MainWindow
             var videoId = YouTubeLink.TryGetVideoId(request.Url) ?? "";
             var expires = DateTime.Now.AddDays(days);
             var title = string.IsNullOrWhiteSpace(request.Name) ? Path.GetFileNameWithoutExtension(result.FilePath) : request.Name;
-            var folder = _library.FirstOrDefault(x => string.Equals(x.Name, "Pedidos offline", StringComparison.OrdinalIgnoreCase));
-            if (folder is null) { folder = new LibraryFolder { Name = "Pedidos offline" }; _library.Add(folder); }
+            var folder = ChooseLibraryFolder("Salvar pedido na Biblioteca Offline");
+            if (folder is null) return;
             var existing = _library.SelectMany(f => f.Videos)
                 .FirstOrDefault(v => v.IsOffline && string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
             var inFolder = folder.Videos.FirstOrDefault(v => v.IsOffline &&
@@ -463,7 +463,7 @@ public partial class MainWindow
             request.OfflineVideoId = videoId;
             request.OfflineExpiresAt = expires;
             request.OfflineFormat = result.Format;
-            SaveLibrary();
+            if (!SaveLibrary()) throw new IOException("A Biblioteca não confirmou a gravação no disco. O arquivo de áudio foi preservado na pasta de mídia; tente salvar novamente.");
             SongRequestStore.Save(_requests);
             RefreshFolders(folder.Id);
             StatusText.Text = "Cópia offline validada e associada ao pedido. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
