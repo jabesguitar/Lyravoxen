@@ -100,4 +100,15 @@ const r2=await worker.fetch(new Request('https://x.workers.dev/enviar',{method:'
 j=await r2.json(); ok(r2.status===500&&/armazenamento/.test(j.status),'sem binding PEDIDOS: erro explicado');
 // sem ADMIN_TOKEN configurado ninguém lê
 const r3=await worker.fetch(new Request('https://x.workers.dev/pedidos',{headers:{authorization:'Bearer '}}),{PEDIDOS:new KV()}); ok(r3.status===401,'sem ADMIN_TOKEN: leitura bloqueada');
+// Limite por IP: até cinco pedidos em dez minutos, independente da fila global.
+const rateEnv={PEDIDOS:new KV(),ADMIN_TOKEN:'segredo-de-teste-123'};
+for(let i=0;i<5;i++){
+ const rr=await worker.fetch(new Request('https://x.workers.dev/enviar',{method:'POST',headers:{...jsonH,'CF-Connecting-IP':'203.0.113.77'},body:JSON.stringify({text:'https://youtu.be/rate'+String(i).padStart(8,'0')})}),rateEnv);
+ ok(rr.status===200,'limite por IP permite envio '+(i+1));
+}
+r=await worker.fetch(new Request('https://x.workers.dev/enviar',{method:'POST',headers:{...jsonH,'CF-Connecting-IP':'203.0.113.77'},body:JSON.stringify({text:'https://youtu.be/rate0000006'})}),rateEnv);
+j=await r.json();ok(r.status===429&&/5 pedidos por IP/.test(j.status),'sexto pedido em dez minutos é limitado por IP');
+r=await worker.fetch(new Request('https://x.workers.dev/enviar',{method:'POST',headers:{...jsonH,'CF-Connecting-IP':'203.0.113.78'},body:JSON.stringify({text:'https://youtu.be/rateother001'})}),rateEnv);
+ok(r.status===200,'limite de um IP não afeta outro IP');
+
 console.log(`worker: ${pass} ok, ${fail} falhas`); process.exit(fail?1:0);
