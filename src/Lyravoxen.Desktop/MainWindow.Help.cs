@@ -152,8 +152,8 @@ public partial class MainWindow
                 "Editar selecionada, Atualizar frase, Excluir frase, ↑/↓ Reordenar: corrigem a letra.\n" +
                 "Adicionar tempo, Marcar frase no tempo atual: acertam o instante de cada frase.\n" +
                 "Importar letra sincronizada (.LRC / .SRT): traz uma letra com tempos de um arquivo."),
-            new HelpItem("Sub-aba Histórico de vídeos", "Lista os vídeos já usados. Use a lupa (⌕) para filtrar e clique para reabrir."),
-            new HelpItem("Sub-aba Biblioteca", "Suas músicas organizadas em pastas. Criar pasta, Renomear, Excluir, Adicionar vídeo atual a esta pasta e Importar áudio MP3/WAV para uso offline. Letras confirmadas ou cadastradas pelo celular ficam na pasta \"Músicas sincronizadas\". ✨ Corrigir nomes de todas as músicas limpa o intérprete e o título de toda a biblioteca e do histórico (Playback, Legendado, um tom abaixo...).")
+            new HelpItem("Biblioteca Offline — Histórico de vídeos", "Na aba principal Biblioteca Offline, esta seção lista os vídeos já usados. Use a lupa (⌕) para filtrar e clique para reabrir."),
+            new HelpItem("Biblioteca Offline — Biblioteca de músicas", "Na aba principal Biblioteca Offline, esta seção mantém suas músicas organizadas em pastas. Criar pasta, Renomear, Excluir, Adicionar vídeo atual a esta pasta e Importar áudio MP3/WAV para uso offline. Letras confirmadas ou cadastradas pelo celular ficam na pasta \"Músicas sincronizadas\". ✨ Corrigir nomes de todas as músicas limpa o intérprete e o título de toda a biblioteca e do histórico (Playback, Legendado, um tom abaixo...).")
         });
 
     private static readonly HelpPage RegisterHelp = new(
