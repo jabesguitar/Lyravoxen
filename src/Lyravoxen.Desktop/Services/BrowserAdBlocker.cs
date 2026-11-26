@@ -57,7 +57,7 @@ internal static class BrowserAdBlocker
     public static void Attach(CoreWebView2 core)
     {
         if (!Attached.TryAdd(core, 0)) return;
-        core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
+        core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.All);
         core.WebResourceRequested += (_, args) =>
         {
             if (!Enabled || !Uri.TryCreate(args.Request.Uri, UriKind.Absolute, out var uri)) return;
