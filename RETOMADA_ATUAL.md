@@ -223,3 +223,46 @@ Projeto: `tests/Lyravoxen.OfflineTests`.
 3. Atualizar este registro com o SHA final, os jobs e os artefatos reais.
 4. Só então preparar a única compilação para a rodada de testes do usuário, com checklist específico de navegação real, reprodução offline, expiração e editor da Biblioteca.
 5. Não fazer merge na `main` sem aprovação explícita.
+
+
+## Resultado da compilação consolidada — 26/11/2026
+
+<badge color="success">CI e build Windows aprovados</badge>
+
+- Workflow: [45889091270](https://github.com/jabesguitar/Lyravoxen/actions/runs/45889091270)
+- SHA validado: `76e1f018a9e84c65505de05064eb50534ae0cd86`
+- Branch: `feature/offline-library-on-redesign`
+- Job `cloud-worker-tests`: sucesso.
+  - 21 verificações do serviço offline e políticas de navegador/expiração.
+  - Cobertura da Ajuda: sucesso.
+  - C# static checks: sucesso.
+  - Cloudflare Worker tests: sucesso.
+  - Playwright Chromium / mobile remote page: sucesso.
+- Job `build`: sucesso.
+  - Geração de ícone e splash compacta: sucesso.
+  - Restore e `dotnet publish` Windows x64: sucesso.
+  - Cue timeline tests: sucesso.
+  - ZIP portátil: sucesso.
+  - Instalador Inno Setup: sucesso.
+  - Upload dos três artefatos: sucesso.
+
+### Artefatos desta compilação
+- `Lyravoxen-Windows-x64` — artifact ID `15150797165` — 76,260,202 bytes.
+- `Lyravoxen-Windows-x64-portable` — artifact ID `15150578815` — 76,294,856 bytes.
+- `Lyravoxen-Installer-Windows-x64` — artifact ID `15150673234` — 53,834,443 bytes.
+- Os três artefatos constavam como disponíveis e não expirados no momento da consulta.
+
+### Correção realizada durante a compilação
+- A primeira tentativa completa falhou por uma referência ambígua a `HorizontalAlignment.Right` no editor da Biblioteca.
+- Corrigido para `System.Windows.HorizontalAlignment.Right`.
+- A compilação seguinte no SHA acima passou por completo.
+
+### Situação para a rodada única do usuário
+- A compilação Windows consolidada foi gerada e está disponível nos artefatos do workflow.
+- Ainda não há comprovação manual em um PC com WebView2 real de anúncios, pesquisa/login/reprodução do YouTube; a política de bloqueio foi testada isoladamente.
+- A reprodução real de MP3/WAV offline e o comportamento visual do editor/layout em diferentes resoluções também dependem da validação manual no computador anfitrião.
+- Não fazer merge na `main` sem aprovação explícita.
+- Rotina diária: cron está no workflow da branch, mas GitHub Actions só dispara `schedule` na branch padrão. Como a `main` permanece intacta, os testes diários ainda não estão ativos; o CI roda a cada push e pode ser iniciado manualmente pela interface do GitHub.
+
+### Próxima ação
+Entregar ao usuário esta única compilação consolidada e o checklist manual final. Se os testes manuais forem aprovados, registrar a aprovação antes de considerar merge na `main`.
