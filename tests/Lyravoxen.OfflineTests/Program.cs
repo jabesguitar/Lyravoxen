@@ -51,6 +51,15 @@ try
     var mp3Imported = await service.ImportLocalAsync(mp3Source, media);
     Assert(mp3Imported.Format == "mp3" && File.Exists(mp3Imported.FilePath), "importa MP3 local e identifica o formato pelo conteúdo");
 
+    var mp3DownloadService = new OfflineMediaService(
+        new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(mp3) { Headers = { ContentType = new MediaTypeHeaderValue("audio/mpeg") } }
+        }),
+        resolveHost: (_, _) => Task.FromResult(new[] { IPAddress.Parse("8.8.8.8") }));
+    var mp3Downloaded = await mp3DownloadService.DownloadAsync("https://media.example/audio.mp3", media);
+    Assert(mp3Downloaded.Format == "mp3" && File.Exists(mp3Downloaded.FilePath), "baixa MP3 direto e valida a assinatura do conteúdo");
+
     var rejectedYoutube = false;
     try { await service.DownloadAsync("https://www.youtube.com/watch?v=abc123", media); }
     catch (InvalidOperationException ex) when (ex.Message.Contains("não extrai áudio")) { rejectedYoutube = true; }
