@@ -83,25 +83,8 @@ internal static class BrowserAdBlocker
     }
 
     private static bool ShouldBlock(string host)
-    {
-        host = host.TrimEnd('.').ToLowerInvariant();
-        if (ProtectedHosts.Any(domain => IsHostOrChild(host, domain))) return false;
-        if (MatchesDomainSet(host, AllowedHosts)) return false;
-        return MatchesDomainSet(host, BlockedHosts);
-    }
-
-    private static bool MatchesDomainSet(string host, ConcurrentDictionary<string, byte> domains)
-    {
-        // Check the host and parent labels with O(number of labels) dictionary lookups.
-        var candidate = host;
-        while (true)
-        {
-            if (domains.ContainsKey(candidate)) return true;
-            var dot = candidate.IndexOf('.');
-            if (dot < 0) return false;
-            candidate = candidate[(dot + 1)..];
-        }
-    }
+        => Lyravoxen.Offline.BrowserRequestPolicy.ShouldBlock(
+            host, ProtectedHosts, BlockedHosts.Keys, AllowedHosts.Keys);
 
     private static bool IsHostOrChild(string host, string domain)
         => host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
