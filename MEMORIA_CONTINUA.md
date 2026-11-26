@@ -359,3 +359,44 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - A importação manual MP3/WAV continua disponível como alternativa complementar, sem ser removida.
 - Esta decisão aprova a direção de arquitetura e os requisitos, não significa que o recurso já esteja implementado, compilado ou testado.
 - Próxima etapa técnica: desenhar e implementar o modelo de identidade/versionamento de faixas e o fluxo de ingestão autorizada, integrados à Biblioteca existente e à nova área “Biblioteca Offline”, sem reduzir o player e sem reintroduzir rolagem para localizar comandos.
+
+
+### Checklist consolidado para rodada de ajustes de hoje — 26/11/2026
+**Pedido do usuário:** preparar compilação para testes e recuperar também problemas antigos que ficaram pendentes. Este checklist distingue estado conhecido de itens que precisam ser revalidados. A compilação atual não deve ser apresentada como implementação da Biblioteca Offline, pois essa funcionalidade ainda não foi codificada.
+
+#### A. Falhas confirmadas em teste real / prioridade alta
+- [ ] **Limpeza automática da projeção ao fim do hino:** teste real em 26/11 mostrou que a letra permanece no telão após o vídeo terminar; usuário precisa clicar “Sair da projeção”. Corrigir o evento de término do WebView2/YouTube e validar também a limpeza no destino de projeção ativo.
+- [ ] **Integração Holyrics — No quick presentation available:** erro apareceu na captura real. Investigar separadamente da limpeza automática; verificar criação/seleção de apresentação rápida e envio da letra.
+- [ ] **Anúncios no YouTube:** capturas mostraram anúncio lateral patrocinado e anúncio em vídeo antes da música. Bloqueio atual é parcial. Melhorar somente dentro das possibilidades técnicas permitidas, sem prometer remoção de anúncios servidos pelo próprio YouTube.
+- [ ] **Áudio offline MP3/WAV:** usuário ainda não informou o resultado do teste orientado (importar, tocar e repetir sem internet). Executar/registrar esse teste.
+
+#### B. Problemas e solicitações antigas a revalidar
+- [ ] **Projeção própria / saída:** usuário relatou que a projeção própria entrava sem atalho de saída e podia deixar o operador preso. Conferir estado atual e garantir uma saída claramente acessível, ou confirmar remoção dessa opção caso a decisão de escopo mais recente tenha prevalecido.
+- [ ] **Sincronização manual:** foi criada uma área/aba própria, mas o usuário relatou anteriormente que não conseguiu utilizá-la. Testar marcação/avanço manual durante a música e captura de letra não encontrada; não considerar concluída sem teste real.
+- [ ] **Sincronização e blocos de letra:** conferir quantidade de linhas configurada, substituição do bloco anterior pelo próximo e comportamento nos intervalos instrumentais (tela vazia quando não há letra).
+- [ ] **Próxima música:** revisar busca, preparação, confirmação da letra e botões anterior/próximo/projetar; manter comandos visíveis sem rolagem para encontrá-los.
+- [ ] **Copiar link atual:** houve pedidos antigos para restaurar o atalho na Próxima música e, depois, o usuário considerou desnecessário o botão geral Copiar link atual por já existir cópia na aba de música. Conferir a decisão mais recente: manter cópia contextual onde útil e não duplicar botão redundante.
+- [ ] **Metadados da música:** conferir ordem e compactação dos campos Autor, Composição, Intérprete e Título; pedido mais recente foi reduzir a altura/ocupação desses campos.
+- [ ] **Busca e captura de letras/hinos:** validar busca por título e cantor, identificação a partir do link e cadastro manual quando a letra não for encontrada. Fontes de referência anteriormente solicitadas incluem Cifra Club, Letras.mus.br e Harpa Cristã; não reintroduzir atalhos que o usuário pediu para retirar da aba Próxima música sem necessidade.
+- [ ] **Confirmação de letra:** revalidar o fluxo Sim/Não/Criar e associação da letra criada à gravação correta para reutilização.
+- [ ] **Projeção e atalhos Holyrics:** confirmar saída/limpeza sem depender de ESC ou de janela órfã; Ctrl+F9 foi relatado anteriormente como não funcional em um teste antigo, então revalidar somente se o atalho continuar no escopo.
+- [ ] **Prévia e legibilidade:** conferir tamanho/contraste da prévia, especialmente em modo claro, sem reduzir a área do player.
+- [ ] **Navegação sem rolagem:** revisar Cadastrar Letras e Próxima Música; botões e opções operacionais devem estar visíveis sem rolar. Conteúdo textual/listas pode ter navegação própria.
+- [ ] **Controle remoto no celular:** conferir pedidos, aba Ao vivo, botão vermelho Limpar telão (visual já aprovado), tema claro/escuro e comandos de preparação.
+- [ ] **Compatibilidade/desempenho:** conferir funcionamento em Windows 10/11 e máquinas Intel/Xeon mais antigas, sem exigir AVX2.
+
+#### C. Biblioteca Offline — aprovada, mas ainda não implementada
+- [ ] Mover as guias existentes Histórico de vídeos e Biblioteca para a nova aba principal Biblioteca Offline (depois de Bíblia e antes de Ajuda), sem duplicar dados.
+- [ ] Preservar importação manual MP3/WAV e reprodução local.
+- [ ] Implementar identidade exata de gravação/versão (ID do vídeo e/ou hash do arquivo; metadados de tonalidade quando disponíveis), sem casar apenas por título.
+- [ ] Preservar variantes exatas: original, tons abaixo, playbacks e outras gravações; nunca substituir silenciosamente uma versão por outra.
+- [ ] Preparação automática dos pedidos por arquivo/anexo ou URL direta de áudio com download autorizado; ação no Windows e no controle remoto, com armazenamento no PC anfitrião.
+- [ ] Para pedido contendo somente link do YouTube, preservar URL/ID exatos e informar que arquivo offline autorizado é necessário; não extrair nem contornar restrições.
+- [ ] Deduplicação, estado de download, validade configurável, gestão de espaço e limpeza automática sem apagar metadados/letras.
+- [ ] Não reduzir nem redimensionar o player.
+
+#### D. Estado da compilação / limite desta rodada
+- Último build funcional conhecido: Windows Build #685, run ID 45850726104, commit 4c9adcc27b5aa33783a975697154f7e8a6f5fc6b, concluído com sucesso em 26/11.
+- Desde o build #685, os commits 64baa00, 10533a3 e fb943b3 atualizaram somente MEMORIA_CONTINUA.md; não implementaram as mudanças funcionais da Biblioteca Offline nem corrigiram os problemas acima.
+- A branch redesign/brand-visual-layer tem workflow Windows configurado para executar em push. Uma nova compilação da HEAD atual valida que o código existente ainda compila, mas não transforma recursos documentados em funcionalidades.
+- **Próxima ação:** iniciar uma compilação de conferência da HEAD atual para gerar pacote de testes do código existente; em paralelo, manter o checklist acima como lista de correções. Depois da compilação, fornecer ao usuário o link do workflow/artefatos e orientar a rodada de verificação sem declarar bugs corrigidos antecipadamente.
