@@ -127,6 +127,18 @@ async function enviar(request, env) {
   }
   var senderIp = request.headers.get("CF-Connecting-IP") || "";
   if (senderIp && await env.PEDIDOS.get("b:" + senderIp)) return reply(false, "Este remetente está bloqueado para enviar pedidos.", 403);
+  // Limite básico por IP: até 5 envios a cada 10 minutos. A regra é complementar
+  // ao limite de fila e às regras Rate Limiting/WAF do Cloudflare.
+  if (senderIp) {
+    var rateKey = "r:" + senderIp;
+    var nowMs = Date.now();
+    var rate = null;
+    try { rate = JSON.parse((await env.PEDIDOS.get(rateKey)) || "null"); } catch (e) { rate = null; }
+    if (!rate || !Number.isFinite(rate.started) || nowMs - rate.started >= 600000) rate = { started: nowMs, count: 0 };
+    if (rate.count >= 5) return reply(false, "Limite de 5 pedidos por IP a cada 10 minutos. Tente novamente mais tarde.", 429);
+    rate.count++;
+    await env.PEDIDOS.put(rateKey, JSON.stringify(rate), { expirationTtl: 600 });
+  }
   var text = (await readText(request)).replace(/\u0000/g, "").trim();
   if (!text) return reply(false, "Escreva ou cole pelo menos um link de música.", 400);
   if (text.length > MAX) return reply(false, "Mensagem grande demais.", 413);
