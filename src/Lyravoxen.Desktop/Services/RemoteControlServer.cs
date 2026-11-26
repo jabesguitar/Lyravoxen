@@ -362,7 +362,7 @@ body.theme-light .theme-toggle{background:#fff;border-color:#9bc9dc;color:#087f9
   <div class="dim" id="nowinfo"></div>
   <div class="dim" id="nownext"></div>
   <div class="row"><button onclick="act('cueprev')">◀ Frase</button><button onclick="act('cuenext')">Frase ▶</button></div>
-  <button class="gap" onclick="ask('clearlive','Limpar o telão? A letra só volta quando você tocar em Voltar ao automático.')">🧹 Limpar telão</button>
+  <button class="warn gap" onclick="ask('clearlive','Limpar o telão? A letra só volta quando você tocar em Voltar ao automático.')">🧹 Limpar telão</button>
   <button id="autobtn" class="main gap" style="display:none" onclick="act('auto')">🔄 Voltar ao automático</button>
   <div class="row"><button onclick="act('seek','-10')">⏪ −10 s</button><button onclick="act('seek','10')">+10 s ⏩</button></div>
   <div class="row3"><button onclick="act('vol','-10')">🔉 −</button><button onclick="act('vol','mute')">🔇 Mudo</button><button onclick="act('vol','10')">🔊 +</button></div>
