@@ -440,7 +440,7 @@
         <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="12" Padding="12" ClipToBounds="True">
          <Grid>
           <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.07" Stretch="Uniform" IsHitTestVisible="False"/>
-          <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
+          <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
          </Grid>
         </Border>
         <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,9,4,2"/>
