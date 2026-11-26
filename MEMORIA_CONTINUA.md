@@ -192,3 +192,8 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 ### Teste automatizado do Worker integrado ao workflow — 26/11/2026
 - O workflow Windows foi ampliado com um job Ubuntu independente que extrai o Worker do código C# e executa `tests/js/worker.test.mjs`, incluindo os cenários de captura do IP público, bloqueio, listagem e desbloqueio. O build Windows agora depende da aprovação desse teste, evitando gerar instalador quando o Worker não passar.
 - A associação de pedidos a arquivos offline usa correspondência exata normalizada do nome informado no pedido; não faz aproximação por semelhança para evitar tocar a faixa errada.
+
+
+### Testes da página remota adicionados — 26/11/2026
+- O teste de interface mobile foi ajustado para respeitar os painéis recolhidos: verifica que pedidos e biblioteca iniciam fechados, expande cada painel antes de interagir e valida que ambos permanecem expansíveis.
+- O workflow Ubuntu foi ampliado para instalar Playwright/Chromium e executar `phone.test.mjs`, além dos 37 testes do Worker. Assim a ordenação, os painéis recolhíveis e os fluxos da interface móvel são verificados automaticamente antes do build Windows.

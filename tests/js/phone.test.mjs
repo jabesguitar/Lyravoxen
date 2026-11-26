@@ -104,6 +104,8 @@ ok((await text('st')).includes('Bíblia'),'PIN certo mostra o estado da Bíblia'
 // 2) aba Ao vivo vazia
 await page.click('#t-live'); await page.waitForFunction(()=>document.getElementById('reqhead').textContent.includes('(2)'));
 ok((await text('nowline')).includes('Nenhuma música tocando'),'sem música: mensagem no telão');
+ok((await page.locator('#requestsPanel').getAttribute('open'))===null,'painel de pedidos começa recolhido');
+await page.locator('#requestsPanel summary').click();
 ok(await page.isVisible('#nextempty')&&!(await page.isVisible('#nextbody')),'sem próxima: orienta a escolher um pedido');
 const reqHtml=await page.innerHTML('#reqlist');
 ok(reqHtml.includes('&lt;img')&&!reqHtml.includes('<img src=x'),'nome de pedido malicioso aparece como texto (não vira HTML)');
@@ -162,6 +164,8 @@ await page.click('text=⏯ Pausar / continuar'); await page.waitForFunction(()=>
 ok(true,'pausar atualiza o estado');
 
 // 9) biblioteca: buscar e escolher
+ok((await page.locator('#libraryPanel').getAttribute('open'))===null,'painel da biblioteca começa recolhido');
+await page.locator('#libraryPanel summary').click();
 await page.fill('#lq','santo'); await page.click('text=🔍 Buscar'); await page.waitForSelector('#liblist .item');
 ok((await page.locator('#liblist .item').count())===1&&(await text('liblist')).includes('letra sincronizada'),'busca na biblioteca mostra o resultado e a situação da letra');
 dialogs.length=0; await page.click('#liblist button:has-text("Próxima")'); await page.waitForFunction(()=>document.getElementById('nextbody').style.display==='block');
@@ -304,7 +308,7 @@ await page.click('#t-live');
 const order=await page.evaluate(()=>{const ids=['nowline','audiobtn','nl','nextempty','reqhead','liblist'];return ids.every((id,i)=>ids.slice(i+1).every(next=>!!(document.getElementById(id).compareDocumentPosition(document.getElementById(next))&Node.DOCUMENT_POSITION_FOLLOWING)));});
 ok(order,'ordem: telão, áudio PC, link YouTube, próxima, pedidos e biblioteca');
 ok(await page.locator('#requestsPanel').count()===1&&await page.locator('#libraryPanel').count()===1,'pedidos e biblioteca têm painéis recolhíveis');
-ok((await page.locator('#requestsPanel').getAttribute('open'))===null&&(await page.locator('#libraryPanel').getAttribute('open'))===null,'painéis começam recolhidos');
+ok((await page.locator('#requestsPanel').getAttribute('open'))!==null&&(await page.locator('#libraryPanel').getAttribute('open'))!==null,'os dois painéis podem ser expandidos');
 dialogs.length=0; await page.click('text=🧹 Limpar telão'); await page.waitForTimeout(400);
 ok(dialogs.some(d=>d.includes('Limpar o telão')),'limpar telão (Ao vivo) continua pedindo confirmação'); ok(lastCall('clearlive')!==undefined,'limpar telão chama o computador');
 await page.click('#autobtn').catch(()=>{});

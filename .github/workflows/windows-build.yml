@@ -25,6 +25,17 @@ jobs:
         run: |
           python extract.py
           node worker.test.mjs
+      - name: Install Playwright Chromium
+        run: |
+          npm install --prefix /tmp/lyravoxen-playwright playwright
+          npx --yes --package=playwright playwright install --with-deps chromium
+      - name: Test mobile remote page
+        working-directory: tests/js
+        env:
+          PW_MODULES: /tmp/lyravoxen-playwright/node_modules
+        run: |
+          python extract.py
+          node phone.test.mjs
 
   build:
     needs: cloud-worker-tests
