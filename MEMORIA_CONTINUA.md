@@ -280,3 +280,26 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
   - Áudio offline MP3/WAV: ainda não testado; usuário pediu tutorial.
 - Tutorial fornecido: na aba Ao vivo, selecionar guia interna “Biblioteca”; criar/selecionar pasta; “Importar áudio MP3/WAV para uso offline”; escolher arquivo de áudio próprio/autorizado; definir 5/7/14/30 dias; aguardar importação; clicar na faixa da lista para tocar; desligar internet e selecionar novamente a faixa para validar offline. Não usar “Preparar próxima” para este teste.
 - Próxima ação técnica: investigar correção de limpeza automática ao término e integração Holyrics “No quick presentation available”. Próxima ação do usuário: executar o tutorial de importação/reprodução offline e reportar resultado; manter checklist atualizado.
+
+### Nova proposta do usuário — biblioteca automática de segurança offline — 26/11/2026
+**Solicitação/ideia do usuário (ainda em fase de definição; não implementada nem aprovada como especificação final):**
+- Manter a importação manual de áudio MP3/WAV externo. Ela atende casos em que alguém entrega um arquivo que não está no YouTube.
+- Adicionar uma biblioteca/cache automático: quando uma música for reproduzida, o Lyravoxen deve tentar guardar uma cópia de áudio local, junto com os dados/letra associados, com prazo de validade configurável.
+- Se a conexão cair, permitir reproduzir a cópia local sem internet.
+- Para pedidos, quando chegar uma música com um arquivo de áudio disponível/anexado, baixar/copiar automaticamente para a área local de segurança, sem exigir ação manual, com prazo de retenção configurável.
+- Ao vencer o prazo, excluir automaticamente o arquivo de áudio, preservando o registro/dados do pedido e da música conforme definido.
+- Objetivo: redundância para cultos/eventos sem internet; evitar que uma música solicitada fique indisponível por queda de conexão.
+**Distinção importante:** importação manual existente ≠ cache automático de músicas reproduzidas ≠ download automático de anexos de áudio dos pedidos.
+**Auditoria preliminar do código atual na branch `redesign/brand-visual-layer`:**
+- A importação manual MP3/WAV existe em `MainWindow.xaml.cs`, dentro da Biblioteca; copia o arquivo para `%LOCALAPPDATA%\\Lyravoxen\\Media`, registra validade e cria LibraryVideo offline.
+- Selecionar uma faixa offline na Biblioteca chama `PlayLocalAudio(video)`.
+- Pedidos atuais são essencialmente texto com links/metadados. `CloudRequestClient.FetchAsync` busca `id`, `text` e `ip`; `CloudTickAsync` importa texto usando `SongRequestStore.MessagesToJson` e `Parse`. O formulário web atual aceita nome/link e envia texto JSON. Não foi encontrado fluxo atual de upload/armazenamento binário de anexos de áudio nos pedidos.
+- Música do YouTube é atualmente reproduzida dentro do WebView2; o código examinado não demonstra mecanismo de obtenção/armazenamento de arquivo de áudio do stream. Portanto, cache automático de qualquer música do YouTube não pode ser prometido sem investigar fontes, permissões, direitos e viabilidade técnica. Uma alternativa segura é cache de arquivos fornecidos pelo usuário/solicitante ou URLs diretas de áudio autorizadas.
+- Não confundir cache de reprodução com download irrestrito de áudio do YouTube.
+**Pontos a definir antes de implementar:**
+1. O que exatamente significa “música reproduzida”: qualquer vídeo iniciado, ou só faixas reconhecidas/cadastradas?
+2. Para pedidos, o solicitante poderá anexar MP3/WAV no formulário/link? Como tratar pedidos recebidos pelo WhatsApp/Cloudflare, que hoje só carregam texto/link?
+3. Prazo de retenção: uma configuração global (ex.: 1, 3, 7, 15, 30 dias) ou prazos separados para cache de reprodução e anexos de pedidos?
+4. Limite de armazenamento e limpeza automática quando o disco ficar cheio.
+5. Comportamento quando há cópia local válida: oferecer “Reproduzir offline” ou preferir automaticamente a cópia local quando a internet falhar?
+**Estado:** ideia compreendida e registrada como proposta pendente. Nenhum código foi alterado para essa funcionalidade. Preservar a importação manual existente.
