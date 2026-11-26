@@ -381,20 +381,29 @@ public partial class MainWindow
             if (folder is null) { folder = new LibraryFolder { Name = "Pedidos offline" }; _library.Add(folder); }
             var existing = _library.SelectMany(f => f.Videos)
                 .FirstOrDefault(v => v.IsOffline && string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
-            if (existing is null)
+            var inFolder = folder.Videos.FirstOrDefault(v => v.IsOffline &&
+                string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
+            if (inFolder is null)
             {
-                existing = new LibraryVideo
+                inFolder = new LibraryVideo
                 {
-                    VideoId = videoId, Title = title, TrackName = title, Url = request.Url,
+                    VideoId = videoId,
+                    Title = string.IsNullOrWhiteSpace(existing?.Title) ? title : existing.Title,
+                    TrackName = string.IsNullOrWhiteSpace(existing?.TrackName) ? title : existing.TrackName,
+                    Artist = existing?.Artist ?? "",
+                    Composer = existing?.Composer ?? "",
+                    Url = string.IsNullOrWhiteSpace(existing?.Url) ? request.Url : existing.Url,
                     IsOffline = true, LocalPath = result.FilePath, Format = result.Format,
+                    FullLyrics = existing?.FullLyrics ?? "",
+                    Cues = existing?.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList() ?? new(),
                     SavedAt = DateTime.Now, OfflineExpiresAt = expires
                 };
-                folder.Videos.Add(existing);
+                folder.Videos.Add(inFolder);
             }
             else
             {
-                existing.OfflineExpiresAt = expires;
-                if (string.IsNullOrWhiteSpace(existing.Url)) existing.Url = request.Url;
+                inFolder.OfflineExpiresAt = expires;
+                if (string.IsNullOrWhiteSpace(inFolder.Url)) inFolder.Url = request.Url;
             }
             request.OfflineLocalPath = result.FilePath;
             request.OfflineVideoId = videoId;
