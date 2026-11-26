@@ -6,6 +6,7 @@ using System.Text.Json;
 namespace Lyravoxen.Services;
 
 internal sealed record CloudRequest(string Id, string Text, string SenderIp);
+internal sealed record CloudBlockedSender(string Ip, string Name);
 
 /// <summary>Conversa do Lyravoxen com o serviço de pedidos na nuvem (ver CloudWorker).</summary>
 internal static class CloudRequestClient
@@ -65,6 +66,27 @@ internal static class CloudRequestClient
             return (true, newVersion, items, "");
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException) { return (false, "", items, Explain(ex)); }
+    }
+
+    public static async Task<(bool Ok, List<CloudBlockedSender> Items, string Message)> GetBlockedAsync(string baseUrl, string token)
+    {
+        var items = new List<CloudBlockedSender>();
+        try
+        {
+            using var request = Build(HttpMethod.Get, baseUrl, "/bloqueios", token);
+            using var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return (false, items, "Erro " + (int)response.StatusCode + " ao consultar bloqueios.");
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (json.RootElement.TryGetProperty("blocked", out var list) && list.ValueKind == JsonValueKind.Array)
+                foreach (var item in list.EnumerateArray())
+                {
+                    var ip = item.TryGetProperty("ip", out var ipValue) ? ipValue.GetString() ?? "" : "";
+                    var name = item.TryGetProperty("name", out var nameValue) ? nameValue.GetString() ?? "" : "";
+                    if (ip.Length > 0) items.Add(new CloudBlockedSender(ip, name));
+                }
+            return (true, items, "");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException) { return (false, items, Explain(ex)); }
     }
 
     public static async Task<(bool Ok, string Message)> SetBlockedAsync(string baseUrl, string token, string ip, string name, bool blocked)
