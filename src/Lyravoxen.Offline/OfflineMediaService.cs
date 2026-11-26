@@ -59,8 +59,19 @@ public sealed class OfflineMediaService : IDisposable
             if (format == "mp3" && extension is not (".mp3" or "")) throw new InvalidDataException("A extensão do endereço não corresponde ao áudio MP3 recebido.");
             if (format == "wav" && extension is not (".wav" or "")) throw new InvalidDataException("A extensão do endereço não corresponde ao áudio WAV recebido.");
             var hash = await HashFileAsync(temp, cancellationToken);
-            var existing = Directory.EnumerateFiles(mediaFolder, "*." + format)
-                .FirstOrDefault(path => string.Equals(HashFileAsync(path, CancellationToken.None).GetAwaiter().GetResult(), hash, StringComparison.OrdinalIgnoreCase));
+            string? existing = null;
+            foreach (var candidate in Directory.EnumerateFiles(mediaFolder, "*." + format))
+            {
+                try
+                {
+                    if (string.Equals(await HashFileAsync(candidate, cancellationToken), hash, StringComparison.OrdinalIgnoreCase))
+                    {
+                        existing = candidate;
+                        break;
+                    }
+                }
+                catch (IOException) { /* arquivo em uso ou incompleto: ignora e continua */ }
+            }
             if (existing is not null)
             {
                 File.Delete(temp); temp = null;
@@ -99,7 +110,9 @@ public sealed class OfflineMediaService : IDisposable
 
     private async ValueTask<Stream> ConnectPublicAsync(SocketsHttpConnectionContext context, CancellationToken token)
     {
-        var addresses = await _resolveHost(context.DnsEndPoint.Host, token);
+        var addresses = IPAddress.TryParse(context.DnsEndPoint.Host, out var literal)
+            ? new[] { literal }
+            : await _resolveHost(context.DnsEndPoint.Host, token);
         if (addresses.Length == 0 || addresses.Any(address => !IsPublicAddress(address)))
             throw new HttpRequestException("O domínio resolveu para um endereço local, privado ou não permitido.");
         Exception? lastError = null;
