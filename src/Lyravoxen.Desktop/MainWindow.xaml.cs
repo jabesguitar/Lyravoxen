@@ -2814,12 +2814,12 @@ public partial class MainWindow : Window
         // Só remove os bytes quando nenhum item da biblioteca ou pedido ainda referencia o mesmo arquivo.
         foreach (var path in expiredPaths)
         {
-            var referencedByLibrary = _library.SelectMany(folder => folder.Videos)
-                .Any(video => video.IsOffline && string.Equals(video.LocalPath, path, StringComparison.OrdinalIgnoreCase));
-            var referencedByRequest = _requests.Any(request =>
-                string.Equals(request.OfflineLocalPath, path, StringComparison.OrdinalIgnoreCase) &&
-                (!request.OfflineExpiresAt.HasValue || request.OfflineExpiresAt.Value > now));
-            if (!referencedByLibrary && !referencedByRequest)
+            var libraryReferences = _library.SelectMany(folder => folder.Videos)
+                .Where(video => video.IsOffline).Select(video => video.LocalPath);
+            var requestReferences = _requests
+                .Where(request => !request.OfflineExpiresAt.HasValue || request.OfflineExpiresAt.Value > now)
+                .Select(request => request.OfflineLocalPath);
+            if (OfflineExpiryPolicy.CanDelete(path, libraryReferences, requestReferences))
             {
                 try { if (File.Exists(path)) File.Delete(path); }
                 catch (Exception ex) { AppLog.Error("Não foi possível remover uma cópia offline vencida", ex); }
