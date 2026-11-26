@@ -6,7 +6,7 @@ namespace Lyravoxen.Offline;
 
 public sealed record OfflineMediaResult(string FilePath, string Format, long Size, string Sha256);
 
-public sealed class OfflineMediaService
+public sealed class OfflineMediaService : IDisposable
 {
     public const long DefaultMaxBytes = 50L * 1024 * 1024;
     private readonly HttpClient _http;
@@ -94,6 +94,8 @@ public sealed class OfflineMediaService
         }
         return new OfflineMediaResult(target, format, new FileInfo(target).Length, hash);
     }
+
+    public void Dispose() => _http.Dispose();
 
     private async ValueTask<Stream> ConnectPublicAsync(SocketsHttpConnectionContext context, CancellationToken token)
     {
