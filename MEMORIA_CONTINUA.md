@@ -197,3 +197,8 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 ### Testes da página remota adicionados — 26/11/2026
 - O teste de interface mobile foi ajustado para respeitar os painéis recolhidos: verifica que pedidos e biblioteca iniciam fechados, expande cada painel antes de interagir e valida que ambos permanecem expansíveis.
 - O workflow Ubuntu foi ampliado para instalar Playwright/Chromium e executar `phone.test.mjs`, além dos 37 testes do Worker. Assim a ordenação, os painéis recolhíveis e os fluxos da interface móvel são verificados automaticamente antes do build Windows.
+
+
+### Correção detectada pelo teste da página móvel — 26/11/2026
+- O teste Playwright identificou que a primeira reorganização da aba Ao Vivo havia deixado de fora o painel auxiliar oculto `pastepanel`, usado pelo botão “Criar letra”. A causa foi reconstruir a área apenas com os cartões visíveis e não preservar esse painel.
+- Correção: reinserido o painel oculto original antes dos painéis recolhíveis, preservando seu HTML e identificadores. O teste móvel permanece habilitado para validar os fluxos completos, não apenas a ordem visual.

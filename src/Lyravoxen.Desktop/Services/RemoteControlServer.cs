@@ -407,6 +407,11 @@ body.theme-light .theme-toggle{background:#fff;border-color:#9bc9dc;color:#087f9
  </div><div class="card" id="queuecard" style="display:none"><h2 id="queuehead">📋 Fila</h2><div id="queuelist"></div>
   <button class="gap" onclick="ask('qclear','Limpar a fila inteira?')">🗑 Limpar fila</button>
  </div>
+<div class="card" id="pastepanel" style="display:none"><h2>✎ Colar a letra</h2>
+  <div class="dim" id="pastehint"></div>
+  <textarea id="pastebox" rows="7" placeholder="Cole aqui a letra completa (copie no Letras.mus.br, Cifra Club...). Uma linha em branco entre as estrofes."></textarea>
+  <div class="row"><button class="main" onclick="sendPaste()">💾 Salvar letra</button><button onclick="closePaste()">✖ Cancelar</button></div>
+ </div>
 <details class="card collapsible" id="requestsPanel"><summary>📥 Pedidos em espera <span>Toque para expandir ou recolher</span></summary><div class="card"><h2 id="reqhead">📥 Pedidos</h2><div id="reqlist" class="dim">Nenhum pedido na lista.</div></div></details>
 <details class="card collapsible" id="libraryPanel"><summary>📚 Biblioteca e últimas músicas <span>Toque para expandir ou recolher</span></summary><div class="card"><h2>📚 Buscar na biblioteca</h2>
   <input id="lq" placeholder="Nome da música ou autor" autocomplete="off" onkeydown="if(event.key==='Enter')libSearch()">
