@@ -88,3 +88,16 @@ A execução comprova build e testes automatizados indicados acima. **Não compr
 
 ## Próxima ação
 Continuar diretamente na branch `feature/offline-library-on-redesign`, inspecionando os XAML e serviços existentes antes de alterar. Não pedir nenhuma ação ao usuário agora. Atualizar este registro e `MEMORIA_CONTINUA.md` após mudanças significativas.
+
+
+## Atualização após as capturas — 26/11/2026
+- Alterado o painel esquerdo da aba Próxima música no commit 7580049ac07b6096e1b86fd602bb8716541df236.
+- Removido o ScrollViewer que permitia rolagem vertical; os controles foram reorganizados em grade compacta, com botões de menor altura/padding e fontes menores. As ações de proteção, navegação, atualização, copiar link, fontes e abas foram mantidas.
+- A coluna direita que contém o navegador/WebView2 foi preservada sem alteração intencional de largura/estrutura.
+- Workflow acionado automaticamente pelo push: 45875746475 (status queued no último acompanhamento). Não instalar/testar até o CI terminar e até a rodada consolidada.
+- A alteração visual ainda precisa passar por build e inspeção real; não declarar como validada visualmente antes disso.
+
+## Registro documental
+- Arquivo completo de retomada: este arquivo, mantido no repositório.
+- Histórico cronológico: MEMORIA_CONTINUA.md atualizado no commit 8a115be77d78aab91945537d425a7b8c6bc65134.
+- Cópia local para o usuário: RETOMADA_ATUAL_LYRAVOXEN.md.
