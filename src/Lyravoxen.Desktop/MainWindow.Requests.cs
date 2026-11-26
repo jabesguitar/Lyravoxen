@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using Lyravoxen.Models;
+using Lyravoxen.Offline;
 using Lyravoxen.Services;
 
 namespace Lyravoxen;
@@ -340,7 +341,7 @@ public partial class MainWindow
 
 
     /// <summary>Importa um arquivo autorizado e o associa ao pedido e ao ID exato do vídeo quando disponível.</summary>
-    private void ImportOfflineForRequest(SongRequest request)
+    private async void ImportOfflineForRequest(SongRequest request)
     {
         var retention = PromptForText("Validade da cópia offline", "Por quantos dias manter esta cópia local? (5, 7, 14 ou 30)", "30");
         if (retention is null) return;
@@ -350,42 +351,59 @@ public partial class MainWindow
             return;
         }
 
-        using var dialog = new System.Windows.Forms.OpenFileDialog
-        {
-            Title = "Selecione um áudio autorizado para este pedido",
-            Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
-            Multiselect = false
-        };
-        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-
         try
         {
-            var ext = Path.GetExtension(dialog.FileName).ToLowerInvariant();
-            if (ext is not ".mp3" and not ".wav") throw new InvalidOperationException("Escolha um arquivo MP3 ou WAV.");
-            var mediaFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
-            Directory.CreateDirectory(mediaFolder);
-            var target = Path.Combine(mediaFolder, Guid.NewGuid().ToString("N") + ext);
-            File.Copy(dialog.FileName, target, false);
+            OfflineMediaResult result;
+            if (YouTubeLink.TryGetVideoId(request.Url) is null)
+            {
+                StatusText.Text = "Baixando o arquivo de áudio direto do endereço do pedido...";
+                result = await _offlineMedia.DownloadAsync(request.Url, OfflineMediaFolder);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                    "O pedido contém um link do YouTube. O Lyravoxen não extrai áudio do YouTube nem contorna anúncios ou restrições. Se você possui o áudio autorizado, selecione o arquivo MP3/WAV no computador.",
+                    "Áudio autorizado necessário", MessageBoxButton.OK, MessageBoxImage.Information);
+                using var dialog = new System.Windows.Forms.OpenFileDialog
+                {
+                    Title = "Selecione um áudio autorizado para este pedido",
+                    Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
+                    Multiselect = false
+                };
+                if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                result = await _offlineMedia.ImportLocalAsync(dialog.FileName, OfflineMediaFolder);
+            }
 
             var videoId = YouTubeLink.TryGetVideoId(request.Url) ?? "";
             var expires = DateTime.Now.AddDays(days);
-            var title = string.IsNullOrWhiteSpace(request.Name) ? Path.GetFileNameWithoutExtension(dialog.FileName) : request.Name;
-            var folder = _library.FirstOrDefault(x => x.Name == "Pedidos offline");
+            var title = string.IsNullOrWhiteSpace(request.Name) ? Path.GetFileNameWithoutExtension(result.FilePath) : request.Name;
+            var folder = _library.FirstOrDefault(x => string.Equals(x.Name, "Pedidos offline", StringComparison.OrdinalIgnoreCase));
             if (folder is null) { folder = new LibraryFolder { Name = "Pedidos offline" }; _library.Add(folder); }
-            folder.Videos.Add(new LibraryVideo
+            var existing = _library.SelectMany(f => f.Videos)
+                .FirstOrDefault(v => v.IsOffline && string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
+            if (existing is null)
             {
-                VideoId = videoId, Title = title, TrackName = title, Url = request.Url,
-                IsOffline = true, LocalPath = target, Format = ext.TrimStart('.'),
-                SavedAt = DateTime.Now, OfflineExpiresAt = expires
-            });
-            request.OfflineLocalPath = target;
+                existing = new LibraryVideo
+                {
+                    VideoId = videoId, Title = title, TrackName = title, Url = request.Url,
+                    IsOffline = true, LocalPath = result.FilePath, Format = result.Format,
+                    SavedAt = DateTime.Now, OfflineExpiresAt = expires
+                };
+                folder.Videos.Add(existing);
+            }
+            else
+            {
+                existing.OfflineExpiresAt = expires;
+                if (string.IsNullOrWhiteSpace(existing.Url)) existing.Url = request.Url;
+            }
+            request.OfflineLocalPath = result.FilePath;
             request.OfflineVideoId = videoId;
             request.OfflineExpiresAt = expires;
-            request.OfflineFormat = ext.TrimStart('.');
+            request.OfflineFormat = result.Format;
             SaveLibrary();
             SongRequestStore.Save(_requests);
-            RefreshFolders();
-            StatusText.Text = "Cópia offline preparada para o pedido. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
+            RefreshFolders(folder.Id);
+            StatusText.Text = "Cópia offline validada e associada ao pedido. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
             RefreshRequestsWindow();
         }
         catch (Exception ex)
