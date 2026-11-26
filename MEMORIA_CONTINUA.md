@@ -336,3 +336,13 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Diretriz geral permanece: botões minimalistas/compactos; eliminar rolagem vertical usada apenas para localizar botões/opções. Conteúdo longo (letras/listas) pode exigir navegação própria; evitar esconder dados ou prejudicar acessibilidade.
 - Não iniciar testes funcionais antes de concluir a reorganização visual e o fluxo da Biblioteca Offline. Ao final da implementação, pausar para o usuário testar e fornecer checklist de verificação.
 - Estado desta decisão: aprovada pelo usuário. Código ainda não alterado nesta etapa; próxima etapa de implementação na branch `redesign/brand-visual-layer`.
+
+### Opção de download antecipado por pedido — computador e controle remoto — 26/11/2026
+- Solicitação explícita do usuário: em cada item da aba Pedidos, disponibilizar ação para baixar/preparar previamente a música para uso offline, acionável tanto no aplicativo Windows quanto pelo controle remoto no celular.
+- Objetivo: antes do evento, com internet disponível, baixar o arquivo de áudio para que uma falha de conexão durante o evento não impeça a reprodução.
+- A ação deve verificar primeiro se já existe cópia local válida; se existir, não duplicar. Se houver arquivo/anexo MP3/WAV ou URL direta de áudio com download autorizado, baixar para a Biblioteca Offline, respeitar validade configurada e mostrar estado (baixando, disponível offline, falha/indisponível).
+- A ação no celular deve chamar o mesmo fluxo seguro do computador, não implementar download independente no telefone. O download é executado pelo PC anfitrião, onde ficará o arquivo local que será reproduzido.
+- Para pedidos com apenas URL do YouTube, não prometer download/extração de áudio; informar que falta arquivo ou fonte com download permitido. O link do YouTube permanece associado ao pedido.
+- Integrar com a nova aba Biblioteca Offline e com a biblioteca física já existente; sem duplicar conteúdo.
+- UI: botão/ícone compacto no cartão do pedido, tanto na janela Pedidos do PC quanto na aba Pedidos do controle remoto. Não aumentar a área do player.
+- Estado: requisito aprovado para implementação; ainda não implementado nem testado. Incluir no checklist da rodada de desenvolvimento.
