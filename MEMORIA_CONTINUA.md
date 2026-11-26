@@ -237,3 +237,10 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Artefatos desse workflow: `Lyravoxen-Windows-x64` (id `15126766492`), `Lyravoxen-Windows-x64-portable` (id `15126741379`), `Lyravoxen-Installer-Windows-x64` (id `15125498118`); expiração indicada pelo GitHub: 24/02/2027.
 - Limitação de validação: os testes automatizados existentes não simulam a navegação real do WebView2 nem medem bloqueio de anúncios no YouTube. Ainda não houve teste manual de reprodução, pesquisa, letras e consumo de memória/processador no PC do usuário. Portanto, a compilação e os testes de regressão do app passaram, mas a eficácia real contra anúncios deve ser validada no uso.
 - Próxima ação: disponibilizar o instalador/ZIP para teste manual; verificar YouTube (pesquisa, reprodução, pre-roll/mid-roll), Google, Cifra Club, Letras.mus.br, exceção por domínio, alternância da proteção, múltiplas abas e estabilidade/performance. Corrigir qualquer quebra antes de considerar o bloqueador plenamente validado.
+
+### Destaque do botão Limpar telão no controle remoto — 26/11/2026
+- Usuário esclareceu que o botão vermelho é o botão de limpar/encerrar a projeção na aba Ao vivo do controle remoto pelo celular, não na janela principal do Windows.
+- No HTML servido por `Services/RemoteControlServer.cs`, o botão “🧹 Limpar telão” já chamava a ação existente `clearlive`, distinta de “⏹ Encerrar” (que encerra a música).
+- Ajuste visual aplicado: adicionada a classe CSS `warn` ao botão “Limpar telão”, usando o estilo vermelho já existente. A ação, confirmação e retorno “Voltar ao automático” foram preservados.
+- Commit: `fa87d1738121a42cb52d63077265e7aeebbaa30c`.
+- Próxima ação: confirmar Windows Build após o push. Não iniciar testes funcionais até o layout ser aprovado; na conferência visual do celular, verificar que “Limpar telão” está vermelho e “Encerrar” continua sendo uma ação separada.
