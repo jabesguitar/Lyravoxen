@@ -400,3 +400,12 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Desde o build #685, os commits 64baa00, 10533a3 e fb943b3 atualizaram somente MEMORIA_CONTINUA.md; não implementaram as mudanças funcionais da Biblioteca Offline nem corrigiram os problemas acima.
 - A branch redesign/brand-visual-layer tem workflow Windows configurado para executar em push. Uma nova compilação da HEAD atual valida que o código existente ainda compila, mas não transforma recursos documentados em funcionalidades.
 - **Próxima ação:** iniciar uma compilação de conferência da HEAD atual para gerar pacote de testes do código existente; em paralelo, manter o checklist acima como lista de correções. Depois da compilação, fornecer ao usuário o link do workflow/artefatos e orientar a rodada de verificação sem declarar bugs corrigidos antecipadamente.
+
+
+## 26/11/2026 — Biblioteca Offline aplicada sobre o redesign aprovado
+- Correção de continuidade: a implementação anterior na branch baseada em `main` foi rejeitada pelo usuário porque restaurou layout antigo. PR #11 foi fechada sem merge.
+- Branch de trabalho correta criada a partir de `redesign/brand-visual-layer`: `feature/offline-library-on-redesign`.
+- A interface visual original do redesign foi mantida. As subabas XAML existentes Histórico de vídeos e Biblioteca foram movidas, sem reconstruir seus controles, para uma nova aba principal Biblioteca Offline inserida após a área Bíblia.
+- A Ajuda contextual foi atualizada para apontar para Biblioteca Offline. O workflow Windows foi habilitado para a branch de trabalho.
+- Nenhuma lógica de player, sincronização, controle remoto, Holyrics ou tema foi intencionalmente alterada nesta etapa.
+- Estado: alterações enviadas; CI Windows e testes automatizados ainda precisam concluir. Não considerar a compilação aprovada até o workflow ficar verde.
