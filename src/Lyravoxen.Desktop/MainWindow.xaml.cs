@@ -2783,16 +2783,49 @@ public partial class MainWindow : Window
 
     private void CleanupExpiredOfflineCopies()
     {
+        var now = DateTime.Now;
         var changed = false;
-        foreach (var video in _library.SelectMany(folder => folder.Videos).Where(video => video.IsOffline && video.OfflineExpiresAt.HasValue && video.OfflineExpiresAt.Value <= DateTime.Now))
+        var expiredPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var video in _library.SelectMany(folder => folder.Videos)
+                     .Where(video => video.IsOffline && video.OfflineExpiresAt.HasValue && video.OfflineExpiresAt.Value <= now))
         {
-            try { if (!string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath)) File.Delete(video.LocalPath); }
-            catch (Exception ex) { AppLog.Error("Não foi possível remover uma cópia offline vencida", ex); }
+            if (!string.IsNullOrWhiteSpace(video.LocalPath)) expiredPaths.Add(video.LocalPath);
             video.LocalPath = null;
             video.OfflineExpiresAt = null;
             changed = true;
         }
-        if (changed) SaveLibrary();
+
+        foreach (var request in _requests.Where(item => !string.IsNullOrWhiteSpace(item.OfflineLocalPath) &&
+                     item.OfflineExpiresAt.HasValue && item.OfflineExpiresAt.Value <= now))
+        {
+            expiredPaths.Add(request.OfflineLocalPath);
+            request.OfflineLocalPath = "";
+            request.OfflineExpiresAt = null;
+            request.OfflineFormat = "";
+            changed = true;
+        }
+
+        // Só remove os bytes quando nenhum item da biblioteca ou pedido ainda referencia o mesmo arquivo.
+        foreach (var path in expiredPaths)
+        {
+            var referencedByLibrary = _library.SelectMany(folder => folder.Videos)
+                .Any(video => video.IsOffline && string.Equals(video.LocalPath, path, StringComparison.OrdinalIgnoreCase));
+            var referencedByRequest = _requests.Any(request =>
+                string.Equals(request.OfflineLocalPath, path, StringComparison.OrdinalIgnoreCase) &&
+                (!request.OfflineExpiresAt.HasValue || request.OfflineExpiresAt.Value > now));
+            if (!referencedByLibrary && !referencedByRequest)
+            {
+                try { if (File.Exists(path)) File.Delete(path); }
+                catch (Exception ex) { AppLog.Error("Não foi possível remover uma cópia offline vencida", ex); }
+            }
+        }
+
+        if (changed)
+        {
+            SaveLibrary();
+            SongRequestStore.Save(_requests);
+            RefreshRequestsWindow();
+        }
     }
 
     private void SaveLibrary()
