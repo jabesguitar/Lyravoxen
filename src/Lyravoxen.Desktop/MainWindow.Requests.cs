@@ -319,6 +319,7 @@ public partial class MainWindow
             var buttons = new System.Windows.Controls.WrapPanel();
             var item = request;
             buttons.Children.Add(RequestButton("⏭ Preparar como próxima", () => PrepareRequestAsNext(item)));
+            buttons.Children.Add(RequestButton("⬇ Baixar offline", () => ImportOfflineForRequest(item)));
             buttons.Children.Add(RequestButton("Abrir", () => OpenRequest(item)));
             buttons.Children.Add(RequestButton("Copiar link", () =>
             {
@@ -329,6 +330,63 @@ public partial class MainWindow
             content.Children.Add(buttons);
             card.Child = content;
             _requestsPanel.Children.Add(card);
+        }
+    }
+
+
+    /// <summary>Importa um arquivo autorizado e o associa ao pedido e ao ID exato do vídeo quando disponível.</summary>
+    private void ImportOfflineForRequest(SongRequest request)
+    {
+        var retention = PromptForText("Validade da cópia offline", "Por quantos dias manter esta cópia local? (5, 7, 14 ou 30)", "30");
+        if (retention is null) return;
+        if (!int.TryParse(retention.Trim(), out var days) || days is not (5 or 7 or 14 or 30))
+        {
+            System.Windows.MessageBox.Show(_requestsWindow ?? this, "Escolha 5, 7, 14 ou 30 dias.", "Validade offline", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        using var dialog = new System.Windows.Forms.OpenFileDialog
+        {
+            Title = "Selecione um áudio autorizado para este pedido",
+            Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+        try
+        {
+            var ext = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            if (ext is not ".mp3" and not ".wav") throw new InvalidOperationException("Escolha um arquivo MP3 ou WAV.");
+            var mediaFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
+            Directory.CreateDirectory(mediaFolder);
+            var target = Path.Combine(mediaFolder, Guid.NewGuid().ToString("N") + ext);
+            File.Copy(dialog.FileName, target, false);
+
+            var videoId = YouTubeLink.TryGetVideoId(request.Url) ?? "";
+            var expires = DateTime.Now.AddDays(days);
+            var title = string.IsNullOrWhiteSpace(request.Name) ? Path.GetFileNameWithoutExtension(dialog.FileName) : request.Name;
+            var folder = _library.FirstOrDefault(x => x.Name == "Pedidos offline");
+            if (folder is null) { folder = new LibraryFolder { Name = "Pedidos offline" }; _library.Add(folder); }
+            folder.Videos.Add(new LibraryVideo
+            {
+                VideoId = videoId, Title = title, TrackName = title, Url = request.Url,
+                IsOffline = true, LocalPath = target, Format = ext.TrimStart('.'),
+                SavedAt = DateTime.Now, OfflineExpiresAt = expires
+            });
+            request.OfflineLocalPath = target;
+            request.OfflineVideoId = videoId;
+            request.OfflineExpiresAt = expires;
+            request.OfflineFormat = ext.TrimStart('.');
+            SaveLibrary();
+            SongRequestStore.Save(_requests);
+            RefreshFolders();
+            StatusText.Text = "Cópia offline preparada para o pedido. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
+            RefreshRequestsWindow();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha ao preparar áudio offline para pedido", ex);
+            System.Windows.MessageBox.Show(_requestsWindow ?? this, "Não foi possível preparar o áudio: " + ex.Message, "Biblioteca Offline", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
