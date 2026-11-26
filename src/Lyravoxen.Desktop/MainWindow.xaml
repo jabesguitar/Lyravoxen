@@ -385,50 +385,56 @@
    </TabItem.Header>
    <Grid Margin="10">
     <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-    <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
-     <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <StackPanel>
-       <Border Background="{DynamicResource Brush_0B2D56}" BorderBrush="{DynamicResource Brush_00BFD8}" BorderThickness="1.2" CornerRadius="11" Padding="8" Margin="1,1,1,8">
-        <StackPanel>
-         <TextBlock Text="PRÓXIMA MÚSICA" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="3,1,3,4"/>
-         <TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="3,1,3,3"/>
-         <TextBlock x:Name="NextLyricsText" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="3,2,3,4" MaxHeight="58"/>
-         <CheckBox x:Name="AutoAdvanceBox" Content="Tocar a próxima automaticamente" Foreground="{DynamicResource TextMuted}" Margin="3,3" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/>
-         <Button Content="▶ Preparar próxima" Click="PrepareNext_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="27"/>
-         <Grid Margin="0,1,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <Button Grid.Column="0" Content="✓ Confirmar letra" Click="ConfirmNextLyrics_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="27" ToolTip="Salva na biblioteca a letra encontrada para a próxima música, para ela rodar no telão ao tocar"/>
-          <Button Grid.Column="1" Content="⌕ Verificar letra" Click="VerifyNextLyrics_Click" MinHeight="27" ToolTip="Confere se a música preparada já tem letra (biblioteca ou catálogo) e mostra a prévia"/>
-         </Grid>
-        </StackPanel>
-       </Border>
-       <TextBlock Text="PESQUISAR MÚSICA" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="4,2,4,5"/>
-       <TextBox x:Name="YoutubeSearchBox" MinHeight="27" TextWrapping="Wrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
-       <Button Content="🔎 Pesquisar" Click="YoutubeSearch_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="27"/>
-       <Grid Margin="0,3,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button x:Name="BrowserProtectionToggleButton" Grid.Column="0" Content="🛡 Proteção ligada" Click="BrowserProtectionToggle_Click" MinHeight="27" ToolTip="Ativar ou desativar o bloqueio de domínios de anúncios e rastreadores"/>
-        <Button Grid.Column="1" Content="Permitir neste site" Click="BrowserAllowSite_Click" MinHeight="27" ToolTip="Criar exceção para o domínio da aba atual"/>
-       </Grid>
-       <TextBlock x:Name="BrowserProtectionStatusText" Text="Carregando proteção..." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="4,0,4,4"/>
-       <Grid Margin="0,1,0,3"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="◀ Voltar" Click="YoutubeSearchBack_Click" MinHeight="27"/>
-        <Button Grid.Column="1" Content="Avançar ▶" Click="YoutubeSearchForward_Click" MinHeight="27"/>
-       </Grid>
-       <Grid Margin="0,0,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="↻ Atualizar" Click="YoutubeSearchRefresh_Click" MinHeight="27"/>
-        <Button Grid.Column="1" Content="Copiar link" Click="CopyBrowserLink_Click" MinHeight="27" ToolTip="Copiar o endereço da página aberta nesta aba"/>
-       </Grid>
-       <TextBlock Text="FONTES DE PESQUISA" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" Margin="5,7,5,3"/>
+    <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="14" Padding="7" Margin="0,0,9,0">
+     <Grid>
+      <Grid.RowDefinitions>
+       <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+       <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+       <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Border Grid.Row="0" Background="{DynamicResource Brush_0B2D56}" BorderBrush="{DynamicResource Brush_00BFD8}" BorderThickness="1" CornerRadius="9" Padding="6" Margin="0,0,0,4">
+       <StackPanel>
+        <TextBlock Text="PRÓXIMA MÚSICA" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="2,0,2,2"/>
+        <TextBlock x:Name="NextTrackText" Text="Pesquise e abra o vídeo desejado. A música atual continuará tocando." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" MaxHeight="30" Margin="2,0"/>
+        <TextBlock x:Name="NextLyricsText" Foreground="{DynamicResource TextMuted}" FontSize="9" TextWrapping="Wrap" MaxHeight="28" Margin="2,1,2,2"/>
+        <CheckBox x:Name="AutoAdvanceBox" Content="Tocar próxima automaticamente" Foreground="{DynamicResource TextMuted}" FontSize="10" Margin="2,1" Checked="AutoAdvanceBox_Changed" Unchecked="AutoAdvanceBox_Changed"/>
+        <Button Content="▶ Preparar próxima" Click="PrepareNext_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="25" Height="25" Padding="5,2" Margin="1"/>
+        <Grid Margin="0,1,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+         <Button Grid.Column="0" Content="✓ Confirmar" Click="ConfirmNextLyrics_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="25" Height="25" Padding="4,2" Margin="1" FontSize="10" ToolTip="Salva na biblioteca a letra encontrada para a próxima música"/>
+         <Button Grid.Column="1" Content="⌕ Verificar" Click="VerifyNextLyrics_Click" MinHeight="25" Height="25" Padding="4,2" Margin="1" FontSize="10" ToolTip="Confere se a música preparada já tem letra"/>
+        </Grid>
+       </StackPanel>
+      </Border>
+      <Grid Grid.Row="1" Margin="0,1,0,3">
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Grid.Row="0" Text="PESQUISAR MÚSICA" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="2,0,2,2"/>
+       <TextBox Grid.Row="1" x:Name="YoutubeSearchBox" MinHeight="27" Height="29" Padding="7,3" Margin="1" FontSize="11" TextWrapping="NoWrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
+      </Grid>
+      <Button Grid.Row="2" Content="⌕ Pesquisar" Click="YoutubeSearch_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="26" Height="26" Padding="5,2" Margin="1" FontSize="10"/>
+      <Grid Grid.Row="3" Margin="0,2,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <Button x:Name="BrowserProtectionToggleButton" Grid.Column="0" Content="🛡 Proteção" Click="BrowserProtectionToggle_Click" MinHeight="26" Height="26" Padding="3,2" Margin="1" FontSize="9" ToolTip="Ativar ou desativar o bloqueio de domínios de anúncios e rastreadores"/>
+       <Button Grid.Column="1" Content="Permitir site" Click="BrowserAllowSite_Click" MinHeight="26" Height="26" Padding="3,2" Margin="1" FontSize="9" ToolTip="Criar exceção para o domínio da aba atual"/>
+      </Grid>
+      <TextBlock Grid.Row="4" x:Name="BrowserProtectionStatusText" Text="Carregando proteção..." Foreground="{DynamicResource TextMuted}" FontSize="9" TextWrapping="Wrap" MaxHeight="28" Margin="3,1"/>
+      <Grid Grid.Row="5" Margin="0,1,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <Button Grid.Row="0" Grid.Column="0" Content="◀ Voltar" Click="YoutubeSearchBack_Click" MinHeight="25" Height="25" Padding="3,1" Margin="1" FontSize="9"/>
+       <Button Grid.Row="0" Grid.Column="1" Content="Avançar ▶" Click="YoutubeSearchForward_Click" MinHeight="25" Height="25" Padding="3,1" Margin="1" FontSize="9"/>
+       <Button Grid.Row="1" Grid.Column="0" Content="↻ Atualizar" Click="YoutubeSearchRefresh_Click" MinHeight="25" Height="25" Padding="3,1" Margin="1" FontSize="9"/>
+       <Button Grid.Row="1" Grid.Column="1" Content="Copiar link" Click="CopyBrowserLink_Click" MinHeight="25" Height="25" Padding="3,1" Margin="1" FontSize="9" ToolTip="Copiar o endereço da página aberta nesta aba"/>
+      </Grid>
+      <StackPanel Grid.Row="6" Margin="1,4,1,0">
+       <TextBlock Text="FONTES DE PESQUISA" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="2,0,2,2"/>
        <WrapPanel>
-        <Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click" MinHeight="27"/>
-        <Button Content="G Google" Tag="google" Click="OpenQuickSite_Click" MinHeight="27"/>
-        <Button Content="L Letras.mus.br" Tag="letras" Click="OpenQuickSite_Click" MinHeight="27"/>
+        <Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click" MinHeight="25" Height="25" Padding="5,2" Margin="1" FontSize="9"/>
+        <Button Content="G Google" Tag="google" Click="OpenQuickSite_Click" MinHeight="25" Height="25" Padding="5,2" Margin="1" FontSize="9"/>
+        <Button Content="L Letras" Tag="letras" Click="OpenQuickSite_Click" MinHeight="25" Height="25" Padding="5,2" Margin="1" FontSize="9"/>
        </WrapPanel>
-       <Grid Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Content="＋ Nova aba" Click="NewBrowserTab_Click" MinHeight="27"/>
-        <Button Grid.Column="1" Content="Fechar aba" Click="CloseBrowserTab_Click" MinHeight="27"/>
-       </Grid>
       </StackPanel>
-     </ScrollViewer>
+      <Grid Grid.Row="7" Margin="0,2,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <Button Grid.Column="0" Content="＋ Nova aba" Click="NewBrowserTab_Click" MinHeight="25" Height="25" Padding="3,1" Margin="1" FontSize="9"/>
+       <Button Grid.Column="1" Content="Fechar aba" Click="CloseBrowserTab_Click" MinHeight="25" Height="25" Padding="3,1" Margin="1" FontSize="9"/>
+      </Grid>
+     </Grid>
     </Border>
     <Border Grid.Column="1" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="16" Padding="10" MinWidth="420">
      <Grid>
