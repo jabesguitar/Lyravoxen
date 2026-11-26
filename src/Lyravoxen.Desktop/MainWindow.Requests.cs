@@ -315,6 +315,10 @@ public partial class MainWindow
                 content.Children.Add(RequestButton("Bloquear este IP", () => { _blockedRequestSenders[request.SenderIp] = request.Group; SaveBlockedRequestSenders(); if (CloudConfigured) _ = CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, request.SenderIp, request.Group, true); StatusText.Text = "IP bloqueado: " + request.SenderIp; RefreshRequestsWindow(); }));
             content.Children.Add(RequestText(request.Url, 12, false, "#2D6A9F"));
             content.Children.Add(RequestText(RequestLyricsLine(request), 12, false, "#1A2430"));
+            if (!string.IsNullOrWhiteSpace(request.OfflineLocalPath))
+                content.Children.Add(RequestText(File.Exists(request.OfflineLocalPath) && (!request.OfflineExpiresAt.HasValue || request.OfflineExpiresAt.Value > DateTime.Now)
+                    ? "✓ Offline preparado · válido até " + request.OfflineExpiresAt?.ToString("dd/MM/yyyy")
+                    : "⚠ Cópia offline expirada ou ausente", 11, true, "#087F9E"));
 
             var buttons = new System.Windows.Controls.WrapPanel();
             var item = request;
@@ -400,12 +404,14 @@ public partial class MainWindow
 
     private void PrepareRequestAsNext(SongRequest request)
     {
-        var requestedName = LyricsPreviewService.Normalize(request.Name);
-        var offlineMatch = requestedName.Length == 0 ? null : _library.SelectMany(folder => folder.Videos)
-            .FirstOrDefault(video => video.IsOffline &&
-                !string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath) &&
-                (!video.OfflineExpiresAt.HasValue || video.OfflineExpiresAt.Value > DateTime.Now) &&
-                (LyricsPreviewService.Normalize(video.TrackName) == requestedName || LyricsPreviewService.Normalize(video.Title) == requestedName));
+        var requestedVideoId = YouTubeLink.TryGetVideoId(request.Url) ?? "";
+        var offlineMatch = !string.IsNullOrWhiteSpace(request.OfflineLocalPath) && File.Exists(request.OfflineLocalPath) &&
+            (!request.OfflineExpiresAt.HasValue || request.OfflineExpiresAt.Value > DateTime.Now)
+            ? _library.SelectMany(folder => folder.Videos).FirstOrDefault(video =>
+                video.IsOffline && video.LocalPath == request.OfflineLocalPath &&
+                (requestedVideoId.Length == 0 || video.VideoId == requestedVideoId))
+            : null;
+        // A request without its own offline file must never be matched to another recording by title alone.
         if (offlineMatch is not null)
         {
             if ((!string.IsNullOrWhiteSpace(_nextVideoUrl) || _nextOfflineVideo is not null) &&
