@@ -168,40 +168,8 @@
        </StackPanel>
       </Grid>
      </TabItem>
-     <TabItem Header="Histórico de vídeos">
-      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-       <TextBlock Text="VÍDEOS UTILIZADOS" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
-       <Grid Grid.Row="1" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
-        <TextBox x:Name="HistorySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar pelo título do vídeo" TextChanged="HistorySearch_TextChanged"/>
-        <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar histórico" Click="HistorySearch_Click"/>
-       </Grid>
-       <ListBox x:Name="HistoryList" Grid.Row="2" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="4" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
-       <TextBlock Grid.Row="3" Text="Selecione um título para carregar novamente o vídeo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
-      </Grid>
-     </TabItem>
-     <TabItem Header="Biblioteca">
-      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-       <TextBlock Text="MINHAS COLEÇÕES" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
-       <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="0.85*"/><ColumnDefinition Width="1.15*"/></Grid.ColumnDefinitions>
-        <Grid Grid.Column="0" Margin="4,0,8,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <ListBox x:Name="LibraryFolderList" Grid.Row="0" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
-         <Button Grid.Row="1" Content="＋ Criar pasta" Click="CreateFolder_Click" Margin="0,8,0,0"/>
-         <Grid Grid.Row="2" Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <Button Grid.Column="0" Content="Renomear" Click="RenameFolder_Click"/>
-          <Button Grid.Column="1" Content="Excluir" Click="DeleteFolder_Click"/>
-         </Grid>
-        </Grid>
-        <Grid Grid.Column="1" Margin="8,0,4,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-         <Grid Grid.Row="0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
-          <TextBox x:Name="LibrarySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar nesta pasta" TextChanged="LibrarySearch_TextChanged"/>
-          <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
-         </Grid>
-         <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
-         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/><Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" Margin="0,5,0,0" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/></StackPanel>
-        </Grid>
-       </Grid>
-      </Grid>
-     </TabItem>
+     
+     
 </TabControl>
    </Border>
   </Grid>
@@ -442,6 +410,52 @@
     </StackPanel>
    </Grid>
   </TabItem>
+
+ <TabItem Header="Biblioteca Offline">
+  <Grid Margin="14">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+   <StackPanel Grid.Row="0" Margin="4,0,4,10">
+    <TextBlock Text="BIBLIOTECA OFFLINE" Foreground="{DynamicResource Accent}" FontSize="22" FontWeight="Bold"/>
+    <TextBlock Text="Organize suas músicas, arquivos locais, letras e histórico em um só lugar." Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,3,0,0"/>
+   </StackPanel>
+   <TabControl Grid.Row="1" Background="{DynamicResource Panel}" BorderThickness="0">
+    <TabItem Header="Histórico de vídeos">
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <TextBlock Text="VÍDEOS UTILIZADOS" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
+       <Grid Grid.Row="1" Margin="4,0,4,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+        <TextBox x:Name="HistorySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar pelo título do vídeo" TextChanged="HistorySearch_TextChanged"/>
+        <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar histórico" Click="HistorySearch_Click"/>
+       </Grid>
+       <ListBox x:Name="HistoryList" Grid.Row="2" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="4" SelectionChanged="HistoryList_SelectionChanged" DisplayMemberPath="Title"/>
+       <TextBlock Grid.Row="3" Text="Selecione um título para carregar novamente o vídeo." Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="6,8,4,2"/>
+      </Grid>
+     </TabItem>
+    <TabItem Header="Biblioteca">
+      <Grid Margin="4"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+       <TextBlock Text="MINHAS COLEÇÕES" Foreground="{StaticResource Accent}" FontWeight="Bold" FontSize="15" Margin="4,4,4,10"/>
+       <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="0.85*"/><ColumnDefinition Width="1.15*"/></Grid.ColumnDefinitions>
+        <Grid Grid.Column="0" Margin="4,0,8,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <ListBox x:Name="LibraryFolderList" Grid.Row="0" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" SelectionChanged="LibraryFolder_SelectionChanged" DisplayMemberPath="Name"/>
+         <Button Grid.Row="1" Content="＋ Criar pasta" Click="CreateFolder_Click" Margin="0,8,0,0"/>
+         <Grid Grid.Row="2" Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <Button Grid.Column="0" Content="Renomear" Click="RenameFolder_Click"/>
+          <Button Grid.Column="1" Content="Excluir" Click="DeleteFolder_Click"/>
+         </Grid>
+        </Grid>
+        <Grid Grid.Column="1" Margin="8,0,4,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <Grid Grid.Row="0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+          <TextBox x:Name="LibrarySearchBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Pesquisar nesta pasta" TextChanged="LibrarySearch_TextChanged"/>
+          <Button Grid.Column="1" Content="⌕" FontSize="22" Padding="2" ToolTip="Pesquisar músicas" Click="LibrarySearch_Click"/>
+         </Grid>
+         <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="#0D151D" Foreground="#F2F6F8" BorderBrush="#355064" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
+         <StackPanel Grid.Row="2"><Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/><Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click" Margin="0,5,0,0"/><Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" Margin="0,5,0,0" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/></StackPanel>
+        </Grid>
+       </Grid>
+      </Grid>
+     </TabItem>
+   </TabControl>
+  </Grid>
+ </TabItem>
 </TabControl>
  </Grid>
 </Window>
