@@ -331,7 +331,7 @@
      <Grid Grid.Row="1">
       <Grid.ColumnDefinitions><ColumnDefinition Width="246"/><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="0.88*"/></Grid.ColumnDefinitions>
       <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
-       <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+       <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"><StackPanel>
          <TextBlock Text="FERRAMENTAS DA LETRA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,7"/>
          <Button Content="📋 Colar e limpar letra" Click="PasteCleanLyrics_Click" ToolTip="Cola o que você copiou, tira cifras, [Refrão], créditos e links e separa as estrofes" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
          <Button Content="🔎 Buscar texto da letra" Click="FetchLyricsText_Click" ToolTip="Busca o texto da letra pelo intérprete e título, no Vagalume (precisa da chave gratuita)" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
@@ -347,7 +347,7 @@
          <TextBlock Text="MARCAÇÃO POR TOQUE — PLAYBACK" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" TextWrapping="Wrap"/>
          <TextBlock Text="Separe estrofes por uma linha em branco. Toque quando cada estrofe começar; Backspace desfaz a última marca." Foreground="{DynamicResource TextMuted}" FontSize="9" TextWrapping="Wrap" Margin="2,2,2,3"/>
          <Button x:Name="TapStartButton" Content="Iniciar marcação por toque" Click="TapStart_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="{DynamicResource Brush_087F9E}" MinHeight="30" FontSize="10" Padding="4,2" Margin="2,2" FontWeight="Bold" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
+         <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="{DynamicResource Brush_087F9E}" MinHeight="30" FontSize="10" Padding="4,2" Margin="2,2" FontWeight="Bold"/>
          <Button x:Name="TapUndoButton" Content="Desfazer (Backspace)" Click="TapUndo_Click" IsEnabled="False" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
          <Button x:Name="TapFinishButton" Content="Concluir e salvar" Click="TapFinish_Click" IsEnabled="False" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
          <Button x:Name="TapCancelButton" Content="Cancelar" Click="TapCancel_Click" IsEnabled="False" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
