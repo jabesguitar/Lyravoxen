@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main, redesign/brand-visual-layer]
+    branches: [main, redesign/brand-visual-layer, feature/offline-library-on-redesign]
   pull_request:
     branches: [main]
   workflow_dispatch:
