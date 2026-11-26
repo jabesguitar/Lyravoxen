@@ -293,3 +293,14 @@ Evoluir o Lyravoxen sem perder os fluxos musicais existentes: player YouTube int
 
 - Arquivo de transferência para Cloud criado em `docs/CONTEXTO_COMPLETO_LYRAVOXEN_PARA_CLOUD.md`, commit `0f77eb73a67adb1afe65c697c87b770b40cf612c`. Contém instruções de continuidade, estado atual, resumo da etapa e cópia integral do `MEMORIA_CONTINUA.md` até a consolidação.
 - Workflow do HEAD `0f77eb73a67adb1afe65c697c87b770b40cf612c`: run #567, ID `44218852475`, está em andamento. Até a última consulta, checkout e geração do ícone concluídos; Setup .NET em andamento; restore/build/testes/pacotes ainda pendentes. Não entregar pacote para teste até conclusão verde.
+
+
+### Atualização — Biblioteca Offline: reorganização da interface (2026-11-26)
+- Solicitação do usuário: não alterar recursos já testados e funcionando; executar somente as mudanças pendentes da última solicitação sobre a estrutura da Biblioteca Offline.
+- Confirmação visual: a versão mostrada pelo usuário ainda exibia Histórico de vídeos e Biblioteca como sub-abas dentro de Ao vivo; a aba principal Biblioteca Offline não existia.
+- Alteração aplicada na branch `feature/offline-library-workspace`, derivada de `feature/integrated-bible-microphone-holyrics`: removidas da área Ao vivo as sub-abas Histórico de vídeos e Biblioteca e reunidas dentro de uma nova aba principal Biblioteca Offline, com duas seções internas. O conteúdo XAML existente foi movido sem reescrever os controles, mantendo nomes e eventos existentes.
+- Ajuda contextual atualizada para identificar as seções como partes da Biblioteca Offline.
+- Preservação: nenhum arquivo de dados local foi apagado; nenhum fluxo de reprodução/sincronização foi intencionalmente modificado. A importação MP3/WAV e o playback local existentes foram preservados.
+- Ainda não realizado nesta etapa: gerenciamento de validade, exclusão automática, deduplicação avançada, download de fontes permitidas, identificação de tonalidade/gravação e teste operacional. Não declarar a Biblioteca Offline completa.
+- Validação pendente: revisar XAML e code-behind, executar testes/CI Windows e testar no computador do usuário antes de considerar concluído.
+- Nota de continuidade: a branch de origem PR #9 contém recursos de microfone bíblico; a decisão posterior do usuário foi retirar temporariamente esse recurso. Não mesclar a PR #9 integralmente sem filtrar essa funcionalidade.
