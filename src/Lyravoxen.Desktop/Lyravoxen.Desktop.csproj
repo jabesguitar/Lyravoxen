@@ -25,6 +25,9 @@
     <PackageReference Include="Whisper.net.Runtime.NoAvx" Version="1.9.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\\Lyravoxen.Offline\\Lyravoxen.Offline.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <SplashScreen Include="Assets\LyravoxenSplash_Compact.png" />
     <Content Include="Assets\Lyravoxen_Icone_App_1024.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
