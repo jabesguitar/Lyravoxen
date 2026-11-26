@@ -48,6 +48,7 @@ public partial class MainWindow : Window
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
     private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
+    private readonly DispatcherTimer _offlineCleanupTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMinutes(1) };
     private bool _isLocalAudioPlaying;
     private bool _playbackEnded;
     private bool _librarySelectionChanging;
@@ -94,13 +95,16 @@ public partial class MainWindow : Window
         LoadLibrary();
         Closing += async (_, _) =>
         {
+            _offlineCleanupTimer.Stop();
             if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
             _micService?.Dispose();
             _micService = null;
         };
         _audioTimer.Tick += (_, _) => ProcessAudioCue();
+        _offlineCleanupTimer.Tick += (_, _) => CleanupExpiredOfflineCopies();
         Loaded += async (_, _) =>
         {
+            _offlineCleanupTimer.Start();
             try
             {
                 await YoutubePlayer.EnsureCoreWebView2Async();
