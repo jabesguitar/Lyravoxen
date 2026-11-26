@@ -3104,45 +3104,68 @@ public partial class MainWindow : Window
     {
         if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
         {
-            System.Windows.MessageBox.Show("Crie ou selecione uma pasta primeiro.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(this, "Crie ou selecione uma pasta primeiro.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var retention = PromptForText("Validade da cópia offline", "Por quantos dias manter esta cópia local? (5, 7, 14 ou 30)", "30");
         if (retention is null) return;
         if (!int.TryParse(retention.Trim(), out var days) || days is not (5 or 7 or 14 or 30))
         {
-            System.Windows.MessageBox.Show("Escolha 5, 7, 14 ou 30 dias.", "Validade offline", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(this, "Escolha 5, 7, 14 ou 30 dias.", "Validade offline", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        var source = PromptForText("Preparar áudio offline", "Cole o endereço direto de um arquivo MP3/WAV autorizado. Deixe vazio para importar um arquivo do computador:");
+        var source = PromptForText("Preparar áudio offline",
+            "Cole uma URL DIRETA de arquivo MP3/WAV autorizado. Se tiver um link do YouTube ou preferir, deixe vazio para escolher os arquivos no computador:");
         if (source is null) return;
         try
         {
-            OfflineMediaResult result;
-            if (!string.IsNullOrWhiteSpace(source))
+            var expires = DateTime.Now.AddDays(days);
+            var localFiles = new List<string>();
+            OfflineMediaResult? downloaded = null;
+            var isYouTube = !string.IsNullOrWhiteSpace(source) && YouTubeLink.TryGetVideoId(source.Trim()) is not null;
+
+            if (!string.IsNullOrWhiteSpace(source) && !isYouTube)
             {
-                StatusText.Text = "Baixando e validando o áudio autorizado...";
-                result = await _offlineMedia.DownloadAsync(source.Trim(), OfflineMediaFolder);
+                try
+                {
+                    StatusText.Text = "Baixando e validando o áudio autorizado...";
+                    downloaded = await _offlineMedia.DownloadAsync(source.Trim(), OfflineMediaFolder);
+                }
+                catch (Exception downloadError)
+                {
+                    var fallback = System.Windows.MessageBox.Show(this,
+                        "Não consegui baixar essa URL como arquivo MP3/WAV direto.\n\nMotivo: " + downloadError.Message +
+                        "\n\nDeseja selecionar um arquivo MP3/WAV que já esteja no computador?",
+                        "Download direto não disponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    if (fallback != MessageBoxResult.Yes) return;
+                }
             }
-            else
+            else if (isYouTube)
+            {
+                System.Windows.MessageBox.Show(this,
+                    "O endereço é uma página do YouTube, não um arquivo MP3/WAV direto. O Lyravoxen não extrai áudio nem remove anúncios do YouTube. Como alternativa, selecione uma gravação MP3/WAV que você tenha autorização para usar.",
+                    "Selecionar áudio autorizado", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            if (downloaded is null)
             {
                 using var dialog = new System.Windows.Forms.OpenFileDialog
                 {
-                    Title = "Selecione um áudio MP3 ou WAV que você tem direito de usar",
+                    Title = "Selecione um ou mais áudios MP3/WAV autorizados",
                     Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
                     Multiselect = true
                 };
                 if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-                var expires = DateTime.Now.AddDays(days);
-                foreach (var file in dialog.FileNames)
+                localFiles.AddRange(dialog.FileNames);
+                foreach (var file in localFiles)
                 {
                     var imported = await _offlineMedia.ImportLocalAsync(file, OfflineMediaFolder);
                     AddOrUpdateOfflineLibraryItem(folder, imported, Path.GetFileNameWithoutExtension(file), expires);
                 }
-                if (!SaveLibrary()) throw new IOException("Os arquivos de áudio foram importados, mas a biblioteca não confirmou o salvamento. Reabra a aba e tente importar novamente.");
+                if (!SaveLibrary()) throw new IOException("Os arquivos foram importados, mas a biblioteca não confirmou o salvamento. Os áudios foram preservados na pasta de mídia.");
                 RefreshFolders(folder.Id);
-                StatusText.Text = "Áudio(s) importado(s) e salvos para uso offline na pasta '" + folder.Name + "'. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
+                StatusText.Text = localFiles.Count + " áudio(s) importado(s) e salvo(s) na pasta '" + folder.Name + "'. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
                 return;
             }
 
@@ -3150,10 +3173,10 @@ public partial class MainWindow : Window
                 ? Path.GetFileNameWithoutExtension(uri.AbsolutePath)
                 : "Áudio offline";
             if (string.IsNullOrWhiteSpace(title)) title = "Áudio offline";
-            AddOrUpdateOfflineLibraryItem(folder, result, title, DateTime.Now.AddDays(days));
+            AddOrUpdateOfflineLibraryItem(folder, downloaded, title, expires);
             if (!SaveLibrary()) throw new IOException("O áudio foi baixado, mas a biblioteca não confirmou o salvamento. O arquivo foi preservado na pasta de mídia.");
             RefreshFolders(folder.Id);
-            StatusText.Text = "Áudio baixado e salvo na pasta '" + folder.Name + "'. Validade até " + DateTime.Now.AddDays(days).ToString("dd/MM/yyyy HH:mm") + ".";
+            StatusText.Text = "Áudio baixado e salvo na pasta '" + folder.Name + "'. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
         }
         catch (Exception ex)
         {
