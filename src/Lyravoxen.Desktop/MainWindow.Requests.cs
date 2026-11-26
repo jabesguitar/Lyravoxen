@@ -413,7 +413,7 @@ public partial class MainWindow
 
         try
         {
-            OfflineMediaResult result;
+            OfflineMediaResult result = null!;
             var isYouTube = YouTubeLink.TryGetVideoId(request.Url) is not null;
             var importLocal = isYouTube;
             if (isYouTube)
