@@ -174,3 +174,52 @@ O usuário confirmou que o mesmo problema do botão Baixar offline dos Pedidos t
 - Inspeção do código confirmou que `ImportAudio_Click` abre `OpenFileDialog` para escolher um arquivo-fonte MP3/WAV e depois copia o arquivo para `%LOCALAPPDATA%/Lyravoxen/Media`, cria `LibraryVideo` offline e chama `SaveLibrary`. Esse seletor é de origem do arquivo, não de destino. O fluxo de URL direta ainda não existe na Biblioteca; `AddCurrentVideoToFolder_Click` guarda apenas link/ID e letra, sem baixar mídia.
 - Em Pedidos, `ImportOfflineForRequest` também abre seletor de arquivo-fonte, copia para a pasta interna e associa ao pedido; não é download da URL do pedido.
 - Para atender ao pedido do usuário, o pacote deve tornar explícito o fluxo: URL direta autorizada = download automático; arquivo local = selecionar origem e copiar automaticamente para a biblioteca interna; link YouTube isolado = não oferecer falso download nem extrair áudio.
+
+
+## Continuação executada — 26/11/2026
+
+### Estado atual da implementação
+- Branch preservada: `feature/offline-library-on-redesign`. A `main` não foi alterada.
+- Criado o projeto compartilhado `src/Lyravoxen.Offline`, sem dependência de WPF, para permitir testes funcionais multiplataforma.
+- Implementado `OfflineMediaService` para download de URLs diretas autorizadas e importação local MP3/WAV:
+  - limite padrão de 50 MB, timeout de 45 segundos, cancelamento e remoção de arquivos temporários após falha;
+  - validação HTTP/HTTPS, MIME quando informado, extensão e assinatura MP3/WAV;
+  - validação DNS/IP público, bloqueio de redes privadas e redirecionamentos limitados; conexão usa o IP público validado para reduzir risco de DNS rebinding;
+  - hash SHA-256 e deduplicação por conteúdo;
+  - links do YouTube são recusados como fonte de arquivo de áudio.
+- Aba Pedidos: URLs diretas de áudio são baixadas; links somente do YouTube explicam a limitação e oferecem seleção de arquivo autorizado local. A cópia é associada ao pedido e à Biblioteca.
+- Biblioteca: aceita URL direta ou importação local. Adicionado editor de título, intérprete e letra na própria aba Biblioteca, sem depender da aba Cadastrar letras. A sincronização existente é preservada.
+- Pastas distintas podem referenciar a mesma mídia deduplicada sem duplicar os bytes.
+- Expiração: limpeza a cada minuto e na inicialização. O arquivo só é excluído quando não há outra referência ativa na Biblioteca ou em Pedidos; fichas, letras e metadados permanecem.
+- Aba Próxima música: painel de comandos reorganizado em layout compacto, mantendo a coluna do navegador/WebView2.
+- Proteção: política de bloqueio extraída para componente puro e testável. Os domínios protegidos do YouTube/Googlevideo permanecem permitidos; domínios de anúncios podem ser bloqueados e exceções do usuário são respeitadas.
+
+### Testes automatizados adicionados
+Projeto: `tests/Lyravoxen.OfflineTests`.
+- Importação local WAV e MP3.
+- Download direto WAV e MP3 com respostas HTTP controladas.
+- Hash/deduplicação e preservação dos bytes.
+- Recusa de YouTube como fonte de áudio.
+- Bloqueio de DNS privado e redirecionamento para rede privada.
+- Redirecionamento HTTPS permitido, limite de tamanho e recusa de HTML.
+- Política do navegador: preservar YouTube/googlevideo, bloquear domínio de anúncio, respeitar exceções e evitar correspondência parcial.
+- Expiração: preservar arquivo ainda referenciado por outra pasta ou pedido e permitir excluir quando não houver referências.
+
+### Evidência de CI
+- Run `45888141360`, commit `1c888e98`: job `cloud-worker-tests` concluído com sucesso. Serviço offline, cobertura da Ajuda, C# static checks, testes do Worker e página remota mobile aprovados. O teste offline nessa revisão cobria os fluxos de WAV, URL direta, redirecionamento, limite de tamanho e política do navegador; ainda não incluía os testes de expiração e MP3 acrescentados depois.
+- Run `45887612874`, commit `5003f831`: jobs `cloud-worker-tests` e `build` concluídos com sucesso. A compilação Windows confirmou a integração inicial do serviço com Pedidos/Biblioteca e o timer de expiração, mas ocorreu antes do editor da Biblioteca e da compactação final da aba Próxima música. Não é a compilação final desta rodada.
+- Run `45888415155`, commit `2b9f8418`: no último acompanhamento, o teste offline, cobertura da Ajuda, C# static checks e testes do Worker estavam aprovados; Playwright / teste mobile ainda estava em execução. Esse run contém os testes adicionais de MP3 e política de expiração. Aguardar conclusão antes de liberar build.
+
+### Limitações que ainda impedem declarar pronto
+- Os testes de mídia usam arquivos sintéticos e handlers HTTP controlados; ainda não comprovam reprodução real de MP3/WAV pelo MediaElement do Windows nem download contra diferentes servidores externos.
+- A política do bloqueador está testada, mas ainda falta teste de integração com WebView2 real confirmando que a pesquisa, login e reprodução do YouTube permanecem funcionais e que a exceção “Permitir site” funciona em navegação real.
+- A nova disposição da aba Próxima música foi validada por XAML/build, mas ainda requer inspeção visual em uma janela real e em diferentes resoluções.
+- A execução Windows `45887612874` é evidência de build intermediário, não da versão final com o editor e o layout compactado.
+- O workflow contém cron diário `17 10 * * *`, mas GitHub Actions executa `schedule` somente a partir da branch padrão. Como não foi autorizado merge na `main`, a rotina diária ainda não está ativa para esta branch. Os testes continuam sendo executados a cada push e podem ser acionados manualmente pela interface do GitHub.
+
+### Próximas ações
+1. Aguardar o término do run `45888415155` e conferir os logs completos dos 21 testes funcionais.
+2. Fazer uma compilação Windows consolidada com todas as alterações atuais; corrigir qualquer falha de build e repetir.
+3. Atualizar este registro com o SHA final, os jobs e os artefatos reais.
+4. Só então preparar a única compilação para a rodada de testes do usuário, com checklist específico de navegação real, reprodução offline, expiração e editor da Biblioteca.
+5. Não fazer merge na `main` sem aprovação explícita.
