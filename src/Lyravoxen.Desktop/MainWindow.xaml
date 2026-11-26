@@ -403,7 +403,7 @@
       <Grid Margin="0,1,0,3">
        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/></Grid.ColumnDefinitions>
        <TextBox Grid.Column="0" x:Name="YoutubeSearchBox" MinHeight="28" Height="28" Padding="6,3" Margin="1" FontSize="10" TextWrapping="NoWrap" VerticalContentAlignment="Center" ToolTip="Pesquise uma música ou cole um link do YouTube"/>
-       <Button Grid.Column="1" Content="⌕ Buscar" Click="YoutubeSearch_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="28" Height="28" Padding="3,1" Margin="1" FontSize="9"/>
+       <Button Grid.Column="1" Content="⌕ Pesquisar" Click="YoutubeSearch_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="28" Height="28" Padding="3,1" Margin="1" FontSize="9"/>
       </Grid>
       <Grid Margin="0,1,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
        <Button x:Name="BrowserProtectionToggleButton" Grid.Column="0" Content="🛡 Proteção" Click="BrowserProtectionToggle_Click" MinHeight="24" Height="24" Padding="2,1" Margin="1" FontSize="9" ToolTip="Ativar ou desativar o bloqueio de domínios de anúncios e rastreadores"/>
@@ -411,10 +411,10 @@
       </Grid>
       <TextBlock x:Name="BrowserProtectionStatusText" Text="Carregando proteção..." Foreground="{DynamicResource TextMuted}" FontSize="8" TextWrapping="Wrap" MaxHeight="24" Margin="3,1"/>
       <WrapPanel Margin="0,2,0,0" HorizontalAlignment="Center">
-       <Button Content="◀" Click="YoutubeSearchBack_Click" MinHeight="23" Height="23" Width="38" Padding="2,1" Margin="1" FontSize="9" ToolTip="Voltar"/>
-       <Button Content="▶" Click="YoutubeSearchForward_Click" MinHeight="23" Height="23" Width="38" Padding="2,1" Margin="1" FontSize="9" ToolTip="Avançar"/>
-       <Button Content="↻" Click="YoutubeSearchRefresh_Click" MinHeight="23" Height="23" Width="38" Padding="2,1" Margin="1" FontSize="9" ToolTip="Atualizar"/>
-       <Button Content="Copiar" Click="CopyBrowserLink_Click" MinHeight="23" Height="23" Padding="3,1" Margin="1" FontSize="8" ToolTip="Copiar link da página"/>
+       <Button Content="◀ Voltar" Click="YoutubeSearchBack_Click" MinHeight="23" Height="23" Width="38" Padding="2,1" Margin="1" FontSize="9" ToolTip="Voltar"/>
+       <Button Content="Avançar ▶" Click="YoutubeSearchForward_Click" MinHeight="23" Height="23" Width="38" Padding="2,1" Margin="1" FontSize="9" ToolTip="Avançar"/>
+       <Button Content="↻ Atualizar" Click="YoutubeSearchRefresh_Click" MinHeight="23" Height="23" Width="38" Padding="2,1" Margin="1" FontSize="9" ToolTip="Atualizar"/>
+       <Button Content="Copiar link" Click="CopyBrowserLink_Click" MinHeight="23" Height="23" Padding="3,1" Margin="1" FontSize="8" ToolTip="Copiar link da página"/>
       </WrapPanel>
       <WrapPanel Margin="0,2,0,0" HorizontalAlignment="Center">
        <Button Content="▶ YouTube" Tag="youtube" Click="OpenQuickSite_Click" MinHeight="23" Height="23" Padding="4,1" Margin="1" FontSize="8"/>
