@@ -207,3 +207,8 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 ### Ajuste de sincronização do teste mobile — 26/11/2026
 - Após preservar `pastepanel`, o teste Playwright passou pelos fluxos de pedido, biblioteca e controles (111 verificações OK), mas uma verificação inicial do status após digitar o PIN falhou por condição de corrida: o teste verificava o texto antes da resposta assíncrona de estado.
 - Ajuste apenas no teste: aguardar explicitamente o status “Bíblia” antes da asserção. A falha não indicou regressão de funcionalidade da aplicação; o teste deve ser repetido para confirmar.
+
+
+### Instruções de atualização do Worker público — 26/11/2026
+- O arquivo `LEIA-ME-nuvem.txt` gerado pelo app agora inclui uma seção específica para instalações existentes: no Lyravoxen, gerar novo `worker.js`, substituir o código no Worker Cloudflare já criado e fazer Deploy, preservando o namespace KV `PEDIDOS` e o secret `ADMIN_TOKEN`. Essa atualização é necessária para que o bloqueio de IP público seja aplicado no serviço remoto sem apagar a fila já armazenada.
+- Teste mobile corrigido para aguardar estado inicial após PIN; revisão Playwright em andamento para validar 112 verificações.

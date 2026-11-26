@@ -46,6 +46,12 @@ ou me mande o texto/foto da tela.
 6) Pegue o endereço do serviço (algo como https://lyravoxen-pedidos.SEUNOME.workers.dev), cole no Lyravoxen, clique em
    "Testar conexão". Se aparecer "Conectado", pronto.
 
+ATUALIZAÇÃO PARA QUEM JÁ TEM O WORKER CRIADO
+- No Lyravoxen, abra Pedidos → Pedidos pela internet → "Gerar código do serviço (worker.js)".
+- No painel do Cloudflare, abra o Worker existente → "Edit code". Substitua o código antigo pelo novo worker.js e clique em "Deploy".
+- NÃO apague nem recrie o namespace KV PEDIDOS e NÃO troque o ADMIN_TOKEN. Assim os pedidos existentes permanecem salvos.
+- Esta atualização é necessária para o bloqueio de IPs pela internet; sem ela, o bloqueio continuará funcionando apenas para pedidos recebidos diretamente na rede local.
+
 COMO USAR
 - Divulgue o link  ENDEREÇO/pedido  (o Lyravoxen copia para você) ou mande o formulário .html gerado depois de salvar o endereço:
   a pessoa preenche e toca em "Enviar pedido ao operador"; o pedido entra na lista 📥 Pedidos em até ~1 minuto, de qualquer rede.
