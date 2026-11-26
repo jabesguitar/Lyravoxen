@@ -409,3 +409,57 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - A Ajuda contextual foi atualizada para apontar para Biblioteca Offline. O workflow Windows foi habilitado para a branch de trabalho.
 - Nenhuma lógica de player, sincronização, controle remoto, Holyrics ou tema foi intencionalmente alterada nesta etapa.
 - Estado: alterações enviadas; CI Windows e testes automatizados ainda precisam concluir. Não considerar a compilação aprovada até o workflow ficar verde.
+
+
+## 26/11/2026 — Requisitos detalhados confirmados pelo usuário para a próxima rodada
+
+### Solicitações do usuário (confirmadas nesta conversa)
+1. **Retenção programável da Biblioteca Offline:** o operador escolhe por quantos dias cada arquivo offline ficará armazenado. Presets explicitamente citados: 5, 7, 14 e 30 dias (o usuário quer escolher/programar o prazo). Ao vencer, excluir somente a cópia local de mídia; preservar cadastro, link/ID exato, letra, tempos, metadados, pasta e histórico. O prazo deve ser visível e editável, com data de expiração e estado.
+2. **Preparar offline diretamente nos Pedidos:** cada pedido recebido deve ter ação explícita “Baixar offline”/“Preparar offline”, para o operador preparar antes do evento. A ação deve usar o PC anfitrião como armazenamento e refletir estado/progresso. Evitar duplicatas e associar ao pedido a gravação/versão exata.
+3. **Fonte do arquivo offline:** preservar o link/ID exato do YouTube como referência. Não implementar extração de áudio do YouTube nem contornar restrições da plataforma. Quando só houver URL de vídeo sem arquivo offline autorizado, a ação deve explicar que precisa de MP3/WAV fornecido/importado ou URL direta de áudio cujo download seja autorizado. Quando houver arquivo autorizado, copiar/baixar para o armazenamento local e associar ao pedido.
+4. **Cadastrar letras — layout compacto:** reduzir botões, espaçamentos, altura e rótulos para estilo minimalista e reorganizar em grupos/grade, de modo que todos os comandos operacionais caibam sem rolagem no painel lateral. Não alterar a largura/proporção/área do editor “Letra completa” nem da prévia da projeção.
+5. **Próxima música — layout compacto:** reorganizar comandos em grupos/grade com botões menores e minimalistas; todos os controles operacionais devem ficar visíveis sem rolagem no painel esquerdo. Não reduzir o navegador/WebView2 nem sua área de visualização. As abas internas do navegador podem continuar com navegação própria.
+6. **Biblioteca — explicar e organizar ações:** manter “Adicionar vídeo atual a esta pasta”, “Importar áudio MP3/WAV para uso offline” e “Corrigir nomes de todas as músicas”, mas explicar na Ajuda o que cada uma faz, quando usar e o alcance. “Corrigir nomes de todas as músicas” é uma ação em lote que limpa/sugere separação de intérprete e título e remove sufixos como Playback/Legendado/tons abaixo; não executar automaticamente sem comando do usuário. Avaliar agrupamento/compactação visual dos botões na área da Biblioteca.
+7. **Ajuda/tutorial por atualização:** toda funcionalidade ou alteração relevante entregue deve atualizar a Ajuda do aplicativo com instrução de uso e um pequeno registro “Novidades desta versão”, com o que mudou, onde encontrar e como testar. Incluir verificação automatizada de cobertura da Ajuda antes de cada compilação.
+8. **Proteção no navegador da aba Próxima música:** usuário quer experiência semelhante a um navegador com proteção contra anúncios/rastreadores e controle para permitir exceções por site. O código atual usa bloqueio de domínios via WebView2 e lista hosts, mas exclui explicitamente domínios essenciais do YouTube (youtube.com, googlevideo.com, ytimg.com e APIs) para não quebrar o player. Isso não bloqueia anúncios servidos pelo próprio YouTube/mesma origem e não deve ser descrito como bloqueio total. Investigar e testar a proteção por tipo de recurso/domínio sem quebrar pesquisa, reprodução, login, abas e carregamento de letras; manter botão “Proteção” e “Permitir neste site”. Não prometer remoção de anúncios in-stream/first-party.
+9. **Processo de continuidade:** em cada comando/etapa, apresentar checklist separado em “a fazer”, “feito” e “testar”, indicando exatamente em qual aba, janela e controle o usuário deve testar. Atualizar `MEMORIA_CONTINUA.md` cronologicamente a cada mudança significativa e não declarar testes reais do usuário como concluídos sem confirmação.
+
+### Estado técnico observado na branch `feature/offline-library-on-redesign` (26/11/2026)
+- `LibraryVideo` já contém `IsOffline`, `LocalPath`, `Format` e `OfflineExpiresAt`; o modelo ainda não basta para garantir política completa por faixa/pedido, origem autorizada, hash/ID exato, estado de download e erro/progresso.
+- `SongRequest` contém Id, Group, Name, Url, ReceivedAt e SenderIp; ainda não possui estado offline, caminho local, validade ou associação ao ID/hash da gravação.
+- A janela Pedidos já oferece “Preparar como próxima”, “Abrir”, “Copiar link” e “Descartar”; não há ação Baixar offline.
+- `Cadastrar letras` ainda tem um `ScrollViewer` no painel lateral e botões verticais grandes. O editor `ManualLyricsBox` e a prévia ficam nas colunas centrais/direita; preservar suas proporções e área.
+- `Próxima música` ainda tem `ScrollViewer` em todo o painel esquerdo; botões de preparar, confirmar, verificar, proteção, navegação, fontes e abas ocupam coluna de 220 px. O navegador está na coluna direita; preservar sua área.
+- A Biblioteca ainda mostra três botões grandes no rodapé da lista. A ação “Corrigir nomes de todas as músicas” altera nomes em lote; precisa de descrição clara e confirmação/escopo visível.
+- `BrowserAdBlocker` é filtragem por requisição/domínio com lista local + lista StevenBlack. Os domínios do YouTube estão em `ProtectedHosts` e são sempre permitidos para não interromper vídeo; por isso não remove publicidade nativa/in-stream do YouTube. “Permitir neste site” grava exceção por host.
+- Ajuda contextual já existe, mas precisa incluir Biblioteca Offline e a ação Baixar offline, explicar ações da Biblioteca, proteção e novidades por versão. Cobertura automatizada existente: `tests/help_coverage.py`.
+
+### Checklist de implementação desta etapa
+**A fazer**
+- [ ] Definir/implementar política de validade por faixa offline com presets 5/7/14/30 dias e prazo editável, com expiração automática e remoção somente do arquivo local.
+- [ ] Implementar fluxo autorizado de ingestão offline, identidade exata da versão, deduplicação, progresso, estado e mensagens claras quando só houver link YouTube.
+- [ ] Adicionar ação “Baixar offline” em cada pedido, no PC; verificar se a ação no controle remoto/celular é parte da etapa seguinte e manter PC como anfitrião do armazenamento.
+- [ ] Compactar painel lateral de Cadastrar letras sem rolagem, preservando área do editor e prévia.
+- [ ] Compactar painel esquerdo de Próxima música sem rolagem, preservando área do navegador.
+- [ ] Reorganizar/explicar as três ações da Biblioteca e adicionar Ajuda para cada uma.
+- [ ] Investigar proteção de navegador sem quebrar YouTube; documentar limites e testar exceções por site.
+- [ ] Atualizar Ajuda e seção Novidades da versão para cada recurso entregue.
+- [ ] Atualizar este arquivo com resultados/commits e executar testes de build, testes automatizados e cobertura da Ajuda.
+
+**Feito nesta conversa**
+- [x] Recuperadas as decisões anteriores de automação máxima, armazenamento no PC anfitrião, prazos configuráveis, botão de preparação nos Pedidos e preservação exata de versões/tonalidades.
+- [x] Inspecionado o código atual da branch e identificadas lacunas entre requisitos e implementação.
+- [x] Registrado o escopo detalhado e os limites técnicos da proteção do navegador e de fontes offline.
+
+**Testar após implementação**
+- [ ] Biblioteca Offline → selecionar uma faixa → definir 5, 7, 14 ou 30 dias → conferir data de expiração → simular vencimento em teste controlado → confirmar que somente o arquivo local é removido e letra/metadados permanecem.
+- [ ] Pedidos → receber/importar um pedido → clicar “Baixar offline” com arquivo autorizado → verificar progresso, deduplicação, reprodução sem internet e prazo.
+- [ ] Pedidos → clicar “Baixar offline” num pedido que só tenha link YouTube → confirmar mensagem clara de arquivo necessário e preservação do link/ID.
+- [ ] Cadastrar letras → verificar todos os comandos visíveis sem rolagem; confirmar que editor e prévia mantêm tamanho/proporção.
+- [ ] Próxima música → verificar todos os comandos visíveis sem rolagem; confirmar que navegador/WebView2 mantém área e que pesquisa/abas/reprodução continuam funcionando.
+- [ ] Biblioteca → testar Adicionar vídeo atual, Importar MP3/WAV e Corrigir nomes em lote; confirmar que a Ajuda explica cada ação e que nenhuma ação em lote ocorre sem clique/confirmar.
+- [ ] Próxima música → testar Proteção ligada/desligada e Permitir neste site; verificar que sites normais funcionam e registrar anúncios que permanecem no próprio YouTube.
+- [ ] Ajuda → conferir Novidades da versão e instruções de cada função nova.
+
+### Próxima ação técnica
+Implementar em blocos pequenos na branch `feature/offline-library-on-redesign`, começando por arquitetura de mídia/validade e ação nos Pedidos, depois ajustes compactos de interface, proteção do navegador e Ajuda. Não reduzir player/editor/prévia/navegador. Gerar uma única compilação após concluir o bloco funcional e os testes automatizados, evitando builds intermediários.
