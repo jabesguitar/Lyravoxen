@@ -266,3 +266,17 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Em seguida desligar a internet e selecionar novamente a faixa na Biblioteca. A reprodução deve continuar normalmente. Seleção de faixa offline chama PlayLocalAudio diretamente.
 - Não é necessário preparar a próxima música para esse teste inicial. O teste de reprodução offline pela Biblioteca é distinto do teste de “Preparar próxima”.
 - Estado dos testes manuais: ainda não informado pelo usuário; aguardando resultado de YouTube online e áudio local sem internet.
+
+### Resultado do usuário — teste de reprodução e limpeza automática — 26/11/2026
+- Usuário enviou captura da aba “Ao vivo” com vídeo do YouTube “Imagine - Cassiane” em 4:51/4:52, indicando reprodução online quase até o fim.
+- Resultado relatado: ao terminar o hino, a letra não sai sozinha; usuário precisa clicar em “Sair da projeção”. Registrar como falha confirmada da limpeza automática no uso real, apesar de EndPlayback já chamar PublishProjectionOnly("") e fechar apresentação rápida do Holyrics no código. Investigar origem do evento de término do WebView2/YouTube e se a limpeza precisa fechar/limpar explicitamente a projeção ativa. Não alterar sem análise e teste.
+- Captura também mostra status: “Falha ao enviar a letra ao Holyrics: No quick presentation available”. Registrar como problema separado de integração Holyrics; não confundir com o defeito de limpeza automática.
+- Botão vermelho do controle remoto: usuário confirmou “ficou vermelho ok” — ajuste visual aprovado.
+- O usuário pediu um checklist contínuo por etapa, com estados feito/correto/pendente.
+- Estado manual:
+  - Reprodução YouTube online: reprodução observada até 4:51/4:52; considerar parcialmente verificada, falta confirmar som e fluxo completo.
+  - Limpeza automática da letra ao terminar: FALHOU no teste real.
+  - Botão vermelho Limpar telão no controle: visualmente aprovado pelo usuário.
+  - Áudio offline MP3/WAV: ainda não testado; usuário pediu tutorial.
+- Tutorial fornecido: na aba Ao vivo, selecionar guia interna “Biblioteca”; criar/selecionar pasta; “Importar áudio MP3/WAV para uso offline”; escolher arquivo de áudio próprio/autorizado; definir 5/7/14/30 dias; aguardar importação; clicar na faixa da lista para tocar; desligar internet e selecionar novamente a faixa para validar offline. Não usar “Preparar próxima” para este teste.
+- Próxima ação técnica: investigar correção de limpeza automática ao término e integração Holyrics “No quick presentation available”. Próxima ação do usuário: executar o tutorial de importação/reprodução offline e reportar resultado; manter checklist atualizado.
