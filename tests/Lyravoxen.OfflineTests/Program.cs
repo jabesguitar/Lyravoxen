@@ -76,6 +76,17 @@ try
     try { await htmlService.DownloadAsync("https://media.example/fake.wav", media); }
     catch (InvalidDataException) { rejectedHtml = true; }
     Assert(rejectedHtml, "recusa página HTML apresentada como arquivo de áudio");
+
+    Assert(!BrowserRequestPolicy.ShouldBlock("www.youtube.com", new[] { "youtube.com", "googlevideo.com" }, new[] { "doubleclick.net" }, Array.Empty<string>()),
+        "preserva domínio protegido do YouTube");
+    Assert(!BrowserRequestPolicy.ShouldBlock("r1.googlevideo.com", new[] { "youtube.com", "googlevideo.com" }, new[] { "googlevideo.com" }, Array.Empty<string>()),
+        "preserva subdomínio de entrega de vídeo do YouTube");
+    Assert(BrowserRequestPolicy.ShouldBlock("ads.doubleclick.net", new[] { "youtube.com", "googlevideo.com" }, new[] { "doubleclick.net" }, Array.Empty<string>()),
+        "bloqueia subdomínio de rastreador/anúncio");
+    Assert(!BrowserRequestPolicy.ShouldBlock("ads.doubleclick.net", new[] { "youtube.com" }, new[] { "doubleclick.net" }, new[] { "doubleclick.net" }),
+        "respeita exceção de domínio permitido pelo usuário");
+    Assert(!BrowserRequestPolicy.ShouldBlock("notdoubleclick.net", new[] { "youtube.com" }, new[] { "doubleclick.net" }, Array.Empty<string>()),
+        "não bloqueia domínio por correspondência parcial insegura");
 }
 finally
 {
