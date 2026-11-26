@@ -643,3 +643,18 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - A branch `main` foi consultada e permanece no SHA `2051135a6e4915c13dda5730fa0248ed7dbcfe2f`; não houve merge nem alteração nela.
 - Estado: pacote Windows consolidado disponível para uma única rodada manual. Ainda dependem de teste no PC anfitrião: reprodução offline real, navegação/ads em WebView2 real e inspeção visual em diferentes resoluções.
 - O agendamento diário foi escrito no YAML da branch, mas ainda não dispara até o workflow estar na branch padrão; manter `main` intacta sem autorização.
+
+
+### 26/11/2026 — Revisão corretiva após feedback visual/funcional do usuário
+- Usuário enviou duas capturas de tela e relatou: anúncios in-stream no começo dos vídeos na aba Próxima música; fluxo de baixar offline não funcionava com links do YouTube; Biblioteca difícil de salvar, organizar e renomear; pediu IP/MAC do remetente e bloqueio/desbloqueio no painel Pedidos.
+- Esclarecido limite técnico: site não consegue obter MAC de dispositivo remoto; Cloudflare Worker consegue registrar IP público via `CF-Connecting-IP`. O IP é dado pessoal e o formulário foi atualizado para informar que IP e horário são registrados.
+- Não foi implementada extração de áudio do YouTube nem tentativa de contornar anúncios/restrições. O player embutido pode continuar mostrando anúncios first-party. Offline continua com MP3/WAV local autorizado ou URL direta de arquivo de áudio.
+- Worker atualizado em `CloudWorker.cs`: IP armazenado com pedido, API autenticada `/bloqueios`, bloqueio/desbloqueio, limite de 5 envios por IP/10 minutos e limite global de fila. Testes do Worker passaram.
+- Atenção operacional: o código de Worker novo está no repositório e o app gera o arquivo atualizado, mas a URL pública `lyravoxen-pedidos.ferkt319.workers.dev` não foi implantada por esta sessão por ausência de conexão à conta Cloudflare. Atualização manual única do Worker é necessária; não recriar KV nem trocar ADMIN_TOKEN. Pedidos antigos podem não conter IP.
+- UI Pedidos sincroniza bloqueios remotos ao abrir, mostra IP por pedido, oferece bloquear/desbloquear e atualizar lista remota; avisa quando o IP não chega porque o Worker pode estar desatualizado.
+- Biblioteca agora oferece fallback direto para importação local quando a URL é YouTube ou falha como arquivo direto; pedido offline permite escolher pasta; ações de mover/remover música por pasta; criar pasta no seletor; busca por título/intérprete/compositor; validação de nomes de pasta duplicados; identidade exata para registros de mídia. Salvamento de biblioteca retorna sucesso/falha para não mostrar sucesso falso.
+- Ajuda cobre novos botões e regras.
+- Validação final workflow `45894030900`, SHA `4f39f92562b6eb470b16be1d3513e9d1ecbe8543`: 21 testes offline, 44 Worker, 25 formulários Chromium, 112 testes mobile Chromium, cobertura Ajuda e C# static checks; todos aprovados. Build Windows x64, timeline tests, ZIP portátil e instalador também aprovados.
+- Artefatos: Windows x64 ID `15153435863`; portable ZIP ID `15153276186`; instalador ID `15153231348`. Workflow: https://github.com/jabesguitar/Lyravoxen/actions/runs/45894030900.
+- `main` não alterada; SHA consultado `2051135a6e4915c13dda5730fa0248ed7dbcfe2f`. Branch feature atual recebeu commits de correção e documentação.
+- Pendências reais: atualização manual única do Worker no Cloudflare; teste manual no PC anfitrião de áudio real, biblioteca, IP público e WebView2; anúncios do YouTube first-party não são removidos.
