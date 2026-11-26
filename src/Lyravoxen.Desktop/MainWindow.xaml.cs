@@ -2834,7 +2834,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SaveLibrary()
+    private bool SaveLibrary()
     {
         try
         {
@@ -2848,10 +2848,13 @@ public partial class MainWindow : Window
             if (File.Exists(_libraryFile))
                 File.Copy(_libraryFile, backupFile, true);
             File.Move(tempFile, _libraryFile, true);
+            return true;
         }
         catch (Exception ex)
         {
             StatusText.Text = "Não foi possível salvar a biblioteca; o arquivo anterior foi preservado: " + ex.Message;
+            AppLog.Error("Falha ao persistir a Biblioteca Offline", ex);
+            return false;
         }
     }
 
@@ -2915,9 +2918,110 @@ public partial class MainWindow : Window
         if (LibraryFolderList.SelectedItem is not LibraryFolder folder) return;
         var name = PromptForText("Renomear pasta", "Novo nome:", folder.Name);
         if (string.IsNullOrWhiteSpace(name)) return;
-        folder.Name = name.Trim();
-        SaveLibrary();
+        name = name.Trim();
+        if (_library.Any(other => other.Id != folder.Id && string.Equals(other.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            System.Windows.MessageBox.Show(this, "Já existe uma pasta com esse nome.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var previous = folder.Name;
+        folder.Name = name;
+        if (!SaveLibrary()) { folder.Name = previous; return; }
         RefreshFolders(folder.Id);
+        StatusText.Text = "Pasta renomeada: " + folder.Name;
+    }
+
+    private LibraryFolder? ChooseLibraryFolder(string title = "Escolher pasta da Biblioteca")
+    {
+        if (_library.Count == 0)
+        {
+            var name = PromptForText("Criar pasta", "Ainda não existe nenhuma pasta. Digite o nome da pasta:");
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            var created = new LibraryFolder { Name = name.Trim() };
+            _library.Add(created);
+            if (!SaveLibrary()) { _library.Remove(created); return null; }
+            RefreshFolders(created.Id);
+            return created;
+        }
+
+        var combo = new System.Windows.Controls.ComboBox
+        {
+            ItemsSource = _library,
+            DisplayMemberPath = "Name",
+            SelectedIndex = 0,
+            MinWidth = 300,
+            Margin = new Thickness(0, 8, 0, 12)
+        };
+        var add = new System.Windows.Controls.Button { Content = "＋ Criar nova pasta", Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(10, 6, 10, 6) };
+        var choose = new System.Windows.Controls.Button { Content = "Usar pasta selecionada", Padding = new Thickness(10, 6, 10, 6), MinWidth = 150 };
+        var cancel = new System.Windows.Controls.Button { Content = "Cancelar", Padding = new Thickness(10, 6, 10, 6) };
+        var buttons = new System.Windows.Controls.WrapPanel { HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+        buttons.Children.Add(add); buttons.Children.Add(cancel); buttons.Children.Add(choose);
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Selecione a pasta onde a música deve ficar.", Foreground = Hex("#F2F6F8"), TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(combo); panel.Children.Add(buttons);
+        var dialog = new Window { Title = title, Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner, SizeToContent = SizeToContent.WidthAndHeight, MinWidth = 390, Background = Hex("#071A32"), Content = panel };
+        LibraryFolder? result = null;
+        choose.Click += (_, _) => { result = combo.SelectedItem as LibraryFolder; dialog.DialogResult = result is not null; };
+        cancel.Click += (_, _) => dialog.DialogResult = false;
+        add.Click += (_, _) =>
+        {
+            var name = PromptForText("Criar pasta", "Nome da nova pasta:");
+            if (string.IsNullOrWhiteSpace(name)) return;
+            name = name.Trim();
+            if (_library.Any(folder => string.Equals(folder.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                System.Windows.MessageBox.Show(dialog, "Já existe uma pasta com esse nome.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var created = new LibraryFolder { Name = name };
+            _library.Add(created);
+            if (!SaveLibrary()) { _library.Remove(created); return; }
+            combo.ItemsSource = null; combo.ItemsSource = _library; combo.SelectedItem = created;
+            RefreshFolders(created.Id);
+        };
+        dialog.ShowDialog();
+        return result;
+    }
+
+    private void MoveLibrarySong_Click(object sender, RoutedEventArgs e)
+    {
+        var video = _selectedLibraryVideo;
+        var source = LibraryFolderList.SelectedItem as LibraryFolder;
+        if (video is null || source is null)
+        {
+            System.Windows.MessageBox.Show(this, "Selecione uma música da lista primeiro.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var target = ChooseLibraryFolder("Mover música para outra pasta");
+        if (target is null || target.Id == source.Id) return;
+        source.Videos.Remove(video);
+        var duplicate = target.Videos.Any(item => video.IsOffline
+            ? item.IsOffline && string.Equals(item.LocalPath, video.LocalPath, StringComparison.OrdinalIgnoreCase)
+            : !item.IsOffline && string.Equals(item.VideoId, video.VideoId, StringComparison.Ordinal));
+        if (!duplicate) target.Videos.Add(video);
+        if (!SaveLibrary())
+        {
+            if (!source.Videos.Contains(video)) source.Videos.Add(video);
+            return;
+        }
+        _selectedLibraryVideo = null;
+        RefreshFolders(target.Id);
+        StatusText.Text = duplicate ? "A música já existia na pasta de destino; o item duplicado foi removido da pasta anterior." : "Música movida para: " + target.Name;
+    }
+
+    private void RemoveLibrarySong_Click(object sender, RoutedEventArgs e)
+    {
+        var video = _selectedLibraryVideo;
+        var folder = LibraryFolderList.SelectedItem as LibraryFolder;
+        if (video is null || folder is null) return;
+        var result = System.Windows.MessageBox.Show(this, "Remover esta música somente desta pasta? O arquivo de áudio não será apagado.", "Biblioteca", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (result != MessageBoxResult.Yes) return;
+        folder.Videos.Remove(video);
+        if (!SaveLibrary()) { folder.Videos.Add(video); return; }
+        _selectedLibraryVideo = null;
+        RefreshFolders(folder.Id);
+        StatusText.Text = "Música removida desta pasta. O arquivo original foi preservado.";
     }
 
     private void DeleteFolder_Click(object sender, RoutedEventArgs e)
