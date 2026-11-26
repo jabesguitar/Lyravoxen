@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using Lyravoxen.Integration;
+using Lyravoxen.Offline;
 using Microsoft.Web.WebView2.Core;
 using Lyravoxen.Models;
 using Lyravoxen.Services;
@@ -76,6 +77,8 @@ public partial class MainWindow : Window
     private readonly string _preferencesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "preferences.json");
     private bool _loadingPreferences;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
+    private readonly OfflineMediaService _offlineMedia = new();
+    private static string OfflineMediaFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
 
     public MainWindow()
     {
@@ -2932,7 +2935,7 @@ public partial class MainWindow : Window
     }
 
 
-    private void ImportAudio_Click(object sender, RoutedEventArgs e)
+    private async void ImportAudio_Click(object sender, RoutedEventArgs e)
     {
         if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
         {
@@ -2946,29 +2949,71 @@ public partial class MainWindow : Window
             System.Windows.MessageBox.Show("Escolha 5, 7, 14 ou 30 dias.", "Validade offline", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        using var dialog = new System.Windows.Forms.OpenFileDialog
+
+        var source = PromptForText("Preparar áudio offline", "Cole o endereço direto de um arquivo MP3/WAV autorizado. Deixe vazio para importar um arquivo do computador:");
+        if (source is null) return;
+        try
         {
-            Title = "Selecione um áudio que você tem direito de usar",
-            Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
-            Multiselect = true
-        };
-        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-        var mediaFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
-        Directory.CreateDirectory(mediaFolder);
-        var expires = DateTime.Now.AddDays(days);
-        foreach (var source in dialog.FileNames)
-        {
-            var ext = Path.GetExtension(source).ToLowerInvariant();
-            if (ext is not ".mp3" and not ".wav") continue;
-            var target = Path.Combine(mediaFolder, Guid.NewGuid().ToString("N") + ext);
-            File.Copy(source, target, false);
-            var title = Path.GetFileNameWithoutExtension(source);
-            folder.Videos.RemoveAll(v => v.IsOffline && string.Equals(v.Title, title, StringComparison.OrdinalIgnoreCase));
-            folder.Videos.Add(new LibraryVideo { Title = title, TrackName = title, IsOffline = true, LocalPath = target, Format = ext.TrimStart('.'), SavedAt = DateTime.Now, OfflineExpiresAt = expires });
+            OfflineMediaResult result;
+            if (!string.IsNullOrWhiteSpace(source))
+            {
+                StatusText.Text = "Baixando e validando o áudio autorizado...";
+                result = await _offlineMedia.DownloadAsync(source.Trim(), OfflineMediaFolder);
+            }
+            else
+            {
+                using var dialog = new System.Windows.Forms.OpenFileDialog
+                {
+                    Title = "Selecione um áudio MP3 ou WAV que você tem direito de usar",
+                    Filter = "Áudios MP3 ou WAV (*.mp3;*.wav)|*.mp3;*.wav",
+                    Multiselect = true
+                };
+                if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                var expires = DateTime.Now.AddDays(days);
+                foreach (var file in dialog.FileNames)
+                {
+                    var imported = await _offlineMedia.ImportLocalAsync(file, OfflineMediaFolder);
+                    AddOrUpdateOfflineLibraryItem(folder, imported, Path.GetFileNameWithoutExtension(file), expires);
+                }
+                SaveLibrary();
+                RefreshFolders(folder.Id);
+                StatusText.Text = "Áudio(s) importado(s) e validados para uso offline. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
+                return;
+            }
+
+            var title = Uri.TryCreate(source.Trim(), UriKind.Absolute, out var uri)
+                ? Path.GetFileNameWithoutExtension(uri.AbsolutePath)
+                : "Áudio offline";
+            if (string.IsNullOrWhiteSpace(title)) title = "Áudio offline";
+            AddOrUpdateOfflineLibraryItem(folder, result, title, DateTime.Now.AddDays(days));
+            SaveLibrary();
+            RefreshFolders(folder.Id);
+            StatusText.Text = "Áudio baixado, validado e salvo na Biblioteca Offline. Validade até " + DateTime.Now.AddDays(days).ToString("dd/MM/yyyy HH:mm") + ".";
         }
-        SaveLibrary();
-        RefreshLibrarySongs();
-        StatusText.Text = "Áudio importado para uso offline. A cópia local vence em " + expires.ToString("dd/MM/yyyy HH:mm") + "; os dados da biblioteca serão preservados após a validade.";
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha ao preparar áudio na Biblioteca Offline", ex);
+            StatusText.Text = "Não foi possível preparar o áudio: " + ex.Message;
+            System.Windows.MessageBox.Show(this, ex.Message, "Biblioteca Offline", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void AddOrUpdateOfflineLibraryItem(LibraryFolder folder, OfflineMediaResult result, string title, DateTime expires)
+    {
+        var existing = _library.SelectMany(f => f.Videos)
+            .FirstOrDefault(v => v.IsOffline && string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            existing.OfflineExpiresAt = expires;
+            existing.SavedAt = DateTime.Now;
+            if (string.IsNullOrWhiteSpace(existing.Title)) existing.Title = title;
+            return;
+        }
+        folder.Videos.Add(new LibraryVideo
+        {
+            Title = title, TrackName = title, IsOffline = true, LocalPath = result.FilePath,
+            Format = result.Format, SavedAt = DateTime.Now, OfflineExpiresAt = expires
+        });
     }
 
     private void PlayLocalAudio(LibraryVideo video)
