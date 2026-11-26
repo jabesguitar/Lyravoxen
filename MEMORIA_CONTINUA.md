@@ -187,3 +187,8 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Se não houver correspondência exata válida, o fluxo original do YouTube permanece intacto. A prévia antiga de letra da próxima é recolhida ao preparar uma faixa offline.
 - A preparação offline em memória ainda não é persistida para retomada após fechar o aplicativo e ainda não é exposta no JSON do controle remoto; a preparação e reprodução offline foram implementadas no fluxo da janela Pedidos do Windows. Esses pontos devem ser avaliados antes da entrega final.
 - Build Windows #664 (commit `5bf96d2`) avançou com compilação e teste de linha do tempo concluídos com sucesso; etapa de instalador ainda estava em execução no momento do registro. O erro CS0103 de `Path` foi corrigido com `using System.IO;`.
+
+
+### Teste automatizado do Worker integrado ao workflow — 26/11/2026
+- O workflow Windows foi ampliado com um job Ubuntu independente que extrai o Worker do código C# e executa `tests/js/worker.test.mjs`, incluindo os cenários de captura do IP público, bloqueio, listagem e desbloqueio. O build Windows agora depende da aprovação desse teste, evitando gerar instalador quando o Worker não passar.
+- A associação de pedidos a arquivos offline usa correspondência exata normalizada do nome informado no pedido; não faz aproximação por semelhança para evitar tocar a faixa errada.
