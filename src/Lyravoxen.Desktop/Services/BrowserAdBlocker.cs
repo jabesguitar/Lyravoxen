@@ -64,7 +64,7 @@ internal static class BrowserAdBlocker
             if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return;
             if (!ShouldBlock(uri.Host)) return;
             args.Response = core.Environment.CreateWebResourceResponse(
-                null,  blockedStatusCode: 403, reasonPhrase: "Blocked by Lyravoxen", headers: "Content-Type: text/plain; charset=utf-8");
+                null, 403, "Blocked by Lyravoxen", "Content-Type: text/plain; charset=utf-8");
             Interlocked.Increment(ref _blockedCount);
         };
     }
