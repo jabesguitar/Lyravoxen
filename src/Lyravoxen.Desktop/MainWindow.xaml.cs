@@ -2908,7 +2908,7 @@ public partial class MainWindow : Window
         }
         var folder = new LibraryFolder { Name = name.Trim() };
         _library.Add(folder);
-        SaveLibrary();
+        if (!SaveLibrary()) { _library.Remove(folder); return; }
         RefreshFolders(folder.Id);
         StatusText.Text = "Pasta criada: " + folder.Name;
     }
@@ -3032,7 +3032,7 @@ public partial class MainWindow : Window
             "Confirmar exclusão", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (result != MessageBoxResult.Yes) return;
         _library.Remove(folder);
-        SaveLibrary();
+        if (!SaveLibrary()) { _library.Add(folder); return; }
         RefreshFolders();
     }
 
@@ -3136,9 +3136,9 @@ public partial class MainWindow : Window
                     var imported = await _offlineMedia.ImportLocalAsync(file, OfflineMediaFolder);
                     AddOrUpdateOfflineLibraryItem(folder, imported, Path.GetFileNameWithoutExtension(file), expires);
                 }
-                SaveLibrary();
+                if (!SaveLibrary()) throw new IOException("Os arquivos de áudio foram importados, mas a biblioteca não confirmou o salvamento. Reabra a aba e tente importar novamente.");
                 RefreshFolders(folder.Id);
-                StatusText.Text = "Áudio(s) importado(s) e validados para uso offline. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
+                StatusText.Text = "Áudio(s) importado(s) e salvos para uso offline na pasta '" + folder.Name + "'. Validade até " + expires.ToString("dd/MM/yyyy HH:mm") + ".";
                 return;
             }
 
@@ -3147,9 +3147,9 @@ public partial class MainWindow : Window
                 : "Áudio offline";
             if (string.IsNullOrWhiteSpace(title)) title = "Áudio offline";
             AddOrUpdateOfflineLibraryItem(folder, result, title, DateTime.Now.AddDays(days));
-            SaveLibrary();
+            if (!SaveLibrary()) throw new IOException("O áudio foi baixado, mas a biblioteca não confirmou o salvamento. O arquivo foi preservado na pasta de mídia.");
             RefreshFolders(folder.Id);
-            StatusText.Text = "Áudio baixado, validado e salvo na Biblioteca Offline. Validade até " + DateTime.Now.AddDays(days).ToString("dd/MM/yyyy HH:mm") + ".";
+            StatusText.Text = "Áudio baixado e salvo na pasta '" + folder.Name + "'. Validade até " + DateTime.Now.AddDays(days).ToString("dd/MM/yyyy HH:mm") + ".";
         }
         catch (Exception ex)
         {
@@ -3252,7 +3252,13 @@ public partial class MainWindow : Window
                 MusicArtistBox.Text = video.Artist;
                 ManualLyricsBox.Text = video.FullLyrics;
             }
-            SaveLibrary();
+            if (!SaveLibrary())
+            {
+                video.Title = video.TrackName = titleBox.Text.Trim();
+                video.Artist = artistBox.Text.Trim();
+                video.FullLyrics = lyricsBox.Text.Trim();
+                return;
+            }
             RefreshLibrarySongs();
             StatusText.Text = "Dados e letra atualizados na Biblioteca.";
             dialog.DialogResult = true;
