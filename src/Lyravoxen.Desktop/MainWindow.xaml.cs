@@ -47,6 +47,7 @@ public partial class MainWindow : Window
     private readonly List<VideoHistoryItem> _history = new();
     private readonly List<LibraryFolder> _library = new();
     private LibraryVideo? _currentVideo;
+    private LibraryVideo? _selectedLibraryVideo;
     private readonly DispatcherTimer _audioTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
     private readonly DispatcherTimer _offlineCleanupTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMinutes(1) };
     private bool _isLocalAudioPlaying;
@@ -2961,6 +2962,7 @@ public partial class MainWindow : Window
     private async void LibrarySong_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_librarySelectionChanging || LibrarySongList.SelectedItem is not LibraryVideo video) return;
+        _selectedLibraryVideo = video;
         LibrarySongList.SelectedItem = null;
         if (video.IsOffline)
         {
@@ -3051,6 +3053,73 @@ public partial class MainWindow : Window
             Title = title, TrackName = title, IsOffline = true, LocalPath = result.FilePath,
             Format = result.Format, SavedAt = DateTime.Now, OfflineExpiresAt = expires
         });
+    }
+
+    private void EditLibrarySong_Click(object sender, RoutedEventArgs e)
+    {
+        var video = _selectedLibraryVideo;
+        if (video is null)
+        {
+            System.Windows.MessageBox.Show(this, "Selecione uma música na lista antes de editar.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var titleBox = new System.Windows.Controls.TextBox { Text = video.TrackName.Length > 0 ? video.TrackName : video.Title, Margin = new Thickness(0, 3, 0, 8), MinHeight = 32 };
+        var artistBox = new System.Windows.Controls.TextBox { Text = video.Artist, Margin = new Thickness(0, 3, 0, 8), MinHeight = 32 };
+        var lyricsBox = new System.Windows.Controls.TextBox
+        {
+            Text = video.FullLyrics, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MinHeight = 220, Margin = new Thickness(0, 3, 0, 8)
+        };
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Título da música", FontWeight = FontWeights.Bold });
+        panel.Children.Add(titleBox);
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Intérprete", FontWeight = FontWeights.Bold });
+        panel.Children.Add(artistBox);
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Letra completa", FontWeight = FontWeights.Bold });
+        panel.Children.Add(lyricsBox);
+        var buttons = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var save = new System.Windows.Controls.Button { Content = "Salvar alterações", MinWidth = 130, Margin = new Thickness(4), Padding = new Thickness(10, 7, 10, 7) };
+        var cancel = new System.Windows.Controls.Button { Content = "Cancelar", MinWidth = 90, Margin = new Thickness(4), Padding = new Thickness(10, 7, 10, 7) };
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(save);
+        panel.Children.Add(buttons);
+        var dialog = new Window
+        {
+            Title = "Editar música da Biblioteca",
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 560, Height = 480, MinWidth = 460, MinHeight = 400,
+            ResizeMode = ResizeMode.CanResize,
+            Background = Hex("#071A32"),
+            Content = panel
+        };
+        save.Click += (_, _) =>
+        {
+            if (string.IsNullOrWhiteSpace(titleBox.Text))
+            {
+                System.Windows.MessageBox.Show(dialog, "Informe o título da música.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            video.Title = titleBox.Text.Trim();
+            video.TrackName = titleBox.Text.Trim();
+            video.Artist = artistBox.Text.Trim();
+            video.FullLyrics = lyricsBox.Text.Trim();
+            video.SavedAt = DateTime.Now;
+            if (ReferenceEquals(_currentVideo, video))
+            {
+                MusicTrackBox.Text = video.TrackName;
+                MusicArtistBox.Text = video.Artist;
+                ManualLyricsBox.Text = video.FullLyrics;
+            }
+            SaveLibrary();
+            RefreshLibrarySongs();
+            StatusText.Text = "Dados e letra atualizados na Biblioteca.";
+            dialog.DialogResult = true;
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => { dialog.DialogResult = false; dialog.Close(); };
+        dialog.ShowDialog();
     }
 
     private void PlayLocalAudio(LibraryVideo video)
