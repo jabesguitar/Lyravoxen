@@ -2973,6 +2973,7 @@ public partial class MainWindow : Window
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
     {
         var firstEnd = !_playbackEnded;
+        _lastPlayerState = 0; // não deixar estado antigo do YouTube impedir o avanço automático do áudio local
         EndPlayback("Áudio offline finalizado. Projeção encerrada automaticamente.");
         if (firstEnd) MaybeAutoAdvance();
     }

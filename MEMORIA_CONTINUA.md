@@ -168,3 +168,9 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Bloqueio de remetentes: o Worker Cloudflare está sendo ampliado para capturar o cabeçalho `CF-Connecting-IP`, guardar o IP junto ao pedido, expor endpoint autenticado `/bloqueios` para listar/bloquear/desbloquear, e recusar envios de IPs bloqueados. O desktop propaga o IP do Worker e mantém lista local nomeada em `%LOCALAPPDATA%/Lyravoxen/pedidos-bloqueados.json`; o servidor HTTP local também consulta essa lista antes de aceitar pedidos. A sincronização e os testes automatizados ainda não foram executados.
 - Cuidado técnico: endereços IP públicos podem mudar ou ser compartilhados por várias pessoas (NAT/operadora); o bloqueio por IP é uma barreira operacional, não uma identificação pessoal infalível. MAC address não é disponibilizado ao serviço web remoto.
 - Próximas ações: validar que a nova API Worker foi integrada no código gerado, adicionar testes de bloqueio por IP, conferir a associação entre arquivo offline e música pedida, executar lint/testes/build e corrigir erros antes da entrega consolidada.
+
+
+### Ajuste de robustez — 26/11/2026
+- Refinada a tecla Esc para fechar a janela de projeção própria (não apenas limpar o texto), atualizar o botão para “Abrir projeção própria” e enviar o fechamento ao Holyrics. A música continua tocando e o Lyravoxen permanece aberto.
+- Ajustado o fim de áudio offline para zerar o estado antigo do player YouTube antes de chamar o avanço automático, evitando que um estado de reprodução anterior impeça a troca.
+- Commit da consolidação anterior: `42efc9a44cad121b34142499ceaa8cd8b7c31605`. Ainda falta confirmar o workflow dessa revisão e executar os testes de integração da página/Worker.
