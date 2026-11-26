@@ -545,3 +545,42 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - A implementação atual do botão **Baixar offline** ainda abre seletor local de MP3/WAV; ela não baixa o conteúdo apontado pelo link. O botão deve ser entendido como importação/associação de um arquivo local, não download remoto.
 - Próximo trabalho: avaliar fluxo seguro para links diretos de arquivos de áudio autorizados (download para PC, validação de tipo/tamanho, timeout, hash, deduplicação, validade) e manter URLs YouTube como referência exata sem extração de áudio ou contorno de proteção. Para YouTube, não declarar offline até existir um arquivo local obtido por meio autorizado.
 - O usuário reforçou que deseja fazer todos os testes de uma só vez, após correções e validação prévia; evitar entregar builds fragmentadas.
+
+
+## 26/11/2026 — Evidências visuais e novo registro de retomada
+
+### Solicitações/relato do usuário
+- O usuário enviou duas capturas da aplicação em execução (1366×768).
+- Na aba Próxima música, o painel lateral esquerdo continua com rolagem vertical e parte dos controles/fontes de pesquisa fica abaixo da área visível. Solicita botões minimalistas e comandos acessíveis sem rolar.
+- Na janela Pedidos, a ação Baixar offline abre o seletor de arquivos MP3/WAV para localizar um arquivo existente. O usuário esperava download e salvamento automáticos da mídia de uma URL autorizada, pronta para reprodução posterior sem internet.
+
+### Diagnóstico técnico confirmado pela inspeção do código
+- MainWindow.xaml ainda contém um ScrollViewer no painel esquerdo da aba Próxima música; portanto a compactação anterior não resolveu o problema visual confirmado pela captura.
+- MainWindow.Requests.cs implementa a ação atual como seleção/importação de arquivo local; não é download remoto. A interface e a Ajuda precisam distinguir Baixar de URL direta autorizada de Importar MP3/WAV do computador.
+- SongRequestStore.cs contém caminho local, ID do vídeo, validade e formato, mas ainda não implementa estado completo de download, hash ou progresso.
+- A reprodução offline vinculada ao pedido ainda precisa ser verificada de ponta a ponta, sem correspondência apenas por título.
+
+### Limites preservados
+- Para URLs diretas de arquivos de áudio autorizados, implementar download com validação de protocolo, MIME/extensão, tamanho, timeout, hash, deduplicação e associação à gravação exata.
+- Para links que apontem somente ao YouTube, preservar URL/ID e informar claramente que não há arquivo offline disponível. Não extrair áudio nem contornar DRM/restrições da plataforma.
+- Manter a importação local MP3/WAV como alternativa separada.
+- Preservar a área do navegador/WebView2, pesquisa, abas e reprodução; não sacrificar o espaço do navegador para compactar os comandos.
+
+### CI confirmado nesta data
+- Workflow 45874275889, SHA 0f5b591aa417c408cc7ca55df43096ae26043130, terminou com success.
+- Jobs cloud-worker-tests e build aprovados; cobertura da Ajuda, testes do Worker, página remota mobile, build .NET, cue timeline, ZIP portátil e instalador foram concluídos com sucesso.
+- Artefatos gerados: Lyravoxen-Installer-Windows-x64 (ID 15144741646), Lyravoxen-Windows-x64-portable (ID 15144651792) e Lyravoxen-Windows-x64 (ID 15143443015).
+- CI verde comprova compilação e os testes automatizados listados, não comprova download remoto de áudio, reprodução offline real ou inspeção visual em diferentes resoluções.
+
+### Documentação de retomada
+- Criado RETOMADA_ATUAL.md na branch feature/offline-library-on-redesign, commit f6171a01d247ec390de2672239000eac34bc44f0.
+- Esse arquivo contém estado compacto, evidências das capturas, artefatos do CI, decisões preservadas, checklist e próxima ação.
+
+### Próximas ações
+1. Ajustar o painel esquerdo da aba Próxima música para que os comandos principais caibam sem rolagem, sem clipping e sem reduzir a área útil do navegador.
+2. Separar as ações de download de URL direta autorizada e importação local MP3/WAV.
+3. Implementar validações, progresso, hash/deduplicação e associação exata da cópia offline.
+4. Garantir reprodução da cópia local vinculada ao pedido, inclusive após reiniciar o app e sem internet.
+5. Completar expiração automática em tempo real, proteção do navegador e Ajuda.
+6. Rodar testes e gerar uma única compilação consolidada para o usuário.
+7. Não fazer merge na main sem aprovação explícita.
