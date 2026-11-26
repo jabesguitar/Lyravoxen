@@ -54,6 +54,7 @@ jobs:
           node phone.test.mjs
 
   build:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs: cloud-worker-tests
     runs-on: windows-latest
     steps:
