@@ -14,6 +14,10 @@ internal sealed class SongRequest
     public string Url { get; set; } = "";
     public DateTime ReceivedAt { get; set; }
     public string SenderIp { get; set; } = "";
+    public string OfflineLocalPath { get; set; } = "";
+    public string OfflineVideoId { get; set; } = "";
+    public DateTime? OfflineExpiresAt { get; set; }
+    public string OfflineFormat { get; set; } = "";
 }
 
 /// <summary>Lista de espera dos pedidos de música enviados pela página de pedidos.</summary>
