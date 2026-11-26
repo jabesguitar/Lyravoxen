@@ -3141,9 +3141,8 @@ public partial class MainWindow : Window
             RefreshLibrarySongs();
             StatusText.Text = "Dados e letra atualizados na Biblioteca.";
             dialog.DialogResult = true;
-            dialog.Close();
         };
-        cancel.Click += (_, _) => { dialog.DialogResult = false; dialog.Close(); };
+        cancel.Click += (_, _) => { dialog.DialogResult = false; };
         dialog.ShowDialog();
     }
 
