@@ -33,7 +33,11 @@ public partial class MainWindow
     {
         var message = ConfirmNextLyrics();
         StatusText.Text = message;
-        System.Windows.MessageBox.Show(this, message, "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
+        if (message.StartsWith("✅", StringComparison.Ordinal) || message.StartsWith("Letra salva", StringComparison.Ordinal))
+        {
+            NextLyricsText.Text = "";
+            NextLyricsText.Visibility = Visibility.Collapsed;
+        }
     }
 
     /// <summary>Letra do catálogo ainda não salva, que o operador pode confirmar.</summary>
@@ -55,6 +59,7 @@ public partial class MainWindow
                 return;
             }
 
+            NextLyricsText.Visibility = Visibility.Visible;
             NextLyricsText.Text = "🔎 Verificando se esta música já tem letra…";
             var preview = await LyricsPreviewService.CheckAsync(videoId, _library, force);
             if (token != _nextLyricsToken) return; // outra música foi preparada enquanto verificava

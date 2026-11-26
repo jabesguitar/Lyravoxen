@@ -289,7 +289,7 @@ body{padding-bottom:120px}
 #st{position:fixed;left:10px;right:10px;bottom:10px;z-index:5;font-size:14px;color:var(--text);background:rgba(7,26,56,.97);border:1px solid rgba(0,217,245,.35);border-radius:14px;padding:12px 14px;max-height:38vh;overflow:auto;white-space:pre-wrap;box-shadow:0 8px 28px rgba(0,0,0,.45)}
 #st:empty{display:none}
 .card{background:linear-gradient(145deg,rgba(12,39,79,.96),rgba(7,26,56,.97));border:1px solid rgba(49,113,164,.55);border-radius:17px;padding:13px;margin:12px 0;box-shadow:0 8px 24px rgba(0,0,0,.17)}
-.card h2{font-size:13px;margin:0 0 10px;color:#8feaff;font-weight:750;letter-spacing:.035em}
+.collapsible{padding:0;overflow:hidden}.collapsible>summary{list-style:none;cursor:pointer;padding:14px;color:#8feaff;font-size:14px;font-weight:800}.collapsible>summary::-webkit-details-marker{display:none}.collapsible>summary span{display:block;color:var(--muted);font-size:11px;font-weight:500;margin-top:3px}.collapsible[open]>summary{border-bottom:1px solid rgba(49,113,164,.35)}.collapsible>.card{margin:0;border:0;box-shadow:none;background:transparent}.card h2{font-size:13px;margin:0 0 10px;color:#8feaff;font-weight:750;letter-spacing:.035em}
 .slide{background:#020a18;border:1px solid #28517d;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;color:#fff;line-height:1.25;white-space:pre-wrap;overflow:hidden}
 .slide.big{aspect-ratio:16/9;font-size:22px;font-weight:700}
 .slide.mini{min-height:96px;max-height:150px;font-size:15px;color:#dfeeff}
@@ -327,7 +327,7 @@ body.theme-light button{background:linear-gradient(180deg,#fff,#dceaf5);border-c
 body.theme-light button.main{background:linear-gradient(135deg,#21c5dc,#1685bc);border-color:#0b9bb8;color:#06243b}
 body.theme-light button.warn{background:linear-gradient(135deg,#bd5a73,#98405e);color:#fff}
 body.theme-light .card,body.theme-light #pinbox{background:linear-gradient(145deg,#fff,#e6f1f8);border-color:#b1cad9;box-shadow:0 7px 20px rgba(35,80,110,.08)}
-body.theme-light .card h2{color:#087f9e}
+body.theme-light .card h2{color:#087f9e}body.theme-light .collapsible>summary{color:#087f9e}body.theme-light .collapsible[open]>summary{border-color:#c5d7e3}
 body.theme-light .slide{background:#fff;border-color:#a9c4d5;color:#17324d}
 body.theme-light .slide.big{background:#fff;color:#17324d}
 body.theme-light #st{background:rgba(255,255,255,.97);color:#17324d;border-color:#9bc9dc;box-shadow:0 8px 24px rgba(35,80,110,.15)}
@@ -351,13 +351,7 @@ body.theme-light .theme-toggle{background:#fff;border-color:#9bc9dc;color:#087f9
 <button class="gap" style="margin-bottom:4px" onclick="showQr()">📲 QR code dos pedidos online</button>
 
 <div id="p-live" style="display:none">
- <div class="card"><h2>📚 Buscar na biblioteca</h2>
-  <input id="lq" placeholder="Nome da música ou autor" autocomplete="off" onkeydown="if(event.key==='Enter')libSearch()">
-  <button onclick="libSearch()">🔍 Buscar</button>
-  <div id="liblist" class="dim"></div>
- </div>
- <div class="card"><h2>🕘 Últimas músicas salvas</h2><div id="recentlist" class="dim">Nenhuma música salva ainda.</div></div>
- <div class="card"><h2>🎬 No telão agora</h2>
+<div class="card"><h2>🎬 No telão agora</h2>
   <div class="slide big" id="nowline">Nenhuma música tocando</div>
   <div class="dim" id="nowinfo"></div>
   <div class="dim" id="nownext"></div>
@@ -378,19 +372,14 @@ body.theme-light .theme-toggle{background:#fff;border-color:#9bc9dc;color:#087f9
    <button class="tapbig" id="tapbig" onclick="act('tapmark')">TOQUE</button>
    <div class="row3"><button onclick="act('tapundo')">↩ Desfazer</button><button onclick="act('tapfinish')">✔ Concluir</button><button class="warn" onclick="act('tapcancel')">✖ Cancelar</button></div>
   </div>
- </div>
- <div class="card" id="pastepanel" style="display:none"><h2>✎ Colar a letra</h2>
-  <div class="dim" id="pastehint"></div>
-  <textarea id="pastebox" rows="7" placeholder="Cole aqui a letra completa (copie no Letras.mus.br, Cifra Club...). Uma linha em branco entre as estrofes."></textarea>
-  <div class="row"><button class="main" onclick="sendPaste()">💾 Salvar letra</button><button onclick="closePaste()">✖ Cancelar</button></div>
- </div>
-
- <div class="card"><h2>🎧 Som do computador</h2>
+ </div><div class="card"><h2>🎧 Som do computador</h2>
   <div class="vubox"><div id="vu"></div></div>
   <div class="dim" id="vutxt">Medindo o som do PC…</div>
   <button id="audiobtn" onclick="toggleAudio()">🔈 Ouvir a música do PC: DESLIGADO</button>
- </div>
- <div class="card"><h2>⏭ Próxima música</h2>
+ </div><div class="card"><h2>🔗 Colar link do YouTube</h2>
+  <input id="nl" placeholder="Cole o link do vídeo" inputmode="url" autocapitalize="none" autocomplete="off">
+  <div class="row"><button class="main" onclick="useLink(false)">▶ Como próxima</button><button onclick="useLink(true)">➕ Na fila</button></div>
+ </div><div class="card"><h2>⏭ Próxima música</h2>
   <div id="nextempty" class="dim">Nenhuma preparada. Escolha um pedido ou busque na biblioteca abaixo.</div>
   <div id="nextbody" style="display:none">
    <div class="mini-head"><img id="thumb" alt=""><div><b id="ntitle"></b><div class="dim" id="nstatus"></div></div></div>
@@ -409,17 +398,15 @@ body.theme-light .theme-toggle{background:#fff;border-color:#9bc9dc;color:#087f9
    <div class="row"><button class="main" id="playbtn" onclick="playNext()">⏭ Tocar próxima</button><button onclick="act('reqnext')">📥 Pedido → próxima</button></div>
    <button id="advbtn" class="gap" onclick="act('autoadvance')">⏩ Tocar a próxima sozinha ao terminar: DESLIGADO</button>
   </div>
- </div>
-
- <div class="card"><h2>🔗 Colar link do YouTube</h2>
-  <input id="nl" placeholder="Cole o link do vídeo" inputmode="url" autocapitalize="none" autocomplete="off">
-  <div class="row"><button class="main" onclick="useLink(false)">▶ Como próxima</button><button onclick="useLink(true)">➕ Na fila</button></div>
- </div>
- <div class="card" id="queuecard" style="display:none"><h2 id="queuehead">📋 Fila</h2><div id="queuelist"></div>
+ </div><div class="card" id="queuecard" style="display:none"><h2 id="queuehead">📋 Fila</h2><div id="queuelist"></div>
   <button class="gap" onclick="ask('qclear','Limpar a fila inteira?')">🗑 Limpar fila</button>
  </div>
- <div class="card"><h2 id="reqhead">📥 Pedidos</h2><div id="reqlist" class="dim">Nenhum pedido na lista.</div></div>
-
+<details class="card collapsible" id="requestsPanel"><summary>📥 Pedidos em espera <span>Toque para expandir ou recolher</span></summary><div class="card"><h2 id="reqhead">📥 Pedidos</h2><div id="reqlist" class="dim">Nenhum pedido na lista.</div></div></details>
+<details class="card collapsible" id="libraryPanel"><summary>📚 Biblioteca e últimas músicas <span>Toque para expandir ou recolher</span></summary><div class="card"><h2>📚 Buscar na biblioteca</h2>
+  <input id="lq" placeholder="Nome da música ou autor" autocomplete="off" onkeydown="if(event.key==='Enter')libSearch()">
+  <button onclick="libSearch()">🔍 Buscar</button>
+  <div id="liblist" class="dim"></div>
+ </div><div class="card"><h2>🕘 Últimas músicas salvas</h2><div id="recentlist" class="dim">Nenhuma música salva ainda.</div></div></details>
 </div>
 
 <div id="p-bible">

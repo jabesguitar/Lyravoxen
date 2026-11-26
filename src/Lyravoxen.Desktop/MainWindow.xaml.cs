@@ -2498,6 +2498,21 @@ public partial class MainWindow : Window
 
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        // Esc limpa somente a projeção; não encerra a música nem fecha o Lyravoxen.
+        if (e.Key == System.Windows.Input.Key.Escape)
+        {
+            PublishProjectionOnly("");
+            _manualProjectionMode = false;
+            _manualCueIndex = -1;
+            _lastAutomaticCue = -1;
+            if (_projection is { IsVisible: true }) _projection.ShowLyric("");
+            if (_holyricsEnabled && _holyrics.IsConfigured)
+                _ = ObserveHolyricsQueueAsync(QueueHolyricsCloseProjectionAsync());
+            StatusText.Text = "Projeção limpa. A reprodução continua; o aplicativo permanece aberto.";
+            e.Handled = true;
+            return;
+        }
+
         // Voz (F4), confirmação da Bíblia e marcação por toque têm prioridade sobre os demais atalhos.
         if (HandleVoiceAndTapKeys(e)) return;
 
@@ -2928,7 +2943,11 @@ public partial class MainWindow : Window
     }
 
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
-        => EndPlayback("Áudio offline finalizado. Projeção encerrada automaticamente.");
+    {
+        var firstEnd = !_playbackEnded;
+        EndPlayback("Áudio offline finalizado. Projeção encerrada automaticamente.");
+        if (firstEnd) MaybeAutoAdvance();
+    }
 
     private void EndPlayback(string status)
     {

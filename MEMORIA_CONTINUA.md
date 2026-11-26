@@ -149,3 +149,14 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Nenhuma função, editor, sincronização ou projeção foi alterada.
 - Estado: alteração enviada à branch `redesign/brand-visual-layer`; falta compilar e conferir a tela Cadastrar Letras nos dois temas.
 - Próxima ação: executar Windows Build e validar a prévia na aba Cadastrar Letras.
+
+
+### Consolidação funcional solicitada — 26/11/2026 (em andamento)
+- Usuário autorizou avançar sem interromper para testes manuais; os testes de uso real serão feitos por ele após receber o conjunto consolidado.
+- Base de trabalho mantida exclusivamente na branch `redesign/brand-visual-layer`; nenhuma outra branch foi alterada.
+- Pedidos confirmados: controle remoto com ordem telão → controles → ouvir áudio do PC → link YouTube → próxima música → pedidos em espera → pesquisa/lista da biblioteca; painel de pedidos e painel de biblioteca recolhíveis; gestão de remetentes/IP para pedidos locais e internet; remover som/alerta ao confirmar letra e recolher prévia; corrigir avanço automático; Esc limpa projeção sem fechar o app; modo offline com arquivos autorizados e retenção configurável de 5/7/14/30 dias.
+- Inspeção do código revelou que o Worker Cloudflare atual guarda apenas texto e data do pedido, sem IP do remetente. O runtime Cloudflare disponibiliza metadados da conexão ao Worker; para permitir bloqueio na internet será necessário registrar IP no Worker, criar endpoints autenticados de consulta/gestão de bloqueios e propagar o identificador/IP ao desktop. Ainda não implementado.
+- Alterações de código preparadas nesta etapa (ainda não commitadas): reorganização da página remota com pedidos antes da biblioteca e ambos recolhíveis; confirmação de letra sem MessageBox/som e recolhimento da prévia após sucesso; Esc limpa a projeção local/Holyrics sem encerrar reprodução nem app; evento MediaEnded de áudio offline passa a acionar a mesma lógica de avanço automático do YouTube.
+- A atualização dos testes de página remota também foi preparada para validar a nova ordem e os dois painéis recolhíveis.
+- Reconhecimento bíblico por microfone permanece fora do escopo, conforme decisão anterior do usuário; não foi reintroduzido.
+- Ainda não há commit, build, teste automatizado executado ou pacote de instalação para esta consolidação. Próxima ação: concluir bloqueio de remetentes e offline, integrar demais correções, executar verificações/build e então entregar uma única versão para teste manual.
