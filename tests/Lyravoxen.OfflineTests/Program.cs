@@ -66,6 +66,50 @@ try
     Assert(downloaded.Format == "wav" && File.Exists(downloaded.FilePath), "baixa arquivo WAV direto por HTTP com DNS público simulado");
     Assert(downloaded.Sha256 == first.Sha256 && downloaded.FilePath == first.FilePath, "download direto converge para a mesma cópia deduplicada");
 
+    var redirectCalls = 0;
+    var redirectService = new OfflineMediaService(
+        new StubHandler(_ =>
+        {
+            redirectCalls++;
+            if (redirectCalls == 1)
+                return new HttpResponseMessage(HttpStatusCode.Redirect) { Headers = { Location = new Uri("https://cdn.example/final.wav") } };
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(wav) { Headers = { ContentType = new MediaTypeHeaderValue("audio/wav") } }
+            };
+        }),
+        resolveHost: (_, _) => Task.FromResult(new[] { IPAddress.Parse("8.8.4.4") }));
+    var redirected = await redirectService.DownloadAsync("https://media.example/redirect", media);
+    Assert(redirectCalls == 2 && redirected.FilePath == first.FilePath, "segue redirecionamento HTTPS limitado e valida o destino");
+
+    var redirectToPrivateCalls = 0;
+    var redirectToPrivateService = new OfflineMediaService(
+        new StubHandler(_ =>
+        {
+            redirectToPrivateCalls++;
+            return new HttpResponseMessage(HttpStatusCode.Redirect) { Headers = { Location = new Uri("https://private.example/hidden.wav") } };
+        }),
+        resolveHost: (host, _) => Task.FromResult(new[] { IPAddress.Parse(host == "private.example" ? "10.0.0.8" : "8.8.8.8") }));
+    var rejectedPrivateRedirect = false;
+    try { await redirectToPrivateService.DownloadAsync("https://media.example/redirect", media); }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("local, privado")) { rejectedPrivateRedirect = true; }
+    Assert(rejectedPrivateRedirect && redirectToPrivateCalls == 1, "bloqueia redirecionamento para endereço privado antes do segundo pedido");
+
+    var oversized = new byte[2048];
+    wav.CopyTo(oversized, 0);
+    var sizeLimitedService = new OfflineMediaService(
+        new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(oversized) { Headers = { ContentType = new MediaTypeHeaderValue("audio/wav") } }
+        }),
+        maxBytes: 1024,
+        resolveHost: (_, _) => Task.FromResult(new[] { IPAddress.Parse("8.8.8.8") }));
+    var rejectedOversized = false;
+    try { await sizeLimitedService.DownloadAsync("https://media.example/large.wav", media); }
+    catch (InvalidDataException) { rejectedOversized = true; }
+    Assert(rejectedOversized, "recusa áudio acima do limite configurado");
+
+
     var htmlService = new OfflineMediaService(
         new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
