@@ -187,6 +187,8 @@ public partial class MainWindow
                 "Adicionar tempo, Marcar frase no tempo atual: acertam o instante de cada frase.\n" +
                 "Importar letra sincronizada (.LRC / .SRT): traz uma letra com tempos de um arquivo."),
             new HelpItem("Biblioteca Offline — Histórico de vídeos", "Na aba principal Biblioteca Offline, lista os vídeos já usados. Use a lupa (⌕) para filtrar e clique para reabrir."),
+            new HelpItem("Editar música e letra selecionada", "Na aba Biblioteca, selecione uma música e use este botão para editar o título, o intérprete e a letra completa sem sair da Biblioteca."),
+            new HelpItem("Salvar alterações", "Dentro do editor da Biblioteca, grava os dados e a letra atualizados na coleção local, preservando a sincronização já existente."),
             new HelpItem("Biblioteca Offline — Biblioteca", "Na aba principal Biblioteca Offline, suas músicas ficam organizadas em pastas. Criar pasta, Renomear e Excluir organizam as coleções. Adicionar vídeo atual a esta pasta guarda o link/ID do vídeo aberto e copia os dados da letra e sincronização; não baixa o vídeo. ＋ Importar áudio MP3/WAV para uso offline permite colar um endereço direto autorizado de MP3/WAV para baixar e validar ou deixar o campo vazio para importar arquivos locais. A validade é de 5, 7, 14 ou 30 dias. Editar música e letra selecionada abre o editor da faixa selecionada; altere o título, intérprete e letra e clique em Salvar alterações. Ao vencer, o arquivo local é removido, mas a ficha e a letra permanecem. Corrigir nomes de todas as músicas é uma ação em lote: separa intérprete e título e limpa sufixos como Playback, Legendado e um tom abaixo em toda a biblioteca e histórico; revise antes de usar."),
         });
 
