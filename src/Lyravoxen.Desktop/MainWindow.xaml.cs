@@ -3112,8 +3112,16 @@ public partial class MainWindow : Window
             video.Artist = artistBox.Text.Trim();
             video.FullLyrics = lyricsBox.Text.Trim();
             video.SavedAt = DateTime.Now;
-            if (ReferenceEquals(_currentVideo, video))
+            var sameCurrentRecording = _currentVideo is not null &&
+                (video.IsOffline
+                    ? _currentVideo.IsOffline && string.Equals(_currentVideo.LocalPath, video.LocalPath, StringComparison.OrdinalIgnoreCase)
+                    : !_currentVideo.IsOffline && string.Equals(_currentVideo.VideoId, video.VideoId, StringComparison.Ordinal));
+            if (sameCurrentRecording && _currentVideo is not null)
             {
+                _currentVideo.Title = video.Title;
+                _currentVideo.TrackName = video.TrackName;
+                _currentVideo.Artist = video.Artist;
+                _currentVideo.FullLyrics = video.FullLyrics;
                 MusicTrackBox.Text = video.TrackName;
                 MusicArtistBox.Text = video.Artist;
                 ManualLyricsBox.Text = video.FullLyrics;
