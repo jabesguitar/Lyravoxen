@@ -257,3 +257,12 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - O ajuste do botão vermelho está incluído no build aprovado. A branch permanece separada; não houve merge para `main`.
 - Importante: os testes Playwright validam a interface remota em navegador automatizado, não o aspecto real em todos os celulares. Nenhum teste manual do aplicativo Windows, do WebView2/YouTube, de áudio/Holyrics ou de dispositivos físicos foi realizado nesta rodada.
 - Próxima etapa: o usuário deve baixar o instalador ou o ZIP portátil e conferir o layout final, especialmente o botão vermelho “Limpar telão” na aba Ao vivo do celular. Só após aprovação visual começar a rodada manual funcional.
+
+### Conferência inicial do usuário — anúncios e início dos testes manuais — 26/11/2026
+- Usuário enviou duas capturas do navegador interno na aba “Próxima música”.
+- Evidência observada: anúncio patrocinado na lateral do YouTube e anúncio em vídeo (Amazon Prime) antes da música. A proteção de anúncios continua parcial; não considerar aprovada nem afirmar bloqueio completo.
+- Orientação dada: testar YouTube com internet ligada; observar se anúncios aparecem antes, durante ou na lateral e verificar reprodução/áudio.
+- Teste de áudio offline: em “Cadastrar Letras” > guia interna “Biblioteca”, criar ou selecionar uma pasta, clicar “Importar áudio MP3/WAV para uso offline”, escolher arquivo próprio/autorizado, definir validade (5, 7, 14 ou 30 dias), importar. Selecionar a faixa na lista “Músicas da coleção” para iniciar reprodução.
+- Em seguida desligar a internet e selecionar novamente a faixa na Biblioteca. A reprodução deve continuar normalmente. Seleção de faixa offline chama PlayLocalAudio diretamente.
+- Não é necessário preparar a próxima música para esse teste inicial. O teste de reprodução offline pela Biblioteca é distinto do teste de “Preparar próxima”.
+- Estado dos testes manuais: ainda não informado pelo usuário; aguardando resultado de YouTube online e áudio local sem internet.
