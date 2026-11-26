@@ -81,9 +81,22 @@ internal static class BrowserAdBlocker
     private static bool ShouldBlock(string host)
     {
         host = host.TrimEnd('.').ToLowerInvariant();
-        if (ProtectedHosts.Any(domain => IsHostOrChild(host, domain))) return false;
-        if (AllowedHosts.Keys.Any(domain => IsHostOrChild(host, domain))) return false;
-        return BlockedHosts.Keys.Any(domain => IsHostOrChild(host, domain));
+        if (MatchesAnyDomain(host, ProtectedHosts)) return false;
+        if (MatchesAnyDomain(host, AllowedHosts.Keys)) return false;
+        return MatchesAnyDomain(host, BlockedHosts.Keys);
+    }
+
+    private static bool MatchesAnyDomain(string host, IEnumerable<string> domains)
+    {
+        // Check the host and its parent labels; O(number of labels), not O(number of rules).
+        var candidate = host;
+        while (true)
+        {
+            if (domains.Contains(candidate, StringComparer.OrdinalIgnoreCase)) return true;
+            var dot = candidate.IndexOf('.');
+            if (dot < 0) return false;
+            candidate = candidate[(dot + 1)..];
+        }
     }
 
     private static bool IsHostOrChild(string host, string domain)
