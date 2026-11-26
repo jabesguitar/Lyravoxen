@@ -244,3 +244,16 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Ajuste visual aplicado: adicionada a classe CSS `warn` ao botão “Limpar telão”, usando o estilo vermelho já existente. A ação, confirmação e retorno “Voltar ao automático” foram preservados.
 - Commit: `fa87d1738121a42cb52d63077265e7aeebbaa30c`.
 - Próxima ação: confirmar Windows Build após o push. Não iniciar testes funcionais até o layout ser aprovado; na conferência visual do celular, verificar que “Limpar telão” está vermelho e “Encerrar” continua sendo uma ação separada.
+
+### Build após o destaque vermelho do botão Limpar telão — 26/11/2026
+- Commit de código: `fa87d1738121a42cb52d63077265e7aeebbaa30c`; atualização de documentação: `4c9adcc27b5aa33783a975697154f7e8a6f5fc6b`.
+- Windows Build #685 / run ID `45850726104` concluído com sucesso na branch `redesign/brand-visual-layer`, commit final `4c9adcc27b5aa33783a975697154f7e8a6f5fc6b`.
+- Job `cloud-worker-tests`: 37 testes do Worker aprovados e teste Playwright do controle remoto aprovado (112 verificações, 0 falhas).
+- Job `build`: geração do ícone e splash compacta, restore, compilação Windows, teste da linha do tempo, pacote ZIP portátil e instalador Inno Setup concluídos com sucesso.
+- Artefatos (válidos até 24/02/2027):
+  - `Lyravoxen-Windows-x64` — ID `15133402352`, SHA-256 `cd05ecc28fdb51d4e34f5a68c413c72fd9e2a69b0775169e1c17e30b7fdd427f`.
+  - `Lyravoxen-Windows-x64-portable` — ID `15133357515`, SHA-256 `e4dc53b2c3b131ae8de9eae9529111d0724077b441666b257710f2df1adc1eb4`.
+  - `Lyravoxen-Installer-Windows-x64` — ID `15132703638`, SHA-256 `9075545c5e49747900f57ae7ac1940c032197560e2969ca83dbfc39934b3d71c`.
+- O ajuste do botão vermelho está incluído no build aprovado. A branch permanece separada; não houve merge para `main`.
+- Importante: os testes Playwright validam a interface remota em navegador automatizado, não o aspecto real em todos os celulares. Nenhum teste manual do aplicativo Windows, do WebView2/YouTube, de áudio/Holyrics ou de dispositivos físicos foi realizado nesta rodada.
+- Próxima etapa: o usuário deve baixar o instalador ou o ZIP portátil e conferir o layout final, especialmente o botão vermelho “Limpar telão” na aba Ao vivo do celular. Só após aprovação visual começar a rodada manual funcional.
