@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net;
 using System.Windows;
 using System.Windows.Threading;
 using Lyravoxen.Models;
@@ -28,7 +29,12 @@ public partial class MainWindow
     {
         var ip = PromptForText("Bloquear remetente", "IP do remetente (local ou público):");
         if (string.IsNullOrWhiteSpace(ip)) return;
-        ip = ip.Trim();
+        if (!IPAddress.TryParse(ip.Trim(), out var parsedIp))
+        {
+            System.Windows.MessageBox.Show(_requestsWindow ?? this, "Informe um endereço IPv4 ou IPv6 válido.", "Bloquear remetente", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        ip = parsedIp.ToString();
         var label = PromptForText("Identificar remetente", "Nome para identificar este IP:", ip) ?? ip;
         _blockedRequestSenders[ip] = label.Trim(); SaveBlockedRequestSenders();
         if (CloudConfigured)
@@ -39,11 +45,49 @@ public partial class MainWindow
         else StatusText.Text = "Remetente bloqueado localmente: " + label + ". Configure pedidos na nuvem para bloquear o link público.";
         RefreshRequestsWindow();
     }
+    private async void BlockSender(string ip, string name)
+    {
+        if (!IPAddress.TryParse(ip, out var parsed)) return;
+        ip = parsed.ToString();
+        _blockedRequestSenders[ip] = name;
+        SaveBlockedRequestSenders();
+        if (CloudConfigured)
+        {
+            var cloud = await CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, ip, name, true);
+            StatusText.Text = cloud.Ok ? "IP bloqueado na internet e neste computador: " + ip : "IP bloqueado neste computador, mas a nuvem não confirmou: " + cloud.Message;
+        }
+        else StatusText.Text = "IP bloqueado apenas neste computador. Configure a conexão com a nuvem para bloquear o formulário público.";
+        RefreshRequestsWindow();
+    }
+
     private async void UnblockSender(string ip)
     {
-        _blockedRequestSenders.Remove(ip); SaveBlockedRequestSenders();
-        if (CloudConfigured) await CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, ip, "", false);
-        StatusText.Text = "Bloqueio removido: " + ip; RefreshRequestsWindow();
+        var cloudOk = !CloudConfigured;
+        if (CloudConfigured)
+        {
+            var cloud = await CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, ip, "", false);
+            cloudOk = cloud.Ok;
+        }
+        _blockedRequestSenders.Remove(ip);
+        SaveBlockedRequestSenders();
+        StatusText.Text = cloudOk ? "Bloqueio removido: " + ip : "Bloqueio removido localmente, mas ainda pode estar ativo no Worker: " + ip;
+        RefreshRequestsWindow();
+    }
+
+    private async Task RefreshCloudBlockedSendersAsync()
+    {
+        if (!CloudConfigured) return;
+        var result = await CloudRequestClient.GetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken);
+        if (!result.Ok)
+        {
+            StatusText.Text = "Não foi possível atualizar bloqueios do Worker: " + result.Message;
+            return;
+        }
+        foreach (var sender in result.Items)
+            if (IPAddress.TryParse(sender.Ip, out var parsed))
+                _blockedRequestSenders[parsed.ToString()] = sender.Name;
+        SaveBlockedRequestSenders();
+        RefreshRequestsWindow();
     }
 
 
@@ -216,6 +260,7 @@ public partial class MainWindow
         _requestsWindow = window;
         RefreshRequestsWindow();
         window.Show();
+        _ = RefreshCloudBlockedSendersAsync();
     }
 
     private System.Windows.Controls.TextBlock RequestText(string value, double size, bool bold = false, string color = "#1A2430") => new()
@@ -242,6 +287,7 @@ public partial class MainWindow
 
         _requestsPanel.Children.Add(RequestText("📥 Pedidos de músicas", 20, true));
         _requestsPanel.Children.Add(RequestButton("🛡 Gerenciar IPs bloqueados", ManageBlockedSenders));
+        _requestsPanel.Children.Add(RequestButton("↻ Atualizar bloqueios da internet", () => _ = RefreshCloudBlockedSendersAsync()));
         var urls = _remote?.LocalUrls().Select(u => u + "pedido").ToList() ?? new List<string>();
         var link = urls.FirstOrDefault(u => u.Contains("//192.168.", StringComparison.Ordinal)) ?? urls.FirstOrDefault();
         _requestsPanel.Children.Add(RequestText(link is null
@@ -314,7 +360,15 @@ public partial class MainWindow
                                              " · " + request.ReceivedAt.ToString("dd/MM HH:mm") +
                                              (string.IsNullOrWhiteSpace(request.SenderIp) ? "" : " · IP " + request.SenderIp), 12, false, "#4A5A6B"));
             if (!string.IsNullOrWhiteSpace(request.SenderIp))
-                content.Children.Add(RequestButton("Bloquear este IP", () => { _blockedRequestSenders[request.SenderIp] = request.Group; SaveBlockedRequestSenders(); if (CloudConfigured) _ = CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, request.SenderIp, request.Group, true); StatusText.Text = "IP bloqueado: " + request.SenderIp; RefreshRequestsWindow(); }));
+            {
+                content.Children.Add(RequestText("IP público de origem: " + request.SenderIp, 12, true, "#4A5A6B"));
+                if (_blockedRequestSenders.ContainsKey(request.SenderIp))
+                    content.Children.Add(RequestButton("Desbloquear este IP", () => UnblockSender(request.SenderIp)));
+                else
+                    content.Children.Add(RequestButton("Bloquear este IP", () => BlockSender(request.SenderIp, request.Group)));
+            }
+            else if (CloudConfigured)
+                content.Children.Add(RequestText("IP não recebido. O Worker público pode estar com uma versão antiga; atualize o código do serviço no Cloudflare.", 11, true, "#A83D58"));
             content.Children.Add(RequestText(request.Url, 12, false, "#2D6A9F"));
             content.Children.Add(RequestText(RequestLyricsLine(request), 12, false, "#1A2430"));
             if (!string.IsNullOrWhiteSpace(request.OfflineLocalPath))
