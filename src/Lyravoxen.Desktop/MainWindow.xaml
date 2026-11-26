@@ -700,6 +700,11 @@
            <Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/>
            <Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click"/>
            <Button Content="✎ Editar música e letra selecionada" Click="EditLibrarySong_Click"/>
+           <Grid Margin="0,2,0,0">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="⇄ Mover para outra pasta" Click="MoveLibrarySong_Click" Margin="2" FontSize="10"/>
+            <Button Grid.Column="1" Content="− Remover desta pasta" Click="RemoveLibrarySong_Click" Margin="2" FontSize="10"/>
+           </Grid>
            <Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/>
           </StackPanel>
          </Grid>
