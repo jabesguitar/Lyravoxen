@@ -1,5 +1,9 @@
 name: Windows build
 
+concurrency:
+  group: lyravoxen-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, redesign/brand-visual-layer, feature/offline-library-on-redesign]
