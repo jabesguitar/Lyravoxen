@@ -131,6 +131,13 @@ try
         "respeita exceção de domínio permitido pelo usuário");
     Assert(!BrowserRequestPolicy.ShouldBlock("notdoubleclick.net", new[] { "youtube.com" }, new[] { "doubleclick.net" }, Array.Empty<string>()),
         "não bloqueia domínio por correspondência parcial insegura");
+
+    Assert(!OfflineExpiryPolicy.CanDelete("/media/song.wav", new[] { "/media/song.wav" }, Array.Empty<string>()),
+        "preserva arquivo expirado ainda referenciado por outra pasta da biblioteca");
+    Assert(!OfflineExpiryPolicy.CanDelete("/media/song.wav", Array.Empty<string>(), new[] { "/media/song.wav" }),
+        "preserva arquivo ainda referenciado por um pedido válido");
+    Assert(OfflineExpiryPolicy.CanDelete("/media/song.wav", new[] { "/media/other.wav" }, Array.Empty<string>()),
+        "remove arquivo expirado sem referências restantes");
 }
 finally
 {
