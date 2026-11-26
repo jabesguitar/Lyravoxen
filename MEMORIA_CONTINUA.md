@@ -591,3 +591,41 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - A coluna direita do navegador/WebView2 foi mantida como estava; a alteração não mexeu intencionalmente em sua largura ou estrutura.
 - Workflow acionado pelo push: 45875746475, ainda em fila no último acompanhamento. A alteração ainda não está validada pelo build nem por inspeção visual real.
 - Próxima ação: acompanhar CI; em caso de falha, ler logs e corrigir antes de pedir teste. Continuar implementação de download por URL direta autorizada separado da importação local.
+
+
+## Atualização cronológica — 26/11/2026 (retomada da Biblioteca Offline)
+
+> Esta atualização complementa e supersede, para a etapa atual, as anotações antigas que diziam para não testar ainda ou que o redesign era somente visual. O escopo atual aprovado pelo usuário inclui Pedidos, Biblioteca Offline e navegador da aba Próxima música.
+
+### Solicitações do usuário
+- Fazer “Baixar offline” funcionar de verdade em Pedidos.
+- Na Biblioteca, permitir salvar, editar e baixar offline, mantendo MP3/WAV local como alternativa.
+- Melhorar a navegação do YouTube e a proteção contra anúncios.
+- Testar funcionalmente, não produzir builds vazios e não fazer merge sem autorização.
+
+### Implementações feitas nesta retomada
+- Novo projeto multiplataforma `src/Lyravoxen.Offline`.
+- Serviço `OfflineMediaService`: download de URL direta autorizada, importação local MP3/WAV, validação de assinatura/MIME/extensão, limite 50 MB, timeout 45 s, DNS/IP público, bloqueio de SSRF/redirecionamentos privados, hash SHA-256 e deduplicação.
+- Pedidos e Biblioteca usam o mesmo serviço. Link somente do YouTube não é tratado como download de áudio; o app explica a limitação e oferece arquivo local autorizado.
+- Editor direto na Biblioteca para título, intérprete e letra.
+- Expiração periódica e segura: remove os bytes apenas quando nenhuma referência ativa permanece; preserva registros, letra e metadados.
+- Painel esquerdo da aba Próxima música compactado sem alterar intencionalmente a largura/estrutura do navegador.
+- Política de requisições do navegador extraída e testada independentemente.
+
+### Testes adicionados
+- `tests/Lyravoxen.OfflineTests` cobre importação MP3/WAV, download direto, deduplicação, bloqueio de YouTube, DNS/redirecionamento privado, limite de tamanho, HTML disfarçado, política de anúncios e preservação de arquivos compartilhados durante expiração.
+- Workflow executa testes offline, cobertura da Ajuda, análise estática C#, Worker e página remota mobile.
+- Foi configurada uma agenda diária no YAML, mas o evento `schedule` do GitHub roda somente na branch padrão. Como `main` não foi alterada, a rotina diária ainda não está ativa para a branch de trabalho.
+
+### Evidências e limites
+- Run `45888141360`, SHA `1c888e98`: testes multiplataforma e C# static checks aprovados; build foi deliberadamente omitido na branch de trabalho enquanto a implementação ainda estava em validação.
+- Run `45887612874`, SHA `5003f831`: build Windows e jobs automatizados concluídos com sucesso para a integração inicial do serviço; antecede o editor e a compactação final da aba Próxima música, portanto não é o build final.
+- Run `45888415155`, SHA `2b9f8418`: no último registro, testes de mídia, cobertura da Ajuda, C# static checks e Worker aprovados; Playwright ainda estava em execução. Inclui a revisão mais recente dos testes de MP3 e expiração.
+- Não há comprovação ainda de reprodução real de áudio offline no Windows, teste integrado com WebView2 real ou inspeção visual da nova disposição em várias resoluções.
+
+### Estado do projeto após esta retomada
+- Branch: `feature/offline-library-on-redesign`.
+- `main`: não alterada.
+- Build final: pendente até terminar a validação automatizada e executar a compilação Windows consolidada.
+- Teste manual do usuário: ainda não solicitado; será uma única rodada após entrega consolidada.
+- Próxima ação: concluir o run atual, executar build final Windows, corrigir falhas e registrar SHA, logs e artefatos reais em `RETOMADA_ATUAL.md`.
