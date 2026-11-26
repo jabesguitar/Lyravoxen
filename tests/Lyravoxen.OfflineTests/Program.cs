@@ -43,6 +43,14 @@ try
     Assert(first.FilePath == second.FilePath && first.Sha256 == second.Sha256, "deduplica arquivo por SHA-256");
     Assert(File.ReadAllBytes(first.FilePath).SequenceEqual(wav), "preserva bytes do áudio importado");
 
+    var mp3 = new byte[24];
+    "ID3"u8.CopyTo(mp3.AsSpan(0, 3));
+    mp3[3] = 4; mp3[4] = 0; mp3[5] = 0;
+    var mp3Source = Path.Combine(root, "fixture.mp3");
+    await File.WriteAllBytesAsync(mp3Source, mp3);
+    var mp3Imported = await service.ImportLocalAsync(mp3Source, media);
+    Assert(mp3Imported.Format == "mp3" && File.Exists(mp3Imported.FilePath), "importa MP3 local e identifica o formato pelo conteúdo");
+
     var rejectedYoutube = false;
     try { await service.DownloadAsync("https://www.youtube.com/watch?v=abc123", media); }
     catch (InvalidOperationException ex) when (ex.Message.Contains("não extrai áudio")) { rejectedYoutube = true; }
