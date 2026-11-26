@@ -3048,24 +3048,35 @@ public partial class MainWindow : Window
             System.Windows.MessageBox.Show("Carregue um vídeo do YouTube antes de adicioná-lo à pasta.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        var video = folder.Videos.FirstOrDefault(v => v.VideoId == _currentVideo.VideoId);
+        var video = folder.Videos.FirstOrDefault(v => _currentVideo.IsOffline
+            ? v.IsOffline && string.Equals(v.LocalPath, _currentVideo.LocalPath, StringComparison.OrdinalIgnoreCase)
+            : !v.IsOffline && string.Equals(v.VideoId, _currentVideo.VideoId, StringComparison.Ordinal));
         if (video is null)
-            folder.Videos.Add(new LibraryVideo
+        {
+            video = new LibraryVideo
             {
                 VideoId = _currentVideo.VideoId, Title = _currentVideo.Title, TrackName = MusicTrackBox.Text.Trim(), Artist = MusicArtistBox.Text.Trim(), Url = _currentVideo.Url,
+                IsOffline = _currentVideo.IsOffline, LocalPath = _currentVideo.LocalPath, Format = _currentVideo.Format,
+                OfflineExpiresAt = _currentVideo.OfflineExpiresAt, SavedAt = DateTime.Now,
                 FullLyrics = _currentVideo.FullLyrics,
                 Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
-            });
+            };
+            folder.Videos.Add(video);
+        }
         else
         {
             video.Title = _currentVideo.Title;
             video.TrackName = MusicTrackBox.Text.Trim();
             video.Artist = MusicArtistBox.Text.Trim();
             video.Url = _currentVideo.Url;
+            video.IsOffline = _currentVideo.IsOffline;
+            video.LocalPath = _currentVideo.LocalPath;
+            video.Format = _currentVideo.Format;
+            video.OfflineExpiresAt = _currentVideo.OfflineExpiresAt;
             video.FullLyrics = _currentVideo.FullLyrics;
             video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
         }
-        SaveLibrary();
+        if (!SaveLibrary()) return;
         RefreshLibrarySongs();
         StatusText.Text = $"Vídeo adicionado à pasta '{folder.Name}'.";
     }
