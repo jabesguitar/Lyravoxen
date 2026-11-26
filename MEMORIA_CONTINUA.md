@@ -534,3 +534,14 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Se o build passar, conferir fluxo completo de pedidos com cópia offline, associação ao pedido e preparação como próxima, e gerar um único pacote de testes.
 - Se falhar, ler os logs do run mais recente e corrigir antes de entregar.
 - Não fazer merge na `main` sem aprovação.
+
+
+## 26/11/2026 — URL oficial do formulário de pedidos esclarecida pelo usuário
+
+- URL fornecida: https://lyravoxen-pedidos.ferkt319.workers.dev/
+- O endereço é o Cloudflare Worker do formulário público; os participantes usam o caminho `/pedido`. O programa consulta o endpoint protegido `/pedidos` e importa mensagens contendo `nome` e `link`.
+- A página/Worker guarda texto e links de músicas (incluindo URLs do YouTube); não recebe nem armazena o arquivo de áudio. O computador Lyravoxen recebe a URL e a mantém no objeto `SongRequest.Url`.
+- Confirmação do usuário: a funcionalidade desejada é preparar antecipadamente, diretamente no cartão do pedido que chega à janela Pedidos, a mesma música/versão indicada no link, para tocar offline no evento. Não é para baixar o HTML do formulário nem apenas copiar o link.
+- A implementação atual do botão **Baixar offline** ainda abre seletor local de MP3/WAV; ela não baixa o conteúdo apontado pelo link. O botão deve ser entendido como importação/associação de um arquivo local, não download remoto.
+- Próximo trabalho: avaliar fluxo seguro para links diretos de arquivos de áudio autorizados (download para PC, validação de tipo/tamanho, timeout, hash, deduplicação, validade) e manter URLs YouTube como referência exata sem extração de áudio ou contorno de proteção. Para YouTube, não declarar offline até existir um arquivo local obtido por meio autorizado.
+- O usuário reforçou que deseja fazer todos os testes de uma só vez, após correções e validação prévia; evitar entregar builds fragmentadas.
