@@ -2880,7 +2880,11 @@ public partial class MainWindow : Window
         var songs = folder?.Videos ?? new List<LibraryVideo>();
         var filtered = string.IsNullOrWhiteSpace(search)
             ? songs
-            : songs.Where(v => v.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+            : songs.Where(v =>
+                v.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                v.TrackName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                v.Artist.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                v.Composer.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
         if (_selectedLibraryVideo is not null && !filtered.Contains(_selectedLibraryVideo))
             _selectedLibraryVideo = null;
         _librarySelectionChanging = true;
@@ -3233,6 +3237,11 @@ public partial class MainWindow : Window
                 System.Windows.MessageBox.Show(dialog, "Informe o título da música.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            var oldTitle = video.Title;
+            var oldTrack = video.TrackName;
+            var oldArtist = video.Artist;
+            var oldLyrics = video.FullLyrics;
+            var oldSavedAt = video.SavedAt;
             video.Title = titleBox.Text.Trim();
             video.TrackName = titleBox.Text.Trim();
             video.Artist = artistBox.Text.Trim();
@@ -3254,9 +3263,21 @@ public partial class MainWindow : Window
             }
             if (!SaveLibrary())
             {
-                video.Title = video.TrackName = titleBox.Text.Trim();
-                video.Artist = artistBox.Text.Trim();
-                video.FullLyrics = lyricsBox.Text.Trim();
+                video.Title = oldTitle;
+                video.TrackName = oldTrack;
+                video.Artist = oldArtist;
+                video.FullLyrics = oldLyrics;
+                video.SavedAt = oldSavedAt;
+                if (sameCurrentRecording && _currentVideo is not null)
+                {
+                    _currentVideo.Title = oldTitle;
+                    _currentVideo.TrackName = oldTrack;
+                    _currentVideo.Artist = oldArtist;
+                    _currentVideo.FullLyrics = oldLyrics;
+                    MusicTrackBox.Text = oldTrack;
+                    MusicArtistBox.Text = oldArtist;
+                    ManualLyricsBox.Text = oldLyrics;
+                }
                 return;
             }
             RefreshLibrarySongs();
