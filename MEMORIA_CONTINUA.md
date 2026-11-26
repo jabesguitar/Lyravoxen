@@ -584,3 +584,10 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 5. Completar expiração automática em tempo real, proteção do navegador e Ajuda.
 6. Rodar testes e gerar uma única compilação consolidada para o usuário.
 7. Não fazer merge na main sem aprovação explícita.
+
+
+### Ajuste de interface após as capturas — 26/11/2026
+- Commit 7580049ac07b6096e1b86fd602bb8716541df236: substituído o painel lateral rolável da aba Próxima música por uma grade compacta sem ScrollViewer; controles reorganizados com alturas/paddings menores e rótulos compactos.
+- A coluna direita do navegador/WebView2 foi mantida como estava; a alteração não mexeu intencionalmente em sua largura ou estrutura.
+- Workflow acionado pelo push: 45875746475, ainda em fila no último acompanhamento. A alteração ainda não está validada pelo build nem por inspeção visual real.
+- Próxima ação: acompanhar CI; em caso de falha, ler logs e corrigir antes de pedir teste. Continuar implementação de download por URL direta autorizada separado da importação local.
