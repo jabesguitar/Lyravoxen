@@ -10,17 +10,17 @@ public sealed class OfflineMediaService
 {
     public const long DefaultMaxBytes = 50L * 1024 * 1024;
     private readonly HttpClient _http;
-    private readonly bool _ownsClient;
     private readonly long _maxBytes;
+    private readonly Func<string, CancellationToken, Task<IPAddress[]>> _resolveHost;
 
-    public OfflineMediaService(HttpMessageHandler? handler = null, long maxBytes = DefaultMaxBytes)
+    public OfflineMediaService(HttpMessageHandler? handler = null, long maxBytes = DefaultMaxBytes, Func<string, CancellationToken, Task<IPAddress[]>>? resolveHost = null)
     {
         if (maxBytes < 1024) throw new ArgumentOutOfRangeException(nameof(maxBytes));
         _maxBytes = maxBytes;
+        _resolveHost = resolveHost ?? ((host, token) => Dns.GetHostAddressesAsync(host, token));
         _http = handler is null
             ? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }, true) { Timeout = TimeSpan.FromSeconds(45) }
             : new HttpClient(handler, false) { Timeout = TimeSpan.FromSeconds(45) };
-        _ownsClient = true;
     }
 
     public async Task<OfflineMediaResult> DownloadAsync(string address, string mediaFolder, CancellationToken cancellationToken = default)
@@ -119,14 +119,14 @@ public sealed class OfflineMediaService
         throw new HttpRequestException("Não foi possível obter o arquivo.");
     }
 
-    private static async Task EnsurePublicHostAsync(Uri uri, CancellationToken token)
+    private async Task EnsurePublicHostAsync(Uri uri, CancellationToken token)
     {
         if (IPAddress.TryParse(uri.Host, out var literal))
         {
             if (!IsPublicAddress(literal)) throw new InvalidOperationException("Endereços locais ou privados não são permitidos.");
             return;
         }
-        var addresses = await Dns.GetHostAddressesAsync(uri.Host, token);
+        var addresses = await _resolveHost(uri.Host, token);
         if (addresses.Length == 0 || addresses.Any(address => !IsPublicAddress(address)))
             throw new InvalidOperationException("O domínio resolve para um endereço local, privado ou não permitido.");
     }
