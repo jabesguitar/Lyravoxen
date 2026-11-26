@@ -143,8 +143,10 @@ public sealed class OfflineMediaService
                      b[0] >= 224 || b[0] == 100 && b[1] >= 64 && b[1] <= 127);
         }
         if (address.AddressFamily == AddressFamily.InterNetworkV6)
+        {
             var bytes = address.GetAddressBytes();
             return !address.IsIPv6LinkLocal && !address.IsIPv6SiteLocal && !address.IsIPv6Multicast && !address.IsIPv6Teredo && (bytes[0] & 0xFE) != 0xFC;
+        }
         return false;
     }
 
