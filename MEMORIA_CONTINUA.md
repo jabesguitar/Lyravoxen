@@ -323,3 +323,16 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 - Requisitos mantidos: botões minimalistas; não reduzir/redimensionar o player; preservar o layout principal de reprodução; não introduzir rolagem vertical para acessar comandos. Para grandes listas, preferir busca, filtros, paginação ou painéis de altura fixa sem barra de rolagem visível, mantendo acesso aos itens.
 - Auditoria XAML preliminar: foram encontrados ScrollViewer explícitos na área de sincronização (linha ~234), comandos da letra (~273), ferramentas de cadastro (~408) e template de ComboBox (scroll interno da lista suspensa). Há ainda conteúdo de listas que naturalmente rola. Rever cuidadosamente cada tela e distinguir rolagem de comandos de navegação de conteúdo textual/listas. O usuário pede que nada exija rolagem para encontrar botões; solução deve preservar acessibilidade/legibilidade.
 - Estado: decisão registrada, nenhuma alteração visual/código aplicada nesta etapa. Próxima etapa de implementação: plano de compactação por aba, criar aba Biblioteca Offline entre Bíblia e Ajuda se necessária, depois implementar o fluxo automático de arquivos de pedidos e cache offline permitido, sem alterar o tamanho do player.
+
+### Decisão de arquitetura da Biblioteca Offline — mover Histórico e Biblioteca para fora de Ao Vivo — 26/11/2026
+- Solicitação explícita do usuário: se houver uma área própria de Biblioteca Offline, não faz sentido manter as guias “Histórico de vídeos” e “Biblioteca” dentro da aba “Ao vivo”. Remover essas duas guias da área Ao vivo e transferi-las para a nova área dedicada.
+- Nova aba principal “Biblioteca Offline” ficará depois de “Bíblia” e antes de “Ajuda”.
+- A nova aba deve reunir:
+  - Histórico de vídeos (preservar busca, lista, detalhes e ações existentes).
+  - Biblioteca atual (preservar pastas, músicas, importação manual MP3/WAV e reprodução local).
+  - Novas ferramentas compactas de segurança offline (arquivos de pedidos, cache autorizado, prazo de retenção, status e limpeza).
+- Não duplicar dados nem criar uma segunda biblioteca física. Mover a interface e integrar recursos à mesma estrutura de biblioteca já existente.
+- Na aba Ao Vivo, manter foco exclusivo em reprodução, sincronização, projeção e controles necessários ao evento. O player mantém a dimensão atual.
+- Diretriz geral permanece: botões minimalistas/compactos; eliminar rolagem vertical usada apenas para localizar botões/opções. Conteúdo longo (letras/listas) pode exigir navegação própria; evitar esconder dados ou prejudicar acessibilidade.
+- Não iniciar testes funcionais antes de concluir a reorganização visual e o fluxo da Biblioteca Offline. Ao final da implementação, pausar para o usuário testar e fornecer checklist de verificação.
+- Estado desta decisão: aprovada pelo usuário. Código ainda não alterado nesta etapa; próxima etapa de implementação na branch `redesign/brand-visual-layer`.
