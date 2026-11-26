@@ -303,3 +303,14 @@ Orientar o usuário a executar o workflow Windows build na branch `redesign/bran
 4. Limite de armazenamento e limpeza automática quando o disco ficar cheio.
 5. Comportamento quando há cópia local válida: oferecer “Reproduzir offline” ou preferir automaticamente a cópia local quando a internet falhar?
 **Estado:** ideia compreendida e registrada como proposta pendente. Nenhum código foi alterado para essa funcionalidade. Preservar a importação manual existente.
+
+### Confirmação de escopo — biblioteca existente e cache automático de segurança — 26/11/2026
+- Usuário confirmou que já existe uma Biblioteca no Lyravoxen; não criar outra biblioteca/aba separada.
+- Requisito de UI: novos controles e configurações devem usar botões minimalistas/compactos, ocupar pouco espaço e não reduzir nem redimensionar a área/tela de reprodução da música. Preservar o player na dimensão atual observada na captura do usuário.
+- Importação manual MP3/WAV permanece como recurso para áudio externo enviado por alguém, inclusive música que não esteja no YouTube.
+- Nova função desejada: cache automático de segurança integrado à Biblioteca atual. Quando o operador inserir/receber um link de música nos Pedidos, verificar se já há cópia local válida. Se não houver, tentar obter automaticamente uma cópia de áudio, desde que a fonte disponibilize download autorizado. Registrar validade configurável; permitir reprodução offline; expirar e remover o arquivo automaticamente sem apagar metadados/letra.
+- Objetivo principal: se a internet cair durante evento/culto, o operador já terá um áudio local pronto para tocar.
+- Para pedidos, a solicitação do usuário é que a verificação/download aconteça automaticamente ao chegar o pedido, e não apenas quando clicar “Preparar como próxima”.
+- Auditoria de 26/11: formulário de pedido atual recebe nome e link; CloudRequestClient/CloudWorker armazenam texto e IP, não mídia binária. SongRequest não possui campo de caminho local/arquivo anexado. Necessário desenhar upload de áudio para pedidos e armazenamento local com validação.
+- Limite técnico/legal: link do YouTube não garante acesso a arquivo de áudio baixável. Não implementar extração/baixar áudio do YouTube sem autorização/permissão da fonte. A automação poderá baixar anexos MP3/WAV ou links diretos de áudio que autorizem download; para links YouTube, verificar existência de cópia local e indicar que é necessário fornecer um arquivo autorizado se não houver cópia.
+- Implementação ainda não iniciada nesta etapa; não declarar recurso funcional até haver código, testes e build. Próximo desenho técnico: cache/serviço único dentro da Biblioteca atual; ingestão automática de arquivos dos pedidos; deduplicação por hash; validade e limpeza automática; UI compacta; player e layout principal inalterados.
