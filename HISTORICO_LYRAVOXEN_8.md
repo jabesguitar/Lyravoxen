@@ -226,3 +226,13 @@
 - **PC, janela de Pedidos**: QR code (190 px) + link + copiar, sempre visível. Link = `WhatsAppSettings.OnlineRequestLink` (endereço cadastrado em ☁ Pedidos pela internet ou, se vazio, `DefaultCloudUrl` = https://lyravoxen-pedidos.ferkt319.workers.dev) + `/pedido`.
 - **Verificação de erros sem compilador**: `tests/csharp_lint.py` (usings faltando, campos `_x` sem declaração, chamadas sem definição, membros estáticos inexistentes) — validado injetando erros; projeto real limpo. Assinaturas dos métodos antigos chamados pelo código novo conferidas à mão. O CI (`windows-build.yml`) também roda `dotnet run` do projeto de testes: um `Check` falhando derruba o build. Rode também `python3 tests/help_coverage.py`.
 - Testes JS: 291 (celular 110, nomes/Vagalume 70, leitores 41, worker 30, formulários 23, áudio 17).
+
+
+## 26/11/2026 — Biblioteca Offline: reorganização da interface
+- Solicitação do usuário: não alterar funcionalidades que já foram testadas e estão funcionando; implementar apenas as mudanças pendentes da estrutura da Biblioteca Offline.
+- O print do usuário confirmou que a versão testada ainda mantinha Histórico de vídeos e Biblioteca como sub-abas dentro de Ao vivo, sem uma área principal Biblioteca Offline.
+- Na branch `feature/offline-library-workspace-main`, derivada da `main`, o conteúdo XAML existente das abas Histórico de vídeos e Biblioteca foi movido para dentro de uma nova aba principal `Biblioteca Offline`. Os controles, nomes XAML e eventos foram preservados.
+- A Ajuda contextual foi atualizada para refletir a nova organização.
+- A lógica de reprodução, sincronização, player, Holyrics e controle remoto não foi intencionalmente modificada. Importação MP3/WAV e reprodução local existentes foram mantidas.
+- Não foram implementados nesta etapa: validade, exclusão automática, deduplicação avançada, downloads de fontes autorizadas ou identificação de tonalidade/gravação. Esses itens permanecem pendentes.
+- Validação pendente: CI Windows, compilação, testes automatizados e teste operacional no computador do usuário.
