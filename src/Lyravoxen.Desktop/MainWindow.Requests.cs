@@ -16,8 +16,14 @@ public partial class MainWindow
     private static string BlockedSendersFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "pedidos-bloqueados.json");
     private static Dictionary<string, string> LoadBlockedRequestSenders()
     {
-        try { return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(BlockedSendersFile)) ?? new(StringComparer.OrdinalIgnoreCase); }
-        catch { return new(StringComparer.OrdinalIgnoreCase); }
+        try
+        {
+            var loaded = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(BlockedSendersFile));
+            return loaded is null
+                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(loaded, StringComparer.OrdinalIgnoreCase);
+        }
+        catch { return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); }
     }
     private bool IsRequestSenderBlocked(string ip) => !string.IsNullOrWhiteSpace(ip) && _blockedRequestSenders.ContainsKey(ip);
     private void SaveBlockedRequestSenders()
