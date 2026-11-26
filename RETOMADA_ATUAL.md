@@ -101,3 +101,63 @@ Continuar diretamente na branch `feature/offline-library-on-redesign`, inspecion
 - Arquivo completo de retomada: este arquivo, mantido no repositório.
 - Histórico cronológico: MEMORIA_CONTINUA.md atualizado no commit 8a115be77d78aab91945537d425a7b8c6bc65134.
 - Cópia local para o usuário: RETOMADA_ATUAL_LYRAVOXEN.md.
+
+
+## Pacote único de correções solicitado — 26/11/2026
+
+O usuário pediu que as correções abaixo sejam tratadas como um único bloco integrado, sem entregas ou testes fragmentados. Nenhuma dessas tarefas deve ser considerada concluída apenas por estar planejada.
+
+### A. Navegador com proteção contra anúncios e rastreadores
+- O usuário já havia solicitado que o navegador interno se comporte de forma semelhante a um navegador com proteção, reduzindo anúncios intrusivos, pop-ups e rastreadores.
+- A proteção atual baseada em listas/domínios e a exceção Permitir neste site foram relatadas como não funcionando corretamente; precisam ser investigadas, corrigidas e testadas.
+- Melhorar bloqueio de anúncios e rastreadores de terceiros, pop-ups e redirecionamentos indesejados, mantendo exceções por site e controles claros de ligar/desligar proteção.
+- Preservar compatibilidade com YouTube, pesquisa, login, abas, sites de letras, downloads autorizados e reprodução WebView2.
+- Limite técnico a comunicar: não prometer bloqueio de anúncios first-party/in-stream servidos pelo próprio YouTube ou pela mesma origem do conteúdo. Não quebrar player ou APIs essenciais para tentar removê-los.
+- Incluir explicação honesta na Ajuda sobre o que a proteção bloqueia, o que pode permanecer e como permitir um site.
+
+### B. Painel da aba Próxima música
+- Corrigir a rolagem vertical do painel lateral esquerdo, deixando os comandos principais acessíveis sem rolar.
+- Usar botões minimalistas/compactos e reorganização em grade, sem cortar comandos.
+- Preservar integralmente a área útil do navegador/WebView2, pesquisa, abas e reprodução.
+- A primeira alteração visual foi enviada no commit 7580049ac07b6096e1b86fd602bb8716541df236; ainda depende do CI e inspeção visual real.
+
+### C. Sistema único de Biblioteca Offline — Pedidos e Biblioteca
+O usuário confirmou que o mesmo problema do botão Baixar offline dos Pedidos também ocorre na aba Biblioteca Offline: a ação abre seletor/pesquisador de arquivos ou pastas e não salva a mídia na Biblioteca como esperado. Corrigir ambos os pontos com um único serviço central.
+
+**Pedidos**
+- Baixar URL direta de arquivo de áudio autorizada e salvar automaticamente no armazenamento interno do Lyravoxen, sem pedir pasta de destino nem abrir seletor de arquivo de origem.
+- Associar o arquivo ao pedido e à identidade exata da gravação/versão.
+- Se a URL for apenas do YouTube, preservar URL/ID e informar que não há arquivo offline autorizado disponível; não extrair áudio nem contornar restrições da plataforma.
+
+**Biblioteca Offline**
+- A ação para adicionar/preparar mídia offline deve salvar a cópia no armazenamento interno do Lyravoxen e registrar o item na coleção/pasta selecionada.
+- Não abrir seletor de pasta de destino no fluxo normal de download/salvamento.
+- Manter ação separada Importar MP3/WAV para selecionar um arquivo já existente no computador; após selecionar, copiar para o armazenamento interno e criar/atualizar o registro da Biblioteca.
+
+**Serviço comum e critérios técnicos**
+- Um diretório interno padrão, criação automática de pastas, registro persistente, progresso/estado e mensagens claras.
+- Validar protocolo, MIME, extensão, tamanho máximo e timeout para URL direta autorizada.
+- Calcular hash e deduplicar sem confundir gravações ou tons diferentes; nunca casar somente pelo título.
+- Unificar metadados e prazo de expiração (5, 7, 14 ou 30 dias), limpeza automática enquanto o app estiver aberto e após reinicialização.
+- Expiração remove somente o arquivo local; preservar ficha, letra, histórico, metadados e link.
+- Garantir que preparar/tocar use a cópia local exata, inclusive após reiniciar o app e sem internet.
+
+### D. Documentação, testes e entrega
+- Atualizar Ajuda e Novidades da versão para navegador/proteção, Pedidos, Biblioteca, importação, download e limites.
+- Atualizar MEMORIA_CONTINUA.md e RETOMADA_ATUAL.md cronologicamente.
+- Rodar build e testes automatizados; fazer inspeção estática e visual possível; não afirmar teste manual que não ocorreu.
+- Só depois entregar uma única compilação consolidada e um checklist de testes para o usuário.
+- Não solicitar instalação de builds intermediários e não fazer merge na main sem aprovação explícita.
+
+### Checklist integrado de aceitação
+- [ ] Próxima música: comandos principais visíveis sem rolagem e sem clipping; navegador mantém tamanho útil.
+- [ ] Navegador: proteção liga/desliga; bloqueio de terceiros/pop-ups funciona; Permitir neste site cria exceção efetiva; YouTube/pesquisa/login/abas/letras/reprodução continuam funcionais.
+- [ ] Navegador: Ajuda explica limites de anúncios first-party/in-stream do YouTube.
+- [ ] Pedidos: URL direta autorizada baixa e salva automaticamente na pasta interna.
+- [ ] Pedidos: URL somente YouTube não é falsamente apresentada como arquivo baixado; URL/ID permanecem vinculados.
+- [ ] Biblioteca: adicionar mídia registra e salva automaticamente na coleção selecionada, sem pedir pasta de destino.
+- [ ] Biblioteca: importar MP3/WAV seleciona origem, copia para armazenamento interno e cadastra o item.
+- [ ] Pedidos e Biblioteca usam o mesmo serviço, hash/deduplicação, metadados e validade.
+- [ ] Reprodução da cópia correta funciona offline e após reiniciar o app.
+- [ ] Expiração remove apenas mídia e preserva registros/letras/metadados.
+- [ ] Ajuda, Novidades, testes CI e build consolidado aprovados.
