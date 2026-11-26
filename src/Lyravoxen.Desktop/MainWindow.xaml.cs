@@ -2726,7 +2726,22 @@ public partial class MainWindow : Window
                 StatusText.Text = "Não foi possível ler a biblioteca nem sua cópia de segurança. Os arquivos originais foram preservados.";
             }
         }
+        CleanupExpiredOfflineCopies();
         RefreshFolders();
+    }
+
+    private void CleanupExpiredOfflineCopies()
+    {
+        var changed = false;
+        foreach (var video in _library.SelectMany(folder => folder.Videos).Where(video => video.IsOffline && video.OfflineExpiresAt.HasValue && video.OfflineExpiresAt.Value <= DateTime.Now))
+        {
+            try { if (!string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath)) File.Delete(video.LocalPath); }
+            catch (Exception ex) { AppLog.Error("Não foi possível remover uma cópia offline vencida", ex); }
+            video.LocalPath = null;
+            video.OfflineExpiresAt = null;
+            changed = true;
+        }
+        if (changed) SaveLibrary();
     }
 
     private void SaveLibrary()
@@ -2859,7 +2874,12 @@ public partial class MainWindow : Window
     {
         if (_librarySelectionChanging || LibrarySongList.SelectedItem is not LibraryVideo video) return;
         LibrarySongList.SelectedItem = null;
-        if (video.IsOffline && !string.IsNullOrWhiteSpace(video.LocalPath)) { PlayLocalAudio(video); return; }
+        if (video.IsOffline)
+        {
+            if (!string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath)) { PlayLocalAudio(video); return; }
+            System.Windows.MessageBox.Show(this, "A cópia offline desta música expirou ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.", "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         await LoadVideoAsync(video.Url, true);
     }
 
@@ -2871,6 +2891,13 @@ public partial class MainWindow : Window
             System.Windows.MessageBox.Show("Crie ou selecione uma pasta primeiro.", "Biblioteca", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        var retention = PromptForText("Validade da cópia offline", "Por quantos dias manter esta cópia local? (5, 7, 14 ou 30)", "30");
+        if (retention is null) return;
+        if (!int.TryParse(retention.Trim(), out var days) || days is not (5 or 7 or 14 or 30))
+        {
+            System.Windows.MessageBox.Show("Escolha 5, 7, 14 ou 30 dias.", "Validade offline", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         using var dialog = new System.Windows.Forms.OpenFileDialog
         {
             Title = "Selecione um áudio que você tem direito de usar",
@@ -2880,6 +2907,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
         var mediaFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
         Directory.CreateDirectory(mediaFolder);
+        var expires = DateTime.Now.AddDays(days);
         foreach (var source in dialog.FileNames)
         {
             var ext = Path.GetExtension(source).ToLowerInvariant();
@@ -2888,11 +2916,11 @@ public partial class MainWindow : Window
             File.Copy(source, target, false);
             var title = Path.GetFileNameWithoutExtension(source);
             folder.Videos.RemoveAll(v => v.IsOffline && string.Equals(v.Title, title, StringComparison.OrdinalIgnoreCase));
-            folder.Videos.Add(new LibraryVideo { Title = title, IsOffline = true, LocalPath = target, Format = ext.TrimStart('.') });
+            folder.Videos.Add(new LibraryVideo { Title = title, TrackName = title, IsOffline = true, LocalPath = target, Format = ext.TrimStart('.'), SavedAt = DateTime.Now, OfflineExpiresAt = expires });
         }
         SaveLibrary();
         RefreshLibrarySongs();
-        StatusText.Text = "Áudio importado. Disponível sem internet.";
+        StatusText.Text = "Áudio importado para uso offline. A cópia local vence em " + expires.ToString("dd/MM/yyyy HH:mm") + "; os dados da biblioteca serão preservados após a validade.";
     }
 
     private void PlayLocalAudio(LibraryVideo video)

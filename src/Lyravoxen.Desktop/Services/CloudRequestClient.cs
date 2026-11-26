@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Lyravoxen.Services;
 
-internal sealed record CloudRequest(string Id, string Text);
+internal sealed record CloudRequest(string Id, string Text, string SenderIp);
 
 /// <summary>Conversa do Lyravoxen com o serviço de pedidos na nuvem (ver CloudWorker).</summary>
 internal static class CloudRequestClient
@@ -58,12 +58,28 @@ internal static class CloudRequestClient
                 {
                     var id = item.TryGetProperty("id", out var idElement) ? idElement.GetString() ?? "" : "";
                     var text = item.TryGetProperty("text", out var textElement) ? textElement.GetString() ?? "" : "";
-                    if (id.Length > 0) items.Add(new CloudRequest(id, text));
+                    var senderIp = item.TryGetProperty("ip", out var ipElement) ? ipElement.GetString() ?? "" : "";
+                    if (id.Length > 0) items.Add(new CloudRequest(id, text, senderIp));
                 }
             }
             return (true, newVersion, items, "");
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException) { return (false, "", items, Explain(ex)); }
+    }
+
+    public static async Task<(bool Ok, string Message)> SetBlockedAsync(string baseUrl, string token, string ip, string name, bool blocked)
+    {
+        try
+        {
+            using var request = Build(HttpMethod.Post, baseUrl, "/bloqueios", token);
+            request.Content = new StringContent(JsonSerializer.Serialize(new { ip, name, blocked }), Encoding.UTF8, "application/json");
+            using var response = await Http.SendAsync(request);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = json.RootElement;
+            return (response.IsSuccessStatusCode && root.TryGetProperty("ok", out var ok) && ok.GetBoolean(),
+                root.TryGetProperty("status", out var status) ? status.GetString() ?? "" : "Falha ao atualizar bloqueio.");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException) { return (false, Explain(ex)); }
     }
 
     /// <summary>Apaga do serviço os pedidos já recebidos.</summary>

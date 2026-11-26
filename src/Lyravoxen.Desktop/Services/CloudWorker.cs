@@ -119,6 +119,8 @@ async function enviar(request, env) {
   function reply(ok, message, status) {
     return wantsJson ? json({ ok: ok, status: message }, status) : resultPage(ok, message);
   }
+  var senderIp = request.headers.get("CF-Connecting-IP") || "";
+  if (senderIp && await env.PEDIDOS.get("b:" + senderIp)) return reply(false, "Este remetente está bloqueado para enviar pedidos.", 403);
   var text = (await readText(request)).replace(/\u0000/g, "").trim();
   if (!text) return reply(false, "Escreva ou cole pelo menos um link de música.", 400);
   if (text.length > MAX) return reply(false, "Mensagem grande demais.", 413);
@@ -128,7 +130,7 @@ async function enviar(request, env) {
   if (pending.keys.length >= 150) return reply(false, "A fila do operador está cheia. Tente mais tarde.", 429);
 
   var id = String(Date.now()).padStart(13, "0") + "-" + Math.random().toString(36).slice(2, 8);
-  await env.PEDIDOS.put("p:" + id, JSON.stringify({ text: text, at: new Date().toISOString() }), { expirationTtl: 43200 });
+  await env.PEDIDOS.put("p:" + id, JSON.stringify({ text: text, at: new Date().toISOString(), ip: senderIp }), { expirationTtl: 43200 });
   await env.PEDIDOS.put("ultimo", id);
   return reply(true, "Pedido enviado! O operador do som já pode ver.", 200);
 }
@@ -144,10 +146,34 @@ async function listar(request, env, url) {
     if (!raw) continue;
     try {
       var item = JSON.parse(raw);
-      pedidos.push({ id: listed.keys[i].name, text: item.text, at: item.at });
+      pedidos.push({ id: listed.keys[i].name, text: item.text, at: item.at, ip: item.ip || "" });
     } catch (e) { }
   }
   return json({ ok: true, v: last, pedidos: pedidos });
+}
+
+async function bloqueios(request, env) {
+  if (request.method === "GET") {
+    var listed = await env.PEDIDOS.list({ prefix: "b:", limit: 200 });
+    var blocked = [];
+    for (var i = 0; i < listed.keys.length; i++) {
+      var raw = await env.PEDIDOS.get(listed.keys[i].name);
+      if (!raw) continue;
+      try { var item = JSON.parse(raw); blocked.push({ ip: listed.keys[i].name.slice(2), name: item.name || "" }); } catch (e) { }
+    }
+    return json({ ok: true, blocked: blocked });
+  }
+  if (request.method === "POST") {
+    var data = await request.json();
+    var ip = String(data.ip || "").trim();
+    var name = String(data.name || "").trim().slice(0, 60);
+    var blocked = data.blocked !== false;
+    if (!/^[0-9a-fA-F:.]{3,45}$/.test(ip)) return json({ ok: false, status: "IP inválido." }, 400);
+    if (blocked) await env.PEDIDOS.put("b:" + ip, JSON.stringify({ name: name, at: new Date().toISOString() }));
+    else await env.PEDIDOS.delete("b:" + ip);
+    return json({ ok: true, status: blocked ? "Remetente bloqueado." : "Bloqueio removido." });
+  }
+  return json({ ok: false, status: "Método não permitido." }, 405);
 }
 
 async function confirmar(request, env) {
@@ -170,6 +196,9 @@ export default {
       }
       if (path === "/pedidos" && request.method === "GET") {
         return authorized(request, env) ? await listar(request, env, url) : json({ ok: false, status: "Senha incorreta." }, 401);
+      }
+      if (path === "/bloqueios" && (request.method === "GET" || request.method === "POST")) {
+        return authorized(request, env) ? await bloqueios(request, env) : json({ ok: false, status: "Senha incorreta." }, 401);
       }
       if (path === "/confirmar" && request.method === "POST") {
         return authorized(request, env) ? await confirmar(request, env) : json({ ok: false, status: "Senha incorreta." }, 401);

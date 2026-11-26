@@ -13,6 +13,7 @@ internal sealed class SongRequest
     public string Name { get; set; } = "";
     public string Url { get; set; } = "";
     public DateTime ReceivedAt { get; set; }
+    public string SenderIp { get; set; } = "";
 }
 
 /// <summary>Lista de espera dos pedidos de música enviados pela página de pedidos.</summary>

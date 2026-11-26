@@ -19,6 +19,7 @@ internal sealed class RemoteControlServer : IDisposable
     public int Port { get; private set; }
     public Func<string, string, Task<string>>? Handler { get; set; }
     public Func<string, string, Task<(bool Ok, string Message)>>? RequestHandler { get; set; }
+    public Func<string, bool>? IsRequestBlocked { get; set; }
     /// <summary>Transmite o som do PC ao celular (PCM 16 bits, mono, 24 kHz) até a conexão fechar.</summary>
     public Func<Stream, CancellationToken, Task>? AudioStreamer { get; set; }
     /// <summary>Gera o QR code (PNG) de um texto/endereço; usado pela página do celular.</summary>
@@ -150,6 +151,11 @@ internal sealed class RemoteControlServer : IDisposable
 
                 if (path == "/pedido/enviar")
                 {
+                    if (IsRequestBlocked?.Invoke(ip) == true)
+                    {
+                        await WriteAsync(stream, 403, "application/json; charset=utf-8", JsonSerializer.Serialize(new { ok = false, status = "Este remetente está bloqueado para enviar pedidos." }), timeout.Token);
+                        return;
+                    }
                     if (!AllowSubmission(ip))
                     {
                         await WriteAsync(stream, 429, "application/json; charset=utf-8",

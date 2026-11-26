@@ -8,6 +8,42 @@ namespace Lyravoxen;
 public partial class MainWindow
 {
     private List<SongRequest> _requests = new();
+    private readonly Dictionary<string, string> _blockedRequestSenders = LoadBlockedRequestSenders();
+    private static string BlockedSendersFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "pedidos-bloqueados.json");
+    private static Dictionary<string, string> LoadBlockedRequestSenders()
+    {
+        try { return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(BlockedSendersFile)) ?? new(StringComparer.OrdinalIgnoreCase); }
+        catch { return new(StringComparer.OrdinalIgnoreCase); }
+    }
+    private bool IsRequestSenderBlocked(string ip) => !string.IsNullOrWhiteSpace(ip) && _blockedRequestSenders.ContainsKey(ip);
+    private void SaveBlockedRequestSenders()
+    {
+        try { System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(BlockedSendersFile)!); System.IO.File.WriteAllText(BlockedSendersFile, System.Text.Json.JsonSerializer.Serialize(_blockedRequestSenders, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })); }
+        catch (Exception ex) { AppLog.Error("Não foi possível salvar os remetentes bloqueados", ex); }
+    }
+    private async void ManageBlockedSenders()
+    {
+        var ip = PromptForText("Bloquear remetente", "IP do remetente (local ou público):");
+        if (string.IsNullOrWhiteSpace(ip)) return;
+        ip = ip.Trim();
+        var label = PromptForText("Identificar remetente", "Nome para identificar este IP:", ip) ?? ip;
+        _blockedRequestSenders[ip] = label.Trim(); SaveBlockedRequestSenders();
+        if (CloudConfigured)
+        {
+            var cloud = await CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, ip, label.Trim(), true);
+            StatusText.Text = cloud.Ok ? "Remetente bloqueado localmente e na internet: " + label : "Bloqueado localmente. Bloqueio na internet não sincronizado: " + cloud.Message;
+        }
+        else StatusText.Text = "Remetente bloqueado localmente: " + label + ". Configure pedidos na nuvem para bloquear o link público.";
+        RefreshRequestsWindow();
+    }
+    private async void UnblockSender(string ip)
+    {
+        _blockedRequestSenders.Remove(ip); SaveBlockedRequestSenders();
+        if (CloudConfigured) await CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, ip, "", false);
+        StatusText.Text = "Bloqueio removido: " + ip; RefreshRequestsWindow();
+    }
+
+
     private Window? _requestsWindow;
     private System.Windows.Controls.StackPanel? _requestsPanel;
     private WhatsAppSettings _whatsApp = new();
@@ -91,7 +127,7 @@ public partial class MainWindow
             // O serviço descarta sozinho depois de algumas horas; cada computador lembra o que já importou.
             var total = 0;
             foreach (var item in result.Items)
-                if (_cloudSeenIds.Add(item.Id)) total += ImportMessageText(item.Text).Added;
+                if (_cloudSeenIds.Add(item.Id) && !IsRequestSenderBlocked(item.SenderIp)) total += ImportMessageText(item.Text, item.SenderIp).Added;
             _cloudVersion = result.Version;
             if (total > 0)
             {
@@ -104,7 +140,7 @@ public partial class MainWindow
     }
 
     /// <summary>Importa pedidos de um texto (mensagem, várias mensagens ou conversa inteira). Devolve quantas músicas entraram.</summary>
-    private (int Added, string Message) ImportMessageText(string text)
+    private (int Added, string Message) ImportMessageText(string text, string senderIp = "")
     {
         var jsons = SongRequestStore.MessagesToJson(text);
         if (jsons.Count == 0) return (0, "Não encontrei links nessa mensagem.");
@@ -113,7 +149,7 @@ public partial class MainWindow
         foreach (var json in jsons)
         {
             var (added, ok, message) = SongRequestStore.Parse(json, _requests, DateTime.Now);
-            if (ok) { _requests.AddRange(added); total += added.Count; }
+            if (ok) { foreach (var request in added) request.SenderIp = senderIp; _requests.AddRange(added); total += added.Count; }
             else lastMessage = message;
         }
         if (total > 0)
@@ -135,6 +171,7 @@ public partial class MainWindow
             var (added, ok, message) = SongRequestStore.Parse(json, _requests, DateTime.Now);
             if (ok)
             {
+                foreach (var request in added) request.SenderIp = ip;
                 _requests.AddRange(added);
                 SongRequestStore.Save(_requests);
                 UpdateRequestsButton();
@@ -201,6 +238,7 @@ public partial class MainWindow
         _requestsPanel.Children.Clear();
 
         _requestsPanel.Children.Add(RequestText("📥 Pedidos de músicas", 20, true));
+        _requestsPanel.Children.Add(RequestButton("🛡 Gerenciar IPs bloqueados", ManageBlockedSenders));
         var urls = _remote?.LocalUrls().Select(u => u + "pedido").ToList() ?? new List<string>();
         var link = urls.FirstOrDefault(u => u.Contains("//192.168.", StringComparison.Ordinal)) ?? urls.FirstOrDefault();
         _requestsPanel.Children.Add(RequestText(link is null
@@ -242,6 +280,13 @@ public partial class MainWindow
         offlineButtons.Children.Add(RequestButton("📋 Importar pedido (colar mensagem)", ImportRequestDialog));
         offlineButtons.Children.Add(RequestButton("🗂 Importar conversa exportada (.txt)", ImportChatFile));
         _requestsPanel.Children.Add(offlineButtons);
+        foreach (var blocked in _blockedRequestSenders.ToList())
+        {
+            var row = new System.Windows.Controls.WrapPanel();
+            row.Children.Add(RequestText("Bloqueado: " + blocked.Value + " · " + blocked.Key, 12, false, "#A83D58"));
+            row.Children.Add(RequestButton("Desbloquear", () => UnblockSender(blocked.Key)));
+            _requestsPanel.Children.Add(row);
+        }
 
         if (_requests.Count == 0)
         {
@@ -263,7 +308,10 @@ public partial class MainWindow
             var content = new System.Windows.Controls.StackPanel();
             content.Children.Add(RequestText(string.IsNullOrWhiteSpace(request.Name) ? "(sem nome da música)" : request.Name, 16, true));
             content.Children.Add(RequestText("De: " + (string.IsNullOrWhiteSpace(request.Group) ? "não informado" : request.Group) +
-                                             " · " + request.ReceivedAt.ToString("dd/MM HH:mm"), 12, false, "#4A5A6B"));
+                                             " · " + request.ReceivedAt.ToString("dd/MM HH:mm") +
+                                             (string.IsNullOrWhiteSpace(request.SenderIp) ? "" : " · IP " + request.SenderIp), 12, false, "#4A5A6B"));
+            if (!string.IsNullOrWhiteSpace(request.SenderIp))
+                content.Children.Add(RequestButton("Bloquear este IP", () => { _blockedRequestSenders[request.SenderIp] = request.Group; SaveBlockedRequestSenders(); if (CloudConfigured) _ = CloudRequestClient.SetBlockedAsync(_whatsApp.CloudUrl, _whatsApp.CloudToken, request.SenderIp, request.Group, true); StatusText.Text = "IP bloqueado: " + request.SenderIp; RefreshRequestsWindow(); }));
             content.Children.Add(RequestText(request.Url, 12, false, "#2D6A9F"));
             content.Children.Add(RequestText(RequestLyricsLine(request), 12, false, "#1A2430"));
 

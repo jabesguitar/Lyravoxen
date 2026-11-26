@@ -45,6 +45,7 @@ public partial class MainWindow
             {
                 Handler = HandleRemoteCommandAsync,
                 RequestHandler = HandleSongRequestAsync,
+                IsRequestBlocked = IsRequestSenderBlocked,
                 AudioStreamer = _audioMonitor.StreamAsync,
                 QrPng = MakeQrPngBytes,
                 OnlineLink = () => _whatsApp.OnlineRequestLink

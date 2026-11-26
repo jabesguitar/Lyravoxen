@@ -25,4 +25,6 @@ public sealed class LibraryVideo
     public List<LyricCue> Cues { get; set; } = new();
     /// <summary>Quando a letra/sincronia foi salva pela última vez (para mostrar as músicas salvas mais recentes).</summary>
     public DateTime SavedAt { get; set; }
+    /// <summary>Data limite da cópia local importada; metadados e letra permanecem após expirar.</summary>
+    public DateTime? OfflineExpiresAt { get; set; }
 }

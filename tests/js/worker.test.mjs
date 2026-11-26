@@ -73,6 +73,22 @@ ok([...env.PEDIDOS.m.entries()].filter(([k])=>k.startsWith('p:')).every(([,e])=>
 // confirmar apaga (compatibilidade)
 r=await call('POST','/confirmar',{headers:{...jsonH,...auth},body:JSON.stringify({ids:[ids[0],'ultimo','../x']})}); j=await r.json();
 ok(j.ok&&j.n===1&&env.PEDIDOS.m.has('ultimo'),'confirmar só apaga chaves p:');
+// IP de origem: identifica o remetente no Worker e permite bloqueio/desbloqueio autenticado.
+const senderHeaders={...jsonH,'CF-Connecting-IP':'198.51.100.42'};
+r=await call('POST','/enviar',{headers:senderHeaders,body:JSON.stringify({text:'https://youtu.be/iptest00001'})});
+ok(r.status===200,'pedido com IP é aceito antes do bloqueio');
+let stored=[...env.PEDIDOS.m.entries()].find(([k])=>k.startsWith('p:')&&JSON.parse(env.PEDIDOS.m.get(k).v).ip==='198.51.100.42');
+ok(!!stored,'IP público foi gravado junto ao pedido');
+r=await call('POST','/bloqueios',{headers:{...jsonH,...auth},body:JSON.stringify({ip:'198.51.100.42',name:'Celular teste',blocked:true})});
+j=await r.json();ok(r.status===200&&j.ok,'bloqueio autenticado é criado');
+r=await call('POST','/enviar',{headers:senderHeaders,body:JSON.stringify({text:'https://youtu.be/iptest00002'})});
+j=await r.json();ok(r.status===403&&!j.ok,'IP bloqueado não consegue enviar');
+r=await call('GET','/bloqueios',{headers:auth});j=await r.json();ok(j.blocked.some(x=>x.ip==='198.51.100.42'&&x.name==='Celular teste'),'lista de bloqueios devolve IP e nome');
+r=await call('POST','/bloqueios',{headers:{...jsonH,...auth},body:JSON.stringify({ip:'198.51.100.42',blocked:false})});
+j=await r.json();ok(r.status===200&&j.ok,'desbloqueio autenticado funciona');
+r=await call('POST','/enviar',{headers:senderHeaders,body:JSON.stringify({text:'https://youtu.be/iptest00003'})});
+ok(r.status===200,'remetente pode enviar novamente após desbloqueio');
+
 // fila cheia
 for(let i=0;i<150;i++) env.PEDIDOS.m.set('p:cheio'+String(i).padStart(4,'0'),{v:'{}'});
 r=await call('POST','/enviar',{headers:jsonH,body:JSON.stringify({text:'https://youtu.be/xxxxxxxxxxx'})}); ok(r.status===429,'fila cheia = 429');
