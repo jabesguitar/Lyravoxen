@@ -161,3 +161,16 @@ O usuário confirmou que o mesmo problema do botão Baixar offline dos Pedidos t
 - [ ] Reprodução da cópia correta funciona offline e após reiniciar o app.
 - [ ] Expiração remove apenas mídia e preserva registros/letras/metadados.
 - [ ] Ajuda, Novidades, testes CI e build consolidado aprovados.
+
+
+## 26/11/2026 — Correção do erro de cobertura da Ajuda
+- Erro reportado pelo usuário: `tests/help_coverage.py` falhou porque o botão `Permitir site` não era citado literalmente na Ajuda.
+- Atualizado `MainWindow.Help.cs` para documentar o rótulo exato `Permitir site`, seu alias `Permitir neste site` e os passos para criar exceção persistente e recarregar a página.
+- A validação local do conteúdo atual encontrou zero rótulos ausentes na comparação textual executada nesta sessão. O resultado oficial será o workflow do GitHub após o commit.
+- Commit da correção: `4e70f3846631deac46ba686082e4f183516ccbbb`.
+- O build completo ainda não foi declarado pronto. O próximo passo é conferir o workflow acionado por esse commit e corrigir qualquer falha antes de solicitar teste manual.
+
+## Observação funcional importante sobre Biblioteca Offline
+- Inspeção do código confirmou que `ImportAudio_Click` abre `OpenFileDialog` para escolher um arquivo-fonte MP3/WAV e depois copia o arquivo para `%LOCALAPPDATA%/Lyravoxen/Media`, cria `LibraryVideo` offline e chama `SaveLibrary`. Esse seletor é de origem do arquivo, não de destino. O fluxo de URL direta ainda não existe na Biblioteca; `AddCurrentVideoToFolder_Click` guarda apenas link/ID e letra, sem baixar mídia.
+- Em Pedidos, `ImportOfflineForRequest` também abre seletor de arquivo-fonte, copia para a pasta interna e associa ao pedido; não é download da URL do pedido.
+- Para atender ao pedido do usuário, o pacote deve tornar explícito o fluxo: URL direta autorizada = download automático; arquivo local = selecionar origem e copiar automaticamente para a biblioteca interna; link YouTube isolado = não oferecer falso download nem extrair áudio.
