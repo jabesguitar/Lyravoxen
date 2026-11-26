@@ -236,3 +236,10 @@
 - A lógica de reprodução, sincronização, player, Holyrics e controle remoto não foi intencionalmente modificada. Importação MP3/WAV e reprodução local existentes foram mantidas.
 - Não foram implementados nesta etapa: validade, exclusão automática, deduplicação avançada, downloads de fontes autorizadas ou identificação de tonalidade/gravação. Esses itens permanecem pendentes.
 - Validação pendente: CI Windows, compilação, testes automatizados e teste operacional no computador do usuário.
+
+
+## 26/11/2026 — Correção do primeiro erro de compilação da Biblioteca Offline
+- CI da PR #11 falhou no build C# por ausência do namespace `System.IO` nos arquivos `Services/AudioMonitorService.cs` e `Services/RemoteControlServer.cs` (tipo `Stream` não encontrado).
+- Correção aplicada nos dois arquivos: inclusão explícita de `using System.IO;`. O projeto usa implicit usings, mas a compilação do CI demonstrou que a referência não estava sendo resolvida nesses arquivos; a importação explícita remove a ambiguidade.
+- Não foram alterados métodos, lógica de áudio, servidor remoto ou comportamento funcional.
+- Próxima validação: aguardar novo CI após os commits corretivos e tratar apenas os próximos erros reais, caso apareçam.
