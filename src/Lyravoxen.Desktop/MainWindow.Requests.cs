@@ -414,16 +414,34 @@ public partial class MainWindow
         try
         {
             OfflineMediaResult result;
-            if (YouTubeLink.TryGetVideoId(request.Url) is null)
+            var isYouTube = YouTubeLink.TryGetVideoId(request.Url) is not null;
+            var importLocal = isYouTube;
+            if (isYouTube)
             {
-                StatusText.Text = "Baixando o arquivo de áudio direto do endereço do pedido...";
-                result = await _offlineMedia.DownloadAsync(request.Url, OfflineMediaFolder);
+                System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                    "O pedido contém uma página do YouTube, não um arquivo de áudio. O Lyravoxen não extrai áudio nem remove anúncios do YouTube. Selecione agora um MP3/WAV autorizado que esteja no computador.",
+                    "Selecionar áudio autorizado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                System.Windows.MessageBox.Show(_requestsWindow ?? this,
-                    "O pedido contém um link do YouTube. O Lyravoxen não extrai áudio do YouTube nem contorna anúncios ou restrições. Se você possui o áudio autorizado, selecione o arquivo MP3/WAV no computador.",
-                    "Áudio autorizado necessário", MessageBoxButton.OK, MessageBoxImage.Information);
+                try
+                {
+                    StatusText.Text = "Baixando o arquivo de áudio direto do endereço do pedido...";
+                    result = await _offlineMedia.DownloadAsync(request.Url, OfflineMediaFolder);
+                    importLocal = false;
+                }
+                catch (Exception downloadError)
+                {
+                    var fallback = System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                        "O endereço do pedido não entregou um arquivo MP3/WAV direto.\n\nMotivo: " + downloadError.Message +
+                        "\n\nDeseja escolher um MP3/WAV autorizado no computador?",
+                        "Download direto indisponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    if (fallback != MessageBoxResult.Yes) return;
+                    importLocal = true;
+                }
+            }
+            if (importLocal)
+            {
                 using var dialog = new System.Windows.Forms.OpenFileDialog
                 {
                     Title = "Selecione um áudio autorizado para este pedido",
