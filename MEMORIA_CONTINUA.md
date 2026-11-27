@@ -1061,3 +1061,32 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Não foi removida nenhuma capacidade existente: QR, lista de URLs locais, PIN, renovação do PIN, instruções de Wi-Fi e Firewall continuam disponíveis.
 - Commit: c4b7796e38dd502c4a276a603987dc0c331be18a.
 - Build #866 está em andamento: https://github.com/jabesguitar/Lyravoxen/actions/runs/46029745807. Aguardando resultado; ainda não validar como concluído.
+
+
+## 27/11/2026 — Proteção adicional contra endpoints de anúncios na aba Próxima música
+
+### Objetivo
+- Pedido do usuário: colocar em prática uma proteção mais efetiva contra anúncios na experiência do YouTube, especialmente na aba Próxima música, sem prejudicar a reprodução.
+
+### Inspeção e limites técnicos
+- A aba Próxima música usa WebView2 com `BrowserAdBlocker` já conectado; o player de reprodução principal usa a API oficial IFrame do YouTube em outra instância.
+- O bloqueador anterior atuava principalmente por domínio e preservava integralmente domínios centrais do YouTube, portanto não filtrava endpoints de anúncio servidos no próprio domínio `youtube.com`.
+- Referências open source estudadas anteriormente: ZWebWrap (GPL-3.0-or-later; não foi copiado) e YouTube-Desktop-App (MIT/Electron; filtros como referência, não integração direta).
+- Foi escolhida uma alteração conservadora, sem dependências novas: filtrar caminhos de requisição conhecidos `/pagead/` e `/api/stats/ads` apenas em hosts `youtube.com` e subdomínios, mantendo a API IFrame, páginas normais e hosts de entrega de mídia liberados.
+- Exceção de domínio configurada pelo usuário continua prevalecendo.
+
+### Alterações e commits
+- `c026684d69d7d26e8ec42ad946eb9d9ece24ba3e` — adiciona a política `ShouldBlockRequest(Uri...)` com regras conservadoras de caminho.
+- `b27d13035a8fc7c19a873d20dd81eceae701932e` — conecta o evento WebView2 à nova política de requisição.
+- `c554d1cb08bf047fdee8184f682ceb6dd1320f4f` — acrescenta testes para bloquear endpoints conhecidos e preservar API IFrame, entrega googlevideo e exceções do usuário.
+
+### O que isso faz e o que não promete
+- Bloqueia solicitações reconhecidas por esses caminhos de anúncio e mantém bloqueio por listas de domínios já existente.
+- Não injeta scripts no player, não altera respostas de vídeo e não usa proxy, certificados locais, cookies ou bypass de DRM/paywall.
+- Não garante remover anúncios in-stream ou anúncios entregues por endpoints variáveis/first-party. A compatibilidade real deve ser testada com vídeos variados.
+- O filtro por caminho é aplicado ao WebView2 da aba de navegação/Próxima música, pois é ali que `BrowserAdBlocker.Attach` já estava conectado; o player principal segue separado para reduzir risco de regressão.
+
+### Validação
+- Build #870 concluiu com sucesso antes destes três commits: https://github.com/jabesguitar/Lyravoxen/actions/runs/46030925149.
+- Os commits desta implementação acionam nova execução do workflow; ainda é necessário aguardar build verde e testar reprodução real no aplicativo.
+- Não alterar `main` nem fazer merge sem autorização.
