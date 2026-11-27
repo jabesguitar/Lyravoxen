@@ -1,70 +1,46 @@
 # ESTADO ATUAL — RETOMADA PRIORITÁRIA (27/11/2026)
 
-> Leia esta seção antes de continuar. Ela resume o estado real; o histórico abaixo foi preservado.
+> Leia esta seção antes de continuar. Resumo do estado real; histórico abaixo preservado.
 
-## Objetivo do usuário nesta etapa
-O usuário quer encerrar o ciclo improdutivo de tentativas de bloqueio de anúncios e avançar para as próximas etapas do Lyravoxen. Não pedir novas provas de que os anúncios existem: as capturas e testes já confirmaram repetidamente a falha. Ser eficiente, evitar builds intermediários para teste manual e não afirmar eficácia sem medição.
+## Decisão atual do usuário
+A frente de bloqueio de anúncios do YouTube está **PAUSADA**. O usuário precisa avançar para outras funcionalidades e não quer mais consumir tempo com compilações sem evidência de eficácia. Não prometer remoção de anúncios do YouTube.
 
-## Repositório e segurança
-- Repositório: https://github.com/jabesguitar/Lyravoxen
-- Branch de trabalho: `feature/offline-library-on-redesign`
-- `main` permanece intocada; não fazer merge sem autorização.
-- Build #901: sucesso, https://github.com/jabesguitar/Lyravoxen/actions/runs/46045974542. O commit de #901 é atualização documental; build verde não comprova bloqueio de anúncios.
-- Build #897: sucesso de compilação/empacotamento da versão com uBlock Origin Lite, mas teste funcional do usuário falhou.
+## Repositório
+- https://github.com/jabesguitar/Lyravoxen
+- Branch: `feature/offline-library-on-redesign`
+- `main` intacta.
+- Build #901 passou, mas não valida eficácia de anúncios.
 
-## O que foi efetivamente feito
+## Frente de anúncios — estado
+- Tentativas feitas: bloqueador por domínios/listas, filtros de endpoints, protótipo Brave adblock-rust e extensão uBlock Origin Lite no WebView2.
+- Testes do usuário confirmaram anúncios patrocinados em vídeo e na lateral; objetivo não alcançado.
+- Não há garantia técnica de que uBlock Lite ou botão de controle remova anúncios in-stream/first-party do YouTube.
+- Ideia sugerida pelo usuário: botão redondo uBlock abaixo do controle de tema na aba Próxima música.
+- Um botão pode controlar habilitar/desabilitar uma extensão que esteja instalada no WebView2, mas isso não equivale a bloquear anúncios. **Não implementar como indicador de proteção eficaz.**
+- Nenhum botão foi implementado nesta decisão.
+- Preservar código experimental; não apagar ou reverter sem necessidade.
+- Estado: PAUSADO até existir solução com evidência técnica suficiente.
 
-### Biblioteca Offline / armazenamento
-- Configuração de pasta de armazenamento e criação de subpastas `Musicas`, `Letras`, `Dados`, `Temporarios`.
-- Arquivo independente para letras e sincronizações, com JSON, backup e gravação atômica.
-- Persistência da pasta e recuperação de letras por ID/URL.
-- Integração de download em Pedidos com o armazenamento da Biblioteca; fallback para importação local MP3/WAV autorizado.
-- Fluxos posteriores adicionaram campo de URL direta MP3/WAV na Biblioteca, escolha de destino e registro da faixa com retenção configurável de 5/7/14/30 dias.
-- Limite preservado: URL de página YouTube não é arquivo direto autorizado; não implementar bypass de DRM, paywall ou restrições.
+## Outras implementações existentes
+- Biblioteca Offline com pasta configurável e subpastas Musicas/Letras/Dados/Temporarios.
+- Arquivo independente de letras/sincronizações e recuperação por ID/URL.
+- Integração de armazenamento com Pedidos; importação MP3/WAV e fluxo para URL direta autorizada.
+- Retenção configurável 5/7/14/30 dias.
+- Barra global de reprodução offline e seleção visual em listas.
+- Redesign de Pedidos recebidos e Controle pelo celular.
+- Ajustes no painel Próxima música e lista da Biblioteca; alguns cenários ainda dependem de validação manual consolidada.
 
-### Reprodução / interface
-- Seleção visual de itens no histórico e na Biblioteca.
-- Barra global de reprodução offline com faixa, pausar/retomar, parar, volume e posição.
-- Ajustes na lista de músicas da Biblioteca ao trocar pastas/filtros.
-- Redesign da janela Pedidos recebidos com cards individuais, dados e ações mais claros.
-- Redesign da janela Controle pelo celular com QR, endereço, PIN e instruções em cartões.
-- Ajustes compactos no painel Próxima música; precisam de inspeção visual final se ainda fizerem parte da próxima rodada.
+## Próxima ação
+Perguntar/seguir a próxima funcionalidade do Lyravoxen que o usuário deseja priorizar. Não voltar à frente de anúncios por iniciativa própria. Manter `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` atualizados após mudanças significativas.
 
-### Proteção de anúncios — tentativas e resultado
-1. Bloqueador original por domínios/lista de hosts: não removeu anúncios in-stream/first-party do YouTube.
-2. Filtro pontual para caminhos `/pagead/` e `/api/stats/ads`: implementado e testado; usuário continuou vendo anúncios Pantene e Mercado Livre.
-3. Protótipo Rust com Brave `adblock-rust` (MPL-2.0), C ABI e ponte C#; listas EasyList/EasyPrivacy baixadas e cacheadas; filtro chamado pelo WebView2. Compilação #891 passou nessa revisão, mas não houve prova de eficácia em anúncios reais.
-4. Extensão oficial uBlock Origin Lite (Edge, GPL-3.0) empacotada no workflow; WebView2 configurado com extensões habilitadas e chamada `AddBrowserExtensionAsync`. Build #897 passou, mas usuário testou e continuou vendo anúncios em vídeo e laterais (Pantene, Mercado Livre, Aproxime-se de Deus e Amazon Prime/Blade Runner 2099). Portanto objetivo não alcançado.
-
-### Problemas de código corrigidos durante a etapa
-- Restaurada classe `BrowserAdBlocker` após erro CS0103 causado por arquivo com classe/namespace incorretos.
-- Removido membro `CoreWebView2WebResourceContext.WebSocket` inexistente na versão do SDK, corrigindo CS0117.
-- Avisos CS8602/CS4014 permaneceram avisos não fatais.
-
-## Diagnóstico técnico ainda não feito
-- O app chama `AddBrowserExtensionAsync`, mas não confirma com `GetBrowserExtensionsAsync` se uBOL está instalado, qual ID/nome/versão tem e se `IsEnabled` está true.
-- O contador visível "81.671 regras / 0 solicitações bloqueadas" é do bloqueador legado; não representa as regras do uBOL.
-- O status de instalação é sobrescrito pela mensagem posterior "Player pronto".
-- Não há teste independente confirmando que DNR/Manifest V3 funciona nessa instância WebView2.
-- Portanto não atribuir a falha a uma causa específica ainda.
-
-## Próxima ação recomendada — antes de outra compilação para o usuário
-1. Não pedir novo teste manual agora.
-2. Fazer diagnóstico técnico no código: consultar `GetBrowserExtensionsAsync`; verificar ID/nome/versão/`IsEnabled`; instalar somente se ausente; reler a lista depois da instalação.
-3. Registrar em log local versão do WebView2 Runtime, caminho e manifesto da extensão, HRESULT/exceções e estado de habilitação.
-4. Separar no painel o estado real de uBOL do contador legado; não mostrar "proteção ativa" como prova de que anúncios estão sendo bloqueados.
-5. Validar DNR com uma extensão MV3 mínima/fixture de requisição controlada. Só então decidir se uBOL é compatível e se vale manter.
-6. Se uBOL e DNR estiverem ativos mas anúncios do YouTube persistirem, pesquisar outra solução open source com evidência de compatibilidade WebView2/Chromium, ou registrar objetivamente a limitação. Não repetir as mesmas tentativas.
-7. Para a progressão do produto, priorizar as demais tarefas pendentes do projeto e consolidar uma única build para testes manuais.
-
-## Regras de continuidade
-- Atualizar sempre `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` após mudanças significativas.
-- Diferenciar implementado, compilado, testado e aprovado pelo usuário.
-- Não chamar sugestão de decisão aprovada.
-- Não misturar projetos.
+## Regras
+- Não pedir provas já fornecidas.
+- Distinguir implementado, compilado, testado e aprovado.
+- Não entregar builds intermediários como se fossem finais.
 - Não alterar `main` sem autorização.
-- Evitar pedir ao usuário que repita testes ou provas já fornecidos.
+- Preservar o histórico abaixo desta seção.
 
+---
 ---
 
 # Lyravoxen — Registro de retomada
