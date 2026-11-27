@@ -1052,3 +1052,12 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 ### Validação
 - Build #862 está em execução; commits intermediários foram cancelados automaticamente quando novos commits foram enviados. Só o resultado do #862 deve ser considerado.
 - A correção de lista e o redesign ainda precisam de build verde e validação visual no Windows.
+
+
+## 27/11/2026 — Redesign do Controle pelo celular
+
+- Solicitação do usuário: aplicar o mesmo cuidado visual da janela Pedidos recebidos à janela aberta pelo botão Controle pelo celular, mantendo as funções; o usuário autorizou seguir diretamente.
+- MainWindow.Remote.cs: janela passou de layout claro simples de 420 px para painel escuro de 560 px, cartões separados, títulos e instruções em hierarquia, QR code destacado, endereço em campo legível com botão Copiar endereço, PIN em destaque e ação Gerar novo PIN. Conteúdo rolável e responsivo à altura disponível.
+- Não foi removida nenhuma capacidade existente: QR, lista de URLs locais, PIN, renovação do PIN, instruções de Wi-Fi e Firewall continuam disponíveis.
+- Commit: c4b7796e38dd502c4a276a603987dc0c331be18a.
+- Build #866 está em andamento: https://github.com/jabesguitar/Lyravoxen/actions/runs/46029745807. Aguardando resultado; ainda não validar como concluído.
