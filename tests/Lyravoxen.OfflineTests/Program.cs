@@ -138,6 +138,17 @@ try
     catch (InvalidDataException) { rejectedHtml = true; }
     Assert(rejectedHtml, "recusa página HTML apresentada como arquivo de áudio");
 
+    Assert(BrowserRequestPolicy.ShouldBlockRequest(new Uri("https://www.youtube.com/pagead/interaction/"), new[] { "youtube.com", "googlevideo.com" }, new[] { "doubleclick.net" }, Array.Empty<string>()),
+        "bloqueia endpoint conhecido de anúncios do YouTube");
+    Assert(BrowserRequestPolicy.ShouldBlockRequest(new Uri("https://www.youtube.com/api/stats/ads"), new[] { "youtube.com", "googlevideo.com" }, Array.Empty<string>(), Array.Empty<string>()),
+        "bloqueia endpoint de estatísticas de anúncios do YouTube");
+    Assert(!BrowserRequestPolicy.ShouldBlockRequest(new Uri("https://www.youtube.com/iframe_api"), new[] { "youtube.com", "googlevideo.com" }, Array.Empty<string>(), Array.Empty<string>()),
+        "preserva API oficial do player do YouTube");
+    Assert(!BrowserRequestPolicy.ShouldBlockRequest(new Uri("https://r1.googlevideo.com/videoplayback"), new[] { "youtube.com", "googlevideo.com" }, Array.Empty<string>(), Array.Empty<string>()),
+        "preserva entrega de vídeo e áudio do YouTube");
+    Assert(!BrowserRequestPolicy.ShouldBlockRequest(new Uri("https://www.youtube.com/pagead/interaction/"), new[] { "youtube.com" }, Array.Empty<string>(), new[] { "youtube.com" }),
+        "respeita exceção do usuário para domínio do YouTube");
+
     Assert(!BrowserRequestPolicy.ShouldBlock("www.youtube.com", new[] { "youtube.com", "googlevideo.com" }, new[] { "doubleclick.net" }, Array.Empty<string>()),
         "preserva domínio protegido do YouTube");
     Assert(!BrowserRequestPolicy.ShouldBlock("r1.googlevideo.com", new[] { "youtube.com", "googlevideo.com" }, new[] { "googlevideo.com" }, Array.Empty<string>()),
