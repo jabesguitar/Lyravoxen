@@ -129,3 +129,29 @@ O primeiro CI chegou ao teste estrutural e falhou porque a expectativa era 6. A 
 
 ## 27/11/2026 — Resultado do CI #931
 O run `46067616951` foi consultado diretamente no GitHub. Os dois jobs (`build` e `cloud-worker-tests`) terminaram com sucesso. O job Windows passou por restore, build, testes da linha do tempo, pacote portátil e instalador. Os três artefatos foram publicados e baixados; os ZIPs foram verificados sem erros de integridade. Esta evidência confirma apenas o código presente no commit `6350d2819950907e7490422353cd1b6d52c7322f`; não demonstra ainda funcionamento de interface nova, alinhamento de áudio cantado ou cadastro remoto.
+
+
+## Auditoria funcional inicial do fluxo atual (27/11/2026)
+
+### Interface WPF existente
+- A aba atual ainda é composta por trilho de ferramentas, editor de texto completo e prévia.
+- Os comandos expostos incluem limpeza/consulta de letra, estimativa, cadastro rápido, salvar/sincronizar, reconhecimento e marcação por toque.
+- O texto orienta separar frases por linha e estrofes por linha em branco; isso ainda exige organização manual da letra.
+
+### Reconhecimento e marcação
+- `StartAutoRecognitionAsync` cria `LiveAudioTranscriptionService` associado ao instante de reprodução e recebe transcrições progressivas enquanto a música toca. O fluxo observado é reconhecimento incremental ao vivo; não é ainda forced alignment completo de toda a gravação nem análise estrutural preparatória do áudio.
+- `MainWindow.TapSync.cs` usa `TapSyncPlanner.SplitStanzas`: um toque marca o início de uma estrofe. A prévia usa `BuildCues` e a constante `TapSecondsPerLineForLast = 3.0` para estimar a duração das linhas finais. Não há cartões individuais por frase/linha, nem navegação/reordenação individual de ocorrências nessa tela.
+- A estrutura nova (`LyricsStructureAnalyzer`) tem testes no projeto de timeline, mas a classe principal `MainWindow.xaml.cs` não a chama. Portanto, o parser validado ainda não alimenta a experiência WPF.
+
+### Persistência e recuperação
+- `PermanentLyricsArchive` clona e persiste `Sections` e `ExecutionOrder`.
+- Porém, `PersistCurrentCues` cria/atualiza os itens da pasta "Músicas sincronizadas" copiando metadados, `FullLyrics` e `Cues`, sem copiar `Sections` e `ExecutionOrder`. Essa integração precisa ser corrigida antes de depender do novo modelo na interface.
+- A chave do arquivo permanente prioriza o ID do vídeo; para outros itens, usa URL e, como fallback, metadados. O fluxo de reabertura precisa ser validado para manter a identidade exata da gravação.
+
+### Controle remoto
+- A página HTML atual expõe somente duas abas: Bíblia e Ao Vivo.
+- O servidor atende comandos pela rota `/api` autenticada por PIN; o dispatcher remoto já conhece comandos de Ao Vivo, Bíblia e marcação por toque, mas ainda não há editor remoto de cadastro de letras.
+- A nova aba deverá usar o mesmo modelo/serviço do Windows. O contrato atual e a leitura do corpo HTTP ainda precisam ser auditados antes de decidir se a edição de letras usará novos comandos ou uma operação POST dedicada. Não quebrar as rotas já usadas por Ao Vivo/Bíblia.
+
+### Próxima ação técnica
+Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquivo permanente; em seguida terminar auditoria de endpoints/protocolo e decidir o transporte seguro para texto longo. Só então implementar a interface automática/manual e a aba remota.
