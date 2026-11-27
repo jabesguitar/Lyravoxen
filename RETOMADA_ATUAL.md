@@ -644,3 +644,11 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Próxima ação: fazer protótipo isolado da integração Rust/C ABI + C# P/Invoke/WebView2; medir compatibilidade, build e impacto em CPUs antigas antes de conectar ao player. Criar testes com URLs/tipos de recurso e testes manuais com YouTube.
 - Limite: nem motor ABP/uBO garante identificar anúncios inseridos no mesmo fluxo de mídia do vídeo.
 - Nenhuma alteração adicional no código após o teste do usuário. Não mexer na main.
+
+
+## Atualização — 27/11/2026: correção CS0117 WebSocket
+
+- Build #886 falhou porque o enum WebView2 1.0.2903.40 não define `CoreWebView2WebResourceContext.WebSocket`.
+- Removido esse case; os demais tipos de requisição permanecem e recursos sem mapeamento usam `other`.
+- Commit: `db889fbb79c6e292a21b9505259e4f22f8256e76`.
+- Acompanhar novo workflow. Próximo objetivo: validar compilação do Rust e .NET, DLL nativa incluída na publicação e testes; não considerar anúncios resolvidos antes de teste real.
