@@ -90,6 +90,23 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item native/adblock/target/x86_64-pc-windows-msvc/release/lyravoxen_adblock.dll artifacts/windows-x64/lyravoxen_adblock.dll
+      - name: Download and bundle official uBlock Origin Lite (Edge) extension
+        shell: pwsh
+        run: |
+          $version = "2026.1124.1811"
+          $url = "https://github.com/uBlockOrigin/uBOL-home/releases/download/$version/uBOLite_$version.edge.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "uBOLite.zip"
+          $extract = Join-Path $env:RUNNER_TEMP "uBOLite"
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $extract -Force
+          $manifest = Get-ChildItem -Path $extract -Filter manifest.json -Recurse | Select-Object -First 1
+          if (-not $manifest) { throw "uBlock Origin Lite manifest.json not found in release archive." }
+          $extensionDir = Join-Path $PWD "artifacts/windows-x64/Extensions/uBOLite"
+          New-Item -ItemType Directory -Force -Path $extensionDir | Out-Null
+          Copy-Item -Path (Join-Path $manifest.DirectoryName "*") -Destination $extensionDir -Recurse -Force
+          if (-not (Test-Path (Join-Path $extensionDir "manifest.json"))) { throw "Extension bundle did not contain manifest.json at its root." }
+          $licenseUrl = "https://raw.githubusercontent.com/uBlockOrigin/uBOL-home/$version/LICENSE.txt"
+          try { Invoke-WebRequest -Uri $licenseUrl -OutFile (Join-Path $extensionDir "LICENSE.txt") } catch { Write-Warning "Could not retrieve upstream license file; verify release licensing before distribution." }
       - name: Test cue timeline
         run: dotnet run --project tests/Lyravoxen.TimelineTests/Lyravoxen.TimelineTests.csproj -c Release
       - name: Package portable ZIP
