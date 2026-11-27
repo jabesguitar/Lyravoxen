@@ -1,6 +1,9 @@
 using System.Text.Json;
 using Lyravoxen.Models;
 
+using Lyravoxen.Services;
+using System.Windows;
+
 namespace Lyravoxen;
 
 public partial class MainWindow
