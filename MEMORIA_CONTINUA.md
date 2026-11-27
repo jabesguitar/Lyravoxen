@@ -753,3 +753,38 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - [ ] Se for necessário gerar novo pacote, executar manualmente Windows Build na branch `feature/offline-library-on-redesign`; não fazer merge, reset ou alteração de layout.
 - [ ] Ao testar, conferir primeiro as cinco abas principais e a presença da aba Biblioteca Offline antes de avaliar funcionalidades.
 
+## 27/11/2026 — Windows Build #810 concluído na branch de redesign
+
+### Execução confirmada no GitHub Actions
+- Usuário informou que o workflow **Windows build #810** ficou verde: execução manual por `workflow_dispatch`.
+- Run: `45931354035`.
+- Link: https://github.com/jabesguitar/Lyravoxen/actions/runs/45931354035
+- Branch: `feature/offline-library-on-redesign`.
+- Commit exato compilado: `9531d4a6c65b89e5fdb3ddef4d9e50d665cf1ea7`.
+- Job `cloud-worker-tests`: `success`; etapas concluídas incluem testes do serviço offline, cobertura da Ajuda, verificações estáticas C#, testes do Worker, formulário público e página remota mobile.
+- Job `build`: `success`; etapas concluídas incluem geração do ícone, splash compacta, restore/build .NET, cue timeline tests, pacote ZIP portátil e instalador Inno Setup, com upload dos três artefatos.
+- Isso comprova que a compilação foi feita a partir da branch correta e do commit registrado; não comprova ainda que o usuário abriu/instalou o pacote ou aprovou visualmente o aplicativo.
+
+### Artefatos publicados (não expirados na consulta)
+- Instalador Windows x64: `Lyravoxen-Installer-Windows-x64`, artifact ID `15168917805`, aproximadamente 51,3 MB.
+- Pacote Windows x64: `Lyravoxen-Windows-x64`, artifact ID `15168088378`, aproximadamente 72,7 MB.
+- ZIP portátil: `Lyravoxen-Windows-x64-portable`, artifact ID `15167933847`, aproximadamente 72,7 MB.
+- Expiração informada pelo GitHub: 25/02/2027 às 02:57 UTC.
+- SHA-256 publicados pelo GitHub:
+  - Instalador: `2dd1fa63fa62cc8d9bafe8b4c061adf0a00ecac9d10bab50c72e37819554cc38`.
+  - Windows x64: `19a63f08f8c40bd6a7a0c7613e77994e9ffffa012bc6c65ae051432a19132e5b`.
+  - ZIP portátil: `57949e6a49cad49bf204841daff8a9ebaecf695de71615b23ede8f7c38989773`.
+
+### Estado atualizado
+- [x] Workflow manual executado na branch `feature/offline-library-on-redesign`.
+- [x] Jobs de testes e build concluídos com sucesso.
+- [x] Artefatos Windows x64, portátil e instalador publicados e identificados.
+- [ ] Usuário baixar/abrir o pacote #810 e confirmar que o layout novo aparece, incluindo Biblioteca Offline.
+- [ ] Rodada manual de testes de funcionalidades conforme checklist anterior; nenhum desses testes deve ser marcado como aprovado sem relato do usuário.
+- [ ] Depois do retorno do usuário, registrar resultados específicos neste arquivo.
+- Não fazer merge para `main` sem autorização explícita.
+
+### Próxima ação
+- Baixar preferencialmente o instalador `Lyravoxen-Installer-Windows-x64` (artifact ID `15168917805`) para instalação normal; alternativamente, usar o ZIP portátil `Lyravoxen-Windows-x64-portable` (artifact ID `15167933847`) para testar sem instalação.
+- Ao verificar o aplicativo, primeiro confirmar a interface nova e a presença da Biblioteca Offline. Depois registrar as falhas/ajustes reais sem reiniciar etapas já concluídas.
+
