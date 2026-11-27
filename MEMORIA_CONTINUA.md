@@ -1101,3 +1101,18 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Build #876 disparado para validar a correção: https://github.com/jabesguitar/Lyravoxen/actions/runs/46034132906.
 - Avisos CS8602 e CS4014 do log original não foram alterados; não eram erros fatais nem a causa do publish falhar.
 - Aguardando resultado do #876. Não considerar o publish corrigido até o workflow terminar com sucesso.
+
+
+## 27/11/2026 — Teste real: anúncios do YouTube continuam aparecendo
+
+- Retorno do usuário após instalar/testar a compilação: na primeira música pesquisada e reproduzida, apareceram dois anúncios.
+- Resultado funcional: a filtragem pontual de `/pagead/` e `/api/stats/ads` não resolveu a presença de anúncios pré-roll/in-stream. A proteção não pode ser considerada concluída.
+- Build #878 concluiu com sucesso após a restauração de `BrowserAdBlocker`: https://github.com/jabesguitar/Lyravoxen/actions/runs/46034192649. Isso comprova compilação/testes automatizados, não remoção de anúncios.
+- Nova pesquisa técnica:
+  - ZWebWrap implementa motor de filtro completo com `adblock-rust`, scriptlets e injeção cosmética, mas o próprio wrapper tem licença GPL-3.0-or-later e ainda não tem release; não copiar o wrapper integralmente para o Lyravoxen.
+  - O motor upstream `brave/adblock-rust` é MPL-2.0 e oferece network blocking, cosmetic filtering, resource replacements e uBlock Origin scriptlet support. É uma base tecnicamente mais apropriada para avaliar integração independente, observando as obrigações MPL.
+  - O código Windows do ZWebWrap usa classificação de tipo de recurso, contexto da página e avaliação de regras por URL; também aplica injeção de scripts cosméticos. Isso é substancialmente mais completo do que a lista de domínios atual.
+- Próxima direção técnica a avaliar: integrar o motor upstream Brave adblock-rust (MPL-2.0) como biblioteca nativa Windows x64 com interface C ABI/P/Invoke para o C# WebView2; carregar listas ABP/uBO, avaliar tipo de recurso e URL da página de origem, aplicar exceções de segurança e injeção cosmética em documentos. Avaliar tamanho, consumo de memória, suporte a CPUs antigas e processo de build antes de adotar.
+- Não assumir que mesmo um motor completo removerá todos os anúncios do YouTube: anúncios server-side/in-stream servidos como parte do próprio fluxo podem não ser distinguíveis de conteúdo normal.
+- Nenhuma integração nova desse motor foi implementada ainda. A alteração atual continua sendo o filtro pontual e deve ser considerada insuficiente para o objetivo do usuário.
+- Branch `feature/offline-library-on-redesign`; `main` permanece intocada.
