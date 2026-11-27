@@ -1189,3 +1189,22 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
   6. Se uBOL estiver ativo e DNR funcionar mas o anúncio do YouTube continuar, avaliar a limitação da extensão/YouTube e outras arquiteturas de navegador, sem repetir o bloqueador legado.
 - Preferência de continuidade reiterada pelo usuário: manter sempre `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` atualizados com o que foi feito e a próxima ação para retomada após interrupção.
 - Branch `feature/offline-library-on-redesign`; `main` não alterada.
+
+
+## 27/11/2026 — Segunda confirmação visual: uBlock Lite não impediu anúncios de vídeo
+
+- Usuário enviou nova captura da aba Próxima música, pesquisa `harpa crista 15`.
+- A captura mostra anúncio em vídeo Amazon Prime/Blade Runner 2099, identificado como patrocinado, "2 de 2", com duração de 6 segundos e reprodução em 0:03/0:06. Também aparece anúncio patrocinado na lateral.
+- Resultado: falha confirmada novamente. A extensão uBlock Origin Lite, mesmo empacotada e com chamada de instalação no código, não está impedindo os anúncios exibidos no teste.
+- Não pedir mais capturas ou provas ao usuário. Ele já forneceu evidências repetidas.
+- Diagnóstico ainda em aberto: não foi confirmado por API se uBOL está realmente instalado e habilitado no perfil; também não foi validado se as regras DNR da extensão funcionam no WebView2. Mesmo ativa, uBOL Lite pode ter limitações para anúncios específicos do YouTube; não atribuir a causa a uma delas sem instrumentação.
+- Próxima ação de engenharia obrigatória antes de qualquer novo instalador:
+  1. Implementar diagnóstico real usando `CoreWebView2.Profile.GetBrowserExtensionsAsync()`; listar extensão ID, nome, versão e `IsEnabled`.
+  2. Procurar extensão existente por ID e não chamar `AddBrowserExtensionAsync` repetidamente; instalar apenas se ausente e então reler a lista.
+  3. Registrar versão do WebView2 Runtime, caminho do pacote, manifesto e exceções/HRESULT em log local.
+  4. Separar no UI o status da extensão do contador antigo "regras/domínios/bloqueios"; não exibir "proteção ativa" como se significasse que uBOL bloqueia.
+  5. Criar uma prova de funcionamento de DNR com uma extensão MV3 mínima/fixture local e requisição controlada, antes de voltar a YouTube.
+  6. Se a extensão estiver ativa e DNR estiver funcional mas anúncios persistirem, pesquisar/avaliar outro projeto open source comprovadamente compatível com WebView2/Chromium; não repetir o bloqueador legado nem insistir na mesma extensão sem justificativa.
+- Build #897 teve sucesso na compilação/empacotamento, mas a eficácia funcional falhou. Compilação verde não é aceitação.
+- Preferência permanente reiterada: manter sempre `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` atualizados com trabalho concluído, problemas e próxima ação para retomada.
+- Branch `feature/offline-library-on-redesign`; `main` não alterada.
