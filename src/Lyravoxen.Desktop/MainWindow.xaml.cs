@@ -1912,7 +1912,6 @@ public partial class MainWindow : Window
     private async void HistoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_historySelectionChanging || HistoryList.SelectedItem is not VideoHistoryItem item) return;
-        HistoryList.SelectedItem = null;
         await LoadVideoAsync(item.Url, false);
         item.LastUsed = DateTime.Now;
         _history.Sort((a, b) => b.LastUsed.CompareTo(a.LastUsed));
@@ -3110,7 +3109,6 @@ public partial class MainWindow : Window
     {
         if (_librarySelectionChanging || LibrarySongList.SelectedItem is not LibraryVideo video) return;
         _selectedLibraryVideo = video;
-        LibrarySongList.SelectedItem = null;
         if (video.IsOffline)
         {
             if (!string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath)) { PlayLocalAudio(video); return; }
