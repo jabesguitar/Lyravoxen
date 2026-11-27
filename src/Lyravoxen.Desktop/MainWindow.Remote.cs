@@ -331,7 +331,7 @@ public partial class MainWindow
         copy.Click += (_, _) =>
         {
             try { System.Windows.Clipboard.SetText(addressBox.Text); }
-            catch (Exception ex) { System.Windows.MessageBox.Show(windowOwner(), "Não foi possível copiar o endereço: " + ex.Message, "Controle pelo celular", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            catch (Exception ex) { System.Windows.MessageBox.Show(this, "Não foi possível copiar o endereço: " + ex.Message, "Controle pelo celular", MessageBoxButton.OK, MessageBoxImage.Warning); }
         };
         steps.Children.Add(copy);
         panel.Children.Add(Card(steps));
@@ -375,7 +375,5 @@ public partial class MainWindow
             }
         };
         window.Show();
-
-        Window windowOwner() => window;
     }
 }
