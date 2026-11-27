@@ -22,7 +22,7 @@ public sealed class PermanentLyricsArchive
     public void Save(LibraryVideo video)
     {
         var key = GetKey(video);
-        if (string.IsNullOrWhiteSpace(key) || (string.IsNullOrWhiteSpace(video.FullLyrics) && video.Cues.Count == 0)) return;
+        if (string.IsNullOrWhiteSpace(key) || (string.IsNullOrWhiteSpace(video.FullLyrics) && video.Cues.Count == 0 && video.ExecutionOrder.Count == 0)) return;
         lock (_sync)
         {
             _items[key] = Clone(video);
@@ -77,6 +77,18 @@ public sealed class PermanentLyricsArchive
         VideoId = v.VideoId, Title = v.Title, TrackName = v.TrackName, Artist = v.Artist,
         Composer = v.Composer, Url = v.Url, IsOffline = false, LocalPath = null, Format = null,
         FullLyrics = v.FullLyrics, SavedAt = v.SavedAt,
-        Cues = v.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList()
+        Cues = v.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(),
+        Sections = v.Sections.Select(section => new LyricsSectionBlock
+        {
+            SectionId = section.SectionId, Label = section.Label, Kind = section.Kind,
+            SourceIndex = section.SourceIndex, Lines = new List<string>(section.Lines),
+            RepeatCount = section.RepeatCount, OccurrenceCount = section.OccurrenceCount,
+            ExplicitlyLabeled = section.ExplicitlyLabeled, NeedsReview = section.NeedsReview
+        }).ToList(),
+        ExecutionOrder = v.ExecutionOrder.Select(item => new LyricsExecutionOccurrence
+        {
+            SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
+            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex
+        }).ToList()
     };
 }
