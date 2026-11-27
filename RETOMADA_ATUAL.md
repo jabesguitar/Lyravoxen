@@ -508,3 +508,41 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - [ ] Testar reprodução offline real da cópia autorizada exata.
 - [ ] Manter explícito que anúncios first-party/in-stream do YouTube não podem ser garantidamente removidos sem comprometer o player.
 - Continuar auditoria da Biblioteca e retenção sem reescrever a limpeza já existente.
+
+
+## 27/11/2026 — Build consolidado #822 concluído; iniciar rodada única de testes
+
+### Build e CI
+- Workflow [Windows build #822](https://github.com/jabesguitar/Lyravoxen/actions/runs/45942283747) concluído com sucesso no commit `eeb1f78d433fe09d46a7448b91023ef3ef256c04`.
+- `cloud-worker-tests`: todos os passos passaram, incluindo mídia offline, cobertura da Ajuda, C# estático, Worker, formulário público e página remota móvel.
+- `build`: Restore, publish Windows x64, teste da linha do tempo, ZIP portátil, instalador Inno Setup e uploads passaram.
+- Correção aplicada após log do usuário: `using System.IO;` nos arquivos `YoutubeAudioDownloadService.cs`, `PermanentLyricsArchive.cs` e `MainWindow.OfflineStorage.cs`.
+
+### Artefatos disponíveis (expiração 25/02/2027)
+- Instalador Windows x64 — artifact ID `15173087837`; SHA-256 `98203e478aed295ab6d7b5ed61da3b6462a0d2e20a7486536cde002a2ff03bad`.
+- Pasta Windows x64 — artifact ID `15172753278`; SHA-256 `f1dbf9e007935adcdedfb3be252766572f865de75e4e07e57045afba59cd3c12`.
+- ZIP portátil — artifact ID `15172354465`; SHA-256 `680ce96f6fd6322f62a574fb9fc832e81fd5946367f7b7291360d84a2e0a838e`.
+
+### Instrução para a rodada manual consolidada
+1. Abrir a execução #822 e, na seção Artifacts, baixar `Lyravoxen-Installer-Windows-x64`.
+2. Extrair o ZIP baixado e executar `Lyravoxen-Setup-Windows-x64.exe`. Fechar o Lyravoxen antes de instalar. Não precisa baixar os três pacotes; o instalador é o recomendado.
+3. Executar a lista abaixo sem apagar a biblioteca atual nem dados anteriores.
+
+### Checklist de testes do usuário
+- [ ] Abrir o aplicativo e confirmar que inicia normalmente, sem erro ou tela vazia.
+- [ ] Configuração de armazenamento: abrir a opção de pasta da Biblioteca Offline; escolher/criar uma pasta dedicada; confirmar que o app cria `Musicas`, `Letras`, `Dados` e `Temporarios` dentro dela.
+- [ ] Cadastro de letra: abrir uma música com letra e cues, salvar, fechar e reabrir; confirmar que letra e sincronização continuam registradas.
+- [ ] Arquivo de áudio: associar/importar um MP3 ou WAV autorizado; confirmar que aparece na Biblioteca Offline e reproduz.
+- [ ] Persistência: remover somente a cópia de áudio (não apagar a ficha/letra pelo app, se houver essa opção); baixar/importar novamente a mesma gravação; confirmar que a letra continua vinculada.
+- [ ] Pedidos recebidos: abrir um pedido e clicar em **Baixar offline**; confirmar a resposta apresentada e que o arquivo fica na pasta configurada. Para link YouTube, anotar a mensagem/resultado exato; não considerar download concluído se não houver arquivo reproduzível.
+- [ ] Preparar próxima música: selecionar a cópia offline vinculada ao pedido; desligar a internet; tocar a próxima e confirmar reprodução local da gravação exata.
+- [ ] Retenção: conferir a validade selecionada e que a limpeza não apaga letras/metadados; não alterar a data do sistema para simular expiração.
+- [ ] Próxima Música: navegar, pesquisar e reproduzir; confirmar que o player continua funcionando com proteção ligada.
+- [ ] Proteção de anúncios: registrar se anúncios/trackers são bloqueados; anúncios in-stream do próprio YouTube podem continuar aparecendo e não devem ser considerados falha se o player permanecer funcional.
+- [ ] Pedidos pela internet: verificar recebimento dos pedidos e se o IP aparece; conferir bloqueio/desbloqueio somente após atualização do Worker em produção.
+
+### Limites e pendências
+- O build #822 prova compilação e testes automatizados, não prova download real do YouTube, reprodução offline no PC nem publicação do Worker Cloudflare em produção.
+- O Worker existente ainda precisa receber o código atualizado pelo usuário no painel Cloudflare, preservando binding KV `PEDIDOS` e secret `ADMIN_TOKEN`; não criar outro Worker nem apagar recursos.
+- Não fazer merge na `main`. Branch de teste permanece `feature/offline-library-on-redesign`.
+- Após o usuário executar os testes, registrar cada resultado (aprovado/falhou/não testado) e corrigir somente o que falhar, sem repetir o checklist inteiro desnecessariamente.
