@@ -80,6 +80,7 @@ public partial class MainWindow : Window
     private bool _loadingPreferences;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
     private readonly OfflineMediaService _offlineMedia = new();
+    private readonly YoutubeAudioDownloadService _youtubeAudio = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen"));
     private string _offlineRootFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Biblioteca Offline");
     private string OfflineMediaFolder => Path.Combine(_offlineRootFolder, "Musicas");
     private string OfflineLyricsFolder => Path.Combine(_offlineRootFolder, "Letras");
