@@ -41,3 +41,13 @@ Executar build/testes no GitHub; corrigir falhas; então prototipar análise de 
 - Ao iniciar nova conversa, consultar registros, branch, commits e Actions antes de agir.
 - Ao concluir marcos, atualizar os arquivos e registrar testes/resultados reais. Se o GitHub não estiver acessível, preparar Markdown na conversa e informar que não foi publicado.
 - Nenhuma autorização para merge na main, remover recursos funcionais ou modificar arquitetura fora do escopo foi concedida.
+
+
+## 27/11/2026 — Liberdade de remodelagem da aba
+- Usuário esclareceu que não considera úteis os comandos atuais da aba Cadastro de Letras, pois não funcionaram no uso esperado.
+- Autorizou explicitamente remodelar a área, substituir controles e fluxo, criar uma experiência moderna e funcional e remover comandos antigos que não tenham utilidade comprovada.
+- A preservação passa a priorizar o resultado do produto e os dados existentes, não a manutenção de botões antigos. Nenhuma função fora da aba Cadastro de Letras deve ser alterada sem necessidade e justificativa.
+- Direção de produto: dois fluxos claros — Automático (análise/alinhamento do áudio real com confiança e revisão) e Manual (blocos/cartões grandes, marcação durante playback, navegação, desfazer, reordenação e repetição de ocorrências sem duplicar texto-fonte).
+- Persistência obrigatória por música, com recuperação da letra, estrutura, ordem de execução e tempos. O acesso pelo controle remoto será desenvolvido após auditoria do protocolo atual, sem quebrar Ao Vivo/Bíblia.
+- O usuário autorizou pesquisa técnica e execução de comandos disponíveis para trazer a solução integrada e pronta; não quer ser chamado para testar etapas intermediárias.
+- Estado: decisão aprovada; implementação e validação ainda pendentes. Não declarar a aba pronta antes de build e testes.
