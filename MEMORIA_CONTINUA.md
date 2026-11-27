@@ -1090,3 +1090,14 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Build #870 concluiu com sucesso antes destes três commits: https://github.com/jabesguitar/Lyravoxen/actions/runs/46030925149.
 - Os commits desta implementação acionam nova execução do workflow; ainda é necessário aguardar build verde e testar reprodução real no aplicativo.
 - Não alterar `main` nem fazer merge sem autorização.
+
+
+## 27/11/2026 — Correção de compilação: BrowserAdBlocker
+
+- O usuário forneceu o log do `dotnet publish`, com nove erros CS0103 em `MainWindow.xaml.cs` (linhas 768–799): o símbolo `BrowserAdBlocker` não existia no contexto.
+- Causa raiz confirmada: o arquivo `src/Lyravoxen.Desktop/Services/BrowserAdBlocker.cs` havia sido sobrescrito incorretamente com o conteúdo de `BrowserRequestPolicy`, removendo a classe `Lyravoxen.Services.BrowserAdBlocker`.
+- Correção: restaurada a implementação completa do serviço WebView2, preservando configurações, cache/lista de hosts, exceções, contagem e o novo encaminhamento de requisições para `BrowserRequestPolicy.ShouldBlockRequest`.
+- Commit corretivo: `bfebc4b14ebba8deea3801cf63e7295d447b53d9`.
+- Build #876 disparado para validar a correção: https://github.com/jabesguitar/Lyravoxen/actions/runs/46034132906.
+- Avisos CS8602 e CS4014 do log original não foram alterados; não eram erros fatais nem a causa do publish falhar.
+- Aguardando resultado do #876. Não considerar o publish corrigido até o workflow terminar com sucesso.
