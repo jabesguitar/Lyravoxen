@@ -1345,3 +1345,10 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Os arquivos de teste incluem `LyricsStructureAnalyzer.cs` e `PermanentLyricsArchive.cs`.
 - **Validação ainda pendente:** a execução de Actions da branch foi cancelada por concorrência entre os commits sucessivos; não há resultado de compilação/teste do último conjunto de mudanças. O teste de persistência está escrito, mas ainda não aprovado.
 - Próxima ação: obter uma execução CI completa sobre o commit mais recente; corrigir erros antes de ligar o parser à interface. A UI moderna não foi alterada e nenhuma função existente foi removida.
+
+
+### Correção do primeiro teste de estrutura (27/11/2026)
+- O log do job `Test cue timeline` mostrou falha em `Program.cs:263`: a asserção esperava 6 ocorrências.
+- Contagem correta do caso: 3 estrofes + coro 1 + coro 2 + coro final 2x = 7 ocorrências. O teste estava errado; a falha não indicava erro no parser.
+- Corrigida a expectativa de 6 para 7 e detalhada a conta na mensagem do teste. As demais asserções do caso continuam verificando quatro ocorrências de coro, quatro blocos-fonte (três estrofes + um coro) e índices do coro de 1 a 4.
+- Próximo passo: aguardar a execução completa do CI no novo commit. Até ela terminar, a correção está commitada, mas não aprovada.
