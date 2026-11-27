@@ -239,22 +239,51 @@ public partial class MainWindow
 
         var urls = _remote.LocalUrls().ToList();
         var url = urls.FirstOrDefault(u => u.Contains("//192.168.", StringComparison.Ordinal)) ?? urls.FirstOrDefault();
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(20) };
 
-        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(18) };
-        System.Windows.Controls.TextBlock Text(string value, double size = 14, bool bold = false) => new()
+        System.Windows.Controls.TextBlock Text(string value, double size = 14, bool bold = false, string color = "#EAF4FF") => new()
         {
             Text = value,
             FontSize = size,
             FontWeight = bold ? FontWeights.Bold : FontWeights.Normal,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Hex("#1A2430"),
+            Foreground = Hex(color),
             Margin = new Thickness(0, 0, 0, 8)
         };
 
-        panel.Children.Add(Text("📱 Controle pelo celular", 20, true));
-        panel.Children.Add(Text("1. Conecte o celular no MESMO Wi-Fi deste computador (ou no ponto de acesso do celular).\n" +
-                                "2. Aponte a câmera para o QR code (ou digite o endereço no navegador).\n" +
-                                "3. Digite o PIN abaixo uma vez. Depois é só usar: campo de referência (com o microfone do teclado), Projetar, versículo/capítulo e Limpar telão."));
+        System.Windows.Controls.Border Card(System.Windows.UIElement content) => new()
+        {
+            Background = Hex("#0B2B50"),
+            BorderBrush = Hex("#167FA8"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(13),
+            Padding = new Thickness(15),
+            Margin = new Thickness(0, 0, 0, 12),
+            Child = content
+        };
+
+        System.Windows.Controls.Button ActionButton(string label) => new()
+        {
+            Content = label,
+            Padding = new Thickness(14, 8, 14, 8),
+            MinHeight = 38,
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Hex("#FFFFFF"),
+            Background = Hex("#123E68"),
+            BorderBrush = Hex("#168EB8"),
+            BorderThickness = new Thickness(1),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            Margin = new Thickness(0, 4, 8, 0)
+        };
+
+        panel.Children.Add(Text("CONTROLE PELO CELULAR", 21, true, "#35DDF5"));
+        panel.Children.Add(Text("Conecte seu celular ao Lyravoxen para controlar a projeção e funções compatíveis pela rede local.", 13, false, "#B8D5EA"));
+
+        var steps = new System.Windows.Controls.StackPanel();
+        steps.Children.Add(Text("1. MESMA REDE WI-FI", 12, true, "#35DDF5"));
+        steps.Children.Add(Text("Conecte o celular ao mesmo Wi-Fi deste computador (ou ao ponto de acesso do celular).", 13));
+        steps.Children.Add(Text("2. LEIA O QR CODE", 12, true, "#35DDF5"));
         if (url is not null)
         {
             try
@@ -267,42 +296,86 @@ public partial class MainWindow
                 bitmap.StreamSource = new MemoryStream(png);
                 bitmap.CacheOption = BitmapCacheOption.OnLoad;
                 bitmap.EndInit();
-                panel.Children.Add(new System.Windows.Controls.Image { Source = bitmap, Width = 220, Height = 220, Margin = new Thickness(0, 6, 0, 6) });
+                var qrFrame = new System.Windows.Controls.Border
+                {
+                    Background = Hex("#FFFFFF"),
+                    CornerRadius = new CornerRadius(10),
+                    Padding = new Thickness(10),
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                    Child = new System.Windows.Controls.Image { Source = bitmap, Width = 230, Height = 230, Stretch = System.Windows.Media.Stretch.Uniform }
+                };
+                steps.Children.Add(qrFrame);
             }
             catch (Exception ex) { AppLog.Error("Falha ao gerar o QR code", ex); }
         }
+        else
+        {
+            steps.Children.Add(Text("Nenhum endereço de rede local foi encontrado. Confira se o computador e o celular estão conectados à rede.", 13, false, "#FFD27A"));
+        }
+        steps.Children.Add(Text("Se preferir, digite o endereço abaixo no navegador do celular:", 12, false, "#B8D5EA"));
 
         var addressBox = new System.Windows.Controls.TextBox
         {
             Text = urls.Count == 0 ? "(sem rede encontrada)" : string.Join("\n", urls),
             IsReadOnly = true,
-            FontSize = 16,
+            FontSize = 14,
+            Padding = new Thickness(10),
+            Foreground = Hex("#DDF5FF"),
+            Background = Hex("#06172F"),
+            BorderBrush = Hex("#245B88"),
+            TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 8)
         };
-        panel.Children.Add(addressBox);
-        var pinText = Text("PIN: " + _remote.Pin, 24, true);
-        panel.Children.Add(pinText);
-        panel.Children.Add(Text("Na primeira vez o Windows pergunta sobre o firewall: permita em \"Redes privadas\". " +
-                                "Só funciona enquanto o Lyravoxen estiver aberto.", 12));
+        steps.Children.Add(addressBox);
+        var copy = ActionButton("Copiar endereço");
+        copy.Click += (_, _) =>
+        {
+            try { System.Windows.Clipboard.SetText(addressBox.Text); }
+            catch (Exception ex) { System.Windows.MessageBox.Show(windowOwner(), "Não foi possível copiar o endereço: " + ex.Message, "Controle pelo celular", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        };
+        steps.Children.Add(copy);
+        panel.Children.Add(Card(steps));
 
-        var renew = new System.Windows.Controls.Button { Content = "Trocar PIN", Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 0, 6) };
+        var pinPanel = new System.Windows.Controls.StackPanel();
+        pinPanel.Children.Add(Text("3. DIGITE O PIN", 12, true, "#35DDF5"));
+        var pinText = Text(_remote.Pin, 30, true, "#FFFFFF");
+        pinText.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+        pinPanel.Children.Add(pinText);
+        pinPanel.Children.Add(Text("Digite este código na página aberta pelo celular. O PIN protege o acesso ao controle.", 12, false, "#B8D5EA"));
+        var renew = ActionButton("Gerar novo PIN");
         renew.Click += (_, _) =>
         {
             _remote.Pin = LoadOrCreatePin(renew: true);
-            pinText.Text = "PIN: " + _remote.Pin;
+            pinText.Text = _remote.Pin;
         };
-        panel.Children.Add(renew);
+        pinPanel.Children.Add(renew);
+        panel.Children.Add(Card(pinPanel));
+
+        var help = new System.Windows.Controls.StackPanel();
+        help.Children.Add(Text("O QUE VOCÊ PODE FAZER", 12, true, "#35DDF5"));
+        help.Children.Add(Text("Usar os controles compatíveis da página móvel, navegar pela Bíblia, projetar referências e controlar funções disponíveis da reprodução e dos pedidos.", 13));
+        help.Children.Add(Text("Na primeira conexão, permita o acesso do Lyravoxen no Firewall do Windows em Redes privadas. O controle funciona enquanto o aplicativo estiver aberto.", 12, false, "#B8D5EA"));
+        panel.Children.Add(Card(help));
 
         var window = new Window
         {
-            Title = "Lyravoxen — Celular",
+            Title = "Lyravoxen — Controle pelo celular",
             Owner = this,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Width = 420,
+            Width = 560,
+            MinWidth = 480,
+            MaxHeight = SystemParameters.WorkArea.Height * 0.9,
             SizeToContent = SizeToContent.Height,
-            Background = Hex("#F5F7FA"),
-            Content = new System.Windows.Controls.ScrollViewer { Content = panel, VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto }
+            Background = Hex("#06172F"),
+            Content = new System.Windows.Controls.ScrollViewer
+            {
+                Content = panel,
+                VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled
+            }
         };
         window.Show();
+
+        Window windowOwner() => window;
     }
 }
