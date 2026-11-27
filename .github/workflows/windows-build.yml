@@ -78,8 +78,18 @@ jobs:
           dotnet-version: 8.0.x
       - name: Restore
         run: dotnet restore src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: Build native adblock engine
+        run: cargo build --manifest-path native/adblock/Cargo.toml --release --target x86_64-pc-windows-msvc
       - name: Build
         run: dotnet publish src/Lyravoxen.Desktop/Lyravoxen.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/windows-x64
+      - name: Bundle native adblock engine
+        shell: pwsh
+        run: |
+          Copy-Item native/adblock/target/x86_64-pc-windows-msvc/release/lyravoxen_adblock.dll artifacts/windows-x64/lyravoxen_adblock.dll
       - name: Test cue timeline
         run: dotnet run --project tests/Lyravoxen.TimelineTests/Lyravoxen.TimelineTests.csproj -c Release
       - name: Package portable ZIP
