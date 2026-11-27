@@ -706,7 +706,7 @@
            </Grid>
           </StackPanel>
           <ListBox x:Name="LibrarySongList" Grid.Row="1" Background="{DynamicResource Brush_071A3B}" Foreground="{DynamicResource Brush_F2F6F8}" BorderBrush="{DynamicResource Brush_245B88}" Margin="0,8,0,8" DisplayMemberPath="Title" SelectionChanged="LibrarySong_SelectionChanged"/>
-          <StackPanel Grid.Row="2">
+          <ScrollViewer Grid.Row="2" MaxHeight="190" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,2,0,0"><StackPanel Grid.Row="2">
            <Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/>
            <Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click"/>
            <Expander Header="⬇ Download manual MP3/WAV" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="2,5,2,2" IsExpanded="False">
@@ -727,7 +727,7 @@
             <Button Grid.Column="1" Content="− Remover desta pasta" Click="RemoveLibrarySong_Click" Margin="2" FontSize="10"/>
            </Grid>
            <Button Content="✨ Corrigir nomes de todas as músicas" Click="FixAllNames_Click" ToolTip="Separa intérprete e título e tira Playback, Legendado, um tom abaixo etc. em toda a biblioteca e no histórico"/>
-          </StackPanel>
+          </StackPanel></ScrollViewer>
          </Grid>
         </Border>
         <Border Grid.Column="2" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="13" Padding="12">
