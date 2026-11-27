@@ -1253,3 +1253,39 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Priorizar interface simples e rápida: controles essenciais visíveis, funções avançadas organizadas sem poluir a tela, Ajuda atualizada para cada recurso entregue.
 - Requisitos de sequência automática e organizador manual persistente permanecem: preservar letra original, separar sequência de ocorrências e tempos; permitir repetir blocos sem duplicar texto.
 - Nenhum botão foi removido nesta decisão; esta é a autorização e diretriz para a próxima implementação.
+
+
+### Nova etapa — Cadastro de letras funcional (27/11/2026)
+
+**Solicitação e requisitos confirmados pelo usuário**
+- Transformar a aba Cadastrar letras em editor funcional de preparação e sincronização; não fazer apenas redesign visual.
+- **Automático:** usuário informa o vídeo/link e cola a letra integral; o sistema analisa o áudio real, reconhece a correspondência entre frases e posiciona tempos de entrada, permitindo revisão antes de finalizar. Não confundir estimativa uniforme com sincronização automática real.
+- **Manual:** mostrar frases/linhas em blocos quadrados selecionáveis; selecionar com mouse ou teclado/setas, acompanhar a reprodução e marcar cada entrada no instante correto. Permitir voltar, corrigir, reordenar e concluir.
+- Ao finalizar, salvar permanentemente letra original, ordem de execução, repetições de refrão, tempos/cues, autor, intérprete, título e vínculo com origem/URL/ID. Reabrir deve recuperar a sincronização sem refazer o trabalho.
+- Disponibilizar a mesma função no controle remoto por IP como terceira aba, além de Ao vivo e Bíblia; computador e celular compartilham biblioteca, persistência e resultados, com layout adaptado.
+- Remover controles/botões sem função real ou sem uso. Não deixar ações decorativas ou promessas que não executam.
+- Preservar funções úteis e não alterar a branch main sem autorização.
+
+**Auditoria inicial do código na branch feature/offline-library-on-redesign**
+- LiveAudioTranscriptionService.cs: captura local do áudio do Windows e transcrição incremental via Whisper.net em blocos de 5 segundos, idioma português, sem API paga. É reconhecimento durante a reprodução, não análise integral prévia do vídeo.
+- LiveLyricsMatcher.cs + AutoSyncPlanner.cs: correspondência incremental monotônica e estimativa de tempos para linhas puladas. Não é alinhamento forçado completo e não garante todas as repetições de refrão.
+- MainWindow.TapSync.cs + TapSyncPlanner.cs: modo manual divide texto em estrofes e grava um toque por estrofe (Espaço/botão); ainda não implementa cartões por frase/linha selecionáveis com setas/mouse.
+- PermanentLyricsArchive.cs: arquivo JSON independente com backup, chave por ID do YouTube/URL/metadados e cópia de letra/cues. MainWindow.xaml.cs consulta _permanentLyrics ao abrir vídeo; auditar e completar todos os pontos de gravação/recuperação do novo fluxo.
+- MainWindow.RemoteLive.cs: permite colar letra para música atual/próxima, salvar texto, estimar tempos e marcar por toque. Página remota ainda precisa da aba de cadastro e editor completo.
+- MainWindow.xaml: cadastro atual tem painel de toque por estrofe, editor de texto e prévia; não corresponde ao editor em blocos quadrados pedido.
+
+**Pesquisa técnica iniciada (referências abertas, não decisões aprovadas)**
+- k2-fsa/sherpa-onnx: documenta forced alignment (timestamps de palavras a partir de áudio + transcrição); investigar Windows/CPU, português, tamanho e licenças.
+- m-bain/whisperX: referência para timestamps em nível de palavra/alinhamento; avaliar dependências Python/PyTorch e peso para app leve.
+- jordisantamaria/karaoke-subs e ACE4AKSHAY/TimeStamper: referências de pipeline e ferramentas de alinhamento; estudar abordagem e auditar licença/dependências antes de reutilizar.
+- aubio e Sonic Visualiser/MATCH Vamp: possíveis ferramentas auxiliares de análise/inspeção temporal, não decisão de implementação.
+
+**Critérios obrigatórios**
+- Não declarar pronto por compilar ou aparecer na interface.
+- Testar canto em português, playback instrumental, ruído/intro, pausas, linhas repetidas e refrão repetido; indicar baixa confiança e permitir correção manual.
+- Testar persistência após fechar/reabrir e carregar outro vídeo da mesma música; recuperar a gravação/ID correto.
+- Confirmar que controle remoto e Windows compartilham registros, nos dois sentidos.
+- Validar mouse, setas, Enter/Espaço, desfazer, voltar, corrigir, concluir e salvar.
+- Remover somente botões comprovadamente sem ação/uso; preservar recursos válidos e documentar remoções.
+
+**Etapa atual:** especificação confirmada e auditoria inicial concluída; implementação ainda não iniciada nesta etapa. Próxima ação: mapear handlers e persistência de cues, provar mecanismo de alinhamento com áudio em português e implementar editor comum para desktop e remoto, seguido de testes e build integrado.
