@@ -86,3 +86,12 @@ Executar build/testes no GitHub; corrigir falhas; então prototipar análise de 
 
 ### Próxima ação técnica
 Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquivo permanente; em seguida terminar auditoria de endpoints/protocolo e decidir o transporte seguro para texto longo. Só então implementar a interface automática/manual e a aba remota.
+
+
+## 27/11/2026 — Auditoria técnica aprofundada
+
+- **Motor atual:** `LiveAudioTranscriptionService` captura o mix de saída do Windows via WASAPI loopback, acumula blocos de 5 segundos, converte para mono 16 kHz e transcreve com Whisper GGML Base local em português. É reconhecimento progressivo durante reprodução; não oferece forced alignment da gravação inteira, voice separation ou mapa de estrutura musical.
+- **Parser atual:** usa parágrafos delimitados por linhas em branco e fingerprints textuais exatos. Repetição textual idêntica pode sugerir coro, mas variações pequenas não são agrupadas; repetição também não é prova musical por si só. A ocorrência ainda não armazena tempo/confiança.
+- **Modelo de ocorrência:** `LyricsExecutionOccurrence` guarda ID da seção, rótulo/tipo, índice e origem; campos temporais e confiança ainda precisam ser adicionados no desenho do alinhador.
+- **Controle remoto:** `RemoteControlServer.HandleAsync` aceita apenas GET; buffer de requisição de 65.536 bytes; `/api` verifica PIN e encaminha `c` (comando) e `a` (argumento). A página atual tem apenas Bíblia/Ao Vivo. Para texto extenso, a proposta é adicionar rota POST autenticada separada, sem mudar os comandos GET existentes.
+- **Preservação de compatibilidade:** nenhuma rota existente foi alterada nesta etapa. A nova rota POST é uma extensão aditiva planejada para o editor remoto, mantendo Ao Vivo/Bíblia sob o mesmo contrato atual.
