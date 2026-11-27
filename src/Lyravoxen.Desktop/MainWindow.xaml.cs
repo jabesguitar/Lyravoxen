@@ -764,15 +764,26 @@ public partial class MainWindow : Window
     private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
 
     private static bool _uBlockExtensionInstalled;
+    private static Task<CoreWebView2Environment>? _extensionEnabledEnvironmentTask;
+
+    private static Task<CoreWebView2Environment> GetExtensionEnabledEnvironmentAsync()
+    {
+        _extensionEnabledEnvironmentTask ??= CreateExtensionEnabledEnvironmentAsync();
+        return _extensionEnabledEnvironmentTask;
+    }
+
+    private static Task<CoreWebView2Environment> CreateExtensionEnabledEnvironmentAsync()
+    {
+        var userData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "WebView2");
+        var options = new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true };
+        return CoreWebView2Environment.CreateAsync(null, userData, options);
+    }
 
     private async Task InitializeBrowserViewAsync(Microsoft.Web.WebView2.Wpf.WebView2 view)
     {
-        // Enable Chromium extension support before creating the WebView2 environment.
-        view.CreationProperties ??= new Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties();
-        view.CreationProperties.AreBrowserExtensionsEnabled = true;
-
         await BrowserAdBlocker.InitializeAsync();
-        await view.EnsureCoreWebView2Async();
+        var environment = await GetExtensionEnabledEnvironmentAsync();
+        await view.EnsureCoreWebView2Async(environment);
 
         // Load the official, unmodified uBlock Origin Lite Edge build when bundled.
         // The extension is installed in the WebView2 profile and persists across launches.
