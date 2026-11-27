@@ -79,7 +79,9 @@ public sealed class YoutubeAudioDownloadService
                 throw new InvalidDataException("O arquivo recebido não é um contêiner M4A/MP4 válido.");
             }
         }
-        var hash = await SHA256.HashDataAsync(File.OpenRead(path), cancellationToken);
+        byte[] hashBytes;
+        await using (var hashStream = File.OpenRead(path)) hashBytes = await SHA256.HashDataAsync(hashStream, cancellationToken);
+        var hash = hashBytes;
         var final = Path.Combine(destinationFolder, Convert.ToHexString(hash) + ".m4a");
         if (!string.Equals(Path.GetFullPath(path), Path.GetFullPath(final), StringComparison.OrdinalIgnoreCase))
         {
