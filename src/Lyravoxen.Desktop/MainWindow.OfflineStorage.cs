@@ -10,6 +10,8 @@ public partial class MainWindow
 {
     private PermanentLyricsArchive? _permanentLyrics;
 
+    private void ReloadPermanentLyricsArchive() => _permanentLyrics = new PermanentLyricsArchive(OfflineLyricsArchiveFile);
+
     private void LoadOfflineStorageSettings()
     {
         try
@@ -22,7 +24,7 @@ public partial class MainWindow
             }
         }
         catch (Exception ex) { AppLog.Error("Falha ao ler pasta da Biblioteca Offline; usando o local padrão.", ex); }
-        _permanentLyrics = new PermanentLyricsArchive(OfflineLyricsArchiveFile);
+        ReloadPermanentLyricsArchive();
     }
 
     private void EnsureOfflineStorageFolders()
@@ -62,8 +64,14 @@ public partial class MainWindow
             File.WriteAllText(temp, JsonSerializer.Serialize(new { rootFolder = selected }, new JsonSerializerOptions { WriteIndented = true }));
             File.Move(temp, OfflineStorageSettingsFile, true);
             var previous = _offlineRootFolder;
+            var previousArchive = Path.Combine(previous, "Letras", "letras-permanentes.json");
             _offlineRootFolder = selected;
             EnsureOfflineStorageFolders();
+            var newArchive = OfflineLyricsArchiveFile;
+            if (!string.Equals(previousArchive, newArchive, StringComparison.OrdinalIgnoreCase) &&
+                File.Exists(previousArchive) && !File.Exists(newArchive))
+                File.Copy(previousArchive, newArchive, false);
+            ReloadPermanentLyricsArchive();
             StatusText.Text = "Pasta da Biblioteca Offline definida. Novos arquivos serão guardados em: " + selected;
             if (!string.Equals(previous, selected, StringComparison.OrdinalIgnoreCase))
                 System.Windows.MessageBox.Show(this, "A nova pasta foi configurada. Os arquivos que já estavam na pasta anterior não foram movidos nem apagados; os novos downloads e importações usarão o novo local.", "Biblioteca Offline", MessageBoxButton.OK, MessageBoxImage.Information);
