@@ -292,4 +292,35 @@ var accentedRepeat = LyricsStructureAnalyzer.Analyze(
 Check(accentedRepeat.Sections.Count == 1 && accentedRepeat.Sections[0].OccurrenceCount == 2,
     "estrutura: rótulos e textos iguais reutilizam identidade de bloco");
 
+
+// Arquivo permanente mantém estrutura musical e ocorrências após reabrir.
+var archivePath = Path.Combine(Path.GetTempPath(), "lyravoxen-structure-" + Guid.NewGuid().ToString("N") + ".json");
+try
+{
+    var archiveAnalysis = LyricsStructureAnalyzer.Analyze(
+        "[Estrofe 1]\nPrimeira parte\n\n[Coro]\nCanta ao Senhor\n\n[Estrofe 2]\nSegunda parte\n\n[Coro]\nCanta ao Senhor");
+    var archiveVideo = new LibraryVideo
+    {
+        VideoId = "structure-test-video",
+        Url = "https://youtu.be/structure-test",
+        TrackName = "Música de teste",
+        Artist = "Intérprete de teste",
+        FullLyrics = "[Estrofe 1]\nPrimeira parte\n\n[Coro]\nCanta ao Senhor\n\n[Estrofe 2]\nSegunda parte\n\n[Coro]\nCanta ao Senhor",
+        Sections = archiveAnalysis.Sections,
+        ExecutionOrder = archiveAnalysis.ExecutionOrder
+    };
+    new PermanentLyricsArchive(archivePath).Save(archiveVideo);
+    var restored = new PermanentLyricsArchive(archivePath).Find("structure-test-video", archiveVideo.Url);
+    Check(restored is not null && restored.Sections.Count == 3 && restored.ExecutionOrder.Count == 4,
+        "arquivo permanente: recupera seções e ocorrências");
+    Check(restored!.ExecutionOrder.Count(item => item.Kind == LyricsSectionKind.Chorus) == 2,
+        "arquivo permanente: preserva duas entradas do coro");
+}
+finally
+{
+    if (File.Exists(archivePath)) File.Delete(archivePath);
+    if (File.Exists(archivePath + ".bak")) File.Delete(archivePath + ".bak");
+    if (File.Exists(archivePath + ".tmp")) File.Delete(archivePath + ".tmp");
+}
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");
