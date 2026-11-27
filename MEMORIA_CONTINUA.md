@@ -1160,3 +1160,32 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - A revisão com a extensão ainda precisa de build. Mesmo com extensão instalada, a compatibilidade específica do uBOL com APIs disponíveis no WebView2 e a eficácia contra anúncios in-stream precisam ser verificadas. A Microsoft documenta a API de extensão; isso não garante que todas as APIs usadas pela extensão tenham suporte idêntico ao Edge completo.
 - Próxima ação: confirmar build do commit `80a5ccc`/workflow subsequente, verificar extensão no perfil e adicionar teste de runtime/telemetria local para confirmar instalação/ativação. Não pedir novas provas de que anúncios existem; usuário já forneceu duas capturas.
 - Não alterar `main`.
+
+
+## 27/11/2026 — Teste do uBlock Origin Lite no WebView2: falhou
+
+- Usuário instalou/testou a build #897 e enviou captura de tela.
+- Resultado visual: anúncio pré-roll "Aproxime-se de Deus" (1 de 2) dentro do player, além de anúncios patrocinados na lateral. Pesquisa `harpa crista 525`; anúncio visível em 0:14/4:06 com botão Pular.
+- Portanto, a integração experimental uBlock Origin Lite ainda não resolveu os anúncios no WebView2. Não solicitar novas provas.
+- Build #897 passou e gerou artefatos, mas isso só confirma compilação e empacotamento, não eficácia da extensão.
+- Inspeção do código:
+  - `InitializeBrowserViewAsync` chama `AddBrowserExtensionAsync` se `Extensions/uBOLite/manifest.json` existir.
+  - Não consulta `GetBrowserExtensionsAsync` para confirmar a extensão instalada, nome/ID e `IsEnabled`.
+  - A variável `_uBlockExtensionInstalled` só confirma que a chamada terminou sem exceção, não que regras DNR/scriptlets estão funcionando no YouTube.
+  - O status escrito durante instalação é posteriormente sobrescrito por "Player pronto..." na inicialização, ocultando o diagnóstico.
+  - O painel "Proteção ativa · 81.671 regras · 0 solicitações bloqueadas" é do bloqueador legado/host list; não mede regras nem contadores do uBOL.
+  - A instalação é chamada a cada inicialização do processo porque o boolean é estático em memória, embora a API persista a extensão no perfil; a documentação diz que adicionar o mesmo caminho reinstala a extensão.
+- Documentação consultada:
+  - Microsoft: `AddBrowserExtensionAsync` retorna objeto `CoreWebView2BrowserExtension`, instalado fica `IsEnabled=true` por padrão e persiste no perfil; `GetBrowserExtensionsAsync` pode listar as extensões. https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2profile.addbrowserextensionasync
+  - WebView2 permite extensões, mas extensões que dependem de ícone/popup não têm UI do navegador no WebView2. Isso não prova falha do motor de filtragem. https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/overview-features-apis
+  - uBOL usa Manifest V3/declarativeNetRequest, com limitações inerentes do DNR e regras/scriptlets declarativos. https://github.com/uBlockOrigin/uBOL-home/wiki/Frequently-asked-questions-%28FAQ%29
+- Diagnóstico honesto: ainda não sabemos se uBOL foi instalado/ativado e se DNR aplicou regras; o app não expõe esses estados. Também não sabemos se os anúncios de vídeo vistos são bloqueáveis pela versão Lite. Não afirmar que o WebView2 não suporta DNR sem teste/documentação específica.
+- Próxima ação de engenharia (antes de outra build para o usuário):
+  1. Consultar `GetBrowserExtensionsAsync` após instalação e em cada inicialização; localizar por ID/nome, conferir `IsEnabled`; não reinstalar se já instalado.
+  2. Registrar diagnóstico local em arquivo: caminho do pacote, manifest/version, extensão ID/nome/IsEnabled, versão do WebView2 Runtime, erros HRESULT de instalação e eventos de navegação.
+  3. Expor no painel uma indicação inequívoca "uBlock Lite: instalado/ativo/não carregado" separada do contador legado.
+  4. Verificar se o build contém de fato os arquivos e se a extensão é a variante Edge correta; validar hashes/versão.
+  5. Executar teste de compatibilidade DNR mínimo com extensão MV3 de diagnóstico ou fixture de requisições controladas antes de voltar a testar anúncios reais.
+  6. Se uBOL estiver ativo e DNR funcionar mas o anúncio do YouTube continuar, avaliar a limitação da extensão/YouTube e outras arquiteturas de navegador, sem repetir o bloqueador legado.
+- Preferência de continuidade reiterada pelo usuário: manter sempre `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` atualizados com o que foi feito e a próxima ação para retomada após interrupção.
+- Branch `feature/offline-library-on-redesign`; `main` não alterada.
