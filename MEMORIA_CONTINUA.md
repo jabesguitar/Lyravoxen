@@ -1229,3 +1229,16 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Recomendação dada: pausar a frente de bloqueio de anúncios como prioridade, sem interromper o projeto Lyravoxen como um todo. Preservar o código experimental e os registros para eventual retomada.
 - Nenhum novo botão foi implementado nem qualquer código alterado nesta decisão.
 - Próxima ação: seguir para outra funcionalidade do Lyravoxen escolhida pelo usuário; a frente de anúncios fica pausada até existir uma arquitetura com evidência de compatibilidade e eficácia suficiente para justificar novo esforço.
+
+
+## 27/11/2026 — Requisito confirmado: sequência automática e organizador manual persistente
+
+- O usuário esclareceu que não exige apenas uma sincronização automática nem uma ordem fixa. Quer duas alternativas complementares:
+  1. **Automática (preferencial):** colar a letra em qualquer organização original; o sistema analisa o áudio, reconhece frases e repetições (especialmente coros que aparecem uma vez no site mas se repetem na gravação), e monta a sequência real de execução sem o usuário ter que dizer "estrofe/coro".
+  2. **Manual (alternativa confiável):** editor visual em blocos/trechos selecionáveis, inspirado no fluxo de seleção de blocos de ferramentas de projeção. O usuário marca os trechos e organiza a ordem real; pode inserir o mesmo bloco várias vezes sem duplicar o texto original; salva a sequência associada à música para reutilização futura.
+- A letra-fonte original deve ser preservada separadamente da sequência de execução e dos tempos. A sequência manual persistida deve sobreviver a reabertura/reimportação da mesma música e poder ser editada.
+- O automático não pode ser prometido como já existente: o matcher atual `LiveLyricsMatcher` é monotônico/sequencial e não resolve sozinho repetição de refrões fora da ordem original. Será necessário desenvolver alinhamento tolerante a repetição/retorno e avaliar reconhecimento de áudio.
+- Não forçar o usuário a pré-classificar estrofes/coros. A classificação pode ser opcional/assistida; o usuário quer selecionar trechos sem ter que rotular cada um.
+- Ajuda do aplicativo deve ser atualizada junto com cada recurso entregue, explicando botões, atalhos, modos automático/manual, como salvar e recuperar sequência.
+- Não há aprovação para remover a letra original ou descartar sincronizações já salvas.
+- Próxima etapa técnica: desenhar modelo de dados persistente separado (blocos-fonte, sequência de ocorrências e tempos); estudar como encaixar no atual `LyricCue`/persistência; implementar primeiro organizador manual com reuso de bloco e salvar/carregar, mais testes; depois aprimorar o modo automático com repetição. Evitar entregar uma versão que só tenha marcação linear por espaço como se atendesse ao requisito.
