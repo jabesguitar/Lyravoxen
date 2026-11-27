@@ -1126,3 +1126,16 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Commit: `db889fbb79c6e292a21b9505259e4f22f8256e76`.
 - Build #886 falhou por esse único erro fatal; avisos CS8602/CS4014 permanecem não fatais.
 - A correção dispara novo workflow. Ainda não há confirmação de compilação completa do motor Rust, cópia da DLL, nem teste real com YouTube.
+
+
+## 27/11/2026 — Evidência visual: motor de filtragem ainda não remove anúncios do YouTube
+
+- O usuário enviou duas capturas de tela do Lyravoxen na aba Próxima música.
+- Captura 1: anúncio em vídeo Pantene, identificado como patrocinado, dentro do conteúdo reproduzido; também há anúncio patrocinado na lateral.
+- Captura 2: anúncio em vídeo Mercado Livre, identificado como patrocinado, dentro do conteúdo reproduzido; também há anúncio patrocinado na lateral.
+- Resultado: a proteção atual continua falhando no objetivo principal. Não pedir novas provas ao usuário.
+- A integração do motor Brave adblock-rust e listas EasyList/EasyPrivacy, mesmo se compilada e carregada, ainda não comprovou bloqueio de anúncios do YouTube. O pipeline atual cobre requisições de rede; não há integração completa de filtros cosméticos/scriptlets uBlock nem evidência de que os anúncios in-stream sejam bloqueáveis por esse caminho.
+- Próxima investigação deve separar dois alvos: (1) anúncios de interface/elementos patrocinados da página de pesquisa e recomendações, que podem exigir filtros cosméticos/scriptlets e regras adequadas; (2) anúncios pré-roll/in-stream dentro do player, que podem ser servidos pelo próprio fluxo do YouTube e não são garantidamente removíveis por bloqueio de URL.
+- Antes de novas mudanças, confirmar resultado do build mais recente e verificar se a DLL nativa foi carregada em runtime (não apenas se foi copiada para a pasta). Instrumentar estado do motor, lista carregada e contadores sem expor dados sensíveis.
+- Não declarar proteção eficaz até testes funcionais reproduzíveis com YouTube, inclusive pré-roll, e sem regressões na reprodução/letras.
+- Não alterar `main`; branch de desenvolvimento.
