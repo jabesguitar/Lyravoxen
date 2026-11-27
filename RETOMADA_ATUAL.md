@@ -581,3 +581,13 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 
 ### Próxima ação
 - Rodar validações estáticas e workflow Windows build na branch. Corrigir qualquer falha de compilação. Depois entregar um único instalador atualizado e checklist curto focado apenas nas três mudanças desta etapa.
+
+
+## Situação atual — 27/11/2026 (Build #855)
+
+- Build #855 concluído com sucesso: https://github.com/jabesguitar/Lyravoxen/actions/runs/46018345034
+- Instalador Windows x64 disponível no artefato `Lyravoxen-Installer-Windows-x64` (ID 15207121706). ZIP portátil: `Lyravoxen-Windows-x64-portable` (ID 15207491300). Artefatos expiram em 25/02/2027.
+- Branch: `feature/offline-library-on-redesign`; `main` não foi alterada.
+- Próxima etapa: instalar o artefato do build #855 e validar em execução real: (1) música offline continua ao trocar de abas; (2) pausar/retomar/parar/volume/posição; (3) seleção destacada no histórico e na Biblioteca; (4) link direto MP3/WAV, escolha de destino e registro na coleção; (5) retenção e preservação da letra/dados.
+- Ainda pendente: publicação/validação do Worker Cloudflare em produção. Os testes automatizados do código passaram, mas produção não foi atualizada por esta execução.
+- Não fazer merge em `main` sem autorização expressa.
