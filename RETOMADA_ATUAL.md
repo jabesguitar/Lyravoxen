@@ -661,3 +661,14 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - O motor ABP em implementação não basta por si só: falta validar carregamento nativo em runtime e avaliar filtros cosméticos/scriptlets para interface; anúncios in-stream são um problema separado e não há garantia de bloqueio por URL.
 - Próxima ação: conferir build mais recente e a inicialização efetiva da DLL/listas; depois desenhar uma abordagem separada para elementos patrocinados da página e anúncios dentro do player. Testar antes de pedir novo teste ao usuário.
 - Não apresentar a proteção como concluída nem entregar versão como solução. Branch feature/offline-library-on-redesign; main intocada.
+
+
+## Atualização — 27/11/2026: protótipo com extensão open source no WebView2
+
+- Mudança de abordagem após evidência visual de anúncios: integrar extensão pronta, em vez de insistir apenas no motor próprio.
+- Extensão escolhida: uBlock Origin Lite (Edge), release 2026.1124.1811, GPL-3.0, distribuída sem modificações.
+- Workflow baixa a versão oficial, extrai a pasta com manifest.json, inclui no pacote Windows e obtém o LICENSE.
+- Inicialização WebView2 corrigida para criar CoreWebView2Environment com AreBrowserExtensionsEnabled=true, perfil persistente LocalAppData/Lyravoxen/WebView2 e AddBrowserExtensionAsync.
+- A revisão com essa integração ainda precisa de build; build #891 verde refere-se ao protótipo Rust anterior e não valida extensão.
+- Próximo passo: validar compilação e bundle; depois confirmar em runtime que a extensão aparece em GetBrowserExtensionsAsync/IsEnabled e testar filtros de página. Atenção: API de extensão existe no WebView2, mas não há ainda confirmação de compatibilidade integral das APIs usadas pelo uBOL.
+- Branch feature/offline-library-on-redesign; main intocada. Não solicitar ao usuário que prove novamente presença de anúncios.
