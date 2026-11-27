@@ -1,6 +1,6 @@
 # Cadastro de letras — especificação funcional e plano de implementação
 
-Atualizado em 27/11/2026. Branch: feature/offline-library-on-redesign.
+Atualizado em 27/11/2026. Branch ativa: feature/lyrics-structure-fast-sync. HEAD de referência: 6350d2819950907e7490422353cd1b6d52c7322f.
 
 ## Objetivo
 Converter a aba Cadastrar letras em editor de sincronização real, com dois modos (automático e manual), salvamento permanente e acesso equivalente pelo controle remoto.
@@ -46,12 +46,17 @@ Converter a aba Cadastrar letras em editor de sincronização real, com dois mod
 - Interface: nenhum botão sem ação ou promessa enganosa; controles essenciais acessíveis no celular.
 - CI verde não substitui testes funcionais.
 
-## Estado
-- Especificação confirmada em 27/11/2026.
-- Auditoria inicial dos arquivos principais feita.
-- Implementação desta nova etapa ainda não iniciada.
-- Próxima ação: mapear gravação/recuperação e atalhos, testar motores candidatos com áudio português e implementar modelo compartilhado + editores.
-
+## Estado após o CI #931
+- Especificação do produto e liberdade de remodelagem aprovadas pelo usuário.
+- Auditoria inicial dos componentes de sincronização, analisador textual e arquivo permanente concluída.
+- Parser determinístico implementado: marcadores explícitos, repetição 2x/x2, agrupamento textual e ocorrências independentes.
+- `LibraryVideo.Sections` e `ExecutionOrder` adicionados; `PermanentLyricsArchive` persiste e recupera os dados estruturais.
+- Testes do parser, repetição e persistência passaram no job `Test cue timeline` do run `46067616951`.
+- CI: jobs `build` e `cloud-worker-tests` concluídos com sucesso. Windows build, pacote portátil e instalador foram publicados.
+- Artefatos do run: `15231637109` (Windows x64), `15231617268` (portátil), `15230839460` (instalador).
+- **Ainda pendente:** redesign da UI, alinhamento de áudio real, cartões manuais, auditoria/integração remota e testes funcionais reais.
+- A compilação #931 é uma base de validação, não a versão final da remodelagem nem uma solicitação para o usuário testar.
+- Próxima ação: auditar handlers e persistência de ponta a ponta, depois auditar o protocolo remoto; em paralelo, preparar benchmark de alinhadores de áudio cantado em português.
 
 ## Complemento: detecção automática de estrutura e desempenho ao vivo (27/11/2026)
 
@@ -120,3 +125,7 @@ O modelo `LibraryVideo` recebeu duas propriedades aditivas:
 
 ## Correção da expectativa do teste (27/11/2026)
 O primeiro CI chegou ao teste estrutural e falhou porque a expectativa era 6. A fixture tem 3 estrofes, duas entradas unitárias do coro e uma indicação final de coro 2x, totalizando 7 ocorrências. A asserção foi corrigida para 7; não foi necessário mudar o algoritmo do analisador.
+
+
+## 27/11/2026 — Resultado do CI #931
+O run `46067616951` foi consultado diretamente no GitHub. Os dois jobs (`build` e `cloud-worker-tests`) terminaram com sucesso. O job Windows passou por restore, build, testes da linha do tempo, pacote portátil e instalador. Os três artefatos foram publicados e baixados; os ZIPs foram verificados sem erros de integridade. Esta evidência confirma apenas o código presente no commit `6350d2819950907e7490422353cd1b6d52c7322f`; não demonstra ainda funcionamento de interface nova, alinhamento de áudio cantado ou cadastro remoto.
