@@ -86,7 +86,7 @@ public partial class MainWindow : Window
     private string OfflineDataFolder => Path.Combine(_offlineRootFolder, "Dados");
     private string OfflineTempFolder => Path.Combine(_offlineRootFolder, "Temporarios");
     private string OfflineStorageSettingsFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "offline-storage.json");
-    private string OfflineLyricsArchiveFile => Path.Combine(OfflineDataFolder, "letras-permanentes.json");
+    private string OfflineLyricsArchiveFile => Path.Combine(OfflineLyricsFolder, "letras-permanentes.json");
 
     public MainWindow()
     {
