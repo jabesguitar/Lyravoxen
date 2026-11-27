@@ -591,3 +591,12 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Próxima etapa: instalar o artefato do build #855 e validar em execução real: (1) música offline continua ao trocar de abas; (2) pausar/retomar/parar/volume/posição; (3) seleção destacada no histórico e na Biblioteca; (4) link direto MP3/WAV, escolha de destino e registro na coleção; (5) retenção e preservação da letra/dados.
 - Ainda pendente: publicação/validação do Worker Cloudflare em produção. Os testes automatizados do código passaram, mas produção não foi atualizada por esta execução.
 - Não fazer merge em `main` sem autorização expressa.
+
+
+## Atualização — 27/11/2026: lista da Biblioteca e janela de pedidos
+
+- Corrigida a troca de pastas para limpar o filtro antigo antes de carregar as músicas da coleção selecionada.
+- Comandos inferiores da coluna Músicas da coleção limitados em altura com rolagem própria para não ocultar a lista de músicas.
+- Janela Pedidos recebidos redesenhada: janela maior, cabeçalho/contador, configurações recolhidas, cards por pedido com conjunto/cantor, título, link e botões de ação legíveis. Botão Copiar link removido dos cards; bloqueio de IP permanece secundário.
+- Build #862: https://github.com/jabesguitar/Lyravoxen/actions/runs/46025648719 (em andamento no momento deste registro).
+- Próxima etapa: aguardar #862. Se verde, baixar instalador e validar: trocar entre pastas com e sem filtro; conferir lista visível; abrir Pedidos recebidos e conferir cards, texto e botões. Não mexer na main.
