@@ -709,14 +709,17 @@
           <StackPanel Grid.Row="2">
            <Button Content="＋ Adicionar vídeo atual a esta pasta" Click="AddCurrentVideoToFolder_Click"/>
            <Button Content="＋ Importar áudio MP3/WAV para uso offline" Click="ImportAudio_Click"/>
-           <TextBlock Text="DOWNLOAD MANUAL — LINK DIRETO MP3/WAV" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="5,8,5,2"/>
-           <TextBox x:Name="LibraryDownloadUrlBox" ToolTip="Cole aqui um link direto para um arquivo MP3 ou WAV autorizado" MinHeight="34"/>
-           <Grid Margin="2,0">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <TextBlock x:Name="LibraryDownloadFolderText" Text="Destino: pasta Musicas da Biblioteca Offline" Foreground="{DynamicResource TextMuted}" FontSize="9" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-            <Button Grid.Column="1" Content="Escolher destino" Click="ChooseLibraryDownloadFolder_Click" MinHeight="28" Padding="7,3" FontSize="9"/>
-           </Grid>
-           <Button Content="⬇ Baixar link para esta coleção" Click="DownloadLibraryLink_Click" Background="{DynamicResource Brush_087F9E}"/>
+           <Expander Header="⬇ Download manual MP3/WAV" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="Bold" Margin="2,5,2,2" IsExpanded="False">
+            <StackPanel Margin="3,4,3,3">
+             <TextBox x:Name="LibraryDownloadUrlBox" ToolTip="Cole aqui um link direto para um arquivo MP3 ou WAV autorizado" MinHeight="32"/>
+             <Grid Margin="2,2">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+              <TextBlock x:Name="LibraryDownloadFolderText" Text="Destino: pasta Musicas da Biblioteca Offline" Foreground="{DynamicResource TextMuted}" FontSize="9" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <Button Grid.Column="1" Content="Escolher destino" Click="ChooseLibraryDownloadFolder_Click" MinHeight="27" Padding="7,2" FontSize="9"/>
+             </Grid>
+             <Button Content="⬇ Baixar link para esta coleção" Click="DownloadLibraryLink_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="30" FontSize="10"/>
+            </StackPanel>
+           </Expander>
            <Button Content="✎ Editar música e letra selecionada" Click="EditLibrarySong_Click"/>
            <Grid Margin="0,2,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
