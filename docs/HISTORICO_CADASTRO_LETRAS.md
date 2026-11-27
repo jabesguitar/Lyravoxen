@@ -33,3 +33,11 @@ Executar build/testes no GitHub; corrigir falhas; então prototipar análise de 
 - Caso contém 3 estrofes + 1 coro + 1 coro + coro final 2x = 7 ocorrências. O valor esperado no teste estava incorreto.
 - Corrigida a expectativa para 7, sem alterar o algoritmo de produção.
 - Aguardando CI completo para validar a correção.
+
+
+## 27/11/2026 — Protocolo de continuidade e execução
+- Usuário pediu continuidade sem interrupções por perguntas rotineiras: avançar até entregar versão testável; perguntar somente quando uma mudança puder afetar estrutura ou funções já funcionais.
+- Acordado manter dois registros no GitHub: `MEMORIA_CONTINUA.md` (histórico cronológico) e `RETOMADA_ATUAL.md` (estado compacto para retomar).
+- Ao iniciar nova conversa, consultar registros, branch, commits e Actions antes de agir.
+- Ao concluir marcos, atualizar os arquivos e registrar testes/resultados reais. Se o GitHub não estiver acessível, preparar Markdown na conversa e informar que não foi publicado.
+- Nenhuma autorização para merge na main, remover recursos funcionais ou modificar arquitetura fora do escopo foi concedida.
