@@ -652,3 +652,12 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Removido esse case; os demais tipos de requisição permanecem e recursos sem mapeamento usam `other`.
 - Commit: `db889fbb79c6e292a21b9505259e4f22f8256e76`.
 - Acompanhar novo workflow. Próximo objetivo: validar compilação do Rust e .NET, DLL nativa incluída na publicação e testes; não considerar anúncios resolvidos antes de teste real.
+
+
+## Atualização — 27/11/2026: teste visual falhou
+
+- Duas capturas enviadas pelo usuário mostram anúncios em vídeo Pantene e Mercado Livre, além de anúncios patrocinados laterais na aba Próxima música.
+- Conclusão: proteção ainda não atende ao requisito. Não solicitar novas provas.
+- O motor ABP em implementação não basta por si só: falta validar carregamento nativo em runtime e avaliar filtros cosméticos/scriptlets para interface; anúncios in-stream são um problema separado e não há garantia de bloqueio por URL.
+- Próxima ação: conferir build mais recente e a inicialização efetiva da DLL/listas; depois desenhar uma abordagem separada para elementos patrocinados da página e anúncios dentro do player. Testar antes de pedir novo teste ao usuário.
+- Não apresentar a proteção como concluída nem entregar versão como solução. Branch feature/offline-library-on-redesign; main intocada.
