@@ -470,12 +470,8 @@ public partial class MainWindow
                 catch (Exception downloadError)
                 {
                     var fallback = System.Windows.MessageBox.Show(_requestsWindow ?? this,
-                        "Não foi possível obter a faixa de áudio M4A deste vídeo.
-
-Motivo: " + downloadError.Message +
-                        "
-
-Deseja associar um arquivo MP3/WAV que você já possui e tem autorização para usar?",
+                        "Não foi possível obter a faixa de áudio M4A deste vídeo.\n\nMotivo: " + downloadError.Message +
+                        "\n\nDeseja associar um arquivo MP3/WAV que você já possui e tem autorização para usar?",
                         "Download indisponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
                     if (fallback != MessageBoxResult.Yes) return;
                     importLocal = true;
@@ -491,12 +487,8 @@ Deseja associar um arquivo MP3/WAV que você já possui e tem autorização para
                 catch (Exception downloadError)
                 {
                     var fallback = System.Windows.MessageBox.Show(_requestsWindow ?? this,
-                        "O endereço do pedido não entregou um arquivo MP3/WAV direto.
-
-Motivo: " + downloadError.Message +
-                        "
-
-Deseja escolher um MP3/WAV autorizado no computador?",
+                        "O endereço do pedido não entregou um arquivo MP3/WAV direto.\n\nMotivo: " + downloadError.Message +
+                        "\n\nDeseja escolher um MP3/WAV autorizado no computador?",
                         "Download direto indisponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
                     if (fallback != MessageBoxResult.Yes) return;
                     importLocal = true;
