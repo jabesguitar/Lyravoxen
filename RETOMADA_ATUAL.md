@@ -622,3 +622,14 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Próxima ação: confirmar workflow verde; instalar/abrir o app e testar vários vídeos na aba Próxima música, incluindo início, reprodução contínua, troca de vídeo e carregamento de letras. Registrar se anúncios pré-roll ainda aparecem ou se algum vídeo/player falha.
 - Limite conhecido: não é bloqueio garantido de anúncios in-stream/servidos dinamicamente; nenhuma alteração no player principal foi feita.
 - Branch `feature/offline-library-on-redesign`; `main` permanece intocada.
+
+
+## Atualização — 27/11/2026: correção CS0103 BrowserAdBlocker
+
+- Log recebido mostrou nove erros CS0103: `BrowserAdBlocker` não existia no contexto de `MainWindow.xaml.cs`.
+- Causa: `BrowserAdBlocker.cs` estava com namespace/classe errados (conteúdo de `BrowserRequestPolicy`), removendo o serviço esperado.
+- Serviço restaurado em `Lyravoxen.Services`, com integração ao novo filtro de endpoints YouTube preservada.
+- Commit: `bfebc4b14ebba8deea3801cf63e7295d447b53d9`.
+- Build #876: https://github.com/jabesguitar/Lyravoxen/actions/runs/46034132906 (em andamento ao registrar).
+- Próxima ação: aguardar #876 e, se falhar, abrir logs do job build e corrigir a próxima falha. Avisos CS8602/CS4014 permanecem não fatais e fora do escopo desta correção.
+- Branch feature/offline-library-on-redesign; main intocada.
