@@ -1016,3 +1016,15 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 
 ### Próxima ação
 - Rodar validações estáticas e workflow Windows build na branch. Corrigir qualquer falha de compilação. Depois entregar um único instalador atualizado e checklist curto focado apenas nas três mudanças desta etapa.
+
+
+## 27/11/2026 — Build #855 concluído com sucesso
+
+- Workflow: https://github.com/jabesguitar/Lyravoxen/actions/runs/46018345034
+- Run ID: 46018345034; commit: 24894084251fc467590b8fa3efdadd6ae391e4a6; branch feature/offline-library-on-redesign.
+- Resultado: sucesso nos jobs cloud-worker-tests e build. Passaram teste OfflineMediaService, cobertura da Ajuda, verificações estáticas C#, testes do Cloudflare Worker, formulário público e página móvel; também Restore, publish Windows x64, teste de timeline, ZIP portátil, instalador e upload dos artefatos.
+- Artefatos disponíveis até 25/02/2027:
+  - Instalador Windows x64: ID 15207121706, 53.858.548 bytes.
+  - Pasta Windows x64: ID 15207466365, 76.282.040 bytes.
+  - ZIP portátil: ID 15207491300, 76.317.985 bytes.
+- O build comprova compilação e testes automatizados, mas não substitui validação funcional no computador do usuário. A reprodução offline ao alternar abas, controles de pausa/retomada/posição/volume e download manual com destino escolhido precisam ser conferidos em execução real.
