@@ -1,0 +1,13 @@
+[package]
+name = "lyravoxen-adblock"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+publish = false
+
+[lib]
+name = "lyravoxen_adblock"
+crate-type = ["cdylib"]
+
+[dependencies]
+adblock = { version = "0.13.6", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling", "resource-assembler"] }
