@@ -763,10 +763,38 @@ public partial class MainWindow : Window
 
     private Microsoft.Web.WebView2.Wpf.WebView2? ActiveBrowserView => (BrowserTabs.SelectedItem as TabItem)?.Content as Microsoft.Web.WebView2.Wpf.WebView2;
 
+    private static bool _uBlockExtensionInstalled;
+
     private async Task InitializeBrowserViewAsync(Microsoft.Web.WebView2.Wpf.WebView2 view)
     {
+        // Enable Chromium extension support before creating the WebView2 environment.
+        view.CreationProperties ??= new Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties();
+        view.CreationProperties.AreBrowserExtensionsEnabled = true;
+
         await BrowserAdBlocker.InitializeAsync();
         await view.EnsureCoreWebView2Async();
+
+        // Load the official, unmodified uBlock Origin Lite Edge build when bundled.
+        // The extension is installed in the WebView2 profile and persists across launches.
+        if (!_uBlockExtensionInstalled)
+        {
+            var extensionPath = Path.Combine(AppContext.BaseDirectory, "Extensions", "uBOLite");
+            var manifestPath = Path.Combine(extensionPath, "manifest.json");
+            if (File.Exists(manifestPath))
+            {
+                try
+                {
+                    await view.CoreWebView2.Profile.AddBrowserExtensionAsync(extensionPath);
+                    _uBlockExtensionInstalled = true;
+                    StatusText.Text = "uBlock Origin Lite instalado no navegador interno.";
+                }
+                catch (Exception ex)
+                {
+                    StatusText.Text = "Extensão de proteção não pôde ser ativada: " + ex.Message;
+                }
+            }
+        }
+
         BrowserAdBlocker.Attach(view.CoreWebView2);
         RefreshBrowserProtectionStatus();
         view.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
