@@ -1,163 +1,56 @@
-using System.IO;
-using System.Collections.Concurrent;
-using System.Net.Http;
-using System.Text.Json;
-using Microsoft.Web.WebView2.Core;
+namespace Lyravoxen.Offline;
 
-namespace Lyravoxen.Services;
-
-/// <summary>
-/// Request-level domain filtering for the embedded WebView2 browser.
-/// This is a lightweight tracker/ad domain filter, not a cosmetic filter
-/// and not a guarantee against first-party/in-stream YouTube advertising.
-/// </summary>
-internal static class BrowserAdBlocker
+public static class BrowserRequestPolicy
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
-    private static readonly ConcurrentDictionary<string, byte> BlockedHosts = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ConcurrentDictionary<string, byte> AllowedHosts = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ConcurrentDictionary<CoreWebView2, byte> Attached = new();
-    private static readonly string DataFolder = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen");
-    private static readonly string SettingsPath = Path.Combine(DataFolder, "browser-protection.json");
-    private static readonly string CachedHostsPath = Path.Combine(DataFolder, "browser-hosts.txt");
-    private static readonly string HostsListUrl = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
-    private static readonly string[] ProtectedHosts =
+    public static bool ShouldBlock(string host, IEnumerable<string> protectedHosts, IEnumerable<string> blockedHosts, IEnumerable<string> allowedHosts)
     {
-        "youtube.com", "youtube-nocookie.com", "googlevideo.com", "ytimg.com",
-        "youtubei.googleapis.com", "googleapis.com", "gstatic.com"
-    };
-    private static readonly string[] BuiltInBlockedHosts =
-    {
-        "doubleclick.net", "googlesyndication.com", "googleadservices.com",
-        "adservice.google.com", "adnxs.com", "adsrvr.org", "advertising.com",
-        "adform.net", "taboola.com", "outbrain.com", "scorecardresearch.com",
-        "quantserve.com", "criteo.com", "casalemedia.com", "popads.net",
-        "popcash.net", "zedo.com", "trafficjunky.com"
-    };
-    private static int _enabled = 1;
-    private static int _blockedCount;
-    private static Task? _loadTask;
-
-    public static bool Enabled
-    {
-        get => Volatile.Read(ref _enabled) == 1;
-        set { Volatile.Write(ref _enabled, value ? 1 : 0); SaveSettings(); }
+        if (string.IsNullOrWhiteSpace(host)) return false;
+        host = host.TrimEnd('.').ToLowerInvariant();
+        if (Matches(host, protectedHosts)) return false;
+        if (Matches(host, allowedHosts)) return false;
+        return Matches(host, blockedHosts);
     }
 
-    public static int BlockedCount => Volatile.Read(ref _blockedCount);
-    public static int RuleCount => BlockedHosts.Count;
 
-    public static Task InitializeAsync()
+    /// <summary>
+    /// Blocks a small, conservative set of known YouTube ad endpoints while preserving
+    /// the main YouTube, iframe API, googlevideo media, thumbnail and playback services.
+    /// These path rules are based on public filter implementations; they are not a
+    /// guarantee against server-side or in-stream ads.
+    /// </summary>
+    public static bool ShouldBlockRequest(Uri uri, IEnumerable<string> protectedHosts, IEnumerable<string> blockedHosts, IEnumerable<string> allowedHosts)
     {
-        LoadSettings();
-        foreach (var host in BuiltInBlockedHosts) BlockedHosts.TryAdd(host, 0);
-        LoadCachedHosts();
-        // Never delay browser startup for a network download; refresh rules in the background.
-        _loadTask ??= LoadHostsListAsync();
-        return Task.CompletedTask;
-    }
+        if (uri is null || string.IsNullOrWhiteSpace(uri.Host)) return false;
+        var host = uri.Host.TrimEnd('.').ToLowerInvariant();
+        var path = uri.AbsolutePath;
 
-    public static void Attach(CoreWebView2 core)
-    {
-        if (!Attached.TryAdd(core, 0)) return;
-        core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.All);
-        core.WebResourceRequested += (_, args) =>
+        if (IsYouTubeHost(host))
         {
-            if (!Enabled || !Uri.TryCreate(args.Request.Uri, UriKind.Absolute, out var uri)) return;
-            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return;
-            if (!ShouldBlock(uri.Host)) return;
-            args.Response = core.Environment.CreateWebResourceResponse(
-                null, 403, "Blocked by Lyravoxen", "Content-Type: text/plain; charset=utf-8");
-            Interlocked.Increment(ref _blockedCount);
-        };
-    }
-
-    public static void AllowCurrentSite(string? address)
-    {
-        if (Uri.TryCreate(address, UriKind.Absolute, out var uri) && !string.IsNullOrWhiteSpace(uri.Host))
-        {
-            AllowedHosts.TryAdd(uri.Host.TrimEnd('.').ToLowerInvariant(), 0);
-            SaveSettings();
+            if (MatchesAllowed(host, allowedHosts)) return false;
+            if (path.StartsWith("/pagead/", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals("/api/stats/ads", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/stats/ads/", StringComparison.OrdinalIgnoreCase))
+                return true;
         }
+
+        return ShouldBlock(host, protectedHosts, blockedHosts, allowedHosts);
     }
 
-    private static bool ShouldBlock(string host)
-        => Lyravoxen.Offline.BrowserRequestPolicy.ShouldBlock(
-            host, ProtectedHosts, BlockedHosts.Keys, AllowedHosts.Keys);
+    private static bool IsYouTubeHost(string host)
+        => host.Equals("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+           host.EndsWith(".youtube.com", StringComparison.OrdinalIgnoreCase);
 
-    private static bool IsHostOrChild(string host, string domain)
-        => host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
-           host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase);
+    private static bool MatchesAllowed(string host, IEnumerable<string> allowedHosts)
+        => Matches(host, allowedHosts);
 
-    private static async Task LoadHostsListAsync()
+    private static bool Matches(string host, IEnumerable<string> domains)
     {
-        try
+        foreach (var raw in domains)
         {
-            using var response = await Http.GetAsync(HostsListUrl, HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync();
-            try
-            {
-                Directory.CreateDirectory(DataFolder);
-                File.WriteAllText(CachedHostsPath, body);
-            }
-            catch { }
-            ParseHosts(body);
+            var domain = raw.Trim().TrimEnd('.').ToLowerInvariant();
+            if (domain.Length > 0 && (host == domain || host.EndsWith("." + domain, StringComparison.Ordinal)))
+                return true;
         }
-        catch
-        {
-            // Built-in and cached rules remain active when the public list cannot be downloaded.
-        }
-    }
-
-    private static void LoadCachedHosts()
-    {
-        try
-        {
-            if (File.Exists(CachedHostsPath)) ParseHosts(File.ReadAllText(CachedHostsPath));
-        }
-        catch { }
-    }
-
-    private static void ParseHosts(string body)
-    {
-        foreach (var raw in body.Split('\n'))
-            {
-                var line = raw.Split('#')[0].Trim();
-                if (line.Length == 0) continue;
-                var parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 2 || (parts[0] != "0.0.0.0" && parts[0] != "127.0.0.1" && parts[0] != "::")) continue;
-                var host = parts[1].TrimEnd('.').ToLowerInvariant();
-                if (host.Contains('.') && host.All(c => char.IsLetterOrDigit(c) || c is '.' or '-'))
-                    if (!ProtectedHosts.Any(domain => IsHostOrChild(host, domain))) BlockedHosts.TryAdd(host, 0);
-            }
-    }
-
-    private sealed record Settings(bool Enabled, string[] AllowedHosts);
-
-    private static void LoadSettings()
-    {
-        try
-        {
-            if (!File.Exists(SettingsPath)) return;
-            var settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsPath));
-            if (settings is null) return;
-            Volatile.Write(ref _enabled, settings.Enabled ? 1 : 0);
-            foreach (var host in settings.AllowedHosts ?? Array.Empty<string>())
-                if (!string.IsNullOrWhiteSpace(host)) AllowedHosts.TryAdd(host, 0);
-        }
-        catch { }
-    }
-
-    private static void SaveSettings()
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-            var json = JsonSerializer.Serialize(new Settings(Enabled, AllowedHosts.Keys.ToArray()));
-            File.WriteAllText(SettingsPath, json);
-        }
-        catch { }
+        return false;
     }
 }
