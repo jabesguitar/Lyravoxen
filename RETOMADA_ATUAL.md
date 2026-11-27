@@ -8,13 +8,14 @@ Remodelar completamente a aba **Cadastrar Letras**, com modo automático baseado
 ## Repositório e branch
 - Repositório: https://github.com/jabesguitar/Lyravoxen
 - Branch ativa: `feature/lyrics-structure-fast-sync`
-- HEAD confirmado: `6350d2819950907e7490422353cd1b6d52c7322f`
+- HEAD atual: `ad79c1df7d1f8356ffa328750e77cffa8c29fd04`
 - Nenhum merge na `main` foi feito ou autorizado.
 
 ## CI e artefatos — execução #931
 - Run: https://github.com/jabesguitar/Lyravoxen/actions/runs/46067616951
 - Jobs `build` e `cloud-worker-tests`: ambos concluídos com sucesso.
-- O job Windows compilou o app, executou `Test cue timeline`, montou o pacote portátil e o instalador e publicou artefatos.
+- O job Windows compilou o commit base `6350d28`, executou `Test cue timeline`, montou o pacote portátil e o instalador e publicou artefatos.
+- Correção posterior `ad79c1d` já está na branch; seu workflow `46069001270` estava em andamento no último acompanhamento. Não considerar esta correção aprovada até o resultado.
 - Artefatos: Windows x64 (`15231637109`), portátil (`15231617268`) e instalador (`15230839460`). ZIPs baixados passaram na verificação de integridade.
 - O build #931 é uma validação técnica intermediária. Não chamar o usuário para testar ainda.
 
@@ -24,12 +25,21 @@ Remodelar completamente a aba **Cadastrar Letras**, com modo automático baseado
 - Persistência dessas estruturas no arquivo permanente.
 - Os testes correspondentes passaram no job de timeline do run #931.
 
+## Correção aplicada após a auditoria
+- `ad79c1d`: cópia profunda de `Sections`/`ExecutionOrder` ao criar/atualizar itens sincronizados e ao restaurar do arquivo permanente. CI `46069001270` pendente.
+
 ## Auditoria inicial — lacunas confirmadas
 - Reconhecimento automático atual é incremental durante a reprodução, não alinhamento prévio da gravação.
 - Marcação manual atual é por estrofe inteira, não por cartões de frases/linhas.
 - `MainWindow.xaml.cs` ainda não chama `LyricsStructureAnalyzer`.
 - `PersistCurrentCues` não copia `Sections`/`ExecutionOrder` para a pasta "Músicas sincronizadas"; o arquivo permanente já clona essas propriedades.
 - Controle remoto mostra apenas Bíblia e Ao Vivo; o dispatcher não possui o fluxo de cadastro completo. Detalhes registrados em `docs/CADASTRO_LETRAS_IMPLEMENTACAO.md`.
+
+## Auditoria técnica adicional
+- `LiveAudioTranscriptionService`: WASAPI loopback, blocos de 5 s e Whisper GGML Base local; reconhecimento incremental, não forced alignment da música inteira.
+- `LyricsStructureAnalyzer`: blocos por linha em branco e repetição textual exata; não detecta repetição musical com áudio nem gera tempo/confiança.
+- `LyricsExecutionOccurrence` ainda não tem timestamp/confiança.
+- `RemoteControlServer` aceita somente GET; a rota `/api` autentica PIN e recebe comando/argumento na URL. Nova rota POST autenticada será aditiva para textos longos, sem alterar os GET de Ao Vivo/Bíblia.
 
 ## O que ainda não está implementado
 - Interface remodelada do Cadastro de Letras.
