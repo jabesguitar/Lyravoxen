@@ -849,3 +849,42 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - [ ] Implementar/testar retenção e limpeza automática, preservando metadados.
 - [ ] Validar reprodução offline da cópia exata com internet desligada.
 
+## 27/11/2026 — Auditoria de continuidade antes da finalização consolidada
+
+### Verificações já existentes no código
+- A limpeza de cópias offline expiradas já está implementada em `MainWindow.xaml.cs`:
+  - é executada durante `LoadLibrary()`;
+  - timer de limpeza dispara a cada minuto enquanto o app está aberto;
+  - remove referências expiradas da Biblioteca e dos Pedidos, preservando título, URL, letra e metadados;
+  - só apaga os bytes quando nenhum item restante referencia o mesmo caminho;
+  - persiste alterações em biblioteca e pedidos.
+- `OfflineExpiryPolicy.CanDelete` e testes existentes cobrem preservação de arquivos ainda referenciados e remoção de arquivos sem referências.
+- Portanto, retenção/limpeza não deve ser reescrita sem necessidade. A tarefa é validar cenários reais de prazo 5/7/14/30, reinício do app, arquivo compartilhado e falha de exclusão.
+- O serviço central `OfflineMediaService` já aceita download HTTP(S) de MP3/WAV direto, com limite, validação de conteúdo, redirects limitados, proteção contra destinos privados, hash e deduplicação.
+- A UI dos Pedidos ainda direciona links YouTube para seletor de arquivo local e apresenta a mensagem de que não extrai áudio. Essa é a razão concreta da experiência não corresponder ao pedido do usuário de baixar a partir do link YouTube.
+- Os testes offline atuais verificam download direto MP3/WAV, importação local, recusa explícita de YouTube, SSRF, redirects, tamanho, HTML, deduplicação, política do navegador e expiração por referência.
+- O teste de Worker já verifica envio com cabeçalho `CF-Connecting-IP`, persistência do IP, criação/listagem de bloqueio, bloqueio de novo pedido e desbloqueio.
+
+### Limites operacionais
+- O Worker gerado no código atual implementa `GET /bloqueios`, `POST /bloqueios` e registro `CF-Connecting-IP`; a tela do usuário recebeu 404 e IP ausente, evidência de Worker publicado antigo.
+- Não há integração Cloudflare conectada para publicar diretamente o Worker nesta sessão. A atualização do Worker existente permanece dependente de ação no painel Cloudflare; preservar namespace KV `PEDIDOS` e secret `ADMIN_TOKEN`.
+- Não implementar extração de áudio/streams protegidos do YouTube nem contorno de anúncios. A ação não pode declarar sucesso quando o link é somente uma página/vídeo.
+- O navegador atual usa bloqueio por host e explicitamente não garante remover anúncios in-stream/first-party do YouTube. A auditoria de proteção deve manter compatibilidade do player e não prometer equivalência total ao Brave.
+
+### Próxima execução consolidada
+1. Priorizar a correção operacional do Worker e preparar instrução única de atualização, sem recriar recursos Cloudflare.
+2. Revisar a UI de “Baixar offline” para não abrir seletor como se estivesse baixando do YouTube; manter tentativa de URL direta de áudio e alternativa explícita de associar arquivo autorizado à gravação exata.
+3. Revisar o cache automático na Biblioteca e o vínculo com as faixas preparadas/projetadas; não baixar mídia de páginas YouTube por extração protegida.
+4. Adicionar testes adicionais de retenção (5/7/14/30), limpeza após reinício, arquivo compartilhado entre pedido e biblioteca e ausência de perda de metadados.
+5. Auditar proteção WebView2 e testes de regressão para navegação, pesquisa e reprodução.
+6. Rodar workflow completo e gerar uma única compilação consolidada; pedir uma única rodada de testes manuais do usuário.
+
+### Estado desta auditoria
+- [x] Confirmada existência de limpeza automática a cada minuto e na carga da biblioteca.
+- [x] Confirmada política de não excluir arquivos ainda referenciados.
+- [x] Confirmados testes automatizados do Worker para IP/bloqueio/desbloqueio.
+- [x] Confirmado que a UI atual não faz download de link YouTube; oferece importação local.
+- [ ] Ampliar testes de retenção e integração de mídia.
+- [ ] Atualizar Worker em produção no Cloudflare.
+- [ ] Consolidar correções restantes e gerar build único.
+
