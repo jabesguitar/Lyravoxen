@@ -888,3 +888,40 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - [ ] Atualizar Worker em produção no Cloudflare.
 - [ ] Consolidar correções restantes e gerar build único.
 
+## 27/11/2026 — Verificação do build #810 e testes automatizados
+
+### Execução confirmada
+- Workflow: [Windows build #810](https://github.com/jabesguitar/Lyravoxen/actions/runs/45931354035)
+- Resultado geral: `completed successfully`.
+- Branch: `feature/offline-library-on-redesign`.
+- Commit compilado: `9531d4a6c65b89e5fdb3ddef4d9e50d665cf1ea7`.
+- Job `cloud-worker-tests`: sucesso.
+  - Teste do serviço de mídia offline: sucesso.
+  - Cobertura da ajuda: sucesso.
+  - Verificações estáticas C#: sucesso.
+  - Testes do Cloudflare Worker: sucesso.
+  - Testes Playwright do formulário público: sucesso.
+  - Testes Playwright da página remota móvel: sucesso.
+- Job `build`: sucesso.
+  - Restore e publish Windows: sucesso.
+  - Teste da linha do tempo: sucesso.
+  - ZIP portátil, pasta Windows e instalador: publicados.
+
+### Artefatos disponíveis do #810
+- Instalador: `Lyravoxen-Installer-Windows-x64`, artifact ID `15168917805`, SHA-256 `2dd1fa63fa62cc8d9bafe8b4c061adf0a00ecac9d10bab50c72e37819554cc38`.
+- Pasta Windows: `Lyravoxen-Windows-x64`, artifact ID `15168088378`, SHA-256 `19a63f08f8c40bd6a7a0c7613e77994e9ffffa012bc6c65ae051432a19132e5b`.
+- ZIP portátil: `Lyravoxen-Windows-x64-portable`, artifact ID `15167933847`, SHA-256 `57949e6a49cad49bf204841daff8a9ebaecf695de71615b23ede8f7c38989773`.
+- Artefatos expiram em 25/02/2027.
+
+### Conclusão e limite da validação
+- Os testes automatizados do código presente no commit #810 passaram.
+- Isso não valida ainda o Worker que está efetivamente publicado no endereço Cloudflare do usuário. O endpoint fornecido não pôde ser inspecionado pelo navegador de pesquisa nesta sessão.
+- A auditoria do código confirma que o Worker gerado contém rotas autenticadas `GET/POST /bloqueios` e coleta `CF-Connecting-IP`. A versão atualmente publicada pelo usuário já havia apresentado IP ausente/404, logo precisa de atualização manual.
+- O próximo bloqueio operacional é publicar o Worker atualizado no Cloudflare existente, mantendo o KV `PEDIDOS` e o secret `ADMIN_TOKEN`. Não criar outro Worker nem apagar o KV.
+- Após publicação, testar o formulário de pedido, recebimento do IP, bloqueio e desbloqueio com dois IPs de teste distintos; só então marcar esse fluxo como validado em produção.
+
+### Próxima ação manual
+- No Lyravoxen, abrir Pedidos → Pedidos pela internet → Gerar código do serviço (worker.js).
+- No Cloudflare, abrir o Worker que atende `lyravoxen-pedidos.ferkt319.workers.dev`, editar o código, substituir pelo worker.js gerado no app e clicar Deploy.
+- Preservar bindings e secrets existentes: `PEDIDOS` e `ADMIN_TOKEN`.
+
