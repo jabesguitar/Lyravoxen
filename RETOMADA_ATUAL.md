@@ -345,3 +345,31 @@ Entregar ao usuário esta única compilação consolidada e o checklist manual f
 2. Uma única implantação do Worker atualizado no Cloudflare, mantendo namespace KV e segredo existentes.
 3. Uma única rodada manual com MP3/WAV real, salvar/mover/renomear, pedido público com IP e navegação YouTube.
 4. Registrar os resultados antes de qualquer merge na `main`.
+
+## 27/11/2026 — Esclarecimento do requisito de mídia offline do YouTube
+
+### Solicitação e justificativa do usuário
+- O usuário esclareceu que insiste no YouTube porque muitas gravações necessárias não existem em outras fontes, especialmente versões específicas de playback.
+- Exemplos citados: mesma música em meio tom abaixo, dois tons abaixo e outras tonalidades/arranjos preparados por terceiros.
+- Para o evento, não basta encontrar outra gravação com o mesmo título: precisa ser exatamente a versão selecionada, preservando tom, arranjo e identidade do vídeo.
+- Objetivo operacional: ter previamente uma cópia local utilizável quando faltar energia ou internet, sem comprometer a continuidade do evento.
+- Restrição de custo reafirmada: solução gratuita, sem APIs ou assinaturas pagas adicionais.
+
+### Decisão de produto / interpretação
+- Preservar o vínculo exato entre item de repertório e gravação: YouTube videoId + URL original + metadados/descrição da versão (ex.: -1 semitom, -2 tons, playback).
+- Não substituir automaticamente uma gravação por outra que tenha o mesmo título.
+- A interface deve distinguir claramente: disponível online, arquivo offline pronto, fonte não baixável diretamente e requer arquivo autorizado.
+- O requisito do usuário é continuidade offline da versão exata, não apenas cache de letras ou link.
+
+### Limite e alternativas técnicas
+- Sites de terceiros que aceitam URL do YouTube normalmente extraem ou convertem o fluxo de mídia; o fato de existirem não significa que o Lyravoxen possa reproduzir essa técnica ou que ela seja estável/segura/permitida.
+- Não implementar extração de streams protegidos, DRM bypass, nem contorno de anúncios/restrições do YouTube.
+- YouTube Premium/offline mantém a mídia no ambiente oficial do YouTube e não disponibiliza um MP3/WAV comum para o Lyravoxen acessar como arquivo local.
+- Caminhos gratuitos viáveis para manter a gravação exata: arquivo fornecido pelo próprio criador/intérprete/autor do playback; link direto de download disponibilizado oficialmente; arquivo MP3/WAV que o usuário já possua e tenha direito de usar; ou gravação/produção própria autorizada.
+- O fluxo do Lyravoxen deve permitir anexar/importar essa cópia ao item já cadastrado no YouTube, preservando o videoId como referência da versão e o hash do arquivo como identidade da cópia local.
+- Se não houver arquivo autorizado, manter o link exato para reprodução online pelo player oficial e informar que ainda não há cópia offline; não declarar “Baixado” quando só foi salvo o link.
+
+### Pendência
+- Avaliar UX para associar um arquivo offline ao item do YouTube sem perder título, intérprete, autor, tom e videoId; permitir que o operador escolha explicitamente qual gravação/arquivo corresponde à versão selecionada.
+- Testar reprodução offline real dessa cópia local, com internet desligada, antes de declarar o fluxo aprovado.
+
