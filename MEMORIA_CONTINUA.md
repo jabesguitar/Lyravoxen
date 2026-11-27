@@ -724,3 +724,32 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 ### Próxima ação
 - O usuário abrirá e testará a compilação mais recente; ao retornar, registrar cada resultado como aprovado, falhou ou inconclusivo, com evidência e etapa exata.
 - Antes de qualquer nova alteração de código, comparar a solicitação com este checklist e preservar os fluxos já aprovados.
+
+
+## 26/11/2026 — Auditoria da identidade visual da compilação (#804 e #807)
+
+### Resultado da comparação direta do código
+- Arquivo principal comparado: `src/Lyravoxen.Desktop/MainWindow.xaml`.
+- Na branch `feature/offline-library-on-redesign`, o arquivo tem blob SHA `28281f23522a86456af45a22f48c7803a3ae1525`, 66.438 caracteres, inclui recursos dinâmicos de tema e a aba principal “Biblioteca Offline”.
+- Na branch `main`, o mesmo arquivo tem blob SHA `1e82984fd26985d0644153ad24fd58a2492ca9f3`, 43.557 caracteres, e não contém a aba “Biblioteca Offline” nem a estrutura visual dinâmica encontrada no redesign.
+- `App.xaml.cs` na branch de trabalho contém a implementação de tema (`SetTheme`); na `main`, essa implementação não existe.
+- Comparação GitHub: `feature/offline-library-on-redesign` está 212 commits à frente de `main`, sem commits atrás no momento da consulta.
+- Conclusão objetiva: **o código da branch de trabalho contém o layout novo; a branch main contém o layout antigo.**
+
+### O que ocorreu com as compilações
+- Commit #804 (`4f39f92562b6eb470b16be1d3513e9d1ecbe8543`) removeu a condição que restringia o job Windows Build a `workflow_dispatch` ou `main`. Isso permitiu que o job de empacotamento Windows fosse executado também na branch de trabalho. O histórico fornecido pelo usuário registra a execução #804 como concluída com sucesso e como pacote Windows consolidado.
+- Commit #807 (`832ef7510f2c984a5a9ef76de7447c143d875f61`) voltou a introduzir a condição:
+  `if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'`.
+- Consequência importante: após #807, um push normal na branch `feature/offline-library-on-redesign` executa os testes do job `cloud-worker-tests`, mas **não executa o job `build`**. Para gerar pacote Windows nessa branch, é necessário disparar manualmente o workflow (`workflow_dispatch`) escolhendo a branch correta.
+- O commit #807 alterou somente a condição do job no workflow; não modificou `MainWindow.xaml`, `App.xaml` ou o layout do aplicativo.
+- Portanto, #807 não é evidência de que um novo executável com layout antigo foi produzido. O pacote consolidado #804 é o candidato identificado para conter o layout novo, pois o build foi liberado para a branch de trabalho naquele commit.
+- Ainda não foi possível confirmar, pelos dados disponíveis nesta auditoria, qual arquivo EXE/ZIP o usuário abriu nem se o executável exibido na captura veio do artefato #804 ou de um pacote anterior da `main`. Não atribuir a causa como certeza sem conferir o nome/link/artefato efetivamente baixado.
+
+### Estado e próxima ação
+- [x] Confirmado que o código atual da branch de trabalho contém o redesign e a Biblioteca Offline.
+- [x] Confirmado que `main` permanece com a interface antiga.
+- [x] Identificada a razão operacional pela qual builds posteriores em push da branch podem não gerar executável: condição do job introduzida em #807.
+- [ ] Confirmar qual pacote o usuário abriu (instalador ou ZIP portátil) e sua origem.
+- [ ] Se for necessário gerar novo pacote, executar manualmente Windows Build na branch `feature/offline-library-on-redesign`; não fazer merge, reset ou alteração de layout.
+- [ ] Ao testar, conferir primeiro as cinco abas principais e a presença da aba Biblioteca Offline antes de avaliar funcionalidades.
+
