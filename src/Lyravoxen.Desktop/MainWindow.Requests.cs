@@ -316,8 +316,6 @@ public partial class MainWindow
             Padding = new Thickness(16),
             Margin = new Thickness(0, 0, 0, 12)
         };
-        var headerGrid = new System.Windows.Controls.Grid();
-        headerGrid.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = new System.Windows.Controls.ColumnDefinition().Width = new GridLength(1, GridUnitType.Star) });
         var headerInfo = new System.Windows.Controls.StackPanel();
         headerInfo.Children.Add(RequestText("PEDIDOS RECEBIDOS", 21, true, "#FFFFFF"));
         headerInfo.Children.Add(RequestText("Confira os pedidos, prepare a próxima música ou salve uma cópia offline.", 12, false, "#B8D5EA"));
