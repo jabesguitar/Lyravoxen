@@ -610,3 +610,15 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Próxima ação: aguardar build. Se verde, baixar instalador único e validar visualmente as telas Biblioteca Offline, Pedidos recebidos e Controle pelo celular. Branch feature/offline-library-on-redesign; não alterar main.
 
 - Observação operacional: o push de documentação cancelou a execução concorrente #866; acompanhar a execução mais recente disparada pelo commit final de documentação antes de liberar o instalador.
+
+
+## Atualização — 27/11/2026: filtro conservador de endpoints de anúncios YouTube
+
+- Implementada política de requisições que bloqueia caminhos conhecidos `/pagead/` e `/api/stats/ads` em `youtube.com` e subdomínios, além da lista de hosts já existente.
+- Preservados API IFrame, páginas normais do YouTube, `googlevideo.com` e exceções de domínio permitidas pelo usuário.
+- Testes adicionados para confirmar bloqueio desses endpoints e preservação dos recursos de reprodução.
+- Commits: `c026684` (política), `b27d130` (integração WebView2), `c554d1c` (testes).
+- Build #870 passou antes dessas alterações, mas não valida os commits novos. Acompanhar a execução disparada pelo commit mais recente.
+- Próxima ação: confirmar workflow verde; instalar/abrir o app e testar vários vídeos na aba Próxima música, incluindo início, reprodução contínua, troca de vídeo e carregamento de letras. Registrar se anúncios pré-roll ainda aparecem ou se algum vídeo/player falha.
+- Limite conhecido: não é bloqueio garantido de anúncios in-stream/servidos dinamicamente; nenhuma alteração no player principal foi feita.
+- Branch `feature/offline-library-on-redesign`; `main` permanece intocada.
