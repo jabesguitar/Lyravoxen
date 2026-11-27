@@ -608,3 +608,5 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Commit: c4b7796e38dd502c4a276a603987dc0c331be18a.
 - Build #866: https://github.com/jabesguitar/Lyravoxen/actions/runs/46029745807 (em andamento).
 - Próxima ação: aguardar build. Se verde, baixar instalador único e validar visualmente as telas Biblioteca Offline, Pedidos recebidos e Controle pelo celular. Branch feature/offline-library-on-redesign; não alterar main.
+
+- Observação operacional: o push de documentação cancelou a execução concorrente #866; acompanhar a execução mais recente disparada pelo commit final de documentação antes de liberar o instalador.
