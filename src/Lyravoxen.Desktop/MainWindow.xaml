@@ -149,8 +149,14 @@
      <ContentPresenter/>
     </Border>
     <ControlTemplate.Triggers>
-     <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#123A66"/><Setter Property="Foreground" Value="{DynamicResource Brush_00D9F5}"/></Trigger>
-     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#00D9F5"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#173D68"/><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#38DDF5"/></Trigger>
+     <Trigger Property="IsSelected" Value="True">
+      <Setter TargetName="ItemBorder" Property="Background" Value="#087F9E"/>
+      <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#00E5FF"/>
+      <Setter TargetName="ItemBorder" Property="BorderThickness" Value="1.5"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter TargetName="ItemBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#00D9F5" BlurRadius="12" ShadowDepth="0" Opacity="0.38"/></Setter.Value></Setter>
+     </Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
@@ -223,7 +229,7 @@
       <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
        <TextBlock Text="REPRODUÇÃO — YOUTUBE" Foreground="{DynamicResource TextMuted}" Margin="8" FontWeight="Bold" FontSize="11"/>
        <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1" MinHeight="220"/>
-       <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
+       <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Manual" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
       </Grid>
      </Border>
      <Border Grid.Column="1" Background="{DynamicResource Panel}" CornerRadius="14" Padding="8" Margin="0" MinHeight="390">
@@ -734,6 +740,16 @@
   <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Width="48" Height="48" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,8,0" Stretch="Uniform" Opacity="0.92" IsHitTestVisible="False">
    <Image.Effect><DropShadowEffect Color="{DynamicResource Color_13C8E4}" BlurRadius="18" ShadowDepth="0" Opacity="0.62"/></Image.Effect>
   </Image>
-   <Button x:Name="ThemeToggleButton" Content="☀" Width="42" Height="38" Padding="4" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,58,0" Click="ThemeToggle_Click" ToolTip="Alternar entre modo claro e modo escuro" Panel.ZIndex="10"/>
+   <Border x:Name="OfflinePlaybackBar" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12,0,12,8" Padding="8,5" Background="#E9081B36" BorderBrush="#00D9F5" BorderThickness="1" CornerRadius="14" Panel.ZIndex="20" Visibility="Collapsed">
+   <DockPanel LastChildFill="True">
+    <TextBlock x:Name="OfflinePlaybackTitle" DockPanel.Dock="Left" Text="Reprodução offline" Foreground="#FFFFFF" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,12,0" MaxWidth="190" TextTrimming="CharacterEllipsis"/>
+    <Button Content="Ⅱ / ▶" Click="OfflinePlaybackToggle_Click" MinWidth="54" MinHeight="30" Padding="6,2"/>
+    <Button Content="■" Click="OfflinePlaybackStop_Click" MinWidth="38" MinHeight="30" Padding="4,2"/>
+    <TextBlock Text="Volume" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,2,0"/>
+    <Slider x:Name="OfflineVolumeSlider" Minimum="0" Maximum="1" Value="0.8" Width="105" VerticalAlignment="Center" ValueChanged="OfflineVolumeSlider_Changed"/>
+    <Slider x:Name="OfflinePositionSlider" Minimum="0" Maximum="100" Value="0" Width="190" Margin="8,0,4,0" VerticalAlignment="Center" ValueChanged="OfflinePositionSlider_Changed"/>
+   </DockPanel>
+  </Border>
+  <Button x:Name="ThemeToggleButton" Content="☀" Width="42" Height="38" Padding="4" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,58,0" Click="ThemeToggle_Click" ToolTip="Alternar entre modo claro e modo escuro" Panel.ZIndex="10"/>
  </Grid>
 </Window>
