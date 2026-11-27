@@ -261,7 +261,7 @@ Check(LyricsSourceSettings.SafeKey("abc-123_DEF ;'\"") == "abc-123_DEF", "vagalu
 var structuredLyrics = LyricsStructureAnalyzer.Analyze(
     "Estrofe 1\nQuando eu clamo, tu me ouves\nE me sustentas em amor\n\n[Coro]\nSanto, santo é o Senhor\nDigno de todo louvor\n\nEstrofe 2\nMesmo na noite eu cantarei\nTua promessa guardarei\n\n[Coro]\nSanto, santo é o Senhor\nDigno de todo louvor\n\nEstrofe 3\nTua luz me conduzirá\nE tua graça bastará\n\n[Coro 2x]\nSanto, santo é o Senhor\nDigno de todo louvor");
 var chorusSection = structuredLyrics.Sections.Single(section => section.Kind == LyricsSectionKind.Chorus);
-Check(structuredLyrics.ExecutionOrder.Count == 6, "estrutura: cria ocorrências na ordem textual e expande coro 2x");
+Check(structuredLyrics.ExecutionOrder.Count == 7, "estrutura: cria 3 estrofes + 2 entradas do coro + coro final 2x (7 ocorrências)");
 Check(chorusSection.OccurrenceCount == 4, "estrutura: mesmo coro explícito aponta para quatro ocorrências");
 Check(structuredLyrics.Sections.Count == 4, "estrutura: preserva três estrofes e um único bloco-fonte de coro");
 Check(structuredLyrics.ExecutionOrder.Where(item => item.Kind == LyricsSectionKind.Chorus).Select(item => item.OccurrenceIndex).SequenceEqual(new[] { 1, 2, 3, 4 }),
