@@ -51,3 +51,12 @@ Executar build/testes no GitHub; corrigir falhas; então prototipar análise de 
 - Persistência obrigatória por música, com recuperação da letra, estrutura, ordem de execução e tempos. O acesso pelo controle remoto será desenvolvido após auditoria do protocolo atual, sem quebrar Ao Vivo/Bíblia.
 - O usuário autorizou pesquisa técnica e execução de comandos disponíveis para trazer a solução integrada e pronta; não quer ser chamado para testar etapas intermediárias.
 - Estado: decisão aprovada; implementação e validação ainda pendentes. Não declarar a aba pronta antes de build e testes.
+
+
+## 27/11/2026 — CI Windows #931 concluído
+- Run do GitHub Actions: `46067616951`, associado ao commit `6350d2819950907e7490422353cd1b6d52c7322f` na branch `feature/lyrics-structure-fast-sync`.
+- Jobs `build` e `cloud-worker-tests`: ambos `completed/success`.
+- O job Windows concluiu Restore, Build, `Test cue timeline`, pacote portátil, instalador Inno Setup e upload dos artefatos.
+- O job cloud concluiu testes do serviço de mídia offline, Help coverage, verificações C#, Cloudflare Worker e página remota/mobile.
+- Artefatos: `Lyravoxen-Windows-x64` (ID `15231637109`), `Lyravoxen-Windows-x64-portable` (ID `15231617268`), `Lyravoxen-Installer-Windows-x64` (ID `15230839460`). Integridade dos ZIPs baixados verificada.
+- Resultado limitado ao código do commit acima e às verificações configuradas; não valida alinhamento de áudio cantado, a UI remodelada ou cadastro pelo controle remoto.
