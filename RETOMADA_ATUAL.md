@@ -373,3 +373,37 @@ Entregar ao usuário esta única compilação consolidada e o checklist manual f
 - Avaliar UX para associar um arquivo offline ao item do YouTube sem perder título, intérprete, autor, tom e videoId; permitir que o operador escolha explicitamente qual gravação/arquivo corresponde à versão selecionada.
 - Testar reprodução offline real dessa cópia local, com internet desligada, antes de declarar o fluxo aprovado.
 
+## 27/11/2026 — Confirmação do fluxo desejado para “Baixar offline” e retenção
+
+### Requisito confirmado pelo usuário
+- Na janela **Pedidos**, ao receber um pedido com link do YouTube, deve existir a ação **Baixar offline** no próprio pedido, sem exigir que o operador procure manualmente um arquivo no computador.
+- O usuário espera que o download seja iniciado a partir do link recebido e que o arquivo fique guardado localmente para uso no evento, evitando depender de internet/energia.
+- O mesmo princípio de armazenamento temporário deve atender à Biblioteca Offline.
+- O usuário quer escolher o prazo de retenção dentre as opções já planejadas: **5, 7, 14 ou 30 dias**.
+- Ao vencer o prazo, apagar somente o arquivo de mídia local para evitar acúmulo e peso excessivo no computador; preservar pedido, título, link, letra, metadados e histórico.
+- A seleção do prazo deve ser clara no fluxo de download/armazenamento; o vencimento precisa ser visível e a limpeza automática deve ser confiável.
+- O usuário reforçou que a experiência desejada é pelo link do pedido, sem seletor de arquivos como caminho principal.
+
+### Limite técnico e comportamento honesto
+- Um link de página/vídeo do YouTube não é uma URL direta de arquivo MP3/WAV. O serviço de mídia atual rejeita explicitamente hosts YouTube.
+- Não implementar extração do fluxo de áudio protegido do YouTube, contorno de DRM ou mecanismos de proteção/anúncios.
+- Portanto, não apresentar a ação como se qualquer URL YouTube fosse baixável pelo Lyravoxen. A ação deve verificar a origem e explicar claramente quando o link não fornece um arquivo direto.
+- Caminhos compatíveis para obter a cópia exata: URL direta de arquivo publicada para download pelo criador/fornecedor; arquivo fornecido pelo criador; ou arquivo MP3/WAV local que o usuário possua e esteja autorizado a usar. Associar essa cópia ao pedido original, preservando o YouTube videoId e os metadados da versão.
+- Não substituir uma versão específica (ex.: meio tom abaixo ou dois tons abaixo) por outra gravação de mesmo título.
+
+### Implementação necessária
+- Rever a experiência do botão **Baixar offline**: iniciar tentativa de download direto apenas para fontes que realmente entreguem arquivo de áudio permitido; se a URL for página YouTube, não abrir imediatamente seletor como se o download estivesse acontecendo. Exibir estado/motivo e oferecer associação de cópia autorizada como alternativa explícita.
+- Unificar o serviço de armazenamento entre Pedidos e Biblioteca Offline.
+- Registrar por item: caminho local, hash, formato, tamanho, data de armazenamento e data de expiração.
+- Aplicar retenção configurável 5/7/14/30 dias; executar limpeza automática na inicialização e periodicamente enquanto o app estiver aberto.
+- A limpeza deve remover somente mídia expirada, não registros, letras, metadados, links, histórico ou pastas do usuário.
+- Garantir atomicidade do download (arquivo temporário e promoção após validação), validação real MP3/WAV, deduplicação por hash e associação à gravação exata.
+- Permitir que o usuário identifique claramente se a música está apenas online ou se a cópia offline está pronta.
+
+### Estado
+- [x] Usuário confirmou o fluxo pretendido e as opções de retenção 5, 7, 14 e 30 dias.
+- [ ] Ajustar UI e lógica de Baixar offline nos Pedidos para distinguir link YouTube de URL direta de arquivo.
+- [ ] Unificar cache temporário de Pedidos e Biblioteca Offline.
+- [ ] Implementar/testar retenção e limpeza automática, preservando metadados.
+- [ ] Validar reprodução offline da cópia exata com internet desligada.
+
