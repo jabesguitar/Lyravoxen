@@ -1139,3 +1139,24 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Antes de novas mudanças, confirmar resultado do build mais recente e verificar se a DLL nativa foi carregada em runtime (não apenas se foi copiada para a pasta). Instrumentar estado do motor, lista carregada e contadores sem expor dados sensíveis.
 - Não declarar proteção eficaz até testes funcionais reproduzíveis com YouTube, inclusive pré-roll, e sem regressões na reprodução/letras.
 - Não alterar `main`; branch de desenvolvimento.
+
+
+## 27/11/2026 — Nova estratégia: extensão de navegador open source integrada ao WebView2
+
+- Após o teste visual confirmar anúncios Pantene e Mercado Livre no YouTube, o usuário expressou frustração com a repetição de tentativas incompletas e pediu uso prático de projetos open source existentes, inclusive fora do GitHub.
+- A estratégia foi alterada: em vez de recriar um bloqueador, integrar uma extensão de navegador existente no WebView2.
+- Projeto selecionado para protótipo: uBlock Origin Lite (uBOL), distribuição oficial Edge, release `2026.1124.1811`, projeto `uBlockOrigin/uBOL-home`, licença GPL-3.0. Extensão será distribuída sem modificações, com arquivo LICENSE e referência ao código-fonte upstream.
+- A documentação Microsoft confirma `CoreWebView2Profile.AddBrowserExtensionAsync`, persistência da extensão no perfil e a necessidade de habilitar `CoreWebView2EnvironmentOptions.AreBrowserExtensionsEnabled`.
+- Alterações realizadas:
+  - `MainWindow.xaml.cs`: cria ambiente WebView2 compartilhado com extensões habilitadas; configura perfil em LocalAppData/Lyravoxen/WebView2; instala a extensão uBOL do diretório `Extensions/uBOLite` se o manifesto existir.
+  - `.github/workflows/windows-build.yml`: baixa ZIP oficial Edge do release fixo, extrai a pasta que contém `manifest.json`, empacota no artefato e inclui LICENSE upstream.
+  - Mantém filtro legado e protótipo Rust como camadas adicionais/fallback por enquanto.
+- Commits principais:
+  - `59d82f352f518a0ea76c1cc614cbfda83ebb581a` — primeira integração experimental (inicialização WPF; corrigida depois para usar EnvironmentOptions).
+  - `2b7758511e28a1bb8cb5985b50e7f24bfe05427c` — download e inclusão do ZIP oficial da extensão.
+  - `463f56ef916a5aeb6887998f799aad430a4bf58c` — caminho correto do LICENSE.
+  - `80a5cccc823428bbe60205cf77610089117156d7` — habilitação correta via CoreWebView2EnvironmentOptions e ambiente compartilhado.
+- Build #891 foi concluído com sucesso antes da integração da extensão e comprovou a compilação do protótipo Rust e do aplicativo naquela revisão: https://github.com/jabesguitar/Lyravoxen/actions/runs/46039033387.
+- A revisão com a extensão ainda precisa de build. Mesmo com extensão instalada, a compatibilidade específica do uBOL com APIs disponíveis no WebView2 e a eficácia contra anúncios in-stream precisam ser verificadas. A Microsoft documenta a API de extensão; isso não garante que todas as APIs usadas pela extensão tenham suporte idêntico ao Edge completo.
+- Próxima ação: confirmar build do commit `80a5ccc`/workflow subsequente, verificar extensão no perfil e adicionar teste de runtime/telemetria local para confirmar instalação/ativação. Não pedir novas provas de que anúncios existem; usuário já forneceu duas capturas.
+- Não alterar `main`.
