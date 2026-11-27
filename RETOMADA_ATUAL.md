@@ -672,3 +672,13 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - A revisão com essa integração ainda precisa de build; build #891 verde refere-se ao protótipo Rust anterior e não valida extensão.
 - Próximo passo: validar compilação e bundle; depois confirmar em runtime que a extensão aparece em GetBrowserExtensionsAsync/IsEnabled e testar filtros de página. Atenção: API de extensão existe no WebView2, mas não há ainda confirmação de compatibilidade integral das APIs usadas pelo uBOL.
 - Branch feature/offline-library-on-redesign; main intocada. Não solicitar ao usuário que prove novamente presença de anúncios.
+
+
+## Atualização — 27/11/2026: teste real do uBlock Origin Lite não funcionou
+
+- Usuário testou build #897 e a captura mostra anúncio em vídeo "Aproxime-se de Deus" (1 de 2), anúncio lateral e anúncio patrocinado; portanto resultado negativo.
+- Build #897 compilou e empacotou, mas não comprova que a extensão foi ativada nem que suas regras foram aplicadas.
+- Código atual chama AddBrowserExtensionAsync mas não confirma com GetBrowserExtensionsAsync, IsEnabled ou diagnóstico de regras. Status da extensão é sobrescrito depois pela mensagem "Player pronto". Painel "81.671 regras / 0 solicitações bloqueadas" mede apenas o bloqueador legado, não uBOL.
+- Próxima ação: melhorar diagnóstico e instalação idempotente: consultar extensão já instalada, confirmar ID/nome/IsEnabled, evitar reinstalar, guardar versão/erros/WebView2 Runtime em log local e mostrar estado real no painel. Validar DNR separadamente antes de nova compilação para o usuário.
+- Não pedir novas provas; usuário já mostrou anúncios em três capturas e quer avançar. Não declarar bloqueio resolvido.
+- Manter este arquivo e MEMORIA_CONTINUA.md sempre atualizados. Branch feature/offline-library-on-redesign; main intocada.
