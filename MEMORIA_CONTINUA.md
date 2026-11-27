@@ -1028,3 +1028,27 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
   - Pasta Windows x64: ID 15207466365, 76.282.040 bytes.
   - ZIP portátil: ID 15207491300, 76.317.985 bytes.
 - O build comprova compilação e testes automatizados, mas não substitui validação funcional no computador do usuário. A reprodução offline ao alternar abas, controles de pausa/retomada/posição/volume e download manual com destino escolhido precisam ser conferidos em execução real.
+
+
+## 27/11/2026 — Correção da lista da Biblioteca e redesign da janela Pedidos recebidos
+
+### Relato do usuário
+- Ao selecionar uma pasta na Biblioteca Offline, a lista de músicas recebidas/da coleção deixou de aparecer.
+- Janela Pedidos recebidos considerada visualmente básica: pediu cards/barras individuais com destaque para nome do conjunto/cantor, música, link e botões; mais espaço para visualizar a lista, visual minimalista com fonte legível. Autorizou remover botões desnecessários.
+
+### Alterações implementadas na branch
+- MainWindow.xaml: os comandos inferiores da coluna Músicas da coleção foram colocados em ScrollViewer com altura máxima, preservando espaço vertical para a lista de faixas.
+- MainWindow.xaml.cs: ao trocar de pasta, o filtro de pesquisa da pasta anterior é limpo antes de atualizar a lista, evitando que uma busca antiga esconda todas as músicas da nova pasta.
+- MainWindow.Requests.cs: janela Pedidos recebidos ampliada para 920x760 (mín. 720x560), fundo escuro coerente com o app, cabeçalho com contador, barra compacta de ações e configurações de recebimento recolhidas em Expander para liberar espaço à fila.
+- Cards individuais destacam título da música, conjunto/cantor (campo Group existente), link, data/IP, situação offline e botões de ação. A ação Copiar link foi removida dos cards para reduzir ruído; permanecem Preparar próxima, Baixar offline, Abrir link e Descartar pedido. Bloqueio de IP permanece disponível como ação secundária.
+- Os dados recebidos não foram alterados: a estrutura atual do pedido contém Group (nome do conjunto/cantor), Name (nome da música) e Url (link); não há campo de artista separado no modelo atual.
+
+### Commits
+- ef8e87da46e3b5e8bfd255ab0b6448c11d59abaf — tentativa inicial de limitar a área dos comandos inferiores.
+- a8feb9ec4e3bf3e0ee9cfa49b99f9b26e03bf06a — limpar busca ao trocar de pasta.
+- 3ba92662caba4b3a35954434a72c0b54b5568586 — redesign da janela de pedidos.
+- cfa82f1b3b1009d70d4bee30435bc475a4f1e35d — limpeza do cabeçalho do redesign.
+
+### Validação
+- Build #862 está em execução; commits intermediários foram cancelados automaticamente quando novos commits foram enviados. Só o resultado do #862 deve ser considerado.
+- A correção de lista e o redesign ainda precisam de build verde e validação visual no Windows.
