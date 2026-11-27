@@ -109,7 +109,6 @@ internal static class BrowserAdBlocker
         CoreWebView2WebResourceContext.Script => "script",
         CoreWebView2WebResourceContext.XmlHttpRequest => "xmlhttprequest",
         CoreWebView2WebResourceContext.Fetch => "xmlhttprequest",
-        CoreWebView2WebResourceContext.WebSocket => "websocket",
         _ => "other"
     };
 
