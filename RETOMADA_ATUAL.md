@@ -546,3 +546,38 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - O Worker existente ainda precisa receber o código atualizado pelo usuário no painel Cloudflare, preservando binding KV `PEDIDOS` e secret `ADMIN_TOKEN`; não criar outro Worker nem apagar recursos.
 - Não fazer merge na `main`. Branch de teste permanece `feature/offline-library-on-redesign`.
 - Após o usuário executar os testes, registrar cada resultado (aprovado/falhou/não testado) e corrigir somente o que falhar, sem repetir o checklist inteiro desnecessariamente.
+
+
+## 27/11/2026 — Melhorias de Biblioteca Offline e reprodução persistente
+
+### Solicitações do usuário
+- Destacar visualmente a opção selecionada nas listas de músicas utilizadas (Histórico de vídeos), pastas e músicas da Biblioteca.
+- Fazer a reprodução offline continuar ao navegar entre abas, com controles de pausar/retomar, parar, volume e posição.
+- Adicionar à Biblioteca Offline um campo para colar link, escolher pasta física de destino e baixar uma faixa individualmente.
+- Usuário autorizou colocar as mudanças em prática e concluir a etapa para liberar tempo para outros projetos.
+
+### Implementações enviadas à branch
+- MainWindow.xaml: estilo global de ListBoxItem reforça seleção com fundo ciano/azul, borda e brilho; hover distinto. A alteração alcança listas do histórico e biblioteca.
+- MainWindow.xaml.cs: handlers de Histórico e Biblioteca deixam de limpar SelectedItem imediatamente, mantendo a seleção visível após carregar/reproduzir.
+- LocalAudioPlayer passou de UnloadedBehavior=Stop para Manual, evitando que a navegação de abas ordene explicitamente a parada do áudio.
+- Barra global OfflinePlaybackBar adicionada no nível raiz da janela, com identificação da faixa, pausar/retomar, parar, volume e posição.
+- PlayLocalAudio atualiza a barra, volume e posição; handlers controlam o MediaElement; timer atualiza o slider; encerramento oculta a barra.
+- Biblioteca Offline recebeu campo de URL direta MP3/WAV, seletor de pasta física de destino e botão de download para a coleção selecionada.
+- Download manual usa OfflineMediaService existente, que valida mídia direta e grava no destino; o item é registrado na coleção selecionada com retenção 5/7/14/30 dias e persistência na biblioteca.
+- Links de página YouTube não são aceitos neste novo campo de download direto; mensagem orienta a importar uma cópia autorizada. Não há bypass de DRM, paywall ou anúncios.
+
+### Commits
+- 19536c982776a7c12fab7db6501ecfa8cd6ffd3c — destaque de seleção e barra global de controles no XAML.
+- 5075494d10cc20cf2b80824e07aef783091419a6 — handlers de reprodução, pausa, parada, volume e posição.
+- b87d62addaa7746017e74dcb6c99e44266d5cf21 — UI de download manual.
+- 1e9e37813364f8750dc02d0b55533464b865cdb6 — lógica de download manual e escolha do destino.
+- fd6c16f1215dfc49b05175a1c56cc0106e7d64f2 — manter item de histórico/biblioteca selecionado após ação.
+
+### Estado de validação
+- Alterações enviadas à branch feature/offline-library-on-redesign; nenhuma alteração na main.
+- Ainda não há build Windows posterior a esses commits nem teste real de reprodução ao alternar abas, controles ou download manual.
+- Precisa validar XML/XAML, compilação, referências dos handlers e os cenários de reprodução e download. Não declarar concluído até build verde.
+- A barra de posição deve ser conferida em uso (sincronização do slider e seek); o destino físico externo à pasta padrão deve ser validado com retenção/limpeza.
+
+### Próxima ação
+- Rodar validações estáticas e workflow Windows build na branch. Corrigir qualquer falha de compilação. Depois entregar um único instalador atualizado e checklist curto focado apenas nas três mudanças desta etapa.
