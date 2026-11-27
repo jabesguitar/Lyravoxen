@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -18,11 +19,13 @@ public sealed class YoutubeAudioDownloadService
     private const string ChecksumsUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS";
     private readonly string _toolsFolder;
     private readonly string _executable;
+    private readonly string _denoExecutable;
 
     public YoutubeAudioDownloadService(string appDataFolder)
     {
         _toolsFolder = Path.Combine(appDataFolder, "Tools");
         _executable = Path.Combine(_toolsFolder, "yt-dlp.exe");
+        _denoExecutable = Path.Combine(_toolsFolder, "deno.exe");
     }
 
     public async Task<OfflineMediaResult> DownloadAuthorizedAudioAsync(string youtubeUrl, string destinationFolder, CancellationToken cancellationToken = default)
@@ -32,6 +35,7 @@ public sealed class YoutubeAudioDownloadService
         Directory.CreateDirectory(_toolsFolder);
         Directory.CreateDirectory(destinationFolder);
         await EnsureExecutableAsync(cancellationToken);
+        await EnsureDenoAsync(cancellationToken);
 
         var outputTemplate = Path.Combine(destinationFolder, "%(id)s.%(ext)s");
         var start = new ProcessStartInfo
@@ -44,6 +48,7 @@ public sealed class YoutubeAudioDownloadService
             WorkingDirectory = _toolsFolder
         };
         foreach (var arg in new[] { "--ignore-config", "--no-playlist", "--no-warnings", "--no-progress",
+                     "--js-runtimes", "deno:" + _denoExecutable, "--remote-components", "ejs:github",
                      "--format", "bestaudio[ext=m4a]", "--output", outputTemplate,
                      "--print", "after_move:filepath", youtubeUrl })
             start.ArgumentList.Add(arg);
@@ -110,6 +115,56 @@ public sealed class YoutubeAudioDownloadService
         var temp = _executable + ".download";
         await File.WriteAllBytesAsync(temp, binary, token);
         File.Move(temp, _executable, true);
+    }
+
+    private async Task EnsureDenoAsync(CancellationToken token)
+    {
+        if (await RunDenoVersionAsync(token)) return;
+        var releaseJson = await Http.GetStringAsync("https://api.github.com/repos/denoland/deno/releases/latest", token);
+        using var release = System.Text.Json.JsonDocument.Parse(releaseJson);
+        var assets = release.RootElement.GetProperty("assets").EnumerateArray().ToList();
+        const string zipName = "deno-x86_64-pc-windows-msvc.zip";
+        var zipAsset = assets.FirstOrDefault(a => a.GetProperty("name").GetString() == zipName);
+        var sumAsset = assets.FirstOrDefault(a => a.GetProperty("name").GetString() == zipName + ".sha256sum");
+        if (zipAsset.ValueKind == System.Text.Json.JsonValueKind.Undefined || sumAsset.ValueKind == System.Text.Json.JsonValueKind.Undefined)
+            throw new InvalidDataException("A versão oficial do Deno não publicou o pacote Windows e seu SHA-256 esperado.");
+        var zipUrl = zipAsset.GetProperty("browser_download_url").GetString()!;
+        var sumUrl = sumAsset.GetProperty("browser_download_url").GetString()!;
+        var archiveBytes = await Http.GetByteArrayAsync(zipUrl, token);
+        var checksumText = await Http.GetStringAsync(sumUrl, token);
+        var expected = Regex.Match(checksumText, @"[0-9a-fA-F]{64}").Value;
+        if (expected.Length != 64 || !Convert.ToHexString(SHA256.HashData(archiveBytes)).Equals(expected, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("A verificação SHA-256 do runtime Deno falhou.");
+        var archivePath = Path.Combine(_toolsFolder, "deno.download.zip");
+        await File.WriteAllBytesAsync(archivePath, archiveBytes, token);
+        try
+        {
+            using var archive = ZipFile.OpenRead(archivePath);
+            var entry = archive.Entries.FirstOrDefault(e => string.Equals(e.Name, "deno.exe", StringComparison.OrdinalIgnoreCase));
+            if (entry is null) throw new InvalidDataException("O pacote oficial do Deno não contém deno.exe.");
+            var temp = _denoExecutable + ".download";
+            await using (var source = entry.Open())
+            await using (var target = File.Create(temp))
+                await source.CopyToAsync(target, token);
+            File.Move(temp, _denoExecutable, true);
+        }
+        finally { TryDelete(archivePath); }
+        if (!await RunDenoVersionAsync(token)) throw new InvalidOperationException("O runtime Deno não iniciou após a instalação verificada.");
+    }
+
+    private async Task<bool> RunDenoVersionAsync(CancellationToken token)
+    {
+        try
+        {
+            if (!File.Exists(_denoExecutable)) return false;
+            var start = new ProcessStartInfo { FileName = _denoExecutable, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+            start.ArgumentList.Add("--version");
+            using var p = Process.Start(start);
+            if (p is null) return false;
+            await p.WaitForExitAsync(token);
+            return p.ExitCode == 0;
+        }
+        catch { return false; }
     }
 
     private async Task<bool> RunVersionAsync(CancellationToken token)
