@@ -116,3 +116,7 @@ O modelo `LibraryVideo` recebeu duas propriedades aditivas:
 `PermanentLyricsArchive` foi atualizado para clonar e persistir profundamente essas propriedades no JSON, mantendo o arquivo permanente independente do áudio. A condição de gravação também aceita um registro que tenha sequência de execução mesmo que ainda não possua cues temporais. Foi adicionado teste de salvar/reabrir e confirmar duas ocorrências de coro.
 
 **Validação:** ainda pendente. Os workflows disparados durante os commits sucessivos foram cancelados por concorrência; não declarar compilação ou teste de persistência aprovado até uma execução completa.
+
+
+## Correção da expectativa do teste (27/11/2026)
+O primeiro CI chegou ao teste estrutural e falhou porque a expectativa era 6. A fixture tem 3 estrofes, duas entradas unitárias do coro e uma indicação final de coro 2x, totalizando 7 ocorrências. A asserção foi corrigida para 7; não foi necessário mudar o algoritmo do analisador.
