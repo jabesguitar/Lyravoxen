@@ -1208,3 +1208,13 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Build #897 teve sucesso na compilação/empacotamento, mas a eficácia funcional falhou. Compilação verde não é aceitação.
 - Preferência permanente reiterada: manter sempre `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` atualizados com trabalho concluído, problemas e próxima ação para retomada.
 - Branch `feature/offline-library-on-redesign`; `main` não alterada.
+
+
+## 27/11/2026 — Resumo de passagem de etapa e prevenção de retrabalho
+
+- Usuário solicitou uma lista objetiva do que foi feito para poder avançar para outra etapa, ressaltando o custo de tempo de sessões longas e a necessidade de continuidade confiável.
+- Foi consolidado o estado atual no topo de `RETOMADA_ATUAL.md`, preservando o conteúdo histórico anterior.
+- O resumo distingue alterações implementadas, builds aprovados, testes reais falhos e diagnósticos ainda pendentes.
+- Estado atual: build #901 passou após atualização documental; a versão com uBlock Origin Lite (#897) compilou, mas o usuário confirmou anúncios de vídeo e laterais. Bloqueio de anúncios não está concluído.
+- Próxima ação técnica: verificar estado real da extensão via `GetBrowserExtensionsAsync`, ID/nome/versão/`IsEnabled`, registrar runtime/HRESULT e testar DNR isoladamente antes de decidir manter/substituir a abordagem. Não pedir mais provas de anúncios.
+- Objetivo operacional: evitar novas instalações intermediárias e concentrar trabalho antes da próxima rodada manual; usuário quer avançar para outras etapas do Lyravoxen.
