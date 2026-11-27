@@ -957,3 +957,27 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 
 ### Próxima ação técnica
 - Conferir a execução de CI do commit `78e88d6`. Se passar, solicitar apenas o build consolidado via workflow manual. Em paralelo, continuar auditoria segura do fluxo da Biblioteca Offline e dos testes de retenção, sem reescrever a limpeza que já está implementada.
+
+
+## 27/11/2026 — Build consolidado #822 concluído após correção de compilação
+
+### Correção aplicada antes do build
+- O log de compilação enviado pelo usuário apontou ausência de `System.IO` em três arquivos: `Services/YoutubeAudioDownloadService.cs`, `Services/PermanentLyricsArchive.cs` e `MainWindow.OfflineStorage.cs`.
+- Adicionado `using System.IO;` nos três arquivos, sem alterar a lógica dos serviços.
+- Commits de correção: `904e2cd`, `9c59f34` e `eeb1f78` (branch `feature/offline-library-on-redesign`).
+
+### Resultado verificado
+- Workflow [Windows build #822](https://github.com/jabesguitar/Lyravoxen/actions/runs/45942283747), commit `eeb1f78d433fe09d46a7448b91023ef3ef256c04`: concluído com sucesso.
+- `cloud-worker-tests`: sucesso — teste de mídia offline, cobertura da Ajuda, verificações estáticas C#, testes do Worker, formulário público e página remota móvel.
+- `build`: sucesso — Restore, publish Windows x64, teste da linha do tempo, ZIP portátil, instalador Inno Setup e upload dos três artefatos.
+
+### Artefatos #822 (válidos até 25/02/2027)
+- Instalador Windows x64: artifact ID `15173087837`, SHA-256 `98203e478aed295ab6d7b5ed61da3b6462a0d2e20a7486536cde002a2ff03bad`.
+- Pasta Windows x64: artifact ID `15172753278`, SHA-256 `f1dbf9e007935adcdedfb3be252766572f865de75e4e07e57045afba59cd3c12`.
+- ZIP portátil: artifact ID `15172354465`, SHA-256 `680ce96f6fd6322f62a574fb9fc832e81fd5946367f7b7291360d84a2e0a838e`.
+
+### Estado e limites
+- Build e testes automatizados estão aprovados para o commit acima. Isso não substitui os testes manuais no computador do usuário.
+- O usuário deverá instalar o instalador #822 e executar a lista de testes descrita em `RETOMADA_ATUAL.md`.
+- A atualização do Worker em produção no Cloudflare continua pendente; os testes automatizados validam o código, não a publicação no ambiente do usuário.
+- Não fazer merge na `main`; permanecer na branch de desenvolvimento.
