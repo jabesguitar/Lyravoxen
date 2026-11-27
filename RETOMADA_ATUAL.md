@@ -633,3 +633,14 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Build #876: https://github.com/jabesguitar/Lyravoxen/actions/runs/46034132906 (em andamento ao registrar).
 - Próxima ação: aguardar #876 e, se falhar, abrir logs do job build e corrigir a próxima falha. Avisos CS8602/CS4014 permanecem não fatais e fora do escopo desta correção.
 - Branch feature/offline-library-on-redesign; main intocada.
+
+
+## Atualização — 27/11/2026: teste real confirmou anúncios ainda presentes
+
+- Usuário testou a compilação e relatou dois anúncios já na primeira música reproduzida na aba Próxima música.
+- Conclusão: filtro pontual por caminhos de anúncio não resolveu pré-roll/in-stream; funcionalidade ainda não atende ao objetivo.
+- Build #878 passou: https://github.com/jabesguitar/Lyravoxen/actions/runs/46034192649. Build verde não comprova bloqueio de anúncios.
+- Pesquisa de alternativa: estudar integração do motor upstream `brave/adblock-rust` (MPL-2.0), que oferece filtro ABP, bloqueio de rede, cosmético e scriptlets. Não copiar o wrapper ZWebWrap (GPL-3.0-or-later) como um todo.
+- Próxima ação: fazer protótipo isolado da integração Rust/C ABI + C# P/Invoke/WebView2; medir compatibilidade, build e impacto em CPUs antigas antes de conectar ao player. Criar testes com URLs/tipos de recurso e testes manuais com YouTube.
+- Limite: nem motor ABP/uBO garante identificar anúncios inseridos no mesmo fluxo de mídia do vídeo.
+- Nenhuma alteração adicional no código após o teste do usuário. Não mexer na main.
