@@ -20,6 +20,7 @@
     <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsTextCleaner.cs" Link="LyricsTextCleaner.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/VagalumeLyricsService.cs" Link="VagalumeLyricsService.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsSourceSettings.cs" Link="LyricsSourceSettings.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Services/PermanentLyricsArchive.cs" Link="PermanentLyricsArchive.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/AppLog.cs" Link="AppLog.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/SongRequestStore.cs" Link="SongRequestStore.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/WhatsAppSettings.cs" Link="WhatsAppSettings.cs" />
