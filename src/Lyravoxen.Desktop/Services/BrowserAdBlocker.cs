@@ -73,7 +73,7 @@ internal static class BrowserAdBlocker
             if (!Enabled || !Uri.TryCreate(args.Request.Uri, UriKind.Absolute, out var uri)) return;
             if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return;
             var sourceUrl = core.Source?.ToString() ?? uri.GetLeftPart(UriPartial.Authority);
-            var requestType = GetRequestType(args.ResourceContext);
+            var requestType = GetRequestType(args.ResourceContext, uri, sourceUrl);
             var nativeBlocked = NativeAdblockEngine.ShouldBlock(args.Request.Uri, sourceUrl, requestType, args.Request.Method);
             if (!nativeBlocked && !Lyravoxen.Offline.BrowserRequestPolicy.ShouldBlockRequest(uri, ProtectedHosts, BlockedHosts.Keys, AllowedHosts.Keys)) return;
             args.Response = core.Environment.CreateWebResourceResponse(
@@ -99,9 +99,9 @@ internal static class BrowserAdBlocker
         => host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
            host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase);
 
-    private static string GetRequestType(CoreWebView2WebResourceContext context) => context switch
+    private static string GetRequestType(CoreWebView2WebResourceContext context, Uri requestUri, string sourceUrl) => context switch
     {
-        CoreWebView2WebResourceContext.Document => "document",
+        CoreWebView2WebResourceContext.Document => Uri.TryCreate(sourceUrl, UriKind.Absolute, out var pageUri) && requestUri == pageUri ? "document" : "sub_frame",
         CoreWebView2WebResourceContext.Stylesheet => "stylesheet",
         CoreWebView2WebResourceContext.Image => "image",
         CoreWebView2WebResourceContext.Media => "media",
