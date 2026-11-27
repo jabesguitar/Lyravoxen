@@ -91,3 +91,17 @@ Converter a aba Cadastrar letras em editor de sincronização real, com dois mod
 
 ### Estado desta revisão
 Pesquisa concluída; branch `feature/lyrics-structure-fast-sync` criada a partir da branch de trabalho atual. Nenhum código de produto foi alterado ainda. Próximo passo: protótipo/testes de estrutura textual e medição comparativa do alinhador português, antes da integração ao layout moderno.
+
+
+## Protótipo de parser textual (27/11/2026)
+
+Foi criado `src/Lyravoxen.Desktop/Models/LyricsStructureAnalyzer.cs` com uma primeira etapa determinística e leve:
+- reconhece cabeçalhos explícitos como `[Coro]`, `[Refrão]`, `[Estrofe 1]`, `[Ponte]`, `[Intro]` e `[Final]`;
+- expande marcadores de repetição `2x`/`x2` (limite de segurança 8);
+- agrupa blocos de texto idênticos após normalização de caixa, acentos e pontuação;
+- cria um registro-fonte por seção e ocorrências separadas em ordem, permitindo que o mesmo coro retorne sem duplicar sua letra;
+- blocos sem evidência ficam como `Unknown`/`NeedsReview`, evitando adivinhar que toda parte única é estrofe.
+
+Foram acrescentados testes de sequência Estrofe 1 → Coro → Estrofe 2 → Coro → Estrofe 3 → Coro 2x, repetição textual sem rótulo, `2x`, identidade compartilhada e revisão de blocos incertos. O `.csproj` da suíte inclui o novo arquivo. O workflow foi configurado para considerar a branch `feature/lyrics-structure-fast-sync`.
+
+**Status de validação:** não compilado nesta sessão: o ambiente local não possui .NET SDK e não foi observada execução de GitHub Actions para a branch. Os testes estão escritos, não podem ser declarados aprovados. O parser não faz ainda análise de áudio nem integração de interface/persistência.
