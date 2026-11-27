@@ -418,9 +418,10 @@ public partial class MainWindow
             var importLocal = isYouTube;
             if (isYouTube)
             {
-                System.Windows.MessageBox.Show(_requestsWindow ?? this,
-                    "O pedido contém uma página do YouTube, não um arquivo de áudio. O Lyravoxen não extrai áudio nem remove anúncios do YouTube. Selecione agora um MP3/WAV autorizado que esteja no computador.",
-                    "Selecionar áudio autorizado", MessageBoxButton.OK, MessageBoxImage.Information);
+                var attachAuthorizedCopy = System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                    "Este pedido contém um link do YouTube. O link será preservado, mas não é um arquivo MP3/WAV que o Lyravoxen possa baixar diretamente.\n\nO Lyravoxen não extrai áudio nem contorna anúncios ou restrições do YouTube.\n\nSe você já possui a gravação exata e tem autorização para usá-la, deseja associar agora um arquivo MP3/WAV a este pedido?",
+                    "Link do YouTube — cópia offline não disponível diretamente", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (attachAuthorizedCopy != MessageBoxResult.Yes) return;
             }
             else
             {
