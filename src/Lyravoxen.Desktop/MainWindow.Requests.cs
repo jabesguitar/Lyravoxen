@@ -247,19 +247,22 @@ public partial class MainWindow
             return;
         }
 
-        _requestsPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(14) };
+        _requestsPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(18) };
         var window = new Window
         {
-            Title = "Lyravoxen — Pedidos de músicas",
+            Title = "Lyravoxen — Pedidos recebidos",
             Owner = this,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Width = 600,
-            Height = 640,
-            Background = Hex("#F5F7FA"),
+            Width = 920,
+            Height = 760,
+            MinWidth = 720,
+            MinHeight = 560,
+            Background = Hex("#06172F"),
             Content = new System.Windows.Controls.ScrollViewer
             {
                 Content = _requestsPanel,
-                VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto
+                VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled
             }
         };
         window.Closed += (_, _) => { _requestsWindow = null; _requestsPanel = null; };
@@ -269,19 +272,32 @@ public partial class MainWindow
         _ = RefreshCloudBlockedSendersAsync();
     }
 
-    private System.Windows.Controls.TextBlock RequestText(string value, double size, bool bold = false, string color = "#1A2430") => new()
+    private System.Windows.Controls.TextBlock RequestText(string value, double size, bool bold = false, string color = "#EAF4FF") => new()
     {
         Text = value,
         FontSize = size,
         FontWeight = bold ? FontWeights.Bold : FontWeights.Normal,
         TextWrapping = TextWrapping.Wrap,
         Foreground = Hex(color),
-        Margin = new Thickness(0, 0, 0, 4)
+        Margin = new Thickness(0, 0, 0, 5)
     };
 
     private System.Windows.Controls.Button RequestButton(string label, Action action)
     {
-        var button = new System.Windows.Controls.Button { Content = label, Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(0, 4, 6, 0) };
+        var button = new System.Windows.Controls.Button
+        {
+            Content = label,
+            Padding = new Thickness(13, 7, 13, 7),
+            Margin = new Thickness(0, 5, 8, 0),
+            MinHeight = 36,
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Hex("#FFFFFF"),
+            Background = Hex("#123E68"),
+            BorderBrush = Hex("#168EB8"),
+            BorderThickness = new Thickness(1),
+            Cursor = System.Windows.Input.Cursors.Hand
+        };
         button.Click += (_, _) => action();
         return button;
     }
@@ -291,114 +307,177 @@ public partial class MainWindow
         if (_requestsPanel is null) return;
         _requestsPanel.Children.Clear();
 
-        _requestsPanel.Children.Add(RequestText("📥 Pedidos de músicas", 20, true));
-        _requestsPanel.Children.Add(RequestButton("🛡 Gerenciar IPs bloqueados", ManageBlockedSenders));
-        _requestsPanel.Children.Add(RequestButton("↻ Atualizar bloqueios da internet", () => _ = RefreshCloudBlockedSendersAsync()));
+        var header = new System.Windows.Controls.Border
+        {
+            Background = Hex("#0B2B50"),
+            BorderBrush = Hex("#087F9E"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(16),
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+        var headerGrid = new System.Windows.Controls.Grid();
+        headerGrid.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = new System.Windows.Controls.ColumnDefinition().Width = new GridLength(1, GridUnitType.Star) });
+        var headerInfo = new System.Windows.Controls.StackPanel();
+        headerInfo.Children.Add(RequestText("PEDIDOS RECEBIDOS", 21, true, "#FFFFFF"));
+        headerInfo.Children.Add(RequestText("Confira os pedidos, prepare a próxima música ou salve uma cópia offline.", 12, false, "#B8D5EA"));
+        headerInfo.Children.Add(RequestText(_requests.Count + (_requests.Count == 1 ? " música aguardando" : " músicas aguardando"), 13, true, "#35DDF5"));
+        header.Child = headerInfo;
+        _requestsPanel.Children.Add(header);
+
+        var toolbar = new System.Windows.Controls.WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
+        toolbar.Children.Add(RequestButton("🛡 IPs bloqueados", ManageBlockedSenders));
+        toolbar.Children.Add(RequestButton("↻ Atualizar bloqueios", () => _ = RefreshCloudBlockedSendersAsync()));
+        _requestsPanel.Children.Add(toolbar);
+
+        var settings = new System.Windows.Controls.StackPanel { Margin = new Thickness(8, 5, 8, 8) };
         var urls = _remote?.LocalUrls().Select(u => u + "pedido").ToList() ?? new List<string>();
         var link = urls.FirstOrDefault(u => u.Contains("//192.168.", StringComparison.Ordinal)) ?? urls.FirstOrDefault();
-        _requestsPanel.Children.Add(RequestText(link is null
-            ? "Sem rede encontrada: conecte o computador ao Wi-Fi para receber pedidos."
-            : "Mande este link às pessoas (elas precisam estar no mesmo Wi-Fi):", 13, false, "#4A5A6B"));
+        settings.Children.Add(RequestText(link is null
+            ? "Sem rede local encontrada. Conecte o computador ao Wi-Fi para receber pedidos na mesma rede."
+            : "LINK DA REDE LOCAL — compartilhe com quem estiver no mesmo Wi-Fi", 12, true, "#35DDF5"));
         if (link is not null)
         {
-            _requestsPanel.Children.Add(new System.Windows.Controls.TextBox { Text = string.Join("\n", urls), IsReadOnly = true, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            _requestsPanel.Children.Add(RequestButton("Copiar link de pedidos", () =>
+            settings.Children.Add(new System.Windows.Controls.TextBox { Text = string.Join("\n", urls), IsReadOnly = true, FontSize = 13, Margin = new Thickness(0, 2, 0, 6), Padding = new Thickness(8) });
+            settings.Children.Add(RequestButton("Copiar link da rede local", () =>
             {
                 try { System.Windows.Clipboard.SetText(link); StatusText.Text = "Link de pedidos copiado: " + link; }
                 catch (Exception ex) { StatusText.Text = "Não foi possível copiar: " + ex.Message; }
             }));
         }
 
-        // Link dos pedidos pela internet (qualquer rede) com QR code para a pessoa apontar a câmera.
         var cloudLink = _whatsApp.OnlineRequestLink;
-        _requestsPanel.Children.Add(RequestText("Pedidos pela internet (funciona em qualquer rede) — aponte a câmera para o QR code:", 13, true));
+        settings.Children.Add(RequestText("PEDIDOS PELA INTERNET — funciona em qualquer rede", 12, true, "#35DDF5"));
         var qrImage = MakeQrImage(cloudLink);
         if (qrImage is not null)
-            _requestsPanel.Children.Add(new System.Windows.Controls.Image { Source = qrImage, Width = 190, Height = 190, HorizontalAlignment = System.Windows.HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 4) });
-        _requestsPanel.Children.Add(new System.Windows.Controls.TextBox { Text = cloudLink, IsReadOnly = true, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-        _requestsPanel.Children.Add(RequestButton("Copiar link da internet", () =>
+            settings.Children.Add(new System.Windows.Controls.Image { Source = qrImage, Width = 130, Height = 130, HorizontalAlignment = System.Windows.HorizontalAlignment.Left, Margin = new Thickness(0, 3, 0, 4) });
+        settings.Children.Add(new System.Windows.Controls.TextBox { Text = cloudLink, IsReadOnly = true, FontSize = 13, Margin = new Thickness(0, 2, 0, 6), Padding = new Thickness(8) });
+        settings.Children.Add(RequestButton("Copiar link da internet", () =>
         {
             try { System.Windows.Clipboard.SetText(cloudLink); StatusText.Text = "Link copiado: " + cloudLink; }
             catch (Exception ex) { StatusText.Text = "Não foi possível copiar: " + ex.Message; }
         }));
 
-        var groupInfo = !string.IsNullOrEmpty(_whatsApp.GroupLink) || !string.IsNullOrEmpty(_whatsApp.GroupName)
-            ? "Pelo WhatsApp — grupo: " + (string.IsNullOrEmpty(_whatsApp.GroupName) ? "(sem nome)" : _whatsApp.GroupName)
-            : "Pelo WhatsApp (sem rede local):";
-        _requestsPanel.Children.Add(RequestText(groupInfo, 13, true));
-        _requestsPanel.Children.Add(RequestText(
-            "Num grupo: copie as mensagens de pedido no WhatsApp Web/Desktop (Ctrl+C) e elas entram aqui sozinhas" +
-            (_whatsApp.WatchClipboard ? "." : " (importação automática DESLIGADA nas configurações)."), 12, false, "#4A5A6B"));
-        var offlineButtons = new System.Windows.Controls.WrapPanel();
-        offlineButtons.Children.Add(RequestButton("☁ Pedidos pela internet (qualquer rede)", CloudSettingsDialog));
-        offlineButtons.Children.Add(RequestButton("⚙ WhatsApp: número e grupo / formulário", WhatsAppSettingsDialog));
-        offlineButtons.Children.Add(RequestButton("📋 Importar pedido (colar mensagem)", ImportRequestDialog));
-        offlineButtons.Children.Add(RequestButton("🗂 Importar conversa exportada (.txt)", ImportChatFile));
-        _requestsPanel.Children.Add(offlineButtons);
-        foreach (var blocked in _blockedRequestSenders.ToList())
+        settings.Children.Add(RequestText("WHATSAPP — " + (!string.IsNullOrWhiteSpace(_whatsApp.GroupName) ? _whatsApp.GroupName : "configuração de grupo"), 12, true, "#35DDF5"));
+        settings.Children.Add(RequestText("Copie as mensagens no WhatsApp Web/Desktop (Ctrl+C) para importar automaticamente " +
+            (_whatsApp.WatchClipboard ? "— recurso ligado." : "— importação automática desligada nas configurações."), 11, false, "#B8D5EA"));
+        var setupButtons = new System.Windows.Controls.WrapPanel();
+        setupButtons.Children.Add(RequestButton("Configurar internet", CloudSettingsDialog));
+        setupButtons.Children.Add(RequestButton("Configurar WhatsApp", WhatsAppSettingsDialog));
+        setupButtons.Children.Add(RequestButton("Colar pedido", ImportRequestDialog));
+        setupButtons.Children.Add(RequestButton("Importar conversa .txt", ImportChatFile));
+        settings.Children.Add(setupButtons);
+
+        var settingsExpander = new System.Windows.Controls.Expander
         {
-            var row = new System.Windows.Controls.WrapPanel();
-            row.Children.Add(RequestText("Bloqueado: " + blocked.Value + " · " + blocked.Key, 12, false, "#A83D58"));
-            row.Children.Add(RequestButton("Desbloquear", () => UnblockSender(blocked.Key)));
-            _requestsPanel.Children.Add(row);
+            Header = "⚙ Configurar recebimento de pedidos e links",
+            IsExpanded = false,
+            Foreground = Hex("#35DDF5"),
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
+            Background = Hex("#0A2342"),
+            BorderBrush = Hex("#245B88"),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(12),
+            Margin = new Thickness(0, 0, 0, 14),
+            Content = settings
+        };
+        _requestsPanel.Children.Add(settingsExpander);
+
+        if (_blockedRequestSenders.Count > 0)
+        {
+            var blockedPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(8, 4, 8, 8) };
+            foreach (var blocked in _blockedRequestSenders.ToList())
+            {
+                var row = new System.Windows.Controls.WrapPanel();
+                row.Children.Add(RequestText("Bloqueado: " + blocked.Value + " · " + blocked.Key, 12, false, "#FF9BAE"));
+                row.Children.Add(RequestButton("Desbloquear", () => UnblockSender(blocked.Key)));
+                blockedPanel.Children.Add(row);
+            }
+            _requestsPanel.Children.Add(new System.Windows.Controls.Expander
+            {
+                Header = "Remetentes bloqueados (" + _blockedRequestSenders.Count + ")",
+                Foreground = Hex("#FF9BAE"),
+                Content = blockedPanel,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
         }
 
+        _requestsPanel.Children.Add(RequestText("LISTA DE PEDIDOS", 14, true, "#35DDF5"));
         if (_requests.Count == 0)
         {
-            _requestsPanel.Children.Add(new System.Windows.Controls.TextBlock { Text = "Nenhum pedido na lista de espera.", Margin = new Thickness(0, 14, 0, 0), Foreground = Hex("#4A5A6B") });
+            var empty = new System.Windows.Controls.Border
+            {
+                Background = Hex("#0B2341"),
+                BorderBrush = Hex("#245B88"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(18),
+                Margin = new Thickness(0, 8, 0, 0),
+                Child = RequestText("Nenhum pedido aguardando no momento.", 14, false, "#B8D5EA")
+            };
+            _requestsPanel.Children.Add(empty);
             return;
         }
 
-        foreach (var request in _requests.OrderBy(r => r.ReceivedAt).ToList())
+        foreach (var request in _requests.OrderByDescending(r => r.ReceivedAt).ToList())
         {
             var card = new System.Windows.Controls.Border
             {
-                Background = Hex("#FFFFFF"),
-                BorderBrush = Hex("#D5DCE4"),
+                Background = Hex("#0B2548"),
+                BorderBrush = Hex("#167BA3"),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(12),
-                Margin = new Thickness(0, 12, 0, 0)
+                CornerRadius = new CornerRadius(13),
+                Padding = new Thickness(15),
+                Margin = new Thickness(0, 7, 0, 7)
             };
             var content = new System.Windows.Controls.StackPanel();
-            content.Children.Add(RequestText(string.IsNullOrWhiteSpace(request.Name) ? "(sem nome da música)" : request.Name, 16, true));
-            content.Children.Add(RequestText("De: " + (string.IsNullOrWhiteSpace(request.Group) ? "não informado" : request.Group) +
-                                             " · " + request.ReceivedAt.ToString("dd/MM HH:mm") +
-                                             (string.IsNullOrWhiteSpace(request.SenderIp) ? "" : " · IP " + request.SenderIp), 12, false, "#4A5A6B"));
-            if (!string.IsNullOrWhiteSpace(request.SenderIp))
+            content.Children.Add(RequestText(string.IsNullOrWhiteSpace(request.Name) ? "MÚSICA SEM TÍTULO INFORMADO" : request.Name, 19, true, "#FFFFFF"));
+            content.Children.Add(RequestText("CONJUNTO / CANTOR", 10, true, "#35DDF5"));
+            content.Children.Add(RequestText(string.IsNullOrWhiteSpace(request.Group) ? "Não informado" : request.Group, 15, true, "#F3C969"));
+            content.Children.Add(RequestText("LINK ENVIADO", 10, true, "#35DDF5"));
+            var urlText = new System.Windows.Controls.TextBox
             {
-                content.Children.Add(RequestText("IP público de origem: " + request.SenderIp, 12, true, "#4A5A6B"));
-                if (_blockedRequestSenders.ContainsKey(request.SenderIp))
-                    content.Children.Add(RequestButton("Desbloquear este IP", () => UnblockSender(request.SenderIp)));
-                else
-                    content.Children.Add(RequestButton("Bloquear este IP", () => BlockSender(request.SenderIp, request.Group)));
-            }
-            else if (CloudConfigured)
-                content.Children.Add(RequestText("IP não recebido. O Worker público pode estar com uma versão antiga; atualize o código do serviço no Cloudflare.", 11, true, "#A83D58"));
-            content.Children.Add(RequestText(request.Url, 12, false, "#2D6A9F"));
-            content.Children.Add(RequestText(RequestLyricsLine(request), 12, false, "#1A2430"));
+                Text = request.Url,
+                IsReadOnly = true,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12,
+                Foreground = Hex("#9DD9F5"),
+                Background = Hex("#06172F"),
+                BorderBrush = Hex("#245B88"),
+                Padding = new Thickness(8),
+                Margin = new Thickness(0, 1, 0, 6)
+            };
+            content.Children.Add(urlText);
+            content.Children.Add(RequestText("Recebido em " + request.ReceivedAt.ToString("dd/MM/yyyy 'às' HH:mm") +
+                (string.IsNullOrWhiteSpace(request.SenderIp) ? "" : " · IP " + request.SenderIp), 11, false, "#AFC8DF"));
+            content.Children.Add(RequestText(RequestLyricsLine(request), 12, false, "#EAF4FF"));
             if (!string.IsNullOrWhiteSpace(request.OfflineLocalPath))
                 content.Children.Add(RequestText(File.Exists(request.OfflineLocalPath) && (!request.OfflineExpiresAt.HasValue || request.OfflineExpiresAt.Value > DateTime.Now)
-                    ? "✓ Offline preparado · válido até " + request.OfflineExpiresAt?.ToString("dd/MM/yyyy")
-                    : "⚠ Cópia offline expirada ou ausente", 11, true, "#087F9E"));
+                    ? "✓ CÓPIA OFFLINE PRONTA · válida até " + request.OfflineExpiresAt?.ToString("dd/MM/yyyy")
+                    : "⚠ CÓPIA OFFLINE EXPIRADA OU AUSENTE", 11, true, "#43E0B1"));
 
-            var buttons = new System.Windows.Controls.WrapPanel();
-            var item = request;
-            buttons.Children.Add(RequestButton("⏭ Preparar como próxima", () => PrepareRequestAsNext(item)));
-            buttons.Children.Add(RequestButton("⬇ Baixar offline", () => ImportOfflineForRequest(item)));
-            buttons.Children.Add(RequestButton("Abrir", () => OpenRequest(item)));
-            buttons.Children.Add(RequestButton("Copiar link", () =>
+            if (!string.IsNullOrWhiteSpace(request.SenderIp))
             {
-                try { System.Windows.Clipboard.SetText(item.Url); StatusText.Text = "Link copiado: " + item.Url; }
-                catch (Exception ex) { StatusText.Text = "Não foi possível copiar: " + ex.Message; }
-            }));
-            buttons.Children.Add(RequestButton("Descartar", () => RemoveRequest(item)));
+                var ipAction = _blockedRequestSenders.ContainsKey(request.SenderIp)
+                    ? RequestButton("Desbloquear IP", () => UnblockSender(request.SenderIp))
+                    : RequestButton("Bloquear IP", () => BlockSender(request.SenderIp, request.Group));
+                ipAction.FontSize = 10;
+                ipAction.MinHeight = 30;
+                content.Children.Add(ipAction);
+            }
+
+            var buttons = new System.Windows.Controls.WrapPanel { Margin = new Thickness(0, 5, 0, 0) };
+            var item = request;
+            buttons.Children.Add(RequestButton("▶ Preparar próxima", () => PrepareRequestAsNext(item)));
+            buttons.Children.Add(RequestButton("⬇ Baixar offline", () => ImportOfflineForRequest(item)));
+            buttons.Children.Add(RequestButton("Abrir link", () => OpenRequest(item)));
+            buttons.Children.Add(RequestButton("Descartar pedido", () => RemoveRequest(item)));
             content.Children.Add(buttons);
             card.Child = content;
             _requestsPanel.Children.Add(card);
         }
     }
-
 
     private bool EnsureYoutubeDownloadConsent()
     {
