@@ -925,3 +925,35 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - No Cloudflare, abrir o Worker que atende `lyravoxen-pedidos.ferkt319.workers.dev`, editar o código, substituir pelo worker.js gerado no app e clicar Deploy.
 - Preservar bindings e secrets existentes: `PEDIDOS` e `ADMIN_TOKEN`.
 
+
+## 27/11/2026 — Retomada estrita e ajuste do fluxo YouTube em Pedidos
+
+### Regra de continuidade reafirmada pelo usuário
+- Trabalhar somente nos três pontos solicitados: IP/bloqueios dos pedidos; download e Biblioteca Offline; proteção de anúncios na aba Próxima Música.
+- Não alterar recursos que já funcionam, não fazer redesign e não tocar na branch `main`.
+- A regra mais recente prevalece sobre instruções antigas de redesign/testes em etapas registradas anteriormente neste arquivo.
+
+### Alteração aplicada
+- Arquivo: `src/Lyravoxen.Desktop/MainWindow.Requests.cs`.
+- Commit: `78e88d6942a578ac4491b94b577fe9185c2b3211`.
+- No botão **Baixar offline** de um pedido cujo link é YouTube, a mensagem agora esclarece que o link não é arquivo MP3/WAV baixável diretamente e pergunta explicitamente se o operador deseja associar um arquivo autorizado que já possua.
+- Se responder **Não**, a operação termina sem abrir seletor de arquivos. Se responder **Sim**, mantém o fluxo existente de seleção/importação do arquivo autorizado, associação ao pedido e Biblioteca, hash, metadados e retenção.
+- URLs que não são YouTube continuam tentando o download direto existente; o fluxo de fallback para arquivo local não foi alterado.
+- Nenhuma extração de áudio, contorno de anúncios ou alteração na reprodução do YouTube foi implementada.
+
+### Verificações realizadas
+- Releitura do estado da branch: `feature/offline-library-on-redesign`.
+- Comparação com `main`: branch de trabalho está 222 commits à frente e 0 atrás; nenhum merge ou alteração na `main` foi feito.
+- Build #810, commit `9531d4a6c65b89e5fdb3ddef4d9e50d665cf1ea7`, confirmado com jobs `cloud-worker-tests` e `build` concluídos com sucesso. Esse resultado é anterior à alteração deste registro e não valida o commit novo.
+- Workflow `.github/workflows/windows-build.yml`: push na branch executa `cloud-worker-tests`; job `build` só executa por `workflow_dispatch` ou na `main`. Não foi alterado.
+
+### Pendências reais
+- [ ] Aguardar e conferir os testes automáticos acionados pelo commit `78e88d6`.
+- [ ] Fazer build Windows consolidado por `workflow_dispatch` depois dos testes, sem criar builds intermediários desnecessários.
+- [ ] Worker publicado no Cloudflare ainda precisa de atualização manual no Worker existente; manter binding KV `PEDIDOS` e secret `ADMIN_TOKEN`.
+- [ ] Testar IP, bloqueio e desbloqueio em produção após deploy do Worker.
+- [ ] Testar reprodução offline real com arquivo autorizado associado à gravação exata.
+- [ ] Não há solução garantida para remover anúncios first-party/in-stream do YouTube sem comprometer o player; manter essa limitação explícita.
+
+### Próxima ação técnica
+- Conferir a execução de CI do commit `78e88d6`. Se passar, solicitar apenas o build consolidado via workflow manual. Em paralelo, continuar auditoria segura do fluxo da Biblioteca Offline e dos testes de retenção, sem reescrever a limpeza que já está implementada.
