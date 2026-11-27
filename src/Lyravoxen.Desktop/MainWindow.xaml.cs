@@ -1016,7 +1016,8 @@ public partial class MainWindow : Window
             // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
             var preparedVideo = _library.SelectMany(folder => folder.Videos)
                 .FirstOrDefault(item => !item.IsOffline && item.VideoId == videoId);
-            _currentVideo = preparedVideo ?? new LibraryVideo
+            var archivedLyrics = _permanentLyrics?.Find(videoId, url);
+            _currentVideo = preparedVideo ?? archivedLyrics ?? new LibraryVideo
             {
                 VideoId = videoId,
                 Url = url,
@@ -1025,6 +1026,14 @@ public partial class MainWindow : Window
                 Composer = _history.FirstOrDefault(v => v.VideoId == videoId)?.Composer ?? "",
                 Artist = _history.FirstOrDefault(v => v.VideoId == videoId)?.Artist ?? ""
             };
+            // A ficha permanente prevalece sobre uma ficha sem letra; não perde letra/cues já arquivados.
+            if (preparedVideo is not null && archivedLyrics is not null)
+            {
+                if (string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)) _currentVideo.FullLyrics = archivedLyrics.FullLyrics;
+                if (_currentVideo.Cues.Count == 0) _currentVideo.Cues = archivedLyrics.Cues;
+                if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = archivedLyrics.TrackName;
+                if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = archivedLyrics.Artist;
+            }
             _currentVideo.Url = url;
             var historyMetadata = _history.FirstOrDefault(v => v.VideoId == videoId);
             if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = historyMetadata?.TrackName ?? "";
