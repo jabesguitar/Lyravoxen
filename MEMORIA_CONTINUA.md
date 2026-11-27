@@ -658,3 +658,69 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Artefatos: Windows x64 ID `15153435863`; portable ZIP ID `15153276186`; instalador ID `15153231348`. Workflow: https://github.com/jabesguitar/Lyravoxen/actions/runs/45894030900.
 - `main` não alterada; SHA consultado `2051135a6e4915c13dda5730fa0248ed7dbcfe2f`. Branch feature atual recebeu commits de correção e documentação.
 - Pendências reais: atualização manual única do Worker no Cloudflare; teste manual no PC anfitrião de áudio real, biblioteca, IP público e WebView2; anúncios do YouTube first-party não são removidos.
+
+
+## 26/11/2026 — Consolidação da Biblioteca Offline e pacote Windows final (#807)
+
+### Fonte e escopo deste registro
+- Registro acrescentado a partir do histórico de execuções do GitHub Actions fornecido pelo usuário nesta conversa em 26/11/2026.
+- Branch de trabalho: `feature/offline-library-on-redesign`.
+- Este registro complementa o histórico anterior; não substitui nem apaga decisões ou checklists anteriores.
+- Os resultados de Actions comprovam execução automatizada/compilação, não substituem validação manual do usuário no aplicativo.
+
+### Marcos de compilação confirmados pelo histórico apresentado
+- **Windows Build #804** — concluído com sucesso; commit `4f39f92562b6eb470b16be1d3513e9d1ecbe8543`; mensagem: “Run the final consolidated Windows package after all feature tests passed”; duração informada 3m25s.
+- **Windows Build #807** — concluído com sucesso; commit `832ef7510f2c984a5a9ef76de7447c143d875f61`; mensagem: “Keep Windows packaging manual after consolidated release”; duração informada 1m23s.
+- **Windows Build #780** — concluído com sucesso; commit `b2ae780b693c8856492b6521fdc9d797a40ddb48`; mensagem: “Record successful Windows validation and final artifact IDs”; duração informada 3m42s.
+- **Windows Build #778** — concluído com sucesso; commit `76e1f01`; correção de referência de alinhamento WPF no editor da biblioteca.
+- **Windows Build #775** — concluído com sucesso; commit `29e1994`; registro cronológico da implementação offline.
+- **Windows Build #710** — concluído com sucesso; commit `5245e66`; registra a implementação da Biblioteca Offline sobre o layout aprovado.
+- O usuário apresentou também a sequência de execuções #661 a #807. A lista inclui muitos runs cancelados, falhos e concluídos; não interpretar cancelamentos como falhas de código nem como validações bem-sucedidas. Os resultados individuais devem ser consultados no Actions quando for necessário investigar uma alteração específica.
+
+### Alterações funcionais/estruturais registradas na sequência #661–#807
+- Continuidade do redesign visual aprovado na branch `redesign/brand-visual-layer`, com a Biblioteca Offline desenvolvida sobre esse layout na branch `feature/offline-library-on-redesign`.
+- Implementação e consolidação da área Biblioteca Offline, incluindo Histórico de vídeos e Biblioteca movidos para a nova área, mantendo a intenção de preservar a interface aprovada e os dados/fluxos existentes.
+- Preparação offline de áudio MP3/WAV autorizado associada aos pedidos, com seleção do arquivo no PC anfitrião, identidade da gravação/vídeo, validade e estados; não significa extração de áudio do YouTube.
+- Gestão de pastas: criar/selecionar destino, mover e remover itens, ações de organização e confirmação de persistência.
+- Proteção do navegador/WebView2 e testes/políticas de requisições, incluindo validação de endereços públicos, bloqueio de destinos privados/redirecionamentos perigosos e exceções por site. Não afirmar bloqueio completo de anúncios first-party/in-stream do YouTube.
+- Formulário público de pedidos: testes com e sem JavaScript, aviso de privacidade, divulgação de coleta de IP e limitação de solicitações por IP; sincronização da lista de bloqueio entre o aplicativo e o Worker.
+- Melhorias e testes da fila, biblioteca, importação MP3/WAV, deduplicação, expiração de arquivos compartilhados, preservação de referências e recursos de ajuda.
+- Ajustes compactos para a aba Próxima música, com intenção de manter controles acessíveis sem rolagem e preservar a área do navegador/player.
+
+### Decisão operacional registrada no commit #807
+- Após a compilação consolidada #804, o workflow foi alterado/documentado para manter o empacotamento Windows manual depois da release consolidada.
+- Não disparar novos pacotes Windows automaticamente para cada commit de documentação ou ajuste subsequente, salvo decisão posterior do usuário ou necessidade explicitamente aprovada.
+- Runs #805 e #806 foram cancelados conforme o histórico fornecido; não são o pacote final. #807 concluiu com sucesso.
+
+### Estado atual conhecido em 26/11/2026
+- Branch de referência desta etapa: `feature/offline-library-on-redesign`.
+- Última compilação Windows concluída com sucesso no histórico fornecido: **#807**, commit `832ef7510f2c984a5a9ef76de7447c143d875f61`.
+- Compilação consolidada anterior: **#804**, commit `4f39f92562b6eb470b16be1d3513e9d1ecbe8543`.
+- A branch do redesign original permanece como ancestral/referência visual; não usar a `main` antiga como fonte do layout novo.
+- PR #11 baseada na `main` foi rejeitada/fechada anteriormente e não deve ser retomada como base. A implementação posterior na branch `feature/offline-library-on-redesign` é uma nova implementação sobre o redesign aprovado.
+- **Validação manual do usuário após #807: pendente de relato nesta conversa.** Não marcar reprodução, sincronização, Holyrics, pedidos, proteção de anúncios, controle remoto, importação/reprodução offline ou layout em resolução real como aprovados sem confirmação explícita.
+- Nenhum merge para `main` foi autorizado por este registro.
+
+### Checklist de continuidade
+**Feito / evidência de CI**
+- [x] Implementação da Biblioteca Offline sobre o redesign registrada no histórico (#710).
+- [x] Marcos de compilação #780, #804 e #807 concluídos com sucesso conforme histórico apresentado pelo usuário.
+- [x] Política de empacotamento manual após release consolidada registrada no commit #807.
+- [x] Histórico de runs #661–#807 fornecido pelo usuário incorporado como contexto de continuidade.
+
+**Aguardando teste manual do usuário**
+- [ ] Abrir o pacote gerado pela compilação consolidada e confirmar que o redesign visual aprovado está presente, sem retorno ao layout antigo.
+- [ ] Verificar Biblioteca Offline: navegação, pastas, itens, edição de metadados/letras e persistência após fechar/reabrir.
+- [ ] Verificar importação MP3/WAV autorizado, reprodução local e funcionamento sem internet.
+- [ ] Verificar pedido com arquivo local autorizado: preparação, associação à gravação exata, validade e reprodução.
+- [ ] Verificar pedido contendo somente link YouTube: mensagem correta de indisponibilidade offline sem extração/contorno.
+- [ ] Verificar organização de pastas: criar, escolher destino, mover, remover e persistir alterações.
+- [ ] Verificar formulário público de pedidos, aviso de privacidade, limite por IP e moderação/bloqueio.
+- [ ] Verificar navegador protegido, exceções por site e reprodução/pesquisa no YouTube; registrar anúncios que permanecerem.
+- [ ] Revalidar reprodução, sincronização, limpeza automática ao fim da música e integração Holyrics, que possuem histórico anterior de problemas reais.
+- [ ] Verificar controle remoto no celular e os fluxos de pedidos/preparação.
+- [ ] Confirmar se os painéis compactos permanecem sem rolagem e sem cortar botões na resolução real do usuário.
+
+### Próxima ação
+- O usuário abrirá e testará a compilação mais recente; ao retornar, registrar cada resultado como aprovado, falhou ou inconclusivo, com evidência e etapa exata.
+- Antes de qualquer nova alteração de código, comparar a solicitação com este checklist e preservar os fluxos já aprovados.
