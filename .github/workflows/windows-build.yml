@@ -61,7 +61,7 @@ jobs:
           node phone.test.mjs
 
   build:
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/offline-library-on-redesign'
     needs: cloud-worker-tests
     runs-on: windows-latest
     steps:
