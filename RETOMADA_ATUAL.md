@@ -3096,3 +3096,23 @@ Regras:
 - Contagem correta do caso: 3 estrofes + coro 1 + coro 2 + coro final 2x = 7 ocorrências. O teste estava errado; a falha não indicava erro no parser.
 - Corrigida a expectativa de 6 para 7 e detalhada a conta na mensagem do teste. As demais asserções do caso continuam verificando quatro ocorrências de coro, quatro blocos-fonte (três estrofes + um coro) e índices do coro de 1 a 4.
 - Próximo passo: aguardar a execução completa do CI no novo commit. Até ela terminar, a correção está commitada, mas não aprovada.
+
+
+## Protocolo de continuidade confirmado — 27/11/2026
+**Instrução do usuário:** continuar o desenvolvimento sem pausas para perguntas rotineiras e só interromper para esclarecer mudanças que possam afetar estrutura ou funções já funcionais.
+
+### Regras operacionais
+1. Antes de começar uma nova conversa, ler `MEMORIA_CONTINUA.md`, este arquivo e conferir branch, commits e Actions reais.
+2. Depois de cada marco significativo, atualizar o histórico no GitHub; manter `MEMORIA_CONTINUA.md` cronológico e este arquivo curto/operacional.
+3. Se o GitHub estiver indisponível, produzir aqui um registro Markdown pronto para retomada e não alegar publicação.
+4. Não recomeçar trabalho já documentado nem declarar testes/build aprovados sem evidência.
+5. Preservar funções existentes e layout moderno. Perguntar apenas quando uma decisão puder alterar/remover comportamento funcional, estrutura de dados/protocolo ou arquitetura fora do escopo.
+6. Não fazer merge na `main` sem autorização.
+
+### Preferências já confirmadas que não precisam ser perguntadas novamente
+- Solução gratuita e, sempre que viável, leve para PCs modestos.
+- Cadastro de letras com automático como prioridade e modo manual por cartões/blocos como alternativa funcional.
+- Sequência de execução separada do texto-fonte, com refrões repetidos sem duplicação da letra.
+- Persistência para reabrir a música com a estrutura/sincronização preservada.
+- Versão equivalente no controle pelo celular.
+- Botões precisam executar ações reais; remover apenas controles comprovadamente sem uso, sem apagar funções úteis.
