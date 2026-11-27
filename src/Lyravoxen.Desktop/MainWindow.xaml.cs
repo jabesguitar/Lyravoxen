@@ -80,7 +80,13 @@ public partial class MainWindow : Window
     private bool _loadingPreferences;
     private static readonly HttpClient MetadataHttp = new() { Timeout = TimeSpan.FromSeconds(8) };
     private readonly OfflineMediaService _offlineMedia = new();
-    private static string OfflineMediaFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Media");
+    private string _offlineRootFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Biblioteca Offline");
+    private string OfflineMediaFolder => Path.Combine(_offlineRootFolder, "Musicas");
+    private string OfflineLyricsFolder => Path.Combine(_offlineRootFolder, "Letras");
+    private string OfflineDataFolder => Path.Combine(_offlineRootFolder, "Dados");
+    private string OfflineTempFolder => Path.Combine(_offlineRootFolder, "Temporarios");
+    private string OfflineStorageSettingsFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "offline-storage.json");
+    private string OfflineLyricsArchiveFile => Path.Combine(OfflineDataFolder, "letras-permanentes.json");
 
     public MainWindow()
     {
@@ -92,6 +98,8 @@ public partial class MainWindow : Window
         InitializeRequests();
         InitializeNextLyrics();
         InitializeHelp();
+        LoadOfflineStorageSettings();
+        EnsureOfflineStorageFolders();
         LoadHistory();
         LoadLibrary();
         Closing += async (_, _) =>
@@ -2695,6 +2703,7 @@ public partial class MainWindow : Window
             saved.FullLyrics = _currentVideo.FullLyrics;
         }
         SaveLibrary();
+        ArchiveCurrentLyrics();
         RefreshLibrarySongs();
     }
 
@@ -2754,6 +2763,7 @@ public partial class MainWindow : Window
             }
         }
         SaveLibrary();
+        ArchiveCurrentLyrics();
         RefreshLibrarySongs();
     }
 
