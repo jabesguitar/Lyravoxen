@@ -1072,6 +1072,8 @@ public partial class MainWindow : Window
             {
                 if (string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)) _currentVideo.FullLyrics = archivedLyrics.FullLyrics;
                 if (_currentVideo.Cues.Count == 0) _currentVideo.Cues = archivedLyrics.Cues;
+                if (_currentVideo.Sections.Count == 0) _currentVideo.Sections = CloneLyricsSections(archivedLyrics.Sections);
+                if (_currentVideo.ExecutionOrder.Count == 0) _currentVideo.ExecutionOrder = CloneLyricsExecutionOrder(archivedLyrics.ExecutionOrder);
                 if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = archivedLyrics.TrackName;
                 if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = archivedLyrics.Artist;
             }
@@ -2756,6 +2758,22 @@ public partial class MainWindow : Window
         RefreshLibrarySongs();
     }
 
+    private static List<LyricsSectionBlock> CloneLyricsSections(IEnumerable<LyricsSectionBlock>? sections) =>
+        (sections ?? Enumerable.Empty<LyricsSectionBlock>()).Select(section => new LyricsSectionBlock
+        {
+            SectionId = section.SectionId, Label = section.Label, Kind = section.Kind,
+            SourceIndex = section.SourceIndex, Lines = new List<string>(section.Lines),
+            RepeatCount = section.RepeatCount, OccurrenceCount = section.OccurrenceCount,
+            ExplicitlyLabeled = section.ExplicitlyLabeled, NeedsReview = section.NeedsReview
+        }).ToList();
+
+    private static List<LyricsExecutionOccurrence> CloneLyricsExecutionOrder(IEnumerable<LyricsExecutionOccurrence>? occurrences) =>
+        (occurrences ?? Enumerable.Empty<LyricsExecutionOccurrence>()).Select(item => new LyricsExecutionOccurrence
+        {
+            SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
+            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex
+        }).ToList();
+
     private void PersistCurrentCues()
     {
         if (_currentVideo is null) return;
@@ -2794,7 +2812,9 @@ public partial class MainWindow : Window
                 Format = _currentVideo.Format,
                 FullLyrics = _currentVideo.FullLyrics,
                 SavedAt = DateTime.Now,
-                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
+                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList(),
+                Sections = CloneLyricsSections(_currentVideo.Sections),
+                ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder)
             });
         }
         else
@@ -2809,6 +2829,8 @@ public partial class MainWindow : Window
                 saved.Url = _currentVideo.Url;
                 saved.FullLyrics = _currentVideo.FullLyrics;
                 saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                saved.Sections = CloneLyricsSections(_currentVideo.Sections);
+                saved.ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder);
             }
         }
         SaveLibrary();
