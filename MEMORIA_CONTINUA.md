@@ -1116,3 +1116,13 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Não assumir que mesmo um motor completo removerá todos os anúncios do YouTube: anúncios server-side/in-stream servidos como parte do próprio fluxo podem não ser distinguíveis de conteúdo normal.
 - Nenhuma integração nova desse motor foi implementada ainda. A alteração atual continua sendo o filtro pontual e deve ser considerada insuficiente para o objetivo do usuário.
 - Branch `feature/offline-library-on-redesign`; `main` permanece intocada.
+
+
+## 27/11/2026 — Correção de compilação do protótipo nativo de filtragem
+
+- O usuário forneceu erro CS0117: `CoreWebView2WebResourceContext` não contém `WebSocket`.
+- Causa: o SDK WebView2 1.0.2903.40 usado pelo projeto não expõe esse membro no enum.
+- Correção aplicada: removido apenas o mapeamento explícito `WebSocket`; recursos não listados continuam classificados como `other`.
+- Commit: `db889fbb79c6e292a21b9505259e4f22f8256e76`.
+- Build #886 falhou por esse único erro fatal; avisos CS8602/CS4014 permanecem não fatais.
+- A correção dispara novo workflow. Ainda não há confirmação de compilação completa do motor Rust, cópia da DLL, nem teste real com YouTube.
