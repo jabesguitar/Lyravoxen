@@ -2,8 +2,8 @@
 
 **Frente ativa:** remodelagem integral da aba Cadastro de Letras e integração equivalente ao controle remoto.  
 **Branch:** `feature/lyrics-structure-fast-sync`  
-**HEAD confirmado:** `6350d2819950907e7490422353cd1b6d52c7322f`  
-**Último CI:** Windows build #931 — run `46067616951`, concluído com sucesso.
+**HEAD mais recente:** `ad79c1df7d1f8356ffa328750e77cffa8c29fd04` (correção de cópia/restauração de estrutura; CI em andamento)  
+**Último CI verde:** run `46067616951` (#931). **CI do ajuste seguinte:** run `46069001270`, em andamento para o commit `ad79c1d`.
 
 ## Resultado confirmado do CI
 - `build`: sucesso. Restore, build .NET, engine nativa de bloqueio, bundle, testes de cue timeline, pacote portátil e instalador Windows x64 foram concluídos e enviados como artefatos.
@@ -1406,3 +1406,11 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - O job cloud concluiu os testes do serviço offline, Help coverage, verificações C# e testes do Worker/página mobile.
 - Artefatos baixados e verificados: instalador ZIP íntegro e pacote portátil interno íntegro; IDs registrados no estado atual no início deste arquivo.
 - Limite: esta execução valida o estado existente e a suíte configurada, não implementa nem prova alinhamento de áudio, nova UI ou cadastro remoto.
+
+
+## 27/11/2026 — Correção da persistência estrutural em andamento
+- Auditoria confirmou que `PersistCurrentCues` copiava texto e cues, mas não `Sections`/`ExecutionOrder` ao criar ou atualizar itens na pasta sincronizada. Também não recuperava as duas propriedades do arquivo permanente no caminho de restauração do vídeo preparado.
+- Commit `ad79c1df7d1f8356ffa328750e77cffa8c29fd04` adiciona cópias profundas dessas propriedades na criação, atualização e recuperação.
+- Workflow disparado: `46069001270`; no último acompanhamento estava `in_progress`, com `cloud-worker-tests` executando Playwright. O resultado de compilação desse commit ainda não foi confirmado.
+- Auditoria adicional: motor de voz usa WASAPI loopback e Whisper GGML Base em segmentos de 5 s; parser atual usa repetição textual exata e não gera timestamps/confiança; controle remoto é GET-only com PIN e buffer 65.536 bytes.
+- Próxima ação: confirmar CI do commit `ad79c1d`, corrigir qualquer falha e então ampliar o modelo temporal/confiança e desenvolver o fluxo remoto aditivo via POST.
