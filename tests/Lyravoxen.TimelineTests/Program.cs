@@ -256,4 +256,40 @@ Check(VagalumeLyricsService.Parse("{\"type\":\"aprox\",\"mus\":[{\"name\":\"Pais
 Check(!VagalumeLyricsService.Parse("não é json", "x").Found && !VagalumeLyricsService.Parse("{\"type\":\"exact\",\"mus\":[{\"name\":\"X\",\"text\":\"curto\"}]}", "X").Found, "vagalume: resposta inválida ou texto curto");
 Check(LyricsSourceSettings.SafeKey("abc-123_DEF ;'\"") == "abc-123_DEF", "vagalume: chave só com letras, números, - e _");
 
+
+// Análise inicial da estrutura da letra: texto-fonte separado das ocorrências de execução.
+var structuredLyrics = LyricsStructureAnalyzer.Analyze(
+    "Estrofe 1\nQuando eu clamo, tu me ouves\nE me sustentas em amor\n\n[Coro]\nSanto, santo é o Senhor\nDigno de todo louvor\n\nEstrofe 2\nMesmo na noite eu cantarei\nTua promessa guardarei\n\n[Coro]\nSanto, santo é o Senhor\nDigno de todo louvor\n\nEstrofe 3\nTua luz me conduzirá\nE tua graça bastará\n\n[Coro 2x]\nSanto, santo é o Senhor\nDigno de todo louvor");
+var chorusSection = structuredLyrics.Sections.Single(section => section.Kind == LyricsSectionKind.Chorus);
+Check(structuredLyrics.ExecutionOrder.Count == 6, "estrutura: cria ocorrências na ordem textual e expande coro 2x");
+Check(chorusSection.OccurrenceCount == 4, "estrutura: mesmo coro explícito aponta para quatro ocorrências");
+Check(structuredLyrics.Sections.Count == 4, "estrutura: preserva três estrofes e um único bloco-fonte de coro");
+Check(structuredLyrics.ExecutionOrder.Where(item => item.Kind == LyricsSectionKind.Chorus).Select(item => item.OccurrenceIndex).SequenceEqual(new[] { 1, 2, 3, 4 }),
+    "estrutura: ocorrências do coro têm índices independentes");
+Check(structuredLyrics.ExecutionOrder[0].Kind == LyricsSectionKind.Verse &&
+      structuredLyrics.ExecutionOrder[1].Kind == LyricsSectionKind.Chorus &&
+      structuredLyrics.ExecutionOrder[2].Kind == LyricsSectionKind.Verse &&
+      structuredLyrics.ExecutionOrder[3].Kind == LyricsSectionKind.Chorus,
+    "estrutura: mantém sequência estrofe-coro-estrofe-coro");
+var inferredLyrics = LyricsStructureAnalyzer.Analyze(
+    "Quando eu clamo tu me ouves\nE me sustentas em amor\n\nSanto santo é o Senhor\nDigno de todo louvor\n\nMesmo na noite eu cantarei\nTua promessa guardarei\n\nSanto, santo é o Senhor!\nDigno de todo louvor.");
+Check(inferredLyrics.Sections.Count == 3, "estrutura: blocos repetidos compartilham um bloco-fonte");
+Check(inferredLyrics.Sections.Count(section => section.Kind == LyricsSectionKind.Chorus) == 1,
+    "estrutura: identifica bloco repetido sem rótulo como provável coro");
+Check(inferredLyrics.ExecutionOrder.Count(item => item.Kind == LyricsSectionKind.Chorus) == 2,
+    "estrutura: mantém duas ocorrências do coro repetido");
+Check(inferredLyrics.Sections.Any(section => section.NeedsReview),
+    "estrutura: partes únicas sem rótulo ficam sinalizadas para revisão, não são classificadas por palpite");
+var plainVerse = LyricsStructureAnalyzer.Analyze("Uma parte sem rótulo\nOutra linha");
+Check(plainVerse.ExecutionOrder.Count == 1 && plainVerse.ExecutionOrder[0].Kind == LyricsSectionKind.Unknown,
+    "estrutura: não inventa que um bloco único é estrofe sem evidência");
+var explicitRepeat = LyricsStructureAnalyzer.Analyze("[Refrão 2x]\nCanta ao Senhor\nToda a terra");
+Check(explicitRepeat.ExecutionOrder.Count == 2 &&
+      explicitRepeat.ExecutionOrder.All(item => item.Kind == LyricsSectionKind.Chorus),
+    "estrutura: interpreta indicação explícita de refrão duas vezes");
+var accentedRepeat = LyricsStructureAnalyzer.Analyze(
+    "[Refrão]\nGlória ao Rei\n\n[Refrão]\nGlória ao Rei");
+Check(accentedRepeat.Sections.Count == 1 && accentedRepeat.Sections[0].OccurrenceCount == 2,
+    "estrutura: rótulos e textos iguais reutilizam identidade de bloco");
+
 Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");
