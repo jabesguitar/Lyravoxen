@@ -1,44 +1,54 @@
 # ESTADO ATUAL — RETOMADA PRIORITÁRIA (27/11/2026)
 
-> Leia esta seção antes de continuar. Resumo do estado real; histórico abaixo preservado.
+> Este resumo substitui snapshots antigos sobre branch/etapa. O histórico abaixo foi preservado integralmente.
 
-## Decisão atual do usuário
-A frente de bloqueio de anúncios do YouTube está **PAUSADA**. O usuário precisa avançar para outras funcionalidades e não quer mais consumir tempo com compilações sem evidência de eficácia. Não prometer remoção de anúncios do YouTube.
+## Objetivo ativo
+Remodelar completamente a aba **Cadastrar Letras**, com modo automático baseado em áudio real, modo manual por blocos/cartões, persistência por música e acesso equivalente pelo controle remoto.
 
-## Repositório
-- https://github.com/jabesguitar/Lyravoxen
-- Branch: `feature/offline-library-on-redesign`
-- `main` intacta.
-- Build #901 passou, mas não valida eficácia de anúncios.
+## Repositório e branch
+- Repositório: https://github.com/jabesguitar/Lyravoxen
+- Branch ativa: `feature/lyrics-structure-fast-sync`
+- HEAD confirmado: `6350d2819950907e7490422353cd1b6d52c7322f`
+- Nenhum merge na `main` foi feito ou autorizado.
 
-## Frente de anúncios — estado
-- Tentativas feitas: bloqueador por domínios/listas, filtros de endpoints, protótipo Brave adblock-rust e extensão uBlock Origin Lite no WebView2.
-- Testes do usuário confirmaram anúncios patrocinados em vídeo e na lateral; objetivo não alcançado.
-- Não há garantia técnica de que uBlock Lite ou botão de controle remova anúncios in-stream/first-party do YouTube.
-- Ideia sugerida pelo usuário: botão redondo uBlock abaixo do controle de tema na aba Próxima música.
-- Um botão pode controlar habilitar/desabilitar uma extensão que esteja instalada no WebView2, mas isso não equivale a bloquear anúncios. **Não implementar como indicador de proteção eficaz.**
-- Nenhum botão foi implementado nesta decisão.
-- Preservar código experimental; não apagar ou reverter sem necessidade.
-- Estado: PAUSADO até existir solução com evidência técnica suficiente.
+## CI e artefatos — execução #931
+- Run: https://github.com/jabesguitar/Lyravoxen/actions/runs/46067616951
+- Jobs `build` e `cloud-worker-tests`: ambos concluídos com sucesso.
+- O job Windows compilou o app, executou `Test cue timeline`, montou o pacote portátil e o instalador e publicou artefatos.
+- Artefatos: Windows x64 (`15231637109`), portátil (`15231617268`) e instalador (`15230839460`). ZIPs baixados passaram na verificação de integridade.
+- O build #931 é uma validação técnica intermediária. Não chamar o usuário para testar ainda.
 
-## Outras implementações existentes
-- Biblioteca Offline com pasta configurável e subpastas Musicas/Letras/Dados/Temporarios.
-- Arquivo independente de letras/sincronizações e recuperação por ID/URL.
-- Integração de armazenamento com Pedidos; importação MP3/WAV e fluxo para URL direta autorizada.
-- Retenção configurável 5/7/14/30 dias.
-- Barra global de reprodução offline e seleção visual em listas.
-- Redesign de Pedidos recebidos e Controle pelo celular.
-- Ajustes no painel Próxima música e lista da Biblioteca; alguns cenários ainda dependem de validação manual consolidada.
+## O que está implementado
+- Analisador textual inicial: cabeçalhos de estrofe/coro/ponte/intro/final, marcadores 2x/x2 e agrupamento de blocos idênticos.
+- Modelo com blocos-fonte e ocorrências independentes (`Sections` e `ExecutionOrder`).
+- Persistência dessas estruturas no arquivo permanente.
+- Os testes correspondentes passaram no job de timeline do run #931.
 
-## Próxima ação
-Perguntar/seguir a próxima funcionalidade do Lyravoxen que o usuário deseja priorizar. Não voltar à frente de anúncios por iniciativa própria. Manter `MEMORIA_CONTINUA.md` e `RETOMADA_ATUAL.md` atualizados após mudanças significativas.
+## O que ainda não está implementado
+- Interface remodelada do Cadastro de Letras.
+- Alinhamento automático de letra com áudio cantado real.
+- Editor manual em cartões por linha/bloco com marcação, navegação, desfazer e reordenação.
+- Terceira aba de Cadastro de Letras no controle remoto, compartilhando o armazenamento do Windows.
+- Testes funcionais de sincronização com gravações reais.
 
-## Regras
-- Não pedir provas já fornecidas.
-- Distinguir implementado, compilado, testado e aprovado.
-- Não entregar builds intermediários como se fossem finais.
-- Não alterar `main` sem autorização.
-- Preservar o histórico abaixo desta seção.
+## Próxima sequência de trabalho
+1. Auditar integralmente os eventos/handlers, leitura, gravação e recuperação da aba atual.
+2. Auditar RemoteControlServer/endpoints e autenticação, sem quebrar Ao Vivo/Bíblia.
+3. Prototipar e medir alinhamento de áudio cantado em português, priorizando gratuito, offline e leve.
+4. Implementar o editor remodelado e a integração remota.
+5. Testar serviços/modelos/fluxo remoto no CI; gerar um único pacote consolidado para a rodada manual do usuário.
+
+## Decisões e restrições
+- O usuário autorizou remodelar a área Cadastro de Letras e remover controles sem utilidade comprovada.
+- Preservar dados, metadados e recursos funcionais fora do escopo.
+- Automático é a prioridade; manual deve continuar utilizável quando a análise não tiver confiança suficiente.
+- Refrões repetidos devem reaparecer na sequência sem duplicar o texto-fonte; cada ocorrência terá seu próprio tempo.
+- Persistência por música/gravação, com recuperação após fechar e reabrir.
+- Controle remoto deve ter layout mobile e usar a mesma fonte de dados.
+- Solução gratuita e leve sempre que viável.
+- Não pedir testes intermediários ao usuário.
+- Não fazer merge na `main` sem autorização.
+
 
 ---
 ---
