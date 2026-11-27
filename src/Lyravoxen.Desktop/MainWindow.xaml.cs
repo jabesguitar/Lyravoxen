@@ -82,6 +82,7 @@ public partial class MainWindow : Window
     private readonly OfflineMediaService _offlineMedia = new();
     private readonly YoutubeAudioDownloadService _youtubeAudio = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen"));
     private string _offlineRootFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "Biblioteca Offline");
+    private string _manualDownloadDestination = "";
     private string OfflineMediaFolder => Path.Combine(_offlineRootFolder, "Musicas");
     private string OfflineLyricsFolder => Path.Combine(_offlineRootFolder, "Letras");
     private string OfflineDataFolder => Path.Combine(_offlineRootFolder, "Dados");
@@ -3119,6 +3120,70 @@ public partial class MainWindow : Window
         await LoadVideoAsync(video.Url, true);
     }
 
+
+    private void ChooseLibraryDownloadFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "Escolha a pasta onde o áudio autorizado será salvo.",
+            UseDescriptionForTitle = true,
+            ShowNewFolderButton = true,
+            SelectedPath = Directory.Exists(_manualDownloadDestination) ? _manualDownloadDestination : OfflineMediaFolder
+        };
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+        _manualDownloadDestination = Path.GetFullPath(dialog.SelectedPath);
+        LibraryDownloadFolderText.Text = "Destino: " + _manualDownloadDestination;
+    }
+
+    private async void DownloadLibraryLink_Click(object sender, RoutedEventArgs e)
+    {
+        if (LibraryFolderList.SelectedItem is not LibraryFolder folder)
+        {
+            System.Windows.MessageBox.Show(this, "Selecione a coleção de destino na coluna Pastas e Coleções.", "Download manual", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var source = LibraryDownloadUrlBox.Text.Trim();
+        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            System.Windows.MessageBox.Show(this, "Cole um endereço HTTP ou HTTPS válido.", "Download manual", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (YouTubeLink.TryGetVideoId(source) is not null)
+        {
+            System.Windows.MessageBox.Show(this, "Este campo aceita links diretos de arquivos MP3/WAV, não páginas de vídeo. Para uma gravação do YouTube, use uma cópia que você tenha autorização para utilizar e importe o arquivo pela Biblioteca.", "Fonte não compatível", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var retentionText = PromptForText("Validade da cópia offline", "Por quantos dias manter esta cópia? (5, 7, 14 ou 30)", "30");
+        if (retentionText is null) return;
+        if (!int.TryParse(retentionText.Trim(), out var days) || days is not (5 or 7 or 14 or 30))
+        {
+            System.Windows.MessageBox.Show(this, "Escolha 5, 7, 14 ou 30 dias.", "Validade offline", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var destination = string.IsNullOrWhiteSpace(_manualDownloadDestination) ? OfflineMediaFolder : _manualDownloadDestination;
+        try
+        {
+            Directory.CreateDirectory(destination);
+            StatusText.Text = "Baixando e validando o arquivo MP3/WAV...";
+            var result = await _offlineMedia.DownloadAsync(source, destination);
+            var title = Path.GetFileNameWithoutExtension(uri.AbsolutePath);
+            if (string.IsNullOrWhiteSpace(title)) title = "Áudio offline";
+            AddOrUpdateOfflineLibraryItem(folder, result, title, DateTime.Now.AddDays(days));
+            if (!SaveLibrary()) throw new IOException("O arquivo foi baixado, mas a Biblioteca não confirmou o salvamento. O arquivo foi preservado no destino escolhido.");
+            RefreshFolders(folder.Id);
+            LibraryDownloadUrlBox.Clear();
+            StatusText.Text = "Download concluído e registrado na coleção '" + folder.Name + "'. Destino: " + destination;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha no download manual da Biblioteca Offline.", ex);
+            StatusText.Text = "Não foi possível concluir o download: " + ex.Message;
+            System.Windows.MessageBox.Show(this, ex.Message, "Download manual", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
 
     private async void ImportAudio_Click(object sender, RoutedEventArgs e)
     {
