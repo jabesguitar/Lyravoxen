@@ -600,3 +600,11 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Janela Pedidos recebidos redesenhada: janela maior, cabeçalho/contador, configurações recolhidas, cards por pedido com conjunto/cantor, título, link e botões de ação legíveis. Botão Copiar link removido dos cards; bloqueio de IP permanece secundário.
 - Build #862: https://github.com/jabesguitar/Lyravoxen/actions/runs/46025648719 (em andamento no momento deste registro).
 - Próxima etapa: aguardar #862. Se verde, baixar instalador e validar: trocar entre pastas com e sem filtro; conferir lista visível; abrir Pedidos recebidos e conferir cards, texto e botões. Não mexer na main.
+
+
+## Atualização — 27/11/2026: redesign Controle pelo celular
+
+- Janela Controle pelo celular redesenhada para combinar com Pedidos recebidos: fundo azul-escuro, cartões, QR destacado, endereço legível/copiar, PIN em destaque e botão Gerar novo PIN. Mantidos QR, endereços, PIN e instruções existentes.
+- Commit: c4b7796e38dd502c4a276a603987dc0c331be18a.
+- Build #866: https://github.com/jabesguitar/Lyravoxen/actions/runs/46029745807 (em andamento).
+- Próxima ação: aguardar build. Se verde, baixar instalador único e validar visualmente as telas Biblioteca Offline, Pedidos recebidos e Controle pelo celular. Branch feature/offline-library-on-redesign; não alterar main.
