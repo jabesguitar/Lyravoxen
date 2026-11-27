@@ -2915,7 +2915,10 @@ public partial class MainWindow : Window
 
     private void LibraryFolder_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_librarySelectionChanging) return;
         _selectedLibraryVideo = null;
+        // A busca pertence à pasta anterior; não deixe o filtro esconder as faixas da nova coleção.
+        if (LibrarySearchBox is not null) LibrarySearchBox.Clear();
         RefreshLibrarySongs();
     }
     private void LibrarySearch_TextChanged(object sender, TextChangedEventArgs e) => RefreshLibrarySongs();
