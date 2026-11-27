@@ -26,3 +26,10 @@ Executar build/testes no GitHub; corrigir falhas; então prototipar análise de 
 - Teste de persistência acrescentado: salvar registro com estrofes/coro e reabrir, verificando que as ocorrências de coro continuam separadas.
 - **CI pendente:** execuções Actions foram canceladas por concorrência de commits. O teste foi escrito, mas não executado/aprovado ainda.
 - Nenhuma alteração visual foi feita; a interface moderna permanece intacta.
+
+
+## 27/11/2026 — Correção do teste de contagem
+- Log real do Actions identificou falha na asserção de `Program.cs:263`, que esperava 6 ocorrências.
+- Caso contém 3 estrofes + 1 coro + 1 coro + coro final 2x = 7 ocorrências. O valor esperado no teste estava incorreto.
+- Corrigida a expectativa para 7, sem alterar o algoritmo de produção.
+- Aguardando CI completo para validar a correção.
