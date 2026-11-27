@@ -3347,8 +3347,12 @@ public partial class MainWindow : Window
             LocalAudioPlayer.Visibility = Visibility.Visible;
             LocalAudioPlayer.Source = new Uri(video.LocalPath);
             LocalAudioPlayer.Position = TimeSpan.Zero;
+            LocalAudioPlayer.Volume = OfflineVolumeSlider.Value;
             LocalAudioPlayer.Play();
             _isLocalAudioPlaying = true;
+            OfflinePlaybackTitle.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
+            OfflinePlaybackBar.Visibility = Visibility.Visible;
+            OfflinePositionSlider.Value = 0;
             _lastAutomaticCue = -1;
             _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = 0;
             _audioTimer.Start();
@@ -3367,9 +3371,64 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Não foi possível reproduzir o áudio: " + ex.Message; }
     }
 
+    private bool _offlinePositionSeeking;
+
+    private void OfflinePlaybackToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentVideo is null || !_currentVideo.IsOffline) return;
+        if (_isLocalAudioPlaying)
+        {
+            LocalAudioPlayer.Pause();
+            _isLocalAudioPlaying = false;
+            _audioTimer.Stop();
+            StatusText.Text = "Reprodução offline pausada.";
+        }
+        else
+        {
+            LocalAudioPlayer.Play();
+            _isLocalAudioPlaying = true;
+            _playbackEnded = false;
+            _audioTimer.Start();
+            StatusText.Text = "Reprodução offline retomada.";
+        }
+    }
+
+    private void OfflinePlaybackStop_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_currentVideo?.IsOffline ?? true) return;
+        LocalAudioPlayer.Stop();
+        EndPlayback("Reprodução offline encerrada.");
+        OfflinePlaybackBar.Visibility = Visibility.Collapsed;
+        LocalAudioPlayer.Visibility = Visibility.Collapsed;
+        YoutubePlayer.Visibility = Visibility.Visible;
+    }
+
+    private void OfflineVolumeSlider_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (LocalAudioPlayer is not null) LocalAudioPlayer.Volume = Math.Clamp(e.NewValue, 0d, 1d);
+    }
+
+    private void OfflinePositionSlider_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_offlinePositionSeeking || LocalAudioPlayer is null || !_isLocalAudioPlaying) return;
+        if (!LocalAudioPlayer.NaturalDuration.HasTimeSpan) return;
+        LocalAudioPlayer.Position = TimeSpan.FromSeconds(LocalAudioPlayer.NaturalDuration.TimeSpan.TotalSeconds * e.NewValue / 100d);
+    }
+
+    private void UpdateOfflinePlaybackPosition()
+    {
+        if (!_isLocalAudioPlaying || !LocalAudioPlayer.NaturalDuration.HasTimeSpan) return;
+        var duration = LocalAudioPlayer.NaturalDuration.TimeSpan.TotalSeconds;
+        if (duration <= 0) return;
+        _offlinePositionSeeking = true;
+        try { OfflinePositionSlider.Value = Math.Clamp(LocalAudioPlayer.Position.TotalSeconds / duration * 100d, 0d, 100d); }
+        finally { _offlinePositionSeeking = false; }
+    }
+
     private void ProcessAudioCue()
     {
         if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
+        UpdateOfflinePlaybackPosition();
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
         _lastKnownPlaybackSeconds = seconds;
         var cueIndex = FindActiveCue(seconds);
@@ -3398,6 +3457,7 @@ public partial class MainWindow : Window
         _lastAutomaticCue = -1;
         PublishProjectionOnly("");
         StatusText.Text = status;
+        OfflinePlaybackBar.Visibility = Visibility.Collapsed;
         _ = CloseHolyricsQuickPresentationAsync();
     }
 
