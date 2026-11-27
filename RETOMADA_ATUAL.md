@@ -483,3 +483,28 @@ Entregar ao usuário esta única compilação consolidada e o checklist manual f
 - No Cloudflare, abrir o Worker que atende `lyravoxen-pedidos.ferkt319.workers.dev`, editar o código, substituir pelo worker.js gerado no app e clicar Deploy.
 - Preservar bindings e secrets existentes: `PEDIDOS` e `ADMIN_TOKEN`.
 
+
+
+## 27/11/2026 — Retomada estrita e ajuste do fluxo YouTube em Pedidos
+
+### Regra vigente
+Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de anúncios na aba Próxima Música. Não alterar o que já funciona, não fazer redesign e não tocar na branch `main`. Esta regra mais recente prevalece sobre pendências antigas de redesign registradas acima.
+
+### Alteração aplicada
+- Commit `78e88d6942a578ac4491b94b577fe9185c2b3211`, arquivo `src/Lyravoxen.Desktop/MainWindow.Requests.cs`.
+- Para pedidos com URL do YouTube, o botão **Baixar offline** agora explica que o link não é arquivo MP3/WAV baixável diretamente e pergunta se o operador deseja associar um arquivo autorizado que já possua.
+- Se responder Não, não abre seletor. Se responder Sim, mantém o fluxo existente de importação/associação ao pedido e Biblioteca.
+- URLs não-YouTube continuam tentando download direto. Não houve extração de áudio nem alteração do player.
+
+### Verificações
+- Branch confirmada: `feature/offline-library-on-redesign`; comparação com `main`: 222 commits à frente, 0 atrás. Nenhum merge foi feito.
+- Build #810 passou antes desta alteração; não conta como validação do commit novo.
+- Push nesta branch executa `cloud-worker-tests`; o job Windows `build` só executa em `workflow_dispatch` ou na `main`. Workflow não foi alterado.
+
+### Pendências / próxima ação
+- [ ] Conferir CI acionado pelo commit `78e88d6`.
+- [ ] Após CI verde, executar build Windows consolidado via workflow manual.
+- [ ] Atualizar Worker existente no Cloudflare mantendo KV `PEDIDOS` e secret `ADMIN_TOKEN`; testar IP/bloqueio/desbloqueio em produção.
+- [ ] Testar reprodução offline real da cópia autorizada exata.
+- [ ] Manter explícito que anúncios first-party/in-stream do YouTube não podem ser garantidamente removidos sem comprometer o player.
+- Continuar auditoria da Biblioteca e retenção sem reescrever a limpeza já existente.
