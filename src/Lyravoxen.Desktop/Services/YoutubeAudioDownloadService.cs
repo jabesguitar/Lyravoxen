@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using Lyravoxen;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -14,7 +15,14 @@ namespace Lyravoxen.Services;
 /// </summary>
 public sealed class YoutubeAudioDownloadService
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(3) };
+    private static readonly HttpClient Http = CreateHttpClient();
+
+    private static HttpClient CreateHttpClient()
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Lyravoxen/1.0");
+        return client;
+    }
     private const string ExecutableUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
     private const string ChecksumsUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS";
     private readonly string _toolsFolder;
