@@ -24,6 +24,13 @@ Remodelar completamente a aba **Cadastrar Letras**, com modo automático baseado
 - Persistência dessas estruturas no arquivo permanente.
 - Os testes correspondentes passaram no job de timeline do run #931.
 
+## Auditoria inicial — lacunas confirmadas
+- Reconhecimento automático atual é incremental durante a reprodução, não alinhamento prévio da gravação.
+- Marcação manual atual é por estrofe inteira, não por cartões de frases/linhas.
+- `MainWindow.xaml.cs` ainda não chama `LyricsStructureAnalyzer`.
+- `PersistCurrentCues` não copia `Sections`/`ExecutionOrder` para a pasta "Músicas sincronizadas"; o arquivo permanente já clona essas propriedades.
+- Controle remoto mostra apenas Bíblia e Ao Vivo; o dispatcher não possui o fluxo de cadastro completo. Detalhes registrados em `docs/CADASTRO_LETRAS_IMPLEMENTACAO.md`.
+
 ## O que ainda não está implementado
 - Interface remodelada do Cadastro de Letras.
 - Alinhamento automático de letra com áudio cantado real.
