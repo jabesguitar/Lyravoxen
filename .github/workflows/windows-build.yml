@@ -105,7 +105,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $extensionDir | Out-Null
           Copy-Item -Path (Join-Path $manifest.DirectoryName "*") -Destination $extensionDir -Recurse -Force
           if (-not (Test-Path (Join-Path $extensionDir "manifest.json"))) { throw "Extension bundle did not contain manifest.json at its root." }
-          $licenseUrl = "https://raw.githubusercontent.com/uBlockOrigin/uBOL-home/$version/LICENSE.txt"
+          $licenseUrl = "https://raw.githubusercontent.com/uBlockOrigin/uBOL-home/$version/LICENSE"
           try { Invoke-WebRequest -Uri $licenseUrl -OutFile (Join-Path $extensionDir "LICENSE.txt") } catch { Write-Warning "Could not retrieve upstream license file; verify release licensing before distribution." }
       - name: Test cue timeline
         run: dotnet run --project tests/Lyravoxen.TimelineTests/Lyravoxen.TimelineTests.csproj -c Release
