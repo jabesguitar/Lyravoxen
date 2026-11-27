@@ -105,3 +105,14 @@ Foi criado `src/Lyravoxen.Desktop/Models/LyricsStructureAnalyzer.cs` com uma pri
 Foram acrescentados testes de sequência Estrofe 1 → Coro → Estrofe 2 → Coro → Estrofe 3 → Coro 2x, repetição textual sem rótulo, `2x`, identidade compartilhada e revisão de blocos incertos. O `.csproj` da suíte inclui o novo arquivo. O workflow foi configurado para considerar a branch `feature/lyrics-structure-fast-sync`.
 
 **Status de validação:** não compilado nesta sessão: o ambiente local não possui .NET SDK e não foi observada execução de GitHub Actions para a branch. Os testes estão escritos, não podem ser declarados aprovados. O parser não faz ainda análise de áudio nem integração de interface/persistência.
+
+
+## Persistência da estrutura musical
+
+O modelo `LibraryVideo` recebeu duas propriedades aditivas:
+- `Sections`: blocos-fonte da letra e sua classificação.
+- `ExecutionOrder`: ocorrências independentes que apontam para os blocos-fonte, permitindo repetir coro sem duplicar a letra.
+
+`PermanentLyricsArchive` foi atualizado para clonar e persistir profundamente essas propriedades no JSON, mantendo o arquivo permanente independente do áudio. A condição de gravação também aceita um registro que tenha sequência de execução mesmo que ainda não possua cues temporais. Foi adicionado teste de salvar/reabrir e confirmar duas ocorrências de coro.
+
+**Validação:** ainda pendente. Os workflows disparados durante os commits sucessivos foram cancelados por concorrência; não declarar compilação ou teste de persistência aprovado até uma execução completa.

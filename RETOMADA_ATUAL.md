@@ -3080,3 +3080,12 @@ Regras:
 - Limitação atual: ainda é somente parser textual. Não analisa áudio, não descobre repetições quando o texto-fonte contém apenas uma ocorrência de coro sem rótulo e não está integrado à UI/cadastro/arquivo permanente.
 - Validação: não foi possível executar `dotnet run` nesta sessão porque o ambiente local não tem .NET SDK. A API do GitHub também não mostrou execução de Actions para a branch no momento da consulta. Portanto, código/testes estão commitados, mas ainda não foram compilados nem aprovados.
 - Próxima ação: executar CI/build no GitHub, corrigir eventuais erros, depois implementar análise preparatória de áudio e integrar com sequência de ocorrências, sem modificar o layout moderno fora da área solicitada.
+
+
+### Persistência da estrutura musical adicionada ao modelo (27/11/2026)
+- `LibraryVideo` agora contém `Sections` e `ExecutionOrder`, além de `FullLyrics` e `Cues`, separando blocos-fonte e ocorrências na ordem da execução.
+- `PermanentLyricsArchive` foi ampliado para copiar/gravar/recuperar profundamente seções e ocorrências no arquivo JSON permanente; registros com sequência de execução também podem ser arquivados.
+- A suíte `Lyravoxen.TimelineTests` inclui um caso de salvar e reabrir o arquivo permanente e verificar que as duas ocorrências do coro permanecem distintas.
+- Os arquivos de teste incluem `LyricsStructureAnalyzer.cs` e `PermanentLyricsArchive.cs`.
+- **Validação ainda pendente:** a execução de Actions da branch foi cancelada por concorrência entre os commits sucessivos; não há resultado de compilação/teste do último conjunto de mudanças. O teste de persistência está escrito, mas ainda não aprovado.
+- Próxima ação: obter uma execução CI completa sobre o commit mais recente; corrigir erros antes de ligar o parser à interface. A UI moderna não foi alterada e nenhuma função existente foi removida.
