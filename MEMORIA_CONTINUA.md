@@ -1289,3 +1289,38 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Remover somente botões comprovadamente sem ação/uso; preservar recursos válidos e documentar remoções.
 
 **Etapa atual:** especificação confirmada e auditoria inicial concluída; implementação ainda não iniciada nesta etapa. Próxima ação: mapear handlers e persistência de cues, provar mecanismo de alinhamento com áudio em português e implementar editor comum para desktop e remoto, seguido de testes e build integrado.
+
+
+### Complemento confirmado — estrutura musical, velocidade e preservação do produto (27/11/2026)
+
+**Novos requisitos explícitos do usuário**
+- O modo automático deve identificar e estruturar estrofes e coro/refrão, inclusive quando a ordem de execução for Estrofe 1 → Coro → Estrofe 2 → Coro → Estrofe 3 → Coro. Não presumir que o texto original seja a ordem linear da execução.
+- Detectar indicações editoriais de sites como [Estrofe], [Coro], [Refrão], [Refrão 2x] quando existirem, mas também funcionar quando o site não fornecer rótulos.
+- Preservar texto-fonte sem duplicação e criar uma sequência de ocorrências de execução: o mesmo bloco de coro pode ser referenciado diversas vezes com timestamps diferentes.
+- Rapidez é requisito de operação ao vivo: preparar estrutura antes do evento quando possível, manter reconhecimento incremental de baixa latência durante a música, evitar análise demorada na hora da apresentação e oferecer correção manual imediata.
+- Preservar o layout moderno/atual e todas as funções que já funcionam. Alterar somente a área/fluxo solicitado. Não restaurar layout antigo, não refatorar telas não relacionadas, não remover recursos válidos e não sobrescrever a versão moderna.
+- Usuário autorizou pesquisa ampla, experimentos e comandos; manter histórico de todas as mudanças e cópia no GitHub para retomada futura.
+
+**Pesquisa técnica adicional — achados**
+- Librosa `segment.recurrence_matrix` calcula recorrência/semelhança entre frames de áudio; a documentação explica que conexões indicam frames repetidos. `recurrence_to_lag` e `recurrence_novelty` ajudam a identificar repetição e fronteiras entre seções. Isso pode apoiar agrupamento estrutural, mas não atribui semanticamente o rótulo 'coro' sozinho.
+- WhisperX `alignment.py` inclui modelo Hugging Face para português (`jonatasgrosman/wav2vec2-large-xlsr-53-portuguese`) e faz forced alignment palavra/trecho com transcrição conhecida. É tecnicamente promissor para alinhamento de texto já conhecido; dependências PyTorch/torchaudio e tamanho/carga devem ser medidos antes de uso no produto.
+- sherpa-onnx é multiplataforma, offline e tem suporte a várias linguagens/CPU, mas a tabela oficial consultada de modelos de forced alignment lista exemplos em inglês/chinês e não confirmou um modelo português pronto. Não selecionar para alinhamento português sem prova concreta.
+- Essentia é C++ e otimizada para processamento de áudio, mas a documentação indica licença AGPLv3 (ou comercial) e suporte Windows parcial. Isso pode conflitar com distribuição gratuita/proprietária; não incorporar sem revisão jurídica/licença.
+- `marcjohnce/keytool` descreve segmentação estrutural com recorrência de CQT/MFCC, agrupamento espectral e rótulos heurísticos (coro como parte recorrente mais forte; estrofe como outra parte recorrente). Usar como referência de arquitetura, verificar licença e não copiar código sem auditoria.
+- `chiranr19/hookfinder` foi descartado como dependência: o próprio repositório informa licença source-available sem permissão de copiar, modificar ou redistribuir. Pode ser lido apenas como referência conceitual não reutilizável.
+
+**Arquitetura recomendada para protótipo (proposta técnica, ainda não aprovada como implementação)**
+1. Parser textual: preservar blocos/linhas e reconhecer cabeçalhos/indicações explícitas de estrofe, coro, ponte, repetição e número de vezes.
+2. Agrupamento por texto: normalização para comparar blocos idênticos/quase idênticos; marcar duplicatas prováveis como mesma seção com múltiplas ocorrências, sem fundir versos diferentes por engano.
+3. Análise de áudio offline/preparatória: extrair características harmônicas/temporais e recorrência para encontrar seções musicalmente semelhantes; combinar com limites de silêncio, mudanças de energia e batida. Resultado é hipótese com confiança, não verdade absoluta.
+4. Alinhamento: testar WhisperX Portuguese forced alignment em arquivo local, comparando qualidade/tempo/CPU com Whisper.net existente. Para execução ao vivo, manter reconhecedor incremental já existente como caminho rápido e usar estrutura preparada para mapear repetição/retorno.
+5. Sequência de execução: modelo de ocorrências com `SectionId`, `OccurrenceIndex`, `StartSeconds`, `EndSeconds`, `Confidence` e referência ao bloco-fonte. Permite coro reaparecer 2x/3x sem duplicar o texto-fonte.
+6. Revisão expressa: antes de entrar ao vivo, exibir sequência detectada e permitir corrigir rótulos/ordem com poucos cliques; no evento, operação de marcação deve ser imediata.
+
+**Preservação de interface e escopo**
+- Branch criada para isolar esta etapa: `feature/lyrics-structure-fast-sync`, partindo de `feature/offline-library-on-redesign` após os commits documentais.
+- Manter XAML, estilos, recursos visuais, navegação e handlers atuais que já funcionam. Fazer alterações localizadas apenas na aba Cadastrar letras e nos pontos mínimos de serviço/modelo/controle remoto necessários.
+- Antes de cada alteração: registrar arquivo/hash/trecho afetado; depois: registrar diff, motivo, teste e resultado. Não substituir arquivos inteiros por versões antigas.
+- Não afirmar implementação/teste/build concluído sem executar e registrar.
+
+**Estado:** pesquisa adicional feita e arquitetura de protótipo delimitada; nenhum código funcional foi alterado nesta etapa. Próxima ação técnica: criar protótipo de parser/agrupador de blocos com casos de repetição, em seguida comparar motor de alinhamento português e medir latência; só então integrar no editor preservando layout atual.
