@@ -1242,3 +1242,14 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Ajuda do aplicativo deve ser atualizada junto com cada recurso entregue, explicando botões, atalhos, modos automático/manual, como salvar e recuperar sequência.
 - Não há aprovação para remover a letra original ou descartar sincronizações já salvas.
 - Próxima etapa técnica: desenhar modelo de dados persistente separado (blocos-fonte, sequência de ocorrências e tempos); estudar como encaixar no atual `LyricCue`/persistência; implementar primeiro organizador manual com reuso de bloco e salvar/carregar, mais testes; depois aprimorar o modo automático com repetição. Evitar entregar uma versão que só tenha marcação linear por espaço como se atendesse ao requisito.
+
+
+## 27/11/2026 — Escopo de interface confirmado para a aba Cadastrar letras
+
+- O usuário esclareceu que todo o fluxo novo deve ficar dentro da aba **Cadastrar letras**: colar/importar a letra, analisar/sincronizar automaticamente, organizar manualmente blocos e repetições, revisar, salvar e recuperar a sequência.
+- Não espalhar essas funções em outras abas nem exigir alternância para completar o cadastro/sincronização. A aba Ao vivo permanece para operação/projeção durante o evento; a aba Cadastrar letras concentra preparação, organização e sincronização.
+- O usuário autorizou retirar botões e controles disfuncionais, não utilizados ou redundantes dentro do escopo trabalhado.
+- Remoção deve ser baseada em inspeção de uso/event handlers/referências. Não remover funções úteis, atalhos, fluxos ativos ou controles com dependências sem verificar impacto.
+- Priorizar interface simples e rápida: controles essenciais visíveis, funções avançadas organizadas sem poluir a tela, Ajuda atualizada para cada recurso entregue.
+- Requisitos de sequência automática e organizador manual persistente permanecem: preservar letra original, separar sequência de ocorrências e tempos; permitir repetir blocos sem duplicar texto.
+- Nenhum botão foi removido nesta decisão; esta é a autorização e diretriz para a próxima implementação.
