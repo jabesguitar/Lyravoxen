@@ -1352,3 +1352,14 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Contagem correta do caso: 3 estrofes + coro 1 + coro 2 + coro final 2x = 7 ocorrências. O teste estava errado; a falha não indicava erro no parser.
 - Corrigida a expectativa de 6 para 7 e detalhada a conta na mensagem do teste. As demais asserções do caso continuam verificando quatro ocorrências de coro, quatro blocos-fonte (três estrofes + um coro) e índices do coro de 1 a 4.
 - Próximo passo: aguardar a execução completa do CI no novo commit. Até ela terminar, a correção está commitada, mas não aprovada.
+
+
+### Protocolo permanente de continuidade — 27/11/2026
+- Solicitação explícita do usuário: não interromper o desenvolvimento para perguntas rotineiras; seguir até uma entrega testável. Só perguntar antes de mudanças que possam alterar, substituir, remover ou comprometer estrutura/funções existentes que já funcionam.
+- A cada etapa relevante, registrar no GitHub o que foi solicitado, o que foi sugestão técnica, decisões aprovadas/pendentes, arquivos alterados, commits, testes executados e resultados reais.
+- Manter este arquivo como histórico cronológico completo e `RETOMADA_ATUAL.md` como resumo operacional da etapa vigente.
+- Ao iniciar uma nova conversa de trabalho, consultar primeiro esses dois arquivos e o estado real da branch/commits/Actions; não reiniciar o planejamento nem presumir que o resumo está atualizado.
+- Ao encerrar uma etapa/conversa, atualizar os registros no GitHub. Se não for possível acessar o GitHub, preparar o registro aqui em Markdown e informar claramente que não foi publicado.
+- Não perguntar novamente preferências já confirmadas: preservar o layout moderno e funções existentes, manter branch isolada, priorizar solução gratuita/leve, automático primeiro e manual por blocos como alternativa, e preparar a mesma capacidade no controle remoto.
+- Limite de segurança: se uma implementação exigir alterar protocolo, banco/arquivo incompatível, remover comportamento funcional, mudar arquitetura de integração ou afetar outras abas, interromper antes dessa mudança e pedir aprovação específica.
+- Esta solicitação não autoriza merge na `main`, remoção de recursos existentes ou mudanças fora do escopo sem análise.
