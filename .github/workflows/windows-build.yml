@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, redesign/brand-visual-layer, feature/offline-library-on-redesign]
+    branches: [main, redesign/brand-visual-layer, feature/offline-library-on-redesign, feature/lyrics-structure-fast-sync]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -61,7 +61,7 @@ jobs:
           node phone.test.mjs
 
   build:
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/offline-library-on-redesign'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/offline-library-on-redesign' || github.ref == 'refs/heads/feature/lyrics-structure-fast-sync'
     needs: cloud-worker-tests
     runs-on: windows-latest
     steps:
