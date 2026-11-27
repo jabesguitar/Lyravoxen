@@ -3068,3 +3068,15 @@ Regras:
 - Não afirmar implementação/teste/build concluído sem executar e registrar.
 
 **Estado:** pesquisa adicional feita e arquitetura de protótipo delimitada; nenhum código funcional foi alterado nesta etapa. Próxima ação técnica: criar protótipo de parser/agrupador de blocos com casos de repetição, em seguida comparar motor de alinhamento português e medir latência; só então integrar no editor preservando layout atual.
+
+
+### Protótipo inicial de estrutura textual criado (27/11/2026)
+- Criado `src/Lyravoxen.Desktop/Models/LyricsStructureAnalyzer.cs` na branch `feature/lyrics-structure-fast-sync`.
+- O protótipo reconhece marcadores textuais explícitos para estrofe/verso, coro/refrão, ponte, intro e final; interpreta marcadores de repetição `2x`/`x2` até 8 repetições.
+- Blocos sem rótulo com texto normalizado idêntico compartilham uma identidade de seção e geram ocorrências separadas na ordem de execução. Isso evita duplicar o texto-fonte para refrões repetidos.
+- Blocos únicos sem evidência permanecem `Unknown` e `NeedsReview`; o protótipo não inventa classificação de estrofe/coro.
+- Adicionados casos de teste ao `tests/Lyravoxen.TimelineTests/Program.cs` e inclusão do modelo no `.csproj` de testes: sequência estrofe/coro, coro 2x, repetição sem rótulo, identidade de bloco e incerteza de classificação.
+- Atualizado `.github/workflows/windows-build.yml` para incluir a branch de protótipo nos gatilhos e na condição de build.
+- Limitação atual: ainda é somente parser textual. Não analisa áudio, não descobre repetições quando o texto-fonte contém apenas uma ocorrência de coro sem rótulo e não está integrado à UI/cadastro/arquivo permanente.
+- Validação: não foi possível executar `dotnet run` nesta sessão porque o ambiente local não tem .NET SDK. A API do GitHub também não mostrou execução de Actions para a branch no momento da consulta. Portanto, código/testes estão commitados, mas ainda não foram compilados nem aprovados.
+- Próxima ação: executar CI/build no GitHub, corrigir eventuais erros, depois implementar análise preparatória de áudio e integrar com sequência de ocorrências, sem modificar o layout moderno fora da área solicitada.
