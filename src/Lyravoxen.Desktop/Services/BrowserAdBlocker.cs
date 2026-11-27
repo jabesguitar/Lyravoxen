@@ -21,6 +21,12 @@ internal static class BrowserAdBlocker
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen");
     private static readonly string SettingsPath = Path.Combine(DataFolder, "browser-protection.json");
     private static readonly string CachedHostsPath = Path.Combine(DataFolder, "browser-hosts.txt");
+    private static readonly string NativeRulesPath = Path.Combine(DataFolder, "adblock-rules.txt");
+    private static readonly string[] FilterListUrls =
+    {
+        "https://easylist.to/easylist/easylist.txt",
+        "https://easylist.to/easylist/easyprivacy.txt"
+    };
     private static readonly string HostsListUrl = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
     private static readonly string[] ProtectedHosts =
     {
@@ -54,8 +60,8 @@ internal static class BrowserAdBlocker
         foreach (var host in BuiltInBlockedHosts) BlockedHosts.TryAdd(host, 0);
         LoadCachedHosts();
         // Never delay browser startup for a network download; refresh rules in the background.
-        _loadTask ??= LoadHostsListAsync();
-        return Task.CompletedTask;
+        _loadTask ??= LoadProtectionListsAsync();
+        return _loadTask;
     }
 
     public static void Attach(CoreWebView2 core)
@@ -66,7 +72,10 @@ internal static class BrowserAdBlocker
         {
             if (!Enabled || !Uri.TryCreate(args.Request.Uri, UriKind.Absolute, out var uri)) return;
             if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return;
-            if (!Lyravoxen.Offline.BrowserRequestPolicy.ShouldBlockRequest(uri, ProtectedHosts, BlockedHosts.Keys, AllowedHosts.Keys)) return;
+            var sourceUrl = core.Source?.ToString() ?? uri.GetLeftPart(UriPartial.Authority);
+            var requestType = GetRequestType(args.ResourceContext);
+            var nativeBlocked = NativeAdblockEngine.ShouldBlock(args.Request.Uri, sourceUrl, requestType, args.Request.Method);
+            if (!nativeBlocked && !Lyravoxen.Offline.BrowserRequestPolicy.ShouldBlockRequest(uri, ProtectedHosts, BlockedHosts.Keys, AllowedHosts.Keys)) return;
             args.Response = core.Environment.CreateWebResourceResponse(
                 null, 403, "Blocked by Lyravoxen", "Content-Type: text/plain; charset=utf-8");
             Interlocked.Increment(ref _blockedCount);
@@ -89,6 +98,53 @@ internal static class BrowserAdBlocker
     private static bool IsHostOrChild(string host, string domain)
         => host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
            host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase);
+
+    private static string GetRequestType(CoreWebView2WebResourceContext context) => context switch
+    {
+        CoreWebView2WebResourceContext.Document => "document",
+        CoreWebView2WebResourceContext.Stylesheet => "stylesheet",
+        CoreWebView2WebResourceContext.Image => "image",
+        CoreWebView2WebResourceContext.Media => "media",
+        CoreWebView2WebResourceContext.Font => "font",
+        CoreWebView2WebResourceContext.Script => "script",
+        CoreWebView2WebResourceContext.XmlHttpRequest => "xmlhttprequest",
+        CoreWebView2WebResourceContext.Fetch => "xmlhttprequest",
+        CoreWebView2WebResourceContext.WebSocket => "websocket",
+        _ => "other"
+    };
+
+    private static async Task LoadProtectionListsAsync()
+    {
+        try
+        {
+            Directory.CreateDirectory(DataFolder);
+            if (File.Exists(NativeRulesPath))
+                NativeAdblockEngine.Initialize(await File.ReadAllTextAsync(NativeRulesPath));
+
+            var tasks = FilterListUrls.Select(async url =>
+            {
+                try
+                {
+                    using var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync();
+                }
+                catch { return string.Empty; }
+            });
+            var lists = await Task.WhenAll(tasks);
+            var rules = string.Join(Environment.NewLine, lists.Where(x => !string.IsNullOrWhiteSpace(x)));
+            if (!string.IsNullOrWhiteSpace(rules))
+            {
+                await File.WriteAllTextAsync(NativeRulesPath, rules);
+                NativeAdblockEngine.Initialize(rules);
+            }
+        }
+        catch
+        {
+            // Existing domain protection remains active if lists or native engine are unavailable.
+        }
+        _ = LoadHostsListAsync();
+    }
 
     private static async Task LoadHostsListAsync()
     {
