@@ -1,3 +1,38 @@
+# ESTADO ATUAL — Lyravoxen (27/11/2026)
+
+**Frente ativa:** remodelagem integral da aba Cadastro de Letras e integração equivalente ao controle remoto.  
+**Branch:** `feature/lyrics-structure-fast-sync`  
+**HEAD confirmado:** `6350d2819950907e7490422353cd1b6d52c7322f`  
+**Último CI:** Windows build #931 — run `46067616951`, concluído com sucesso.
+
+## Resultado confirmado do CI
+- `build`: sucesso. Restore, build .NET, engine nativa de bloqueio, bundle, testes de cue timeline, pacote portátil e instalador Windows x64 foram concluídos e enviados como artefatos.
+- `cloud-worker-tests`: sucesso. Testes do serviço de mídia offline, cobertura da Ajuda, verificações C#, Worker Cloudflare e página remota/mobile concluídos.
+- Artefatos criados: `Lyravoxen-Windows-x64` (ID `15231637109`), `Lyravoxen-Windows-x64-portable` (ID `15231617268`) e `Lyravoxen-Installer-Windows-x64` (ID `15230839460`). Os arquivos ZIP baixados foram verificados quanto à integridade.
+- Esse CI valida a compilação e os testes automatizados configurados; não valida alinhamento automático de áudio cantado, interface nova, cadastro remoto nem teste funcional de uma música real.
+
+## Estado técnico do Cadastro de Letras
+- Criado analisador textual determinístico para cabeçalhos e repetições, separando blocos-fonte das ocorrências de execução.
+- `LibraryVideo.Sections` e `ExecutionOrder` adicionados e persistidos no arquivo permanente.
+- Testes automatizados da estrutura, repetição e recuperação foram executados dentro do job `Test cue timeline`, que passou no run #931.
+- **Ainda não implementado:** nova interface automática/manual, alinhamento real de áudio, cartões por linha/bloco, editor de revisão e terceira aba de Cadastro de Letras no controle remoto.
+- A versão gerada pelo run #931 é uma compilação de validação do estado atual da branch, não a versão final para a rodada única de testes do usuário.
+
+## Próximas ações
+1. Auditar handlers, persistência e recuperação completos da aba atual para definir o fluxo substituto sem perder registros existentes.
+2. Auditar endpoints e protocolo remoto, preservando Ao Vivo e Bíblia.
+3. Comparar motores de alinhamento com áudio cantado em português e medir precisão, CPU, RAM e tamanho antes de escolher dependência.
+4. Implementar o editor remodelado e integração remota, com testes de unidade/integração.
+5. Rodar novo CI completo, validar artefatos e só então preparar a versão consolidada para o usuário.
+
+## Regras de continuidade
+- Manter a branch isolada; não fazer merge na `main` sem autorização.
+- Não chamar o usuário para testar etapas intermediárias.
+- Não declarar análise de áudio, UI ou integração remota concluídas sem evidência.
+- Preservar histórico abaixo deste resumo, mesmo quando registros antigos apontarem estados de branches/etapas anteriores.
+
+---
+
 # MEMORIA_CONTINUA — Lyravoxen
 Atualizado em 25/11/2026
 
@@ -1363,3 +1398,11 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Não perguntar novamente preferências já confirmadas: preservar o layout moderno e funções existentes, manter branch isolada, priorizar solução gratuita/leve, automático primeiro e manual por blocos como alternativa, e preparar a mesma capacidade no controle remoto.
 - Limite de segurança: se uma implementação exigir alterar protocolo, banco/arquivo incompatível, remover comportamento funcional, mudar arquitetura de integração ou afetar outras abas, interromper antes dessa mudança e pedir aprovação específica.
 - Esta solicitação não autoriza merge na `main`, remoção de recursos existentes ou mudanças fora do escopo sem análise.
+
+
+## 27/11/2026 — CI #931 validado
+- Usuário informou que o workflow #931 terminou com sucesso. Verificação direta do run `46067616951` confirmou ambos os jobs: `build` e `cloud-worker-tests` em `completed/success`.
+- O job Windows concluiu restore/build .NET, teste de cue timeline, empacotamento portátil, instalador Inno Setup e upload dos três artefatos.
+- O job cloud concluiu os testes do serviço offline, Help coverage, verificações C# e testes do Worker/página mobile.
+- Artefatos baixados e verificados: instalador ZIP íntegro e pacote portátil interno íntegro; IDs registrados no estado atual no início deste arquivo.
+- Limite: esta execução valida o estado existente e a suíte configurada, não implementa nem prova alinhamento de áudio, nova UI ou cadastro remoto.
