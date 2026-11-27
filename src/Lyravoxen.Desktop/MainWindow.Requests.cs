@@ -400,6 +400,49 @@ public partial class MainWindow
     }
 
 
+    private bool EnsureYoutubeDownloadConsent()
+    {
+        var consentFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lyravoxen", "youtube-audio-consent.json");
+        try
+        {
+            if (File.Exists(consentFile) &&
+                System.Text.Json.JsonDocument.Parse(File.ReadAllText(consentFile)).RootElement.TryGetProperty("authorizedUseConfirmed", out var saved) &&
+                saved.ValueKind == System.Text.Json.JsonValueKind.True) return true;
+        }
+        catch { /* consentimento corrompido: solicita novamente */ }
+
+        var answer = System.Windows.MessageBox.Show(_requestsWindow ?? this,
+            "O download integrado usa o yt-dlp oficial para obter a faixa de áudio pública em M4A. Use somente em gravações próprias, de domínio público ou para as quais você tenha autorização. O Lyravoxen não usa cookies, não acessa contas, não contorna DRM, paywalls nem anúncios; a disponibilidade depende do vídeo e do YouTube. O componente é gratuito e terá seu SHA-256 verificado antes do uso.\n\nVocê confirma que tem autorização para baixar e armazenar o áudio deste tipo de conteúdo?",
+            "Uso autorizado de áudio", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        if (answer != MessageBoxResult.Yes) return false;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(consentFile)!);
+            File.WriteAllText(consentFile, "{ \"authorizedUseConfirmed\": true }");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(_requestsWindow ?? this, "Não foi possível registrar a confirmação: " + ex.Message, "Download offline", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+    }
+
+    private LibraryFolder GetOrCreateRequestsOfflineFolder()
+    {
+        var folder = _library.FirstOrDefault(f => string.Equals(f.Name, "Pedidos recebidos", StringComparison.OrdinalIgnoreCase));
+        if (folder is not null) return folder;
+        folder = new LibraryFolder { Name = "Pedidos recebidos" };
+        _library.Add(folder);
+        if (!SaveLibrary())
+        {
+            _library.Remove(folder);
+            throw new IOException("Não foi possível criar a pasta Pedidos recebidos na Biblioteca Offline.");
+        }
+        RefreshFolders(folder.Id);
+        return folder;
+    }
+
     /// <summary>Importa um arquivo autorizado e o associa ao pedido e ao ID exato do vídeo quando disponível.</summary>
     private async void ImportOfflineForRequest(SongRequest request)
     {
@@ -415,13 +458,28 @@ public partial class MainWindow
         {
             OfflineMediaResult result = null!;
             var isYouTube = YouTubeLink.TryGetVideoId(request.Url) is not null;
-            var importLocal = isYouTube;
+            var importLocal = false;
             if (isYouTube)
             {
-                var attachAuthorizedCopy = System.Windows.MessageBox.Show(_requestsWindow ?? this,
-                    "Este pedido contém um link do YouTube. O link será preservado, mas não é um arquivo MP3/WAV que o Lyravoxen possa baixar diretamente.\n\nO Lyravoxen não extrai áudio nem contorna anúncios ou restrições do YouTube.\n\nSe você já possui a gravação exata e tem autorização para usá-la, deseja associar agora um arquivo MP3/WAV a este pedido?",
-                    "Link do YouTube — cópia offline não disponível diretamente", MessageBoxButton.YesNo, MessageBoxImage.Information);
-                if (attachAuthorizedCopy != MessageBoxResult.Yes) return;
+                if (!EnsureYoutubeDownloadConsent()) return;
+                try
+                {
+                    StatusText.Text = "Preparando componente gratuito e baixando áudio autorizado do YouTube...";
+                    result = await _youtubeAudio.DownloadAuthorizedAudioAsync(request.Url, OfflineMediaFolder);
+                }
+                catch (Exception downloadError)
+                {
+                    var fallback = System.Windows.MessageBox.Show(_requestsWindow ?? this,
+                        "Não foi possível obter a faixa de áudio M4A deste vídeo.
+
+Motivo: " + downloadError.Message +
+                        "
+
+Deseja associar um arquivo MP3/WAV que você já possui e tem autorização para usar?",
+                        "Download indisponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    if (fallback != MessageBoxResult.Yes) return;
+                    importLocal = true;
+                }
             }
             else
             {
@@ -429,13 +487,16 @@ public partial class MainWindow
                 {
                     StatusText.Text = "Baixando o arquivo de áudio direto do endereço do pedido...";
                     result = await _offlineMedia.DownloadAsync(request.Url, OfflineMediaFolder);
-                    importLocal = false;
                 }
                 catch (Exception downloadError)
                 {
                     var fallback = System.Windows.MessageBox.Show(_requestsWindow ?? this,
-                        "O endereço do pedido não entregou um arquivo MP3/WAV direto.\n\nMotivo: " + downloadError.Message +
-                        "\n\nDeseja escolher um MP3/WAV autorizado no computador?",
+                        "O endereço do pedido não entregou um arquivo MP3/WAV direto.
+
+Motivo: " + downloadError.Message +
+                        "
+
+Deseja escolher um MP3/WAV autorizado no computador?",
                         "Download direto indisponível", MessageBoxButton.YesNo, MessageBoxImage.Information);
                     if (fallback != MessageBoxResult.Yes) return;
                     importLocal = true;
@@ -456,8 +517,7 @@ public partial class MainWindow
             var videoId = YouTubeLink.TryGetVideoId(request.Url) ?? "";
             var expires = DateTime.Now.AddDays(days);
             var title = string.IsNullOrWhiteSpace(request.Name) ? Path.GetFileNameWithoutExtension(result.FilePath) : request.Name;
-            var folder = ChooseLibraryFolder("Salvar pedido na Biblioteca Offline");
-            if (folder is null) return;
+            var folder = GetOrCreateRequestsOfflineFolder();
             var existing = _library.SelectMany(f => f.Videos)
                 .FirstOrDefault(v => v.IsOffline && string.Equals(v.LocalPath, result.FilePath, StringComparison.OrdinalIgnoreCase));
             var inFolder = folder.Videos.FirstOrDefault(v => v.IsOffline &&
