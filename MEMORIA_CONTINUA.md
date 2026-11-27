@@ -1218,3 +1218,14 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Estado atual: build #901 passou após atualização documental; a versão com uBlock Origin Lite (#897) compilou, mas o usuário confirmou anúncios de vídeo e laterais. Bloqueio de anúncios não está concluído.
 - Próxima ação técnica: verificar estado real da extensão via `GetBrowserExtensionsAsync`, ID/nome/versão/`IsEnabled`, registrar runtime/HRESULT e testar DNR isoladamente antes de decidir manter/substituir a abordagem. Não pedir mais provas de anúncios.
 - Objetivo operacional: evitar novas instalações intermediárias e concentrar trabalho antes da próxima rodada manual; usuário quer avançar para outras etapas do Lyravoxen.
+
+
+## 27/11/2026 — Decisão do usuário: pausar a frente de bloqueio de anúncios
+
+- Após sucessivos testes negativos (bloqueador legado, filtros de endpoints, protótipo Brave adblock-rust e uBlock Origin Lite no WebView2), o usuário informou que precisa avançar para outras etapas e não quer continuar gastando tempo sem garantia.
+- O usuário cogitou um botão redondo de controle uBlock na aba Próxima música, abaixo do botão de tema.
+- Orientação técnica: é possível implementar um controle visual para habilitar/desabilitar uma extensão já instalada via API WebView2, condicionado à extensão estar instalada e habilitada; isso NÃO garante remoção de anúncios in-stream/first-party do YouTube.
+- Não prometer bloqueio total nem criar um botão que sugira eficácia não comprovada.
+- Recomendação dada: pausar a frente de bloqueio de anúncios como prioridade, sem interromper o projeto Lyravoxen como um todo. Preservar o código experimental e os registros para eventual retomada.
+- Nenhum novo botão foi implementado nem qualquer código alterado nesta decisão.
+- Próxima ação: seguir para outra funcionalidade do Lyravoxen escolhida pelo usuário; a frente de anúncios fica pausada até existir uma arquitetura com evidência de compatibilidade e eficácia suficiente para justificar novo esforço.
