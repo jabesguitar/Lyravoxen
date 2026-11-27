@@ -682,3 +682,12 @@ Trabalhar somente em IP/bloqueios, download/Biblioteca Offline e proteção de a
 - Próxima ação: melhorar diagnóstico e instalação idempotente: consultar extensão já instalada, confirmar ID/nome/IsEnabled, evitar reinstalar, guardar versão/erros/WebView2 Runtime em log local e mostrar estado real no painel. Validar DNR separadamente antes de nova compilação para o usuário.
 - Não pedir novas provas; usuário já mostrou anúncios em três capturas e quer avançar. Não declarar bloqueio resolvido.
 - Manter este arquivo e MEMORIA_CONTINUA.md sempre atualizados. Branch feature/offline-library-on-redesign; main intocada.
+
+
+## Atualização — 27/11/2026: nova captura confirma anúncios ainda presentes
+
+- Nova captura do usuário na aba Próxima música, busca "harpa crista 15": anúncio em vídeo Amazon Prime/Blade Runner 2099, marcado "Patrocinado · 2 de 2", duração 0:06 e reprodução em 0:03/0:06; anúncio patrocinado lateral também visível.
+- Conclusão: uBlock Origin Lite integrado não resolveu o problema. Não solicitar novas provas.
+- Próxima etapa antes de nova compilação: instrumentar GetBrowserExtensionsAsync, confirmar ID/nome/versão/IsEnabled; instalar apenas quando ausente; registrar versão WebView2, caminho e HRESULTs; separar estado real da extensão do contador legado; validar DNR com fixture controlada. Se DNR funcionar e anúncios continuarem, estudar outra solução open source compatível em vez de repetir a mesma abordagem.
+- Não declarar proteção eficaz nem pedir novo teste até termos diagnóstico técnico. Build #897 verde apenas para compilação/empacotamento; teste real falhou.
+- Manter este arquivo e MEMORIA_CONTINUA.md atualizados. Branch feature/offline-library-on-redesign; main intocada.
