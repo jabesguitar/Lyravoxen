@@ -1,3 +1,46 @@
+# RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, após build #977)
+
+**Ponto de retomada confirmado diretamente no GitHub.**
+
+| Campo | Estado |
+|---|---|
+| Repositório | `jabesguitar/Lyravoxen` |
+| Branch ativa | `feature/lyrics-structure-fast-sync` |
+| HEAD da branch | `55984818286b79a2e5bf1e31d2f2c599db4e3501` |
+| Código funcional validado | `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8` |
+| Último workflow | [Windows build #977](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106917809) |
+| Resultado | `cloud-worker-tests` e `build` concluídos com sucesso |
+| Main | Não houve merge; permanece intocada |
+
+## O que o #977 realmente representa
+
+O commit `5598481` atualizou quatro arquivos de documentação e não mudou o código funcional. O build #977 recompilou e empacotou o mesmo código funcional aprovado em `b2a0dfa`. Assim, #977 é a execução mais recente e os pacotes mais recentes, mas não representa uma nova implementação da aplicação.
+
+Artefatos do #977: Windows x64 `15247723159`; portátil ZIP `15247643490`; instalador `15248535524`. Todos constavam como não expirados na última consulta.
+
+## Estado funcional conhecido
+
+- **Cadastro de Letras / Estúdio de Letras:** parser de estrutura, texto-fonte separado das ocorrências, cartões por slide, marcação manual sequencial, prévia, desfazer, repetição, reordenação e persistência implementados.
+- **Automático:** Whisper local incremental durante a reprodução, comparando transcrição com a sequência de cartões. Ainda não é alinhamento prévio completo (forced alignment) e falta validação com gravação cantada real.
+- **Biblioteca Offline:** tenta primeiro o vídeo original quando há internet; se ocorrer erro do player e a cópia local for válida, usa fallback local. Sem internet, usa cópia local válida. MP3/WAV importado sem vínculo com YouTube permanece áudio local.
+- **Controle remoto:** comandos atuais compatíveis com marcação sequencial, mas a terceira aba remota completa de Cadastro de Letras ainda não existe.
+- **Limite conhecido:** player travado sem emitir `ready` ou `playerError` pode exigir timeout de inicialização.
+
+## Próxima etapa — não reiniciar o planejamento
+
+A validação manual do pacote consolidado #977 continua pendente. Testar os quatro cenários online/offline da Biblioteca e o fluxo de criação, marcação, salvamento e recuperação do Cadastro de Letras. Registrar os resultados reais. Depois avançar para a aba remota de Cadastro de Letras e o protótipo/benchmark de alinhamento completo de áudio em português.
+
+## Restrições permanentes
+
+- Não fazer merge na `main` sem autorização explícita.
+- Não alterar telas não relacionadas nem restaurar layout antigo.
+- Preservar recursos válidos, dados e metadados.
+- Manter a solução gratuita e leve sempre que viável.
+- Não declarar alinhamento automático completo ou terceira aba remota pronta sem implementação e testes.
+- Manter o histórico cronológico em `MEMORIA_CONTINUA.md`; este arquivo é o resumo operacional mais recente.
+
+---
+
 # LYRAVOXEN — ESTADO ATUAL E RETOMADA (28/11/2026)
 
 **Branch ativa:** `feature/lyrics-structure-fast-sync`  
