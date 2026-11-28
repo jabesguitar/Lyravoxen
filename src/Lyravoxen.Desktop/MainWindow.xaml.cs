@@ -107,9 +107,11 @@ public partial class MainWindow : Window
         EnsureOfflineStorageFolders();
         LoadHistory();
         LoadLibrary();
+        InitializeMediaConnectivityMonitor();
         Closing += async (_, _) =>
         {
             _offlineCleanupTimer.Stop();
+            StopMediaConnectivityMonitor();
             _offlineMedia.Dispose();
             if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
             _micService?.Dispose();
@@ -1113,6 +1115,8 @@ public partial class MainWindow : Window
         {
             if (_liveRecognition is not null)
                 await StopAutoRecognitionAsync(savePartial: true);
+            CancelPendingOnlineResume();
+            ResetMediaFailoverState();
             _playerSessionId = Guid.NewGuid().ToString("N");
             _playbackEnded = false;
             _autoSyncPending = false;
@@ -1145,7 +1149,8 @@ public partial class MainWindow : Window
                     FullLyrics = offlineBackupVideo.FullLyrics,
                     Cues = offlineBackupVideo.Cues.Select(CloneLyricCue).ToList(),
                     Sections = CloneLyricsSections(offlineBackupVideo.Sections),
-                    ExecutionOrder = CloneLyricsExecutionOrder(offlineBackupVideo.ExecutionOrder)
+                    ExecutionOrder = CloneLyricsExecutionOrder(offlineBackupVideo.ExecutionOrder),
+                    TimelineAdjustments = CloneLyricsTimelineAdjustments(offlineBackupVideo.TimelineAdjustments)
                 }
                 : new LibraryVideo
             {
@@ -1166,6 +1171,8 @@ public partial class MainWindow : Window
                     _currentVideo.Sections = CloneLyricsSections(offlineBackupVideo.Sections);
                 if (_currentVideo.ExecutionOrder.Count == 0)
                     _currentVideo.ExecutionOrder = CloneLyricsExecutionOrder(offlineBackupVideo.ExecutionOrder);
+                if (_currentVideo.TimelineAdjustments.Count == 0)
+                    _currentVideo.TimelineAdjustments = CloneLyricsTimelineAdjustments(offlineBackupVideo.TimelineAdjustments);
                 if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = offlineBackupVideo.TrackName;
                 if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = offlineBackupVideo.Artist;
             }
@@ -1176,6 +1183,7 @@ public partial class MainWindow : Window
                 if (_currentVideo.Cues.Count == 0) _currentVideo.Cues = archivedLyrics.Cues;
                 if (_currentVideo.Sections.Count == 0) _currentVideo.Sections = CloneLyricsSections(archivedLyrics.Sections);
                 if (_currentVideo.ExecutionOrder.Count == 0) _currentVideo.ExecutionOrder = CloneLyricsExecutionOrder(archivedLyrics.ExecutionOrder);
+                if (_currentVideo.TimelineAdjustments.Count == 0) _currentVideo.TimelineAdjustments = CloneLyricsTimelineAdjustments(archivedLyrics.TimelineAdjustments);
                 if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = archivedLyrics.TrackName;
                 if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = archivedLyrics.Artist;
             }
@@ -2148,7 +2156,12 @@ public partial class MainWindow : Window
                 {
                     _playerReady = false;
                     _pendingQueueVideoId = null;
-                    var fallback = _pendingOfflineFallbackVideo;
+                    if (_pendingOnlineResume)
+                    {
+                        HandleOnlineResumeFailure(explanation, code is 100 or 101 or 150 or 153);
+                        return;
+                    }
+                    var fallback = _pendingOfflineFallbackVideo ?? FindOfflineBackupForCurrentVideo();
                     var fallbackVideoId = fallback is null
                         ? null
                         : YouTubeLink.TryGetVideoId(fallback.Url) ?? fallback.VideoId;
@@ -2160,10 +2173,14 @@ public partial class MainWindow : Window
 
                     if (canUseFallback)
                     {
+                        var fallbackPosition = _youtubePlaybackIntended ? _lastKnownPlaybackSeconds : 0;
+                        var offlinePlayback = CreateOfflinePlaybackCopy(_currentVideo ?? fallback!, fallback!);
                         _pendingOfflineFallbackVideo = null;
-                        PlayLocalAudio(fallback!);
+                        _wasAutomaticallySwitchedToOffline = _youtubePlaybackIntended && (code is -1 or 5);
+                        _retryOnlineAfterUtc = DateTime.UtcNow.AddSeconds(_wasAutomaticallySwitchedToOffline ? 0 : 30);
+                        PlayLocalAudio(offlinePlayback, fallbackPosition);
                         StatusText.Text = "O YouTube não conseguiu reproduzir este vídeo (" + explanation +
-                            "). O Lyravoxen iniciou a cópia offline salva; ela continua disponível para uso sem internet.";
+                            "). A cópia local retomou do ponto em que a música estava.";
                         return;
                     }
 
@@ -2203,6 +2220,22 @@ public partial class MainWindow : Window
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
                 Dispatcher.Invoke(() =>
                 {
+                    if (playerState == 1)
+                    {
+                        if (_pendingOnlineResume)
+                        {
+                            _ = CompleteOnlineResumeAsync();
+                            return;
+                        }
+                        _youtubePlaybackIntended = true;
+                    }
+                    else if (playerState == 2 && !(_isLocalAudioPlaying && _wasAutomaticallySwitchedToOffline))
+                        _youtubePlaybackIntended = false;
+                    if (playerState == 0 && _pendingOnlineResume)
+                    {
+                        HandleOnlineResumeFailure("O vídeo não iniciou durante a retomada online.", permanent: false);
+                        return;
+                    }
                     if (playerState == 1 && _pendingOfflineFallbackVideo is { } startedBackup)
                     {
                         var startedBackupId = YouTubeLink.TryGetVideoId(startedBackup.Url) ?? startedBackup.VideoId;
@@ -2225,6 +2258,8 @@ public partial class MainWindow : Window
             if (!double.IsFinite(seconds) || seconds < 0) return;
             _lastKnownPlaybackSeconds = seconds;
             var state = root.TryGetProperty("state", out var stateElement) ? stateElement.GetInt32() : -1;
+            if (state == 1) _youtubePlaybackIntended = true;
+            else if (state == 2 && !(_isLocalAudioPlaying && _wasAutomaticallySwitchedToOffline)) _youtubePlaybackIntended = false;
             if (root.TryGetProperty("duration", out var durationElement) && durationElement.TryGetDouble(out var durationValue)) _playerDurationSeconds = durationValue;
             if (state != _lastPlayerState)
             {
@@ -2939,6 +2974,7 @@ public partial class MainWindow : Window
             saved.Artist = _currentVideo.Artist;
             saved.Url = _currentVideo.Url;
             saved.FullLyrics = _currentVideo.FullLyrics;
+            saved.TimelineAdjustments = CloneLyricsTimelineAdjustments(_currentVideo.TimelineAdjustments);
         }
         SaveLibrary();
         ArchiveCurrentLyrics();
@@ -2960,6 +2996,14 @@ public partial class MainWindow : Window
             SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
             OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex,
             LineOrder = new List<int>(item.LineOrder)
+        }).ToList();
+
+    private static List<LyricsTimelineAdjustment> CloneLyricsTimelineAdjustments(IEnumerable<LyricsTimelineAdjustment>? adjustments) =>
+        (adjustments ?? Enumerable.Empty<LyricsTimelineAdjustment>()).Select(item => new LyricsTimelineAdjustment
+        {
+            SectionId = item.SectionId, OccurrenceIndex = item.OccurrenceIndex,
+            SourceLineIndex = item.SourceLineIndex, AnchorOrderIndex = item.AnchorOrderIndex,
+            DeltaSeconds = item.DeltaSeconds
         }).ToList();
 
     private void PersistCurrentCues()
@@ -3002,7 +3046,8 @@ public partial class MainWindow : Window
                 SavedAt = DateTime.Now,
                 Cues = _currentVideo.Cues.Select(cue => CloneLyricCue(cue)).ToList(),
                 Sections = CloneLyricsSections(_currentVideo.Sections),
-                ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder)
+                ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder),
+                TimelineAdjustments = CloneLyricsTimelineAdjustments(_currentVideo.TimelineAdjustments)
             });
         }
         else
@@ -3019,6 +3064,7 @@ public partial class MainWindow : Window
                 saved.Cues = _currentVideo.Cues.Select(cue => CloneLyricCue(cue)).ToList();
                 saved.Sections = CloneLyricsSections(_currentVideo.Sections);
                 saved.ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder);
+                saved.TimelineAdjustments = CloneLyricsTimelineAdjustments(_currentVideo.TimelineAdjustments);
             }
         }
         SaveLibrary();
@@ -3683,7 +3729,7 @@ public partial class MainWindow : Window
         dialog.ShowDialog();
     }
 
-    private void PlayLocalAudio(LibraryVideo video)
+    private void PlayLocalAudio(LibraryVideo video, double startSeconds = 0)
     {
         try
         {
@@ -3697,8 +3743,8 @@ public partial class MainWindow : Window
             PublishProjectionOnly("");
             YoutubePlayer.Visibility = Visibility.Collapsed;
             LocalAudioPlayer.Visibility = Visibility.Visible;
+            SetPendingLocalPlaybackStart(startSeconds);
             LocalAudioPlayer.Source = new Uri(video.LocalPath);
-            LocalAudioPlayer.Position = TimeSpan.Zero;
             LocalAudioPlayer.Volume = OfflineVolumeSlider.Value;
             LocalAudioPlayer.Play();
             _isLocalAudioPlaying = true;
@@ -3706,7 +3752,7 @@ public partial class MainWindow : Window
             OfflinePlaybackBar.Visibility = Visibility.Visible;
             OfflinePositionSlider.Value = 0;
             _lastAutomaticCue = -1;
-            _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = 0;
+            _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = Math.Max(0, startSeconds);
             _audioTimer.Start();
             _currentVideo = video;
             MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
@@ -3802,6 +3848,7 @@ public partial class MainWindow : Window
     {
         if (_playbackEnded) return;
         _playbackEnded = true;
+        ResetMediaFailoverState();
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
         if (_liveRecognition is not null) _ = StopAutoRecognitionAsync(savePartial: true);

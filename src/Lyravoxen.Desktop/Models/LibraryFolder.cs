@@ -26,6 +26,7 @@ public sealed class LibraryVideo
     // Estrutura-fonte e ocorrências de execução: refrões podem reaparecer sem duplicar o texto.
     public List<LyricsSectionBlock> Sections { get; set; } = new();
     public List<LyricsExecutionOccurrence> ExecutionOrder { get; set; } = new();
+    public List<LyricsTimelineAdjustment> TimelineAdjustments { get; set; } = new();
     /// <summary>Quando a letra/sincronia foi salva pela última vez (para mostrar as músicas salvas mais recentes).</summary>
     public DateTime SavedAt { get; set; }
     /// <summary>Data limite da cópia local importada; metadados e letra permanecem após expirar.</summary>

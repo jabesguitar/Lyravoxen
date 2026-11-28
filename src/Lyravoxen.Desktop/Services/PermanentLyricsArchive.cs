@@ -95,6 +95,12 @@ public sealed class PermanentLyricsArchive
             SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
             OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex,
             LineOrder = new List<int>(item.LineOrder)
+        }).ToList(),
+        TimelineAdjustments = (v.TimelineAdjustments ?? new List<LyricsTimelineAdjustment>()).Select(item => new LyricsTimelineAdjustment
+        {
+            SectionId = item.SectionId, OccurrenceIndex = item.OccurrenceIndex,
+            SourceLineIndex = item.SourceLineIndex, AnchorOrderIndex = item.AnchorOrderIndex,
+            DeltaSeconds = item.DeltaSeconds
         }).ToList()
     };
 }
