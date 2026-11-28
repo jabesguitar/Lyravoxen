@@ -438,12 +438,16 @@ try
     File.WriteAllBytes(secondCopyPath, new byte[] { 5, 6, 7 });
     try
     {
+        var ambiguousOriginal = new LibraryVideo
+        {
+            IsOffline = true, LocalPath = offlineTestPath, TrackName = "Te Ver", Artist = ""
+        };
         var duplicate = new LibraryVideo
         {
             IsOffline = true, LocalPath = secondCopyPath, TrackName = "Te Ver", Artist = "",
             SavedAt = DateTime.Now.AddMinutes(-1)
         };
-        Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { offlineByName, duplicate }, onlineCurrent, DateTime.Now) is null,
+        Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { ambiguousOriginal, duplicate }, onlineCurrent, DateTime.Now) is null,
             "failover: não escolhe arbitrariamente entre duas cópias do mesmo título sem intérprete");
     }
     finally { if (File.Exists(secondCopyPath)) File.Delete(secondCopyPath); }
