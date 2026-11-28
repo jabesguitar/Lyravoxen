@@ -90,6 +90,8 @@ public partial class MainWindow
         StatusText.Text = $"Cartão {card.SectionLabel} marcado em {card.TimeLabel}. Continue com Espaço ou clique em Marcar próxima.";
     }
 
+    private void TapUndo() => TapUndo_Click(this, new RoutedEventArgs());
+
     private void TapUndo_Click(object sender, RoutedEventArgs e)
     {
         if (!_tapActive)

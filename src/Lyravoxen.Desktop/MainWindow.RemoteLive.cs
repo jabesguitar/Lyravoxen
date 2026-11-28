@@ -196,9 +196,11 @@ public partial class MainWindow
     private object BuildTapState() => new
     {
         active = _tapActive,
-        marked = _tapStarts.Count,
-        total = _tapStanzas.Count,
-        nextLine = _tapActive && _tapStarts.Count < _tapStanzas.Count && _tapStanzas[_tapStarts.Count].Count > 0 ? _tapStanzas[_tapStarts.Count][0] : ""
+        marked = _tapMarkedCards.Count,
+        total = _lyricsEditorCards.Count,
+        nextLine = _tapActive
+            ? _lyricsEditorCards.FirstOrDefault(card => !card.Seconds.HasValue)?.Text ?? ""
+            : ""
     };
 
     private object BuildRecentSaved() => _library.SelectMany(folder => folder.Videos)
