@@ -93,7 +93,8 @@ public sealed class PermanentLyricsArchive
         ExecutionOrder = v.ExecutionOrder.Select(item => new LyricsExecutionOccurrence
         {
             SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
-            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex
+            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex,
+            LineOrder = new List<int>(item.LineOrder)
         }).ToList()
     };
 }
