@@ -984,6 +984,21 @@ public partial class MainWindow : Window
         RefreshNextLyricsPreview();
     }
 
+    private async Task<bool> CanReachYoutubeAsync()
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.youtube.com/generate_204");
+            using var response = await MetadataHttp.SendAsync(
+                request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            return response.IsSuccessStatusCode;
+        }
+        catch (OperationCanceledException) { return false; }
+        catch (HttpRequestException) { return false; }
+        catch (IOException) { return false; }
+    }
+
     private async void PlayNextPrepared_Click(object sender, RoutedEventArgs e)
     {
         if (_nextOfflineVideo is { } offline)
@@ -996,15 +1011,44 @@ public partial class MainWindow : Window
                 StatusText.Text = "A cópia offline preparada venceu ou não está disponível. Os dados da música continuam na biblioteca.";
                 return;
             }
+
+            var originalUrl = !string.IsNullOrWhiteSpace(offline.Url)
+                ? offline.Url
+                : (string.IsNullOrWhiteSpace(offline.VideoId) ? "" : "https://www.youtube.com/watch?v=" + offline.VideoId);
+            var originalVideoId = YouTubeLink.TryGetVideoId(originalUrl) ?? offline.VideoId;
+
+            // A cópia offline é uma reserva. Com o YouTube acessível, prioriza o vídeo completo.
+            if (!string.IsNullOrWhiteSpace(originalVideoId) && await CanReachYoutubeAsync())
+            {
+                var onlineUrl = "https://www.youtube.com/watch?v=" + originalVideoId;
+                WorkspaceTabs.SelectedIndex = 0;
+                if (await LoadVideoAsync(onlineUrl, true))
+                {
+                    _nextOfflineVideo = null;
+                    _nextVideoUrl = null;
+                    SaveNextVideoPreference();
+                    PlayNextButton.IsEnabled = false;
+                    StatusText.Text = "Internet disponível: reproduzindo o vídeo original do YouTube. A cópia offline continua guardada como reserva.";
+                    return;
+                }
+
+                StatusText.Text = "O vídeo online não pôde ser preparado. Vou usar a cópia offline salva.";
+            }
+            else if (!string.IsNullOrWhiteSpace(originalVideoId))
+            {
+                StatusText.Text = "YouTube sem conexão: usando a cópia offline salva.";
+            }
+
             _nextOfflineVideo = null;
             _nextVideoUrl = null;
             SaveNextVideoPreference();
             PlayNextButton.IsEnabled = false;
             WorkspaceTabs.SelectedIndex = 0;
             PlayLocalAudio(offline);
-            StatusText.Text = "Reproduzindo a cópia local autorizada: " + (offline.TrackName.Length > 0 ? offline.TrackName : offline.Title);
+            StatusText.Text = "Reproduzindo a cópia local de segurança: " + (offline.TrackName.Length > 0 ? offline.TrackName : offline.Title);
             return;
         }
+
         if (string.IsNullOrWhiteSpace(_nextVideoUrl)) return;
         var url = _nextVideoUrl;
         var queuedVideoId = YouTubeLink.TryGetVideoId(url);
@@ -1057,8 +1101,24 @@ public partial class MainWindow : Window
             // Pré-carrega as frases salvas para este vídeo antes de inicializar o player.
             var preparedVideo = _library.SelectMany(folder => folder.Videos)
                 .FirstOrDefault(item => !item.IsOffline && item.VideoId == videoId);
+            var offlineBackupVideo = _library.SelectMany(folder => folder.Videos)
+                .FirstOrDefault(item => item.IsOffline && item.VideoId == videoId &&
+                    !string.IsNullOrWhiteSpace(item.LocalPath) && File.Exists(item.LocalPath) &&
+                    (!item.OfflineExpiresAt.HasValue || item.OfflineExpiresAt.Value > DateTime.Now));
             var archivedLyrics = _permanentLyrics?.Find(videoId, url);
-            _currentVideo = preparedVideo ?? archivedLyrics ?? new LibraryVideo
+            _currentVideo = preparedVideo ?? archivedLyrics ?? (offlineBackupVideo is not null
+                ? new LibraryVideo
+                {
+                    VideoId = offlineBackupVideo.VideoId, Title = offlineBackupVideo.Title,
+                    TrackName = offlineBackupVideo.TrackName, Artist = offlineBackupVideo.Artist,
+                    Composer = offlineBackupVideo.Composer, Url = url, IsOffline = false,
+                    FullLyrics = offlineBackupVideo.FullLyrics,
+                    Cues = offlineBackupVideo.Cues.Select(cue => new LyricCue
+                        { Seconds = cue.Seconds, Text = cue.Text }).ToList(),
+                    Sections = CloneLyricsSections(offlineBackupVideo.Sections),
+                    ExecutionOrder = CloneLyricsExecutionOrder(offlineBackupVideo.ExecutionOrder)
+                }
+                : new LibraryVideo
             {
                 VideoId = videoId,
                 Url = url,
@@ -1066,7 +1126,21 @@ public partial class MainWindow : Window
                 TrackName = _history.FirstOrDefault(v => v.VideoId == videoId)?.TrackName ?? "",
                 Composer = _history.FirstOrDefault(v => v.VideoId == videoId)?.Composer ?? "",
                 Artist = _history.FirstOrDefault(v => v.VideoId == videoId)?.Artist ?? ""
-            };
+            });
+            // Se já existia uma ficha online incompleta, aproveita os dados da cópia salva.
+            if (offlineBackupVideo is not null)
+            {
+                if (string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)) _currentVideo.FullLyrics = offlineBackupVideo.FullLyrics;
+                if (_currentVideo.Cues.Count == 0)
+                    _currentVideo.Cues = offlineBackupVideo.Cues.Select(cue => new LyricCue
+                        { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                if (_currentVideo.Sections.Count == 0)
+                    _currentVideo.Sections = CloneLyricsSections(offlineBackupVideo.Sections);
+                if (_currentVideo.ExecutionOrder.Count == 0)
+                    _currentVideo.ExecutionOrder = CloneLyricsExecutionOrder(offlineBackupVideo.ExecutionOrder);
+                if (string.IsNullOrWhiteSpace(_currentVideo.TrackName)) _currentVideo.TrackName = offlineBackupVideo.TrackName;
+                if (string.IsNullOrWhiteSpace(_currentVideo.Artist)) _currentVideo.Artist = offlineBackupVideo.Artist;
+            }
             // A ficha permanente prevalece sobre uma ficha sem letra; não perde letra/cues já arquivados.
             if (preparedVideo is not null && archivedLyrics is not null)
             {
