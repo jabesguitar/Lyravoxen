@@ -306,7 +306,7 @@ public partial class MainWindow
         LyricsLineCardsList.SelectedItem = selected;
     }
 
-    private void LyricsLineCardsList_KeyDown(object sender, KeyEventArgs e)
+    private void LyricsLineCardsList_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Space && LyricsLineCardsList.SelectedItem is LyricsEditorCard card)
         {
