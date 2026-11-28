@@ -329,29 +329,7 @@ public partial class MainWindow
         _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
         _currentVideo.Sections = CloneLyricsSections(_lyricsStructureDraft.Sections);
 
-        var order = new List<LyricsExecutionOccurrence>();
-        (string SectionId, int OccurrenceIndex)? previousKey = null;
-        foreach (var card in _lyricsEditorCards)
-        {
-            var key = (card.SectionId, card.OccurrenceIndex);
-            if (previousKey == key) continue;
-            var section = _lyricsStructureDraft.Sections.FirstOrDefault(item => item.SectionId == card.SectionId);
-            if (section is null) continue;
-            order.Add(new LyricsExecutionOccurrence
-            {
-                SectionId = card.SectionId,
-                Label = card.SectionLabel.Split('·')[0].Trim(),
-                Kind = section.Kind,
-                OccurrenceIndex = card.OccurrenceIndex,
-                SourceIndex = card.SourceBlockIndex
-            });
-            previousKey = key;
-        }
-        foreach (var section in _currentVideo.Sections)
-        {
-            section.OccurrenceCount = order.Count(item => item.SectionId == section.SectionId);
-        }
-        _currentVideo.ExecutionOrder = order;
+        _currentVideo.ExecutionOrder = BuildExecutionOrderFromCards();
 
         var marked = _lyricsEditorCards
             .Where(card => card.Seconds.HasValue)
@@ -382,6 +360,46 @@ public partial class MainWindow
             : $"Sincronização parcial salva. {unmarked} cartões ainda não têm tempo; marque-os depois.";
         StatusText.Text = $"Cadastro salvo para {MusicTrackBox.Text}: {marked.Count} frases com tempo. A letra original foi preservada.";
     }
+
+
+    private List<LyricsExecutionOccurrence> BuildExecutionOrderFromCards()
+    {
+        var order = new List<LyricsExecutionOccurrence>();
+        if (_lyricsStructureDraft is null) return order;
+        (string SectionId, int OccurrenceIndex)? previousKey = null;
+        foreach (var card in _lyricsEditorCards)
+        {
+            var key = (card.SectionId, card.OccurrenceIndex);
+            if (previousKey == key) continue;
+            var section = _lyricsStructureDraft.Sections.FirstOrDefault(item => item.SectionId == card.SectionId);
+            if (section is null) continue;
+            order.Add(new LyricsExecutionOccurrence
+            {
+                SectionId = card.SectionId,
+                Label = card.SectionLabel.Split('·')[0].Trim(),
+                Kind = section.Kind,
+                OccurrenceIndex = card.OccurrenceIndex,
+                SourceIndex = card.SourceBlockIndex
+            });
+            previousKey = key;
+        }
+
+        foreach (var section in _lyricsStructureDraft.Sections)
+            section.OccurrenceCount = order.Count(item => item.SectionId == section.SectionId);
+        return order;
+    }
+
+    private static LyricCue CloneLyricCue(LyricCue cue) => new()
+    {
+        Seconds = cue.Seconds,
+        Text = cue.Text,
+        SectionId = cue.SectionId,
+        OccurrenceIndex = cue.OccurrenceIndex,
+        SourceLineIndex = cue.SourceLineIndex,
+        Confidence = cue.Confidence,
+        NeedsReview = cue.NeedsReview,
+        IsManual = cue.IsManual
+    };
 
     private sealed record LyricsCatalogResult(
         string Track, string Artist, string Album, double Duration,
@@ -571,11 +589,15 @@ public partial class MainWindow
             _currentVideo.TrackName = selected.Track;
             _currentVideo.Artist = selected.Artist;
             var importedCues = importTimed ? selected.TimedCues : new List<LyricCue>();
-            var sourceText = !string.IsNullOrWhiteSpace(selected.PlainLyrics)
-                ? selected.PlainLyrics
-                : string.Join(Environment.NewLine, importedCues.Select(cue => cue.Text));
+            var sourceText = importTimed && importedCues.Count > 1
+                ? string.Join(Environment.NewLine, importedCues.Select(cue => cue.Text))
+                : !string.IsNullOrWhiteSpace(selected.PlainLyrics)
+                    ? selected.PlainLyrics
+                    : string.Join(Environment.NewLine, importedCues.Select(cue => cue.Text));
             ManualLyricsBox.Text = sourceText;
             _currentVideo.FullLyrics = sourceText;
+            _currentVideo.Sections.Clear();
+            _currentVideo.ExecutionOrder.Clear();
             _currentVideo.Cues = importedCues.Select(cue => new LyricCue
             {
                 Seconds = cue.Seconds, Text = cue.Text, Confidence = 1.0,
