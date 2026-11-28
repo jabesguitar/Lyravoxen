@@ -95,3 +95,34 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - **Modelo de ocorrência:** `LyricsExecutionOccurrence` guarda ID da seção, rótulo/tipo, índice e origem; campos temporais e confiança ainda precisam ser adicionados no desenho do alinhador.
 - **Controle remoto:** `RemoteControlServer.HandleAsync` aceita apenas GET; buffer de requisição de 65.536 bytes; `/api` verifica PIN e encaminha `c` (comando) e `a` (argumento). A página atual tem apenas Bíblia/Ao Vivo. Para texto extenso, a proposta é adicionar rota POST autenticada separada, sem mudar os comandos GET existentes.
 - **Preservação de compatibilidade:** nenhuma rota existente foi alterada nesta etapa. A nova rota POST é uma extensão aditiva planejada para o editor remoto, mantendo Ao Vivo/Bíblia sob o mesmo contrato atual.
+
+
+## 28/11/2026 — Remodelagem da grade, compatibilidade e prioridade online/offline
+
+### Pedido do usuário
+- A antiga aba de letras não estava funcional para o fluxo pretendido. O usuário apresentou capturas do Holyrics como referência de pesquisa integrada e edição por grade de slides/cartões: selecionar cada bloco visual, acompanhar a prévia, marcar o instante na música e salvar.
+- O usuário também esclareceu que o arquivo baixado offline deve ser cópia de segurança: com internet, a reprodução deve usar o vídeo original do YouTube para que a imagem apareça; sem internet, utilizar o arquivo local.
+- O usuário forneceu logs de compilação com ambiguidades WPF/Windows Forms e nomes de controles TapSync removidos.
+
+### Implementações e correções
+- Criada a interface “Cadastro de letras / Estúdio de Letras”: pesquisa LRCLIB, pesquisa web alternativa, texto-fonte integral, cartões por slide de projeção, prévia, repetição de bloco, reordenação, marcação manual sequencial, desfazer, salvar e cancelar.
+- A busca LRCLIB foi documentada com os campos reais de pesquisa (título/intérprete/álbum); “Pesquisar na web” fica separado para busca alternativa.
+- O Whisper local incremental passou a comparar com a sequência expandida de cartões e mapear detecções para o slide; detecções estimadas/baixa confiança ficam sinalizadas.
+- `CueTimeline.Normalize` passou a preservar origem, ocorrência, confiança, necessidade de revisão e tipo de marcação.
+- `LyricsExecutionOccurrence.LineOrder` armazena a ordem personalizada dos slides; arquivo permanente e clones preservam o campo.
+- Corrigidos tipos WPF/WinForms ambíguos em `MainWindow.LyricsEditor.cs`; `KeyEventArgs` é explicitamente WPF.
+- `MainWindow.TapSync.cs` foi convertido da marcação por estrofe para cartão/slide e referências antigas a controles removidos foram eliminadas.
+- `MainWindow.RemoteLive.cs` calcula estado da marcação a partir de cartões e preserva o comando remoto `tapundo`; `TapUndo()` wrapper mantém atalho de voz.
+- Player online-primeiro: fila e seleção na Biblioteca tentam YouTube quando existe vídeo original; a cópia local permanece como reserva até `state == 1`. `playerError` recorre a arquivo local válido.
+- A validade do arquivo local agora limita somente o fallback; se o arquivo expirou, o vídeo original ainda pode tocar online.
+
+### Builds e testes confirmados
+- **#974**, commit `91a7bc1`, run `46105291580`: sucesso nos jobs `cloud-worker-tests` e `build`.
+- **#975**, commit `26c70d1`, run `46105922703`: sucesso nos dois jobs; validou prioridade online e fallback local.
+- **#976**, commit `b2a0dfa`, run `46106316394`: sucesso nos dois jobs; suíte auxiliar 17/17; Windows build e `Test cue timeline` aprovados. Artefatos: Windows x64 `15247444367`, portátil `15248120574`, instalador `15248205075`.
+- ZIP do portátil (artefato #976) verificado: ZIP externo e interno íntegros (`testzip() == None`), arquivo interno inclui `Lyravoxen.exe` (1.438 entradas). ZIP do instalador íntegro; executável extraído possui cabeçalho `MZ`.
+
+### Limitações e próximo passo
+- A sincronização automática ainda é reconhecimento Whisper incremental durante a reprodução, não forced alignment completo anterior ao playback.
+- A terceira aba remota dedicada ao cadastro de letras ainda não foi construída; compatibilidade dos comandos de marcação existentes foi mantida.
+- Ainda não há teste manual real em música cantada. Próxima ação é a rodada manual controlada do usuário com vídeo online/offline, backup expirado e marcação por cartões, registrando resultados sem assumir sucesso antes da verificação.

@@ -1,3 +1,61 @@
+# LYRAVOXEN — ESTADO ATUAL E RETOMADA (28/11/2026)
+
+**Branch ativa:** `feature/lyrics-structure-fast-sync`  
+**HEAD de código validado:** `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8`  
+**Build mais recente:** Windows build #976 — [run 46106316394](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106316394), concluído com sucesso nos dois jobs.  
+**Main:** não houve merge nem alteração na `main`.
+
+## Resultados CI confirmados
+
+- **#974 — commit `91a7bc1`:** compilação Windows, testes de timeline e suíte auxiliar concluídos com sucesso; gerados Windows x64, ZIP portátil e instalador.
+- **#975 — commit `26c70d1`:** mesmos dois jobs aprovados; validou a preferência pelo vídeo original do YouTube e fallback para a cópia local quando o player falha.
+- **#976 — commit `b2a0dfa`:** ambos os jobs concluídos com sucesso. A suíte auxiliar passou 17/17 etapas; o job Windows passou por Rust, build C#, bundle, `Test cue timeline`, ZIP portátil e instalador.
+- **Artefatos do #976:** Windows x64 (`15247444367`), portátil (`15248120574`) e instalador (`15248205075`).
+- **Integridade conferida nesta sessão:** ZIP externo do portátil e ZIP externo do instalador passaram em `zipfile.testzip()`; o ZIP portátil interno também passou, contém 1.438 entradas e inclui `Lyravoxen.exe`; o instalador extraído tem cabeçalho `MZ`.
+- Os testes CI provam compilação e os testes automatizados configurados; não substituem teste manual real de sincronização com uma música cantada.
+
+## Cadastro de Letras — o que está no código
+
+- A antiga aba de marcação por estrofe foi substituída por **Cadastro de letras / Estúdio de Letras**.
+- Texto-fonte completo permanece separado das ocorrências de execução.
+- Parser textual reconhece cabeçalhos de estrofe/verso, coro/refrão, ponte, intro/final e marcadores de repetição `2x`/`x2`; blocos repetidos apontam para o mesmo texto-fonte.
+- A grade cria cartões por **slide/bloco de projeção** (respeitando `_maxProjectionLines`), e não apenas um botão por linha. Cada cartão mostra o conteúdo do slide, seção/ocorrência, tempo e estado de revisão.
+- Marcação manual sequencial: iniciar, marcar o próximo slide com clique/Espaço, desfazer, concluir/salvar ou cancelar. Também existem repetição de bloco, reordenação e prévia.
+- Busca integrada gratuita via LRCLIB para título/intérprete/álbum; botão separado abre pesquisa web para outras fontes. A pesquisa LRCLIB não é busca no corpo integral da letra.
+- Tempos guardam seção, ocorrência, linha-fonte, confiança, necessidade de revisão e flag manual; normalização e arquivo permanente preservam esses dados.
+- A projeção isola seção/ocorrência para impedir vazamento de linhas entre blocos; ordem personalizada dos slides é persistida.
+- Reconhecimento automático atual continua sendo **Whisper local incremental durante a reprodução**, comparando linhas reconhecidas com a sequência de cartões e marcando o slide correspondente. Não é ainda forced alignment prévio da música inteira nem foi validado manualmente em uma gravação real.
+- Controles de marcação antigos foram removidos/adaptados; os comandos remotos existentes e o atalho por voz mantêm compatibilidade com a marcação sequencial. **A terceira aba remota completa de Cadastro de Letras ainda não foi implementada.**
+
+## Biblioteca Offline — comportamento implementado
+
+- Quando um item offline contém um ID/URL original do YouTube e há internet, a fila e a seleção direta na Biblioteca tentam primeiro o vídeo original, para preservar a imagem/vídeo.
+- A referência da cópia local permanece reservada até o player informar estado de reprodução (`state == 1`). Se o player envia `playerError` e a cópia local ainda existe e não expirou, ela é usada como fallback.
+- A validade de retenção afeta somente a cópia local: mesmo que o arquivo tenha expirado ou sido removido, o aplicativo ainda tenta reproduzir o vídeo original online.
+- Sem internet, o fallback local só ocorre se o arquivo existir e estiver dentro da validade. Caso contrário, a aplicação informa que não existe cópia offline utilizável.
+- Arquivos MP3/WAV importados sem vídeo original vinculado não têm como abrir um vídeo do YouTube; permanecem reprodução local.
+- Limite conhecido: o fallback após falha online depende do evento de erro do player. Um player travado sem emitir `ready`/`playerError` ainda pode exigir melhoria futura com timeout de inicialização.
+
+## Próximo passo prático
+
+1. O pacote #976 está aprovado para **uma rodada de teste manual controlada**. Use o portátil ou instalador do #976, não os pacotes dos runs anteriores.
+2. Testar um item offline com internet (deve abrir YouTube e mostrar o vídeo), o mesmo item sem internet (deve usar o arquivo local), um item com cópia local expirada mas link original válido (deve tentar YouTube), e um vídeo privado/sem incorporação com cópia local válida (deve cair para áudio local).
+3. Na aba Cadastro de Letras, testar colar uma letra completa, criar cartões/slides, marcar em reprodução, desfazer/repetir, salvar, fechar/reabrir e conferir que os tempos e a ordem persistem.
+4. Registrar resultados reais antes de declarar a remodelagem concluída. Depois avançar para: aba remota dedicada ao cadastro e protótipo/benchmark de alinhamento completo de áudio cantado em português.
+
+## Regras permanentes
+
+- Não fazer merge na `main` sem autorização explícita.
+- Não chamar o usuário para testar builds intermediários.
+- Não afirmar que o alinhamento automático completo ou a terceira aba remota está pronta.
+- Preservar dados e recursos válidos fora do escopo.
+- Manter solução gratuita e leve sempre que viável.
+- Atualizar este estado e o histórico após novos resultados; snapshots antigos abaixo permanecem como histórico, não como status atual.
+
+---
+
+# HISTÓRICO ANTERIOR PRESERVADO
+
 # ESTADO ATUAL — Lyravoxen (27/11/2026)
 
 **Frente ativa:** remodelagem integral da aba Cadastro de Letras e integração equivalente ao controle remoto.  

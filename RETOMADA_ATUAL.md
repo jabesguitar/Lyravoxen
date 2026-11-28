@@ -1,71 +1,61 @@
-# ESTADO ATUAL — RETOMADA PRIORITÁRIA (27/11/2026)
+# LYRAVOXEN — ESTADO ATUAL E RETOMADA (28/11/2026)
 
-> Este resumo substitui snapshots antigos sobre branch/etapa. O histórico abaixo foi preservado integralmente.
+**Branch ativa:** `feature/lyrics-structure-fast-sync`  
+**HEAD de código validado:** `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8`  
+**Build mais recente:** Windows build #976 — [run 46106316394](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106316394), concluído com sucesso nos dois jobs.  
+**Main:** não houve merge nem alteração na `main`.
 
-## Objetivo ativo
-Remodelar completamente a aba **Cadastrar Letras**, com modo automático baseado em áudio real, modo manual por blocos/cartões, persistência por música e acesso equivalente pelo controle remoto.
+## Resultados CI confirmados
 
-## Repositório e branch
-- Repositório: https://github.com/jabesguitar/Lyravoxen
-- Branch ativa: `feature/lyrics-structure-fast-sync`
-- HEAD atual: `ad79c1df7d1f8356ffa328750e77cffa8c29fd04`
-- Nenhum merge na `main` foi feito ou autorizado.
+- **#974 — commit `91a7bc1`:** compilação Windows, testes de timeline e suíte auxiliar concluídos com sucesso; gerados Windows x64, ZIP portátil e instalador.
+- **#975 — commit `26c70d1`:** mesmos dois jobs aprovados; validou a preferência pelo vídeo original do YouTube e fallback para a cópia local quando o player falha.
+- **#976 — commit `b2a0dfa`:** ambos os jobs concluídos com sucesso. A suíte auxiliar passou 17/17 etapas; o job Windows passou por Rust, build C#, bundle, `Test cue timeline`, ZIP portátil e instalador.
+- **Artefatos do #976:** Windows x64 (`15247444367`), portátil (`15248120574`) e instalador (`15248205075`).
+- **Integridade conferida nesta sessão:** ZIP externo do portátil e ZIP externo do instalador passaram em `zipfile.testzip()`; o ZIP portátil interno também passou, contém 1.438 entradas e inclui `Lyravoxen.exe`; o instalador extraído tem cabeçalho `MZ`.
+- Os testes CI provam compilação e os testes automatizados configurados; não substituem teste manual real de sincronização com uma música cantada.
 
-## CI e artefatos — execução #931
-- Run: https://github.com/jabesguitar/Lyravoxen/actions/runs/46067616951
-- Jobs `build` e `cloud-worker-tests`: ambos concluídos com sucesso.
-- O job Windows compilou o commit base `6350d28`, executou `Test cue timeline`, montou o pacote portátil e o instalador e publicou artefatos.
-- Correção posterior `ad79c1d` já está na branch; seu workflow `46069001270` estava em andamento no último acompanhamento. Não considerar esta correção aprovada até o resultado.
-- Artefatos: Windows x64 (`15231637109`), portátil (`15231617268`) e instalador (`15230839460`). ZIPs baixados passaram na verificação de integridade.
-- O build #931 é uma validação técnica intermediária. Não chamar o usuário para testar ainda.
+## Cadastro de Letras — o que está no código
 
-## O que está implementado
-- Analisador textual inicial: cabeçalhos de estrofe/coro/ponte/intro/final, marcadores 2x/x2 e agrupamento de blocos idênticos.
-- Modelo com blocos-fonte e ocorrências independentes (`Sections` e `ExecutionOrder`).
-- Persistência dessas estruturas no arquivo permanente.
-- Os testes correspondentes passaram no job de timeline do run #931.
+- A antiga aba de marcação por estrofe foi substituída por **Cadastro de letras / Estúdio de Letras**.
+- Texto-fonte completo permanece separado das ocorrências de execução.
+- Parser textual reconhece cabeçalhos de estrofe/verso, coro/refrão, ponte, intro/final e marcadores de repetição `2x`/`x2`; blocos repetidos apontam para o mesmo texto-fonte.
+- A grade cria cartões por **slide/bloco de projeção** (respeitando `_maxProjectionLines`), e não apenas um botão por linha. Cada cartão mostra o conteúdo do slide, seção/ocorrência, tempo e estado de revisão.
+- Marcação manual sequencial: iniciar, marcar o próximo slide com clique/Espaço, desfazer, concluir/salvar ou cancelar. Também existem repetição de bloco, reordenação e prévia.
+- Busca integrada gratuita via LRCLIB para título/intérprete/álbum; botão separado abre pesquisa web para outras fontes. A pesquisa LRCLIB não é busca no corpo integral da letra.
+- Tempos guardam seção, ocorrência, linha-fonte, confiança, necessidade de revisão e flag manual; normalização e arquivo permanente preservam esses dados.
+- A projeção isola seção/ocorrência para impedir vazamento de linhas entre blocos; ordem personalizada dos slides é persistida.
+- Reconhecimento automático atual continua sendo **Whisper local incremental durante a reprodução**, comparando linhas reconhecidas com a sequência de cartões e marcando o slide correspondente. Não é ainda forced alignment prévio da música inteira nem foi validado manualmente em uma gravação real.
+- Controles de marcação antigos foram removidos/adaptados; os comandos remotos existentes e o atalho por voz mantêm compatibilidade com a marcação sequencial. **A terceira aba remota completa de Cadastro de Letras ainda não foi implementada.**
 
-## Correção aplicada após a auditoria
-- `ad79c1d`: cópia profunda de `Sections`/`ExecutionOrder` ao criar/atualizar itens sincronizados e ao restaurar do arquivo permanente. CI `46069001270` pendente.
+## Biblioteca Offline — comportamento implementado
 
-## Auditoria inicial — lacunas confirmadas
-- Reconhecimento automático atual é incremental durante a reprodução, não alinhamento prévio da gravação.
-- Marcação manual atual é por estrofe inteira, não por cartões de frases/linhas.
-- `MainWindow.xaml.cs` ainda não chama `LyricsStructureAnalyzer`.
-- `PersistCurrentCues` não copia `Sections`/`ExecutionOrder` para a pasta "Músicas sincronizadas"; o arquivo permanente já clona essas propriedades.
-- Controle remoto mostra apenas Bíblia e Ao Vivo; o dispatcher não possui o fluxo de cadastro completo. Detalhes registrados em `docs/CADASTRO_LETRAS_IMPLEMENTACAO.md`.
+- Quando um item offline contém um ID/URL original do YouTube e há internet, a fila e a seleção direta na Biblioteca tentam primeiro o vídeo original, para preservar a imagem/vídeo.
+- A referência da cópia local permanece reservada até o player informar estado de reprodução (`state == 1`). Se o player envia `playerError` e a cópia local ainda existe e não expirou, ela é usada como fallback.
+- A validade de retenção afeta somente a cópia local: mesmo que o arquivo tenha expirado ou sido removido, o aplicativo ainda tenta reproduzir o vídeo original online.
+- Sem internet, o fallback local só ocorre se o arquivo existir e estiver dentro da validade. Caso contrário, a aplicação informa que não existe cópia offline utilizável.
+- Arquivos MP3/WAV importados sem vídeo original vinculado não têm como abrir um vídeo do YouTube; permanecem reprodução local.
+- Limite conhecido: o fallback após falha online depende do evento de erro do player. Um player travado sem emitir `ready`/`playerError` ainda pode exigir melhoria futura com timeout de inicialização.
 
-## Auditoria técnica adicional
-- `LiveAudioTranscriptionService`: WASAPI loopback, blocos de 5 s e Whisper GGML Base local; reconhecimento incremental, não forced alignment da música inteira.
-- `LyricsStructureAnalyzer`: blocos por linha em branco e repetição textual exata; não detecta repetição musical com áudio nem gera tempo/confiança.
-- `LyricsExecutionOccurrence` ainda não tem timestamp/confiança.
-- `RemoteControlServer` aceita somente GET; a rota `/api` autentica PIN e recebe comando/argumento na URL. Nova rota POST autenticada será aditiva para textos longos, sem alterar os GET de Ao Vivo/Bíblia.
+## Próximo passo prático
 
-## O que ainda não está implementado
-- Interface remodelada do Cadastro de Letras.
-- Alinhamento automático de letra com áudio cantado real.
-- Editor manual em cartões por linha/bloco com marcação, navegação, desfazer e reordenação.
-- Terceira aba de Cadastro de Letras no controle remoto, compartilhando o armazenamento do Windows.
-- Testes funcionais de sincronização com gravações reais.
+1. O pacote #976 está aprovado para **uma rodada de teste manual controlada**. Use o portátil ou instalador do #976, não os pacotes dos runs anteriores.
+2. Testar um item offline com internet (deve abrir YouTube e mostrar o vídeo), o mesmo item sem internet (deve usar o arquivo local), um item com cópia local expirada mas link original válido (deve tentar YouTube), e um vídeo privado/sem incorporação com cópia local válida (deve cair para áudio local).
+3. Na aba Cadastro de Letras, testar colar uma letra completa, criar cartões/slides, marcar em reprodução, desfazer/repetir, salvar, fechar/reabrir e conferir que os tempos e a ordem persistem.
+4. Registrar resultados reais antes de declarar a remodelagem concluída. Depois avançar para: aba remota dedicada ao cadastro e protótipo/benchmark de alinhamento completo de áudio cantado em português.
 
-## Próxima sequência de trabalho
-1. Auditar integralmente os eventos/handlers, leitura, gravação e recuperação da aba atual.
-2. Auditar RemoteControlServer/endpoints e autenticação, sem quebrar Ao Vivo/Bíblia.
-3. Prototipar e medir alinhamento de áudio cantado em português, priorizando gratuito, offline e leve.
-4. Implementar o editor remodelado e a integração remota.
-5. Testar serviços/modelos/fluxo remoto no CI; gerar um único pacote consolidado para a rodada manual do usuário.
+## Regras permanentes
 
-## Decisões e restrições
-- O usuário autorizou remodelar a área Cadastro de Letras e remover controles sem utilidade comprovada.
-- Preservar dados, metadados e recursos funcionais fora do escopo.
-- Automático é a prioridade; manual deve continuar utilizável quando a análise não tiver confiança suficiente.
-- Refrões repetidos devem reaparecer na sequência sem duplicar o texto-fonte; cada ocorrência terá seu próprio tempo.
-- Persistência por música/gravação, com recuperação após fechar e reabrir.
-- Controle remoto deve ter layout mobile e usar a mesma fonte de dados.
-- Solução gratuita e leve sempre que viável.
-- Não pedir testes intermediários ao usuário.
-- Não fazer merge na `main` sem autorização.
+- Não fazer merge na `main` sem autorização explícita.
+- Não chamar o usuário para testar builds intermediários.
+- Não afirmar que o alinhamento automático completo ou a terceira aba remota está pronta.
+- Preservar dados e recursos válidos fora do escopo.
+- Manter solução gratuita e leve sempre que viável.
+- Atualizar este estado e o histórico após novos resultados; snapshots antigos abaixo permanecem como histórico, não como status atual.
 
+---
+
+
+# HISTÓRICO DE RETOMADAS ANTERIORES (PRESERVADO)
 
 ---
 ---

@@ -1,3 +1,29 @@
+## Atualização de implementação — 28/11/2026 (HEAD `b2a0dfa`)
+
+### Build #976 aprovado
+Run https://github.com/jabesguitar/Lyravoxen/actions/runs/46106316394. Jobs `cloud-worker-tests` e `build`: ambos `completed/success`. A suíte auxiliar passou 17/17 etapas; o Windows passou pela compilação, `Test cue timeline`, empacotamento portátil e instalador. Artefatos: `15247444367` (Windows x64), `15248120574` (portátil), `15248205075` (instalador). ZIP portátil e ZIP do instalador foram verificados; o ZIP portátil interno contém `Lyravoxen.exe`.
+
+### Cadastro de Letras implementado nesta branch
+- A interface WPF foi redesenhada como Estúdio de Letras, com pesquisa integrada LRCLIB, pesquisa web alternativa, texto-fonte, cartões por slide de projeção, prévia e comandos de salvar/desfazer/repetir/reordenar.
+- A marcação sequencial antiga foi adaptada aos cartões; removidas referências a `TapMarkButton`, `TapStartButton`, `TapUndoButton`, `TapFinishButton`, `TapCancelButton` e `TapProgressText`.
+- Controles dinâmicos do diálogo de pesquisa usam tipos WPF totalmente qualificados para evitar ambiguidades com Windows Forms; `KeyEventArgs` também está qualificado.
+- Controle remoto e comando de voz continuam chamando os handlers compatíveis de marcação/desfazer; a UI remota dedicada de Cadastro de Letras ainda está pendente.
+- Metadados de cue e ordem personalizada dos slides sobrevivem à normalização e persistência.
+- Reconhecimento automático permanece incremental via Whisper durante a reprodução. Forced alignment da gravação inteira e teste em músicas reais ainda não foram concluídos.
+
+### Biblioteca Offline: online-primeiro
+- A seleção de item offline pela fila ou pela Biblioteca tenta o vídeo original do YouTube quando acessível, mantendo a cópia local temporariamente como fallback.
+- O fallback só é descartado quando o player informa que iniciou a reprodução (`state == 1`); um evento `playerError` usa a cópia local se existir e não estiver expirada.
+- A validade do arquivo local não bloqueia a tentativa de reprodução online. Sem internet e sem arquivo local válido, o usuário recebe aviso em vez de tentar um arquivo expirado.
+- O arquivo local permanece como cópia de contingência, não como fonte prioritária quando o vídeo online está disponível.
+
+### Limites e validação pendente
+- O CI testa compilação, timeline/projeção, lint, Ajuda, serviço offline, Worker e página mobile; não valida performance/precisão de alinhamento em gravações cantadas reais.
+- Fazer teste manual controlado com vídeo online, fallback offline, item offline expirado com internet e gravações reais na grade de cartões.
+- Depois dos testes, continuar a integração de uma terceira aba remota dedicada e pesquisar/medir forced alignment leve em português.
+
+---
+
 # Cadastro de letras — especificação funcional e plano de implementação
 
 Atualizado em 27/11/2026. Branch ativa: feature/lyrics-structure-fast-sync. HEAD de referência: 6350d2819950907e7490422353cd1b6d52c7322f.
