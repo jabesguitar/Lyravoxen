@@ -1479,7 +1479,7 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 **Verificação realizada no GitHub nesta retomada.**
 
 - Repositório: `jabesguitar/Lyravoxen`.
-- Branch ativa e HEAD atual: `feature/lyrics-structure-fast-sync` em `55984818286b79a2e5bf1e31d2f2c599db4e3501`.
+- Branch ativa: `feature/lyrics-structure-fast-sync`. O commit `5598481` era o HEAD no momento da execução #977; os commits posteriores desta retomada alteraram somente os dois arquivos de continuidade.
 - Workflow: [Windows build #977](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106917809), concluído com sucesso em 28/11/2026.
 - Jobs aprovados: `cloud-worker-tests` e `build`.
 - O commit `5598481` tem como pai `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8`. A comparação confirmou um único commit e quatro arquivos alterados, todos de documentação: `MEMORIA_CONTINUA.md`, `RETOMADA_ATUAL.md`, `docs/CADASTRO_LETRAS_IMPLEMENTACAO.md` e `docs/HISTORICO_CADASTRO_LETRAS.md`. Não houve alteração do código funcional nesse commit.
