@@ -35,6 +35,8 @@ public sealed class LyricsExecutionOccurrence
     public LyricsSectionKind Kind { get; init; }
     public int OccurrenceIndex { get; init; }
     public int SourceIndex { get; init; }
+    // Starting source-line index for each projection slide, in the user's saved order.
+    public List<int> LineOrder { get; init; } = new();
 }
 
 public sealed class LyricsStructureAnalysis
@@ -123,7 +125,8 @@ public static class LyricsStructureAnalyzer
                     Label = section.Label,
                     Kind = section.Kind,
                     OccurrenceIndex = nextOccurrence + repeat + 1,
-                    SourceIndex = i
+                    SourceIndex = i,
+                    LineOrder = new List<int>()
                 });
             }
             occurrences[sectionId] = nextOccurrence + block.RepeatCount;
