@@ -1472,3 +1472,52 @@ Aguardar o workflow Windows mais recente terminar. Corrigir falhas de compilaç�
 - Workflow disparado: `46069001270`; no último acompanhamento estava `in_progress`, com `cloud-worker-tests` executando Playwright. O resultado de compilação desse commit ainda não foi confirmado.
 - Auditoria adicional: motor de voz usa WASAPI loopback e Whisper GGML Base em segmentos de 5 s; parser atual usa repetição textual exata e não gera timestamps/confiança; controle remoto é GET-only com PIN e buffer 65.536 bytes.
 - Próxima ação: confirmar CI do commit `ad79c1d`, corrigir qualquer falha e então ampliar o modelo temporal/confiança e desenvolver o fluxo remoto aditivo via POST.
+
+
+## Marco de continuidade confirmado — build #977 (28/11/2026)
+
+**Verificação realizada no GitHub nesta retomada.**
+
+- Repositório: `jabesguitar/Lyravoxen`.
+- Branch ativa e HEAD atual: `feature/lyrics-structure-fast-sync` em `55984818286b79a2e5bf1e31d2f2c599db4e3501`.
+- Workflow: [Windows build #977](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106917809), concluído com sucesso em 28/11/2026.
+- Jobs aprovados: `cloud-worker-tests` e `build`.
+- O commit `5598481` tem como pai `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8`. A comparação confirmou um único commit e quatro arquivos alterados, todos de documentação: `MEMORIA_CONTINUA.md`, `RETOMADA_ATUAL.md`, `docs/CADASTRO_LETRAS_IMPLEMENTACAO.md` e `docs/HISTORICO_CADASTRO_LETRAS.md`. Não houve alteração do código funcional nesse commit.
+- Portanto, o código da aplicação validado pelo build #977 continua sendo o código de `b2a0dfa`; o #977 repetiu a compilação e o empacotamento desse código junto com a atualização documental.
+
+### Etapas aprovadas no #977
+
+- `cloud-worker-tests`: teste do serviço de mídia offline, cobertura da Ajuda, verificações estáticas C#, Worker Cloudflare, formulário público de pedidos e página remota mobile.
+- `build`: geração do ícone e splash, restore/build .NET, engine nativa Rust de bloqueio, bundle do aplicativo e da extensão uBlock Origin Lite para Edge, teste `Test cue timeline`, pacote portátil e instalador Windows.
+- Os dois jobs foram concluídos com `success`. Isso comprova os testes automatizados configurados e a compilação/empacotamento, não substitui o teste manual real no computador e com música reproduzida.
+
+### Artefatos do build #977
+
+- Windows x64: `15247723159` — [execução #977](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106917809).
+- Portátil ZIP: `15247643490`.
+- Instalador Windows: `15248535524`.
+- No momento da consulta, os três artefatos constavam como não expirados.
+
+### Etapa em andamento e próxima ação
+
+A remodelagem do Cadastro de Letras e o fluxo online-first com fallback offline estão implementados no código validado; **a validação manual controlada continua pendente**.
+
+1. No pacote do #977, testar item offline com internet (deve tentar o vídeo original do YouTube e exibir vídeo), o mesmo item sem internet (deve tocar a cópia local), cópia local expirada com link original válido (deve tentar o YouTube) e vídeo privado/sem incorporação com cópia local válida (deve recorrer ao arquivo local).
+2. No Cadastro de Letras, colar uma letra completa, gerar cartões/slides, marcar durante a reprodução, desfazer/repetir/reordenar, salvar, fechar e reabrir para conferir persistência dos tempos e da ordem.
+3. Registrar os resultados reais antes de declarar concluída a remodelagem.
+4. Depois da validação, avançar para a aba remota dedicada ao Cadastro de Letras e para o protótipo/benchmark de alinhamento completo de áudio cantado em português.
+
+### Limitações conhecidas que permanecem
+
+- O reconhecimento automático ainda é Whisper local incremental durante a reprodução; não é forced alignment prévio da música inteira e ainda não foi validado em gravação real.
+- A terceira aba remota dedicada ao Cadastro de Letras ainda não está implementada.
+- O fallback online/offline após erro depende do evento `playerError`; player travado sem `ready` ou `playerError` pode precisar de timeout de inicialização.
+- A suíte CI verde não deve ser apresentada como prova de sincronização musical real.
+
+### Regras preservadas
+
+- Não fazer merge na `main` sem autorização explícita.
+- Preservar layout moderno, dados, metadados e recursos funcionais fora do escopo.
+- Soluções gratuitas e leves sempre que viáveis.
+- Não pedir testes de builds intermediários; esta é a rodada manual consolidada registrada como pendente.
+- Atualizar este arquivo e `RETOMADA_ATUAL.md` após cada novo marco, sem apagar snapshots históricos.
