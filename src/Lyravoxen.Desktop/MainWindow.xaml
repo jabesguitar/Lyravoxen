@@ -343,7 +343,7 @@
     <Grid Grid.Row="1" Margin="2,0,2,9">
      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
      <TextBox x:Name="LyricsCatalogSearchBox" Grid.Column="0" Height="34" FontSize="13" Padding="10,6" VerticalContentAlignment="Center"
-              ToolTip="Pesquise pelo título da música, intérprete ou um trecho conhecido da letra"/>
+              ToolTip="Pesquise pelo título da música, intérprete ou álbum no catálogo gratuito"/>
      <Button Grid.Column="1" Content="⌕ Pesquisar letras" Click="SearchLyricsCatalog_Click" Margin="5,0,0,0" Padding="12,5" MinHeight="34" Background="{DynamicResource Brush_087F9E}"/>
      <Button Grid.Column="2" Content="＋ Criar cartões" Click="BuildLyricsCards_Click" Margin="5,0,0,0" Padding="12,5" MinHeight="34"/>
      <Button Grid.Column="3" Content="Salvar cadastro" Click="SaveLyricsEditor_Click" Margin="5,0,0,0" Padding="12,5" MinHeight="34" Background="{DynamicResource Brush_087F9E}" FontWeight="Bold"/>
