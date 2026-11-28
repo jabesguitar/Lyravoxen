@@ -1420,7 +1420,13 @@ public partial class MainWindow : Window
         // Reconhecimento segue a sequência de execução (inclui retornos do coro),
         // não apenas o texto-fonte que pode conter o refrão uma única vez.
         _automaticCardSequence = _lyricsEditorCards.ToList();
-        _manualDraftLines = _automaticCardSequence.Select(card => card.Text).ToList();
+        _automaticCardLines = _automaticCardSequence
+            .SelectMany((card, cardIndex) => card.Text
+                .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select((line, lineIndex) => (Card: card, Line: line.Trim(), CardIndex: cardIndex, LineIndex: lineIndex)))
+            .Where(item => !string.IsNullOrWhiteSpace(item.Line))
+            .ToList();
+        _manualDraftLines = _automaticCardLines.Select(item => item.Line).ToList();
         _manualDraftCues.Clear();
         _liveTranscriptBuffer.Clear();
         _unmatchedTranscriptBlocks = 0;
@@ -1510,49 +1516,66 @@ public partial class MainWindow : Window
             var previousDraftIndex = _manualDraftIndex;
             var allSkippedCouldBePlaced = plannedCues.Count == matchedIndex - previousDraftIndex + 1;
             var firstPlannedSourceIndex = allSkippedCouldBePlaced ? previousDraftIndex : matchedIndex;
+            var newSlideCues = new List<LyricCue>();
             for (var cueOffset = 0; cueOffset < plannedCues.Count; cueOffset++)
             {
                 var sourceIndex = firstPlannedSourceIndex + cueOffset;
-                if (sourceIndex < 0 || sourceIndex >= _automaticCardSequence.Count) continue;
-                var sourceCard = _automaticCardSequence[sourceIndex];
+                if (sourceIndex < 0 || sourceIndex >= _automaticCardLines.Count) continue;
+                var lineEntry = _automaticCardLines[sourceIndex];
+                var card = lineEntry.Card;
+
+                // A projection tile receives one timestamp: the first line detected in that tile.
+                // If recognition starts halfway through a tile, keep it but flag it for manual review.
+                if (card.Seconds.HasValue) continue;
                 var generatedCue = plannedCues[cueOffset];
                 var wasActuallyRecognized = sourceIndex == matchedIndex;
-                generatedCue.SectionId = sourceCard.SectionId;
-                generatedCue.OccurrenceIndex = sourceCard.OccurrenceIndex;
-                generatedCue.SourceLineIndex = sourceCard.SourceLineIndex;
-                generatedCue.Confidence = wasActuallyRecognized ? confidence : null;
-                generatedCue.NeedsReview = !wasActuallyRecognized || confidence < 0.90;
-                generatedCue.IsManual = false;
+                card.Seconds = generatedCue.Seconds;
+                card.Confidence = wasActuallyRecognized && lineEntry.LineIndex == 0 ? confidence : null;
+                card.NeedsReview = !wasActuallyRecognized || lineEntry.LineIndex > 0 || confidence < 0.90;
+                card.IsManual = false;
 
-                sourceCard.Seconds = generatedCue.Seconds;
-                sourceCard.Confidence = generatedCue.Confidence;
-                sourceCard.NeedsReview = generatedCue.NeedsReview;
-                sourceCard.IsManual = false;
+                newSlideCues.Add(new LyricCue
+                {
+                    Seconds = generatedCue.Seconds,
+                    Text = card.Text,
+                    SectionId = card.SectionId,
+                    OccurrenceIndex = card.OccurrenceIndex,
+                    SourceLineIndex = card.SourceLineIndex,
+                    Confidence = card.Confidence,
+                    NeedsReview = card.NeedsReview,
+                    IsManual = false
+                });
             }
 
-            _manualDraftCues.AddRange(plannedCues);
-            var cue = plannedCues[^1];
-            estimatedSeconds = cue.Seconds;
+            _manualDraftCues.AddRange(newSlideCues);
+            _manualDraftCues.Sort((left, right) => left.Seconds.CompareTo(right.Seconds));
+            var matchedLine = _automaticCardLines[matchedIndex];
+            estimatedSeconds = plannedCues[^1].Seconds;
             _manualDraftIndex = matchedIndex + 1;
 
             // Mesmo caminho da reprodução normal: prévia, janela de projeção própria e Holyrics.
-            var block = CueTimeline.BuildProjectionBlock(_manualDraftCues, _manualDraftCues.Count - 1, _maxProjectionLines);
-            PublishProjectionOnly(block);
-            QueueHolyricsUpdate(block);
+            if (_manualDraftCues.Count > 0)
+            {
+                var activeCueIndex = _manualDraftCues.FindLastIndex(item => item.Seconds <= estimatedSeconds);
+                var block = CueTimeline.BuildProjectionBlock(_manualDraftCues, activeCueIndex, _maxProjectionLines);
+                PublishProjectionOnly(block);
+                QueueHolyricsUpdate(block);
+            }
 
             SecondsBox.Text = estimatedSeconds.ToString("0.00", CultureInfo.InvariantCulture);
             if (_manualDraftIndex < _manualDraftLines.Count)
             {
-                ManualCurrentLineText.Text = _manualDraftLines[_manualDraftIndex];
-                NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[_manualDraftIndex];
+                ManualCurrentLineText.Text = matchedLine.Card.Text;
+                var nextSlide = _automaticCardLines.Skip(_manualDraftIndex).FirstOrDefault(item => !item.Card.Seconds.HasValue);
+                NextProjectionPreviewText.Text = nextSlide.Card is null ? "Próxima: —" : "Próxima: " + nextSlide.Card.Text;
                 ManualSyncProgressText.Text = $"Reconhecidas {_manualDraftIndex} de {_manualDraftLines.Count} frases. Última: {confidence:P0} de confiança.";
-                StatusText.Text = "Frase reconhecida e enviada ao Holyrics: " + cue.Text;
+                StatusText.Text = "Cartão reconhecido e enviado ao Holyrics: " + matchedLine.Card.Text;
             }
             else
             {
-                ManualCurrentLineText.Text = "Todas as frases foram reconhecidas. Sincronização concluída.";
+                ManualCurrentLineText.Text = "Todos os cartões foram processados. Sincronização concluída.";
                 NextProjectionPreviewText.Text = "Próxima: —";
-                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} trechos identificados e sincronizados. Letra e tempos salvos na biblioteca.";
+                ManualSyncProgressText.Text = $"Concluído: {_manualDraftCues.Count} cartões sincronizados. Confira os cartões sinalizados para revisão e salve o cadastro.";
                 _ = StopAutoRecognitionAsync(savePartial: true);
             }
         }));
