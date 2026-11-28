@@ -139,3 +139,16 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - CI #982 aprovado integralmente, com artefatos Windows, portátil e instalador.
 - CI #983 estava em andamento para validar o último ajuste de detecção em buffering.
 - Teste manual de perda/retorno real de internet ainda pendente; CI não substitui esse teste.
+
+
+## 28/11/2026 — Linha do tempo visual, prévia e controles de ritmo
+
+- Usuário pediu uma linha do tempo sob a prévia da projeção, arrastável com mouse e controlável pelas setas, para revisar o adiantamento/atraso antes de confirmar.
+- Implementado slider em escala de segundos da música. As setas movem 0,1 s; Shift + setas, 0,5 s; Page Up/Page Down, 1 s.
+- A leitura temporária mostra a alteração prevista para a frase selecionada e a próxima frase marcada. Arrastar não grava nada; Aplicar salva o deslocamento na frase selecionada e nas posteriores; Cancelar restaura o tempo; Desfazer reverte o ajuste aplicado.
+- A prévia usa a função pura PreviewShiftAfterAnchor, com teste para garantir que a lista original não é alterada antes de aplicar e que a frase não ultrapassa a anterior.
+- Os controles “Acelerar 1%” e “Desacelerar 1%” foram adicionados antes desta etapa e aprovados no build #984.
+- Build #985 revelou ambiguidade do tipo KeyEventArgs entre WPF e Windows Forms; corrigido no commit 899ed86.
+- Build #986 aprovado: ambos os jobs, compilação WPF, teste de timeline e demais testes auxiliares concluídos com sucesso.
+- Artefatos #986: Windows x64 15273631141; portátil 15273516795; instalador 15273197863.
+- Teste manual no computador do usuário ainda pendente; roteiro criado em docs/ROTEIRO_TESTES_CADASTRO_LETRAS.md. CI não comprova arraste real do mouse nem queda/retorno de rede no WebView2.

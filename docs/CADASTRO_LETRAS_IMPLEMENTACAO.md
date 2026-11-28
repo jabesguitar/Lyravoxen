@@ -237,3 +237,34 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - Manter o histórico anterior abaixo, sem apagar snapshots e decisões antigas.
 - Não declarar failover real testado antes da simulação manual de rede.
 - Após o teste consolidado, atualizar os resultados e então avançar para a aba remota completa e o benchmark de alinhamento em português.
+
+
+## 28/11/2026 — Linha do tempo visual com prévia antes de aplicar
+
+### Solicitação do usuário
+Colocar, logo abaixo da prévia da letra projetada no Cadastro de Letras, uma linha do tempo horizontal que possa ser movida pelo mouse e pelas setas laterais, permitindo adiantar/atrasar a frase, visualizar o resultado antes de fixar e só então aplicar a sincronização.
+
+### Implementação
+- Incluída uma linha do tempo horizontal sob a prévia da projeção. O marcador aponta para o segundo salvo da frase selecionada dentro da duração conhecida da música.
+- O usuário pode arrastar o marcador com o mouse; ← / → move 0,1 s; Shift + ← / → move 0,5 s; Page Up/Page Down move 1 s.
+- A linha mostra o segundo atual e a extensão temporal da faixa; o texto de leitura prévia compara o horário original com o horário simulado e apresenta também o efeito na próxima frase sincronizada.
+- A prévia é não destrutiva: mover o marcador não altera os cartões nem grava no cadastro. “Cancelar prévia” restaura o segundo original. “Aplicar ajuste” desloca a frase selecionada e as posteriores, mantendo as frases anteriores. Os cartões posteriores sem tempo recebem o deslocamento pendente.
+- O ajuste aplicado é salvo no cadastro e pode ser desfeito pela pilha de desfazer do editor.
+- Para manter a ordem temporal, o ponto simulado não pode ultrapassar a frase marcada anterior: permanece uma separação mínima de 0,05 s.
+- Se o cartão ainda não tiver tempo, a linha do tempo fica desabilitada e orienta marcar a frase primeiro. Letras LRC com tempos já importados podem ser ajustadas diretamente.
+- O mostrador acompanha o segundo previsto durante a movimentação. O evento de teclado foi qualificado como `System.Windows.Input.KeyEventArgs` para evitar ambiguidade com Windows Forms.
+
+### Testes automatizados e CI
+- **Build #984 — run 46168044622:** aprovado, contendo os controles “Acelerar 1%” e “Desacelerar 1%”.
+- **Build #985 — run 46169223825:** falhou na compilação porque `KeyEventArgs` era ambíguo entre Windows Forms e WPF. A causa foi corrigida no commit `899ed86`.
+- **Build #986 — run 46169606748, commit `899ed86f1a56f7962b5b89279374b5974f35f74e`:** os jobs `cloud-worker-tests` e `build` concluíram com sucesso. Passaram serviço offline, cobertura da Ajuda, verificações estáticas C#, Worker, formulário de pedidos, página remota mobile, compilação WPF e `Test cue timeline`.
+- Artefatos não expirados do #986: Windows x64 `15273631141`; ZIP portátil `15273516795`; instalador `15273197863`.
+- Aprovado pelo CI não significa que o comportamento foi testado no computador da igreja ou com perda real de internet; esses passos estão no roteiro manual.
+
+### Próxima validação manual
+Executar `docs/ROTEIRO_TESTES_CADASTRO_LETRAS.md`, principalmente o teste da linha do tempo (prévia, cancelar, aplicar, desfazer e persistência) e, separado, a troca online/offline com cópia local válida.
+
+### Limites registrados
+- A linha do tempo altera os tempos de sincronização das letras, não a velocidade de reprodução do áudio.
+- A prévia é feita sobre a frase selecionada e as frases sincronizadas posteriores; o conteúdo textual da música não muda.
+- O failover exige arquivo offline válido do mesmo ID de vídeo.

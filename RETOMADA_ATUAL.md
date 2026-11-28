@@ -1,3 +1,63 @@
+# RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, linha do tempo visual aprovada)
+
+**Repositório:** jabesguitar/Lyravoxen  
+**Branch ativa:** feature/lyrics-structure-fast-sync  
+**Último commit de código validado:** 899ed86f1a56f7962b5b89279374b5974f35f74e  
+**Último build:** [Windows build #986](https://github.com/jabesguitar/Lyravoxen/actions/runs/46169606748) — jobs auxiliares e Windows concluídos com sucesso.  
+**Main:** intocada; não fazer merge sem autorização.
+
+## Implementações atuais do Cadastro de Letras
+
+- **Ajuste em segundos:** −0,5 s, −0,1 s, +0,1 s e +0,5 s deslocam a frase selecionada e todas as frases posteriores. Tempos futuros ainda sem marcação recebem offset pendente; alteração é salva e pode ser desfeita.
+- **Ajuste acumulado de ritmo:** “Acelerar 1%” aproxima progressivamente os tempos posteriores; “Desacelerar 1%” aumenta os intervalos. Não altera a faixa de áudio.
+- **Linha do tempo visual abaixo da prévia:** marcador absoluto na duração da faixa, arrastável pelo mouse. ← / → move 0,1 s; Shift + seta move 0,5 s; Page Up/Page Down move 1 s.
+- **Prévia antes de fixar:** a leitura mostra o tempo original, o tempo simulado e o efeito na próxima frase. Mover a linha não grava. “Aplicar ajuste” confirma; “Cancelar prévia” descarta. Aplicar salva e pode ser desfeito.
+- **Continuar daqui:** selecionar a frase que está sendo cantada e marcar sua posição atual, seguindo pelas próximas.
+- **Busca enquanto toca:** o catálogo permanece independente do player e a importação de letra não deve reiniciar a música.
+- **Brasil primeiro:** ordenação heurística por sinais de PT-BR; o selo é “PT-BR provável”, não um país verificado.
+- **Bug dos botões de pesquisa:** estado do primeiro resultado é atualizado ao abrir o diálogo.
+
+## CI e artefatos
+
+- #984 aprovado: controles de ritmo 1%.
+- #985 falhou por ambiguidade de `KeyEventArgs`; corrigido com qualificação WPF.
+- **#986 aprovado integralmente:** [workflow](https://github.com/jabesguitar/Lyravoxen/actions/runs/46169606748). Compilação Windows e testes de timeline aprovados.
+- Artefatos #986: Windows x64 `15273631141`; ZIP portátil `15273516795`; instalador `15273197863`.
+- Para baixar: abra o workflow #986 no GitHub e selecione o artefato desejado na seção Artifacts.
+
+## Próxima ação do projeto
+
+Executar o roteiro manual em `docs/ROTEIRO_TESTES_CADASTRO_LETRAS.md`. Não declarar a troca online/offline ou a sincronia em palco como testadas até realizar os testes no Windows com áudio real e cópia offline válida.
+
+## Roteiro manual resumido
+
+1. Abra a versão do build #986, carregue uma música e importe uma letra com tempos (LRC) ou use uma música já sincronizada.
+2. Selecione uma frase marcada na lista de cartões. A linha do tempo deverá posicionar o marcador no segundo salvo.
+3. Arraste o marcador para a esquerda/direita; confira o texto de prévia e o horário da próxima frase. O tempo do cartão não deve mudar ainda.
+4. Clique em Cancelar prévia e confirme que o segundo original continua salvo.
+5. Repita e clique Aplicar ajuste; confira a frase selecionada e as posteriores, salve, reabra e confirme persistência. Use Desfazer para testar reversão.
+6. Teste setas, Shift + setas, Page Up/Page Down; depois teste “Acelerar 1%” e “Desacelerar 1%”.
+7. Durante uma música em execução, abra a pesquisa de letras, importe a letra e use “Continuar daqui” para a frase atual.
+8. Só depois teste queda/retorno de internet, com uma cópia offline válida do mesmo vídeo.
+
+## Limitações conhecidas
+
+- Se o cartão não tem tempo, a linha do tempo fica desabilitada até ele ser marcado.
+- O ajuste atua sobre o relógio da letra, não sobre a velocidade do áudio.
+- PT-BR é uma estimativa linguística.
+- O fallback só funciona se existir cópia local válida do mesmo ID de vídeo.
+- CI não substitui teste manual do WebView2 durante interrupção real de internet.
+
+## Arquivos de continuidade
+
+- [MEMORIA_CONTINUA.md](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/MEMORIA_CONTINUA.md)
+- [Roteiro de testes](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/ROTEIRO_TESTES_CADASTRO_LETRAS.md)
+- [Implementação](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/CADASTRO_LETRAS_IMPLEMENTACAO.md)
+- [Histórico](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/HISTORICO_CADASTRO_LETRAS.md)
+
+---
+
+# Snapshot anterior preservado
 # RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, após ajuste de sincronização e failover)
 
 **Repositório:** jabesguitar/Lyravoxen  
