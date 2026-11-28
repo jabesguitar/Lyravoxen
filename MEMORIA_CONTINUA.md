@@ -2,7 +2,7 @@
 
 **Branch ativa:** `feature/lyrics-structure-fast-sync`  
 **HEAD de código validado:** `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8`  
-**Build mais recente:** Windows build #976 — [run 46106316394](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106316394), concluído com sucesso nos dois jobs.  
+**Build de referência do código funcional:** Windows build #977 — [run 46106917809](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106917809), concluído com sucesso nos dois jobs. O commit #977 é documental; o código funcional continua sendo o de `b2a0dfa`.  
 **Main:** não houve merge nem alteração na `main`.
 
 ## Resultados CI confirmados
