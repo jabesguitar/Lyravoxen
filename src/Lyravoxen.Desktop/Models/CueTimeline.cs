@@ -77,6 +77,34 @@ public static class CueTimeline
         return result;
     }
 
+    /// <summary>
+    /// Cria uma prévia não destrutiva do deslocamento de uma frase e das frases marcadas seguintes.
+    /// O resultado nunca altera a lista recebida e respeita o espaço mínimo em relação à frase anterior.
+    /// </summary>
+    public static double?[] PreviewShiftAfterAnchor(
+        IReadOnlyList<double?> executionTimes,
+        int anchorIndex,
+        double requestedAnchorSeconds,
+        double minimumGapSeconds = 0.05)
+    {
+        var preview = executionTimes.ToArray();
+        if (anchorIndex < 0 || anchorIndex >= preview.Length ||
+            !preview[anchorIndex].HasValue ||
+            !double.IsFinite(requestedAnchorSeconds))
+            return preview;
+
+        var delta = ClampForwardOffset(
+            executionTimes, anchorIndex,
+            requestedAnchorSeconds - executionTimes[anchorIndex]!.Value,
+            minimumGapSeconds);
+
+        for (var i = anchorIndex; i < preview.Length; i++)
+            if (preview[i].HasValue)
+                preview[i] = Math.Max(0, preview[i]!.Value + delta);
+
+        return preview;
+    }
+
     // Build a rolling page from consecutive visual lyric lines.
     public static string BuildProjectionBlock(IReadOnlyList<LyricCue> cues, int activeCueIndex, int lineCount)
     {

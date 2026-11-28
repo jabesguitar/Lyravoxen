@@ -26,6 +26,18 @@ Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, 10.2, 30 }, 1,
     "ajuste fino não deixa uma frase ultrapassar a anterior");
 Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, null, 30 }, 1, -0.3) + 0.3) < 0.001,
     "ajuste pendente funciona em cartão ainda sem tempo");
+var originalPreviewTimes = new double?[] { 10, 20, 30, null };
+var previewShiftedTimes = CueTimeline.PreviewShiftAfterAnchor(originalPreviewTimes, 1, 20.4);
+Check(Math.Abs(previewShiftedTimes[1]!.Value - 20.4) < 0.001 &&
+      Math.Abs(previewShiftedTimes[2]!.Value - 30.4) < 0.001 &&
+      !previewShiftedTimes[3].HasValue,
+    "prévia da linha do tempo desloca a frase selecionada e os cues seguintes");
+Check(Math.Abs(originalPreviewTimes[1]!.Value - 20) < 0.001 &&
+      Math.Abs(originalPreviewTimes[2]!.Value - 30) < 0.001,
+    "prévia da linha do tempo não altera os dados originais antes de aplicar");
+var boundedPreviewTimes = CueTimeline.PreviewShiftAfterAnchor(new double?[] { 10, 10.2, 20 }, 1, 9);
+Check(Math.Abs(boundedPreviewTimes[1]!.Value - 10.05) < 0.001,
+    "prévia impede o cartão selecionado de ultrapassar a frase anterior");
 var acceleratedTimeline = CueTimeline.ScaleAfterAnchor(new double?[] { 10, 20, 30 }, 0, 0.99);
 Check(Math.Abs(acceleratedTimeline[0]!.Value - 10) < 0.001 &&
       Math.Abs(acceleratedTimeline[1]!.Value - 19.9) < 0.001 &&

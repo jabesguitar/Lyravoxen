@@ -476,7 +476,7 @@
       </Border>
       <Border Grid.Row="1" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="13" Padding="10" Margin="0,8,0,8">
        <Grid>
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,2,3,8"/>
         <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="11" Padding="10" ClipToBounds="True">
          <Grid>
@@ -486,7 +486,34 @@
          </Grid>
         </Border>
         <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}"
-                   FontSize="10" TextWrapping="Wrap" TextAlignment="Center" Margin="3,8,3,2"/>
+                   FontSize="10" TextWrapping="Wrap" TextAlignment="Center" Margin="3,6,3,2"/>
+        <Border Grid.Row="3" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="9" Padding="8,6" Margin="2,4,2,0">
+         <StackPanel>
+          <DockPanel LastChildFill="True">
+           <TextBlock Text="LINHA DO TEMPO · ARRASTE OU USE ← / →" Foreground="{DynamicResource Accent}" FontSize="9" FontWeight="Bold"/>
+           <TextBlock x:Name="TimelineAdjustmentCurrentLabel" DockPanel.Dock="Right" Text="00:00.0" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="10" FontWeight="Bold" Margin="8,0,0,0"/>
+          </DockPanel>
+          <Slider x:Name="TimelineAdjustmentSlider" Minimum="0" Maximum="60" Value="0"
+                  SmallChange="0.1" LargeChange="0.5" TickFrequency="10" TickPlacement="BottomRight"
+                  IsSnapToTickEnabled="False" IsEnabled="False" MinHeight="25" Margin="2,0,2,0"
+                  ValueChanged="TimelineAdjustmentSlider_ValueChanged"
+                  PreviewKeyDown="TimelineAdjustmentSlider_PreviewKeyDown"
+                  ToolTip="Arraste para escolher o novo segundo da frase. As setas movem 0,1 s; Shift + seta move 0,5 s."/>
+          <Grid Margin="2,0,2,2">
+           <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+           <TextBlock x:Name="TimelineAdjustmentStartLabel" Grid.Column="0" Text="00:00" Foreground="{DynamicResource TextMuted}" FontSize="8"/>
+           <TextBlock x:Name="TimelineAdjustmentEndLabel" Grid.Column="1" Text="01:00" Foreground="{DynamicResource TextMuted}" FontSize="8" HorizontalAlignment="Right"/>
+          </Grid>
+          <TextBlock x:Name="TimelinePreviewReadout" Text="Marque uma frase para habilitar a linha do tempo." Foreground="{DynamicResource Brush_B8CAD5}"
+                     FontSize="9" TextWrapping="Wrap" Margin="2,3,2,3"/>
+          <WrapPanel HorizontalAlignment="Right">
+           <Button x:Name="TimelineAdjustmentApplyButton" Content="Aplicar ajuste" Click="ApplyTimelineAdjustmentPreview_Click"
+                   IsEnabled="False" MinHeight="25" FontSize="9" Padding="9,3" Margin="2" Background="{DynamicResource Brush_087F9E}"/>
+           <Button x:Name="TimelineAdjustmentCancelButton" Content="Cancelar prévia" Click="CancelTimelineAdjustmentPreview_Click"
+                   IsEnabled="False" MinHeight="25" FontSize="9" Padding="9,3" Margin="2"/>
+          </WrapPanel>
+         </StackPanel>
+        </Border>
        </Grid>
       </Border>
       <WrapPanel Grid.Row="2" HorizontalAlignment="Center">

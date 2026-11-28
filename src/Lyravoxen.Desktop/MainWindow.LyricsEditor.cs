@@ -76,6 +76,7 @@ public partial class MainWindow
     private readonly ObservableCollection<LyricsEditorCard> _lyricsEditorCards = new();
     private LyricsStructureAnalysis? _lyricsStructureDraft;
     private readonly Stack<Action> _lyricsEditorUndo = new();
+    private bool _updatingLyricsTimelineSlider;
     private List<LyricsEditorCard> _automaticCardSequence = new();
     private List<(LyricsEditorCard Card, string Line, int CardIndex, int LineIndex)> _automaticCardLines = new();
 
@@ -200,6 +201,158 @@ public partial class MainWindow
             ? "Próxima frase: " + _lyricsEditorCards[nextIndex].Text
             : "Fim da sequência cadastrada.";
         ManualCurrentLineText.Text = card.Text;
+        UpdateLyricsTimelineSliderForSelection(card);
+    }
+
+    private void UpdateLyricsTimelineSliderForSelection(LyricsEditorCard? card)
+    {
+        if (TimelineAdjustmentSlider is null || TimelinePreviewReadout is null) return;
+
+        var duration = _playerDurationSeconds;
+        if (_isLocalAudioPlaying && LocalAudioPlayer.NaturalDuration.HasTimeSpan)
+            duration = LocalAudioPlayer.NaturalDuration.TimeSpan.TotalSeconds;
+
+        var lastMarked = _lyricsEditorCards
+            .Where(item => item.Seconds.HasValue)
+            .Select(item => item.Seconds!.Value)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        var maximum = Math.Max(60, Math.Max(duration, lastMarked + 5));
+        _updatingLyricsTimelineSlider = true;
+        try
+        {
+            TimelineAdjustmentSlider.Minimum = 0;
+            TimelineAdjustmentSlider.Maximum = maximum;
+            TimelineAdjustmentSlider.Value = card?.Seconds.HasValue == true
+                ? Math.Clamp(card.Seconds.Value, 0, maximum)
+                : 0;
+            TimelineAdjustmentSlider.IsEnabled = card?.Seconds.HasValue == true;
+            TimelineAdjustmentStartLabel.Text = "00:00";
+            TimelineAdjustmentEndLabel.Text = FormatLyricsTimelineTime(maximum);
+            TimelineAdjustmentApplyButton.IsEnabled = false;
+            TimelineAdjustmentCancelButton.IsEnabled = false;
+        }
+        finally
+        {
+            _updatingLyricsTimelineSlider = false;
+        }
+
+        if (card?.Seconds.HasValue != true)
+            TimelinePreviewReadout.Text = "Marque esta frase primeiro para ajustar seu ponto na linha do tempo.";
+        else
+            TimelinePreviewReadout.Text = $"Ponto salvo: {FormatLyricsTimelineTime(card.Seconds.Value)}. Arraste o marcador ou use ← / → para simular o ajuste.";
+    }
+
+    private static string FormatLyricsTimelineTime(double seconds) =>
+        TimeSpan.FromSeconds(Math.Max(0, seconds)).ToString(@"mm\\:ss\\.f");
+
+    private void TimelineAdjustmentSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_updatingLyricsTimelineSlider) return;
+        UpdateLyricsTimelinePreview();
+    }
+
+    private void TimelineAdjustmentSlider_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not Slider slider || !slider.IsEnabled) return;
+
+        var step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 0.5 : 0.1;
+        if (e.Key == Key.Left)
+        {
+            slider.Value = Math.Max(slider.Minimum, slider.Value - step);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Right)
+        {
+            slider.Value = Math.Min(slider.Maximum, slider.Value + step);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.PageDown)
+        {
+            slider.Value = Math.Max(slider.Minimum, slider.Value - 1.0);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.PageUp)
+        {
+            slider.Value = Math.Min(slider.Maximum, slider.Value + 1.0);
+            e.Handled = true;
+        }
+    }
+
+    private void UpdateLyricsTimelinePreview()
+    {
+        if (LyricsLineCardsList.SelectedItem is not LyricsEditorCard selected || !selected.Seconds.HasValue)
+        {
+            TimelineAdjustmentApplyButton.IsEnabled = false;
+            TimelineAdjustmentCancelButton.IsEnabled = false;
+            TimelinePreviewReadout.Text = "Selecione uma frase já marcada para pré-visualizar o novo ponto.";
+            return;
+        }
+
+        var anchorIndex = _lyricsEditorCards.IndexOf(selected);
+        var originalTimes = _lyricsEditorCards.Select(card => card.Seconds).ToList();
+        var previewTimes = CueTimeline.PreviewShiftAfterAnchor(
+            originalTimes, anchorIndex, TimelineAdjustmentSlider.Value);
+        var current = selected.Seconds.Value;
+        var preview = previewTimes[anchorIndex] ?? current;
+        var delta = preview - current;
+        var nextMarked = Enumerable.Range(anchorIndex + 1, Math.Max(0, _lyricsEditorCards.Count - anchorIndex - 1))
+            .FirstOrDefault(index => _lyricsEditorCards[index].Seconds.HasValue, -1);
+
+        var summary = Math.Abs(delta) < 0.005
+            ? $"Ponto salvo: {FormatLyricsTimelineTime(current)}. Mova a linha para criar uma prévia."
+            : $"PRÉVIA TEMPORÁRIA · {FormatLyricsTimelineTime(current)} → {FormatLyricsTimelineTime(preview)} ({delta:+0.0;-0.0;0.0}s).";
+
+        if (nextMarked >= 0)
+        {
+            var nextCurrent = _lyricsEditorCards[nextMarked].Seconds!.Value;
+            var nextPreview = previewTimes[nextMarked] ?? nextCurrent;
+            summary += $" Próxima frase: {FormatLyricsTimelineTime(nextCurrent)} → {FormatLyricsTimelineTime(nextPreview)}.";
+        }
+
+        var previousMarked = _lyricsEditorCards.Take(anchorIndex)
+            .LastOrDefault(card => card.Seconds.HasValue);
+        if (previousMarked?.Seconds is double previousSeconds &&
+            preview < previousSeconds + 0.05 - 0.001)
+            summary += $" Limite da frase anterior: não será permitido antes de {FormatLyricsTimelineTime(previousSeconds + 0.05)}.";
+
+        TimelinePreviewReadout.Text = summary;
+        TimelineAdjustmentApplyButton.IsEnabled = Math.Abs(delta) >= 0.005;
+        TimelineAdjustmentCancelButton.IsEnabled = Math.Abs(delta) >= 0.005;
+    }
+
+    private void ApplyTimelineAdjustmentPreview_Click(object sender, RoutedEventArgs e)
+    {
+        if (LyricsLineCardsList.SelectedItem is not LyricsEditorCard selected || !selected.Seconds.HasValue)
+        {
+            StatusText.Text = "Selecione uma frase marcada antes de aplicar a prévia.";
+            return;
+        }
+
+        var requestedSeconds = TimelineAdjustmentSlider.Value;
+        var before = selected.Seconds.Value;
+        if (Math.Abs(requestedSeconds - before) < 0.005)
+        {
+            StatusText.Text = "A linha do tempo está no ponto original. Nenhuma alteração foi aplicada.";
+            return;
+        }
+
+        AdjustSelectedLyricsTiming(requestedSeconds - before);
+        UpdateLyricsTimelineSliderForSelection(selected);
+        TimelinePreviewReadout.Text = $"Ajuste aplicado e salvo em {selected.TimeLabel}. A prévia foi confirmada.";
+    }
+
+    private void CancelTimelineAdjustmentPreview_Click(object sender, RoutedEventArgs e)
+    {
+        if (LyricsLineCardsList.SelectedItem is not LyricsEditorCard selected)
+        {
+            UpdateLyricsTimelineSliderForSelection(null);
+            return;
+        }
+
+        UpdateLyricsTimelineSliderForSelection(selected);
+        StatusText.Text = "Prévia descartada. Os tempos salvos permaneceram inalterados.";
     }
 
     private void MarkLyricsLine_Click(object sender, RoutedEventArgs e)
