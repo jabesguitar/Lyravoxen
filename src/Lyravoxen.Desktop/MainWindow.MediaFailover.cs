@@ -1,3 +1,4 @@
+using Microsoft.Web.WebView2.Core;
 using System.Windows;
 using System.Windows.Threading;
 using Lyravoxen.Models;
