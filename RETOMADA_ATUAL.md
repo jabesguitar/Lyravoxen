@@ -6,7 +6,6 @@
 |---|---|
 | Repositório | `jabesguitar/Lyravoxen` |
 | Branch ativa | `feature/lyrics-structure-fast-sync` |
-| HEAD da branch | `55984818286b79a2e5bf1e31d2f2c599db4e3501` |
 | Código funcional validado | `b2a0dfabdad6e470e0ec50d0cccdadd2844aafe8` |
 | Último workflow | [Windows build #977](https://github.com/jabesguitar/Lyravoxen/actions/runs/46106917809) |
 | Resultado | `cloud-worker-tests` e `build` concluídos com sucesso |
