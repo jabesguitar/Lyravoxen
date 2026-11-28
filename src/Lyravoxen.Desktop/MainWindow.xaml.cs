@@ -93,6 +93,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeLyricsEditor();
         ThemeToggleButton.Content = App.IsLightTheme ? "☾" : "☀";
         ThemeToggleButton.ToolTip = App.IsLightTheme ? "Mudar para modo escuro" : "Mudar para modo claro";
         InitializeBackup();
@@ -1166,6 +1167,7 @@ public partial class MainWindow : Window
             _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
             CueList.ItemsSource = null;
             CueList.ItemsSource = _cues;
+            ReloadLyricsCardsFromCurrentVideo();
             _lastAutomaticCue = -1;
             StatusText.Text = _cues.Count > 0
                 ? $"Letra preparada: {_cues.Count} frases carregadas. Inicializando o vídeo..."
@@ -3567,6 +3569,7 @@ public partial class MainWindow : Window
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(video.Cues));
             CueList.ItemsSource = null; CueList.ItemsSource = _cues;
+            ReloadLyricsCardsFromCurrentVideo();
             StatusText.Text = $"Reproduzindo offline: {video.Title} ({video.Format?.ToUpperInvariant()})";
         }
         catch (Exception ex) { StatusText.Text = "Não foi possível reproduzir o áudio: " + ex.Message; }
