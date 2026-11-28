@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,6 +21,7 @@ public sealed class LyricsEditorCard : INotifyPropertyChanged
     public string SectionLabel { get; init; } = "";
     public string Text { get; init; } = "";
     public int SourceLineIndex { get; init; }
+    public int SourceLineCount { get; init; } = 1;
     public int SourceBlockIndex { get; init; }
     public int OccurrenceIndex { get; init; }
     public bool IsRepeat { get; init; }
@@ -100,18 +103,26 @@ public partial class MainWindow
             savedOrder.Count == _currentVideo?.ExecutionOrder.Count
                 ? savedOrder
                 : _lyricsStructureDraft.ExecutionOrder;
+        var linesPerSlide = Math.Clamp(_maxProjectionLines, 1, 10);
         foreach (var occurrence in execution)
         {
             if (!sections.TryGetValue(occurrence.SectionId, out var section)) continue;
-            for (var lineIndex = 0; lineIndex < section.Lines.Count; lineIndex++)
+            var slideStarts = occurrence.LineOrder.Count > 0
+                ? occurrence.LineOrder.Where(index => index >= 0 && index < section.Lines.Count).ToList()
+                : Enumerable.Range(0, (section.Lines.Count + linesPerSlide - 1) / linesPerSlide)
+                    .Select(page => page * linesPerSlide).ToList();
+            foreach (var lineStart in slideStarts)
             {
+                var slideLines = section.Lines.Skip(lineStart).Take(linesPerSlide).ToList();
+                if (slideLines.Count == 0) continue;
                 var label = string.IsNullOrWhiteSpace(occurrence.Label) ? section.Label : occurrence.Label;
                 _lyricsEditorCards.Add(new LyricsEditorCard
                 {
                     SectionId = occurrence.SectionId,
                     SectionLabel = $"{label} · ocorrência {occurrence.OccurrenceIndex}",
-                    Text = section.Lines[lineIndex],
-                    SourceLineIndex = lineIndex,
+                    Text = string.Join(Environment.NewLine, slideLines),
+                    SourceLineIndex = lineStart,
+                    SourceLineCount = slideLines.Count,
                     SourceBlockIndex = section.SourceIndex,
                     OccurrenceIndex = occurrence.OccurrenceIndex,
                     IsRepeat = occurrence.OccurrenceIndex > 1
@@ -164,7 +175,8 @@ public partial class MainWindow
                 item.SourceLineIndex == card.SourceLineIndex);
             cue ??= _currentVideo.Cues.FirstOrDefault(item =>
                 !used.Contains(item) &&
-                string.Equals(item.Text.Trim(), card.Text.Trim(), StringComparison.OrdinalIgnoreCase));
+                (string.Equals(item.Text.Trim(), card.Text.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(item.Text.Trim(), card.Text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim(), StringComparison.OrdinalIgnoreCase)));
             if (cue is null) continue;
 
             used.Add(cue);
@@ -366,22 +378,33 @@ public partial class MainWindow
     {
         var order = new List<LyricsExecutionOccurrence>();
         if (_lyricsStructureDraft is null) return order;
-        (string SectionId, int OccurrenceIndex)? previousKey = null;
-        foreach (var card in _lyricsEditorCards)
+
+        var index = 0;
+        while (index < _lyricsEditorCards.Count)
         {
-            var key = (card.SectionId, card.OccurrenceIndex);
-            if (previousKey == key) continue;
-            var section = _lyricsStructureDraft.Sections.FirstOrDefault(item => item.SectionId == card.SectionId);
-            if (section is null) continue;
-            order.Add(new LyricsExecutionOccurrence
+            var first = _lyricsEditorCards[index];
+            var key = (first.SectionId, first.OccurrenceIndex);
+            var end = index + 1;
+            while (end < _lyricsEditorCards.Count &&
+                   _lyricsEditorCards[end].SectionId == key.SectionId &&
+                   _lyricsEditorCards[end].OccurrenceIndex == key.OccurrenceIndex)
+                end++;
+
+            var section = _lyricsStructureDraft.Sections.FirstOrDefault(item => item.SectionId == first.SectionId);
+            if (section is not null)
             {
-                SectionId = card.SectionId,
-                Label = card.SectionLabel.Split('·')[0].Trim(),
-                Kind = section.Kind,
-                OccurrenceIndex = card.OccurrenceIndex,
-                SourceIndex = card.SourceBlockIndex
-            });
-            previousKey = key;
+                order.Add(new LyricsExecutionOccurrence
+                {
+                    SectionId = first.SectionId,
+                    Label = first.SectionLabel.Split('·')[0].Trim(),
+                    Kind = section.Kind,
+                    OccurrenceIndex = first.OccurrenceIndex,
+                    SourceIndex = first.SourceBlockIndex,
+                    LineOrder = _lyricsEditorCards.Skip(index).Take(end - index)
+                        .Select(card => card.SourceLineIndex).ToList()
+                });
+            }
+            index = end;
         }
 
         foreach (var section in _lyricsStructureDraft.Sections)
