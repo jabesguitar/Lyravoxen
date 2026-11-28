@@ -1002,42 +1002,59 @@ public partial class MainWindow : Window
         catch (IOException) { return false; }
     }
 
+    private static bool IsOfflineBackupUsable(LibraryVideo video) =>
+        !string.IsNullOrWhiteSpace(video.LocalPath) &&
+        File.Exists(video.LocalPath) &&
+        (!video.OfflineExpiresAt.HasValue || video.OfflineExpiresAt.Value > DateTime.Now);
+
     private async void PlayNextPrepared_Click(object sender, RoutedEventArgs e)
     {
         if (_nextOfflineVideo is { } offline)
         {
-            if (string.IsNullOrWhiteSpace(offline.LocalPath) || !File.Exists(offline.LocalPath) ||
-                (offline.OfflineExpiresAt.HasValue && offline.OfflineExpiresAt.Value <= DateTime.Now))
-            {
-                _nextOfflineVideo = null;
-                PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
-                StatusText.Text = "A cópia offline preparada venceu ou não está disponível. Os dados da música continuam na biblioteca.";
-                return;
-            }
-
+            var localBackupAvailable = IsOfflineBackupUsable(offline);
             var originalUrl = !string.IsNullOrWhiteSpace(offline.Url)
                 ? offline.Url
                 : (string.IsNullOrWhiteSpace(offline.VideoId) ? "" : "https://www.youtube.com/watch?v=" + offline.VideoId);
             var originalVideoId = YouTubeLink.TryGetVideoId(originalUrl) ?? offline.VideoId;
 
-            // A cópia offline é uma reserva. Com o YouTube acessível, prioriza o vídeo completo.
+            // A validade expira somente a cópia local. Nunca impede tentar o vídeo original online.
             if (!string.IsNullOrWhiteSpace(originalVideoId) && await CanReachYoutubeAsync())
             {
                 var onlineUrl = "https://www.youtube.com/watch?v=" + originalVideoId;
                 WorkspaceTabs.SelectedIndex = 0;
-                _pendingOfflineFallbackVideo = offline;
+                _pendingOfflineFallbackVideo = localBackupAvailable ? offline : null;
                 if (await LoadVideoAsync(onlineUrl, true))
                 {
                     _nextOfflineVideo = null;
                     _nextVideoUrl = null;
                     SaveNextVideoPreference();
                     PlayNextButton.IsEnabled = false;
-                    StatusText.Text = "Internet disponível: aguardando o vídeo original do YouTube iniciar. A cópia offline continua reservada para fallback.";
+                    StatusText.Text = localBackupAvailable
+                        ? "Internet disponível: aguardando o vídeo original do YouTube iniciar. A cópia offline válida está reservada para fallback."
+                        : "Internet disponível: abrindo o vídeo original do YouTube. A cópia offline expirou e não será usada como fallback.";
                     return;
                 }
 
                 _pendingOfflineFallbackVideo = null;
+                if (!localBackupAvailable)
+                {
+                    _nextOfflineVideo = null;
+                    PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
+                    StatusText.Text = "O vídeo online não pôde ser preparado e a cópia offline está vencida ou indisponível.";
+                    return;
+                }
+
                 StatusText.Text = "O vídeo online não pôde ser preparado. Vou usar a cópia offline salva.";
+            }
+            else if (!localBackupAvailable)
+            {
+                _nextOfflineVideo = null;
+                _pendingOfflineFallbackVideo = null;
+                PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
+                StatusText.Text = string.IsNullOrWhiteSpace(originalVideoId)
+                    ? "Esta cópia não tem um vídeo original vinculado e o arquivo offline venceu ou não está disponível."
+                    : "YouTube sem conexão e a cópia offline venceu ou não está disponível.";
+                return;
             }
             else if (!string.IsNullOrWhiteSpace(originalVideoId))
             {
@@ -1045,6 +1062,7 @@ public partial class MainWindow : Window
                 StatusText.Text = "YouTube sem conexão: usando a cópia offline salva.";
             }
 
+            _pendingOfflineFallbackVideo = null;
             _nextOfflineVideo = null;
             _nextVideoUrl = null;
             SaveNextVideoPreference();
@@ -3345,30 +3363,41 @@ public partial class MainWindow : Window
         _selectedLibraryVideo = video;
         if (video.IsOffline)
         {
-            if (string.IsNullOrWhiteSpace(video.LocalPath) || !File.Exists(video.LocalPath) ||
-                (video.OfflineExpiresAt.HasValue && video.OfflineExpiresAt.Value <= DateTime.Now))
-            {
-                System.Windows.MessageBox.Show(this, "A cópia offline desta música expirou ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.", "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
+            var localBackupAvailable = IsOfflineBackupUsable(video);
             var originalVideoId = YouTubeLink.TryGetVideoId(video.Url) ?? video.VideoId;
+
+            // Mesmo sem uma cópia local válida, ainda tentamos o vídeo online.
             if (!string.IsNullOrWhiteSpace(originalVideoId) && await CanReachYoutubeAsync())
             {
-                _pendingOfflineFallbackVideo = video;
+                _pendingOfflineFallbackVideo = localBackupAvailable ? video : null;
                 WorkspaceTabs.SelectedIndex = 0;
                 if (await LoadVideoAsync("https://www.youtube.com/watch?v=" + originalVideoId, true))
                 {
-                    StatusText.Text = "Internet disponível: abrindo o vídeo original do YouTube. A cópia offline permanece guardada como reserva.";
+                    StatusText.Text = localBackupAvailable
+                        ? "Internet disponível: abrindo o vídeo original do YouTube. A cópia offline válida permanece como reserva."
+                        : "Internet disponível: abrindo o vídeo original do YouTube. A cópia offline venceu ou não está disponível.";
                     return;
                 }
+
                 _pendingOfflineFallbackVideo = null;
+                if (!localBackupAvailable)
+                {
+                    StatusText.Text = "Não foi possível abrir o vídeo online e não há cópia offline válida.";
+                    return;
+                }
                 StatusText.Text = "Não foi possível abrir o vídeo online. Usando a cópia offline salva.";
             }
             else
             {
                 _pendingOfflineFallbackVideo = null;
-                StatusText.Text = "YouTube sem conexão ou sem link de vídeo. Usando a cópia offline salva.";
+                if (!localBackupAvailable)
+                {
+                    System.Windows.MessageBox.Show(this,
+                        "O YouTube está sem conexão e a cópia offline venceu ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.",
+                        "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                StatusText.Text = "YouTube sem conexão ou sem vídeo original vinculado. Usando a cópia offline salva.";
             }
 
             PlayLocalAudio(video);
@@ -3378,7 +3407,6 @@ public partial class MainWindow : Window
         _pendingOfflineFallbackVideo = null;
         await LoadVideoAsync(video.Url, true);
     }
-
 
     private void ChooseLibraryDownloadFolder_Click(object sender, RoutedEventArgs e)
     {
