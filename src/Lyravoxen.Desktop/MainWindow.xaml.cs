@@ -69,6 +69,8 @@ public partial class MainWindow : Window
     private string? _nextVideoUrl;
     private LibraryVideo? _nextOfflineVideo;
     private string? _pendingQueueVideoId;
+    // Arquivo local mantido como reserva até o player do YouTube confirmar que começou a tocar.
+    private LibraryVideo? _pendingOfflineFallbackVideo;
     private bool _virtualHostMapped;
     private bool _historySelectionChanging;
     private readonly HolyricsClient _holyrics = new();
@@ -1023,20 +1025,23 @@ public partial class MainWindow : Window
             {
                 var onlineUrl = "https://www.youtube.com/watch?v=" + originalVideoId;
                 WorkspaceTabs.SelectedIndex = 0;
+                _pendingOfflineFallbackVideo = offline;
                 if (await LoadVideoAsync(onlineUrl, true))
                 {
                     _nextOfflineVideo = null;
                     _nextVideoUrl = null;
                     SaveNextVideoPreference();
                     PlayNextButton.IsEnabled = false;
-                    StatusText.Text = "Internet disponível: reproduzindo o vídeo original do YouTube. A cópia offline continua guardada como reserva.";
+                    StatusText.Text = "Internet disponível: aguardando o vídeo original do YouTube iniciar. A cópia offline continua reservada para fallback.";
                     return;
                 }
 
+                _pendingOfflineFallbackVideo = null;
                 StatusText.Text = "O vídeo online não pôde ser preparado. Vou usar a cópia offline salva.";
             }
             else if (!string.IsNullOrWhiteSpace(originalVideoId))
             {
+                _pendingOfflineFallbackVideo = null;
                 StatusText.Text = "YouTube sem conexão: usando a cópia offline salva.";
             }
 
@@ -1076,6 +1081,12 @@ public partial class MainWindow : Window
         {
             System.Windows.MessageBox.Show("Cole um link válido de vídeo do YouTube.", "Lyravoxen", MessageBoxButton.OK, MessageBoxImage.Information);
             return false;
+        }
+        if (_pendingOfflineFallbackVideo is { } pendingFallback)
+        {
+            var pendingFallbackId = YouTubeLink.TryGetVideoId(pendingFallback.Url) ?? pendingFallback.VideoId;
+            if (!string.Equals(pendingFallbackId, videoId, StringComparison.Ordinal))
+                _pendingOfflineFallbackVideo = null;
         }
         _isLoadingVideo = true;
         LoadYoutubeButton.IsEnabled = false;
@@ -2119,6 +2130,26 @@ public partial class MainWindow : Window
                 {
                     _playerReady = false;
                     _pendingQueueVideoId = null;
+                    var fallback = _pendingOfflineFallbackVideo;
+                    var fallbackVideoId = fallback is null
+                        ? null
+                        : YouTubeLink.TryGetVideoId(fallback.Url) ?? fallback.VideoId;
+                    var canUseFallback = fallback is not null &&
+                        string.Equals(fallbackVideoId, _currentVideo?.VideoId, StringComparison.Ordinal) &&
+                        !string.IsNullOrWhiteSpace(fallback.LocalPath) &&
+                        File.Exists(fallback.LocalPath) &&
+                        (!fallback.OfflineExpiresAt.HasValue || fallback.OfflineExpiresAt.Value > DateTime.Now);
+
+                    if (canUseFallback)
+                    {
+                        _pendingOfflineFallbackVideo = null;
+                        PlayLocalAudio(fallback!);
+                        StatusText.Text = "O YouTube não conseguiu reproduzir este vídeo (" + explanation +
+                            "). O Lyravoxen iniciou a cópia offline salva; ela continua disponível para uso sem internet.";
+                        return;
+                    }
+
+                    _pendingOfflineFallbackVideo = null;
                     PlayNextButton.IsEnabled = !string.IsNullOrWhiteSpace(_nextVideoUrl);
                     StatusText.Text = "Falha no player: " + explanation + " A próxima música continua guardada na fila.";
                 });
@@ -2154,6 +2185,12 @@ public partial class MainWindow : Window
                 var playerState = root.TryGetProperty("state", out var stateValue) ? stateValue.GetInt32() : -1;
                 Dispatcher.Invoke(() =>
                 {
+                    if (playerState == 1 && _pendingOfflineFallbackVideo is { } startedBackup)
+                    {
+                        var startedBackupId = YouTubeLink.TryGetVideoId(startedBackup.Url) ?? startedBackup.VideoId;
+                        if (string.Equals(startedBackupId, _currentVideo?.VideoId, StringComparison.Ordinal))
+                            _pendingOfflineFallbackVideo = null;
+                    }
                     if (playerState == 0)
                     {
                         var firstEnd = !_playbackEnded;
@@ -3308,10 +3345,37 @@ public partial class MainWindow : Window
         _selectedLibraryVideo = video;
         if (video.IsOffline)
         {
-            if (!string.IsNullOrWhiteSpace(video.LocalPath) && File.Exists(video.LocalPath)) { PlayLocalAudio(video); return; }
-            System.Windows.MessageBox.Show(this, "A cópia offline desta música expirou ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.", "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
+            if (string.IsNullOrWhiteSpace(video.LocalPath) || !File.Exists(video.LocalPath) ||
+                (video.OfflineExpiresAt.HasValue && video.OfflineExpiresAt.Value <= DateTime.Now))
+            {
+                System.Windows.MessageBox.Show(this, "A cópia offline desta música expirou ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.", "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var originalVideoId = YouTubeLink.TryGetVideoId(video.Url) ?? video.VideoId;
+            if (!string.IsNullOrWhiteSpace(originalVideoId) && await CanReachYoutubeAsync())
+            {
+                _pendingOfflineFallbackVideo = video;
+                WorkspaceTabs.SelectedIndex = 0;
+                if (await LoadVideoAsync("https://www.youtube.com/watch?v=" + originalVideoId, true))
+                {
+                    StatusText.Text = "Internet disponível: abrindo o vídeo original do YouTube. A cópia offline permanece guardada como reserva.";
+                    return;
+                }
+                _pendingOfflineFallbackVideo = null;
+                StatusText.Text = "Não foi possível abrir o vídeo online. Usando a cópia offline salva.";
+            }
+            else
+            {
+                _pendingOfflineFallbackVideo = null;
+                StatusText.Text = "YouTube sem conexão ou sem link de vídeo. Usando a cópia offline salva.";
+            }
+
+            PlayLocalAudio(video);
             return;
         }
+
+        _pendingOfflineFallbackVideo = null;
         await LoadVideoAsync(video.Url, true);
     }
 
