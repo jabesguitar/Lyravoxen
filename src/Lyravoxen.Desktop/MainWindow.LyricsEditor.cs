@@ -436,6 +436,20 @@ public partial class MainWindow
             : string.Join(Environment.NewLine, TimedCues.Select(cue => cue.Text));
     }
 
+    private async void OpenLyricsWebSearches_Click(object sender, RoutedEventArgs e)
+    {
+        var track = MusicTrackBox.Text.Trim();
+        var artist = MusicArtistBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(track))
+        {
+            StatusText.Text = "Informe o título ou selecione uma música antes de abrir outras fontes.";
+            WorkspaceTabs.SelectedIndex = 0;
+            return;
+        }
+
+        await OpenLyricsSourceSearchesAsync(track, artist);
+    }
+
     private async void SearchLyricsCatalog_Click(object sender, RoutedEventArgs e)
     {
         var query = LyricsCatalogSearchBox.Text.Trim();
