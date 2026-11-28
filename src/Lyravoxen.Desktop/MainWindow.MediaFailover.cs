@@ -119,7 +119,8 @@ public partial class MainWindow
         if (Interlocked.Exchange(ref _connectivityProbeInFlight, 1) != 0) return;
         try
         {
-            var checkOnline = _youtubePlaybackIntended && !_isLocalAudioPlaying && _lastPlayerState == 1;
+            // Mantém o monitor durante buffering (estado 3), desde que a reprodução tenha sido iniciada e não esteja pausada pelo usuário.
+            var checkOnline = _youtubePlaybackIntended && !_isLocalAudioPlaying && !_pendingOnlineResume;
             var checkReturn = _wasAutomaticallySwitchedToOffline && _isLocalAudioPlaying;
             if (!checkOnline && !checkReturn) { _consecutiveNetworkFailures = 0; return; }
             var online = await IsYoutubeReachableAsync();
