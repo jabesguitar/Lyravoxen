@@ -325,62 +325,159 @@
      <Border Width="29" Height="29" CornerRadius="15" Background="{DynamicResource Brush_E94F9B}" BorderBrush="{DynamicResource Brush_FFFFFF}" BorderThickness="1.5" Margin="0,0,8,0">
       <TextBlock Text="♫" Foreground="{DynamicResource Brush_FFFFFF}" FontSize="14" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
      </Border>
-     <TextBlock Text="Cadastrar letras" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+     <TextBlock Text="Cadastro de letras" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
     </StackPanel>
    </TabItem.Header>
-    <Grid Margin="14">
-     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-     <StackPanel Grid.Row="0" Margin="4,0,4,10">
-      <TextBlock Text="CADASTRAR LETRA PARA ESTA MÚSICA" Foreground="{DynamicResource Accent}" FontSize="20" FontWeight="Bold"/>
-      <TextBlock Text="Cole a letra completa, uma frase por linha. As ferramentas ficam na lateral e a prévia da projeção ao lado do editor." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+   <Grid Margin="12">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Grid Grid.Row="0" Margin="3,0,3,9">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel>
+      <TextBlock Text="ESTÚDIO DE LETRAS" Foreground="{DynamicResource Accent}" FontSize="20" FontWeight="Bold"/>
+      <TextBlock Text="Pesquise a música, confira a letra-fonte e marque cada cartão no momento em que a frase começa." Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,3,0,0"/>
      </StackPanel>
-     <Grid Grid.Row="1">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="246"/><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="0.88*"/></Grid.ColumnDefinitions>
-      <Border Grid.Column="0" Background="{DynamicResource Panel}" CornerRadius="14" Padding="9" Margin="0,0,9,0">
-       <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"><StackPanel>
-         <TextBlock Text="FERRAMENTAS DA LETRA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,7"/>
-         <Button Content="📋 Colar e limpar letra" Click="PasteCleanLyrics_Click" ToolTip="Cola o que você copiou, tira cifras, [Refrão], créditos e links e separa as estrofes" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button Content="🔎 Buscar texto da letra" Click="FetchLyricsText_Click" ToolTip="Busca o texto da letra pelo intérprete e título, no Vagalume (precisa da chave gratuita)" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button Content="⚙ Fonte de letras" Click="LyricSource_Click" ToolTip="Chave gratuita do Vagalume para buscar o texto da letra automaticamente" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button Content="⏱ Estimar tempos (rascunho)" Click="EstimateTimings_Click" ToolTip="Distribui as estrofes pela duração da música em segundos. Se a música estiver tocando, o instante atual vira o começo da 1ª estrofe. Depois ajuste com Frase ◀/▶ ou marque por toque" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button Content="⚡ Cadastro rápido" Click="QuickRegister_Click" Background="{DynamicResource Brush_087F9E}" ToolTip="Pega a letra (catálogo ou área de transferência), reinicia a música e já começa a marcação por toque" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Border Height="1" Background="{DynamicResource Brush_245B88}" Margin="4,10"/>
-         <Button Content="Salvar e sincronizar" Click="SaveFullLyrics_Click" Background="{DynamicResource Brush_087F9E}" Height="30" FontSize="11" Padding="5,2" Margin="2,2"/>
-         <Button x:Name="AutoRecognitionButton" Content="Iniciar reconhecimento automático" Click="ToggleAutoRecognition_Click" Background="{DynamicResource Brush_087F9E}" Height="30" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <TextBlock x:Name="ManualSyncProgressText" Text="Cole a letra e clique em Salvar e sincronizar." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" FontSize="9" Margin="3,2"/>
-         <TextBlock x:Name="ManualCurrentLineText" Text="Aguardando o reconhecimento da música..." Foreground="{DynamicResource Brush_F2F6F8}" TextWrapping="Wrap" FontSize="10" FontWeight="SemiBold" Margin="3,1"/>
-         <Border Height="1" Background="{DynamicResource Brush_245B88}" Margin="4,10"/>
-         <TextBlock Text="MARCAÇÃO POR TOQUE — PLAYBACK" Foreground="{DynamicResource Accent}" FontSize="11" FontWeight="Bold" TextWrapping="Wrap"/>
-         <TextBlock Text="Separe estrofes por uma linha em branco. Toque quando cada estrofe começar; Backspace desfaz a última marca." Foreground="{DynamicResource TextMuted}" FontSize="9" TextWrapping="Wrap" Margin="2,2,2,3"/>
-         <Button x:Name="TapStartButton" Content="Iniciar marcação por toque" Click="TapStart_Click" Background="{DynamicResource Brush_087F9E}" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button x:Name="TapMarkButton" Content="TOQUE · próxima estrofe (Espaço)" Click="TapMark_Click" IsEnabled="False" Background="{DynamicResource Brush_087F9E}" MinHeight="30" FontSize="10" Padding="4,2" Margin="2,2" FontWeight="Bold"/>
-         <Button x:Name="TapUndoButton" Content="Desfazer (Backspace)" Click="TapUndo_Click" IsEnabled="False" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button x:Name="TapFinishButton" Content="Concluir e salvar" Click="TapFinish_Click" IsEnabled="False" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <Button x:Name="TapCancelButton" Content="Cancelar" Click="TapCancel_Click" IsEnabled="False" MinHeight="27" FontSize="10" Padding="5,2" Margin="2,2"/>
-         <TextBlock x:Name="TapProgressText" Text="Pronto para marcar." Foreground="{DynamicResource Brush_F2F6F8}" FontSize="11" TextWrapping="Wrap" Margin="4,5"/>
-       </StackPanel></ScrollViewer>
-      </Border>
-      <Border Grid.Column="1" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="14" Padding="10" Margin="0,0,8,0">
-       <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <TextBlock Text="LETRA COMPLETA — UMA FRASE POR LINHA" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
-        <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="16" Padding="16" VerticalContentAlignment="Top" ToolTip="Letra completa: mantenha cada frase em uma linha. As estrofes em branco podem separar partes da música."/>
+     <Border Grid.Column="1" Background="{DynamicResource Brush_0B2D56}" CornerRadius="10" Padding="9,5" VerticalAlignment="Center">
+      <TextBlock Text="AUTOSAVE APÓS SALVAR" Foreground="{DynamicResource Accent}" FontSize="9" FontWeight="Bold"/>
+     </Border>
+    </Grid>
+    <Grid Grid.Row="1" Margin="2,0,2,9">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <TextBox x:Name="LyricsCatalogSearchBox" Grid.Column="0" Height="34" FontSize="13" Padding="10,6" VerticalContentAlignment="Center"
+              ToolTip="Pesquise pelo título da música, intérprete ou um trecho conhecido da letra"/>
+     <Button Grid.Column="1" Content="⌕ Pesquisar letras" Click="SearchLyricsCatalog_Click" Margin="5,0,0,0" Padding="12,5" MinHeight="34" Background="{DynamicResource Brush_087F9E}"/>
+     <Button Grid.Column="2" Content="＋ Criar cartões" Click="BuildLyricsCards_Click" Margin="5,0,0,0" Padding="12,5" MinHeight="34"/>
+     <Button Grid.Column="3" Content="Salvar cadastro" Click="SaveLyricsEditor_Click" Margin="5,0,0,0" Padding="12,5" MinHeight="34" Background="{DynamicResource Brush_087F9E}" FontWeight="Bold"/>
+    </Grid>
+    <Grid Grid.Row="2">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="1.55*"/><ColumnDefinition Width="0.92*"/></Grid.ColumnDefinitions>
+     <Grid Grid.Column="0" Margin="0,0,9,0">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <Expander Grid.Row="0" IsExpanded="True" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" Padding="8" Margin="0,0,0,8">
+       <Expander.Header>
+        <DockPanel>
+         <TextBlock Text="TEXTO-FONTE DA MÚSICA" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="11"/>
+         <TextBlock Text=" · cole a letra inteira; não precisa separar repetições" Foreground="{DynamicResource TextMuted}" FontSize="10"/>
+        </DockPanel>
+       </Expander.Header>
+       <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="116"/></Grid.RowDefinitions>
+        <WrapPanel Grid.Row="0" Margin="0,0,0,5">
+         <Button Content="Colar e limpar" Click="PasteCleanLyrics_Click" MinHeight="26" FontSize="10" Padding="9,3" Margin="0,0,5,0"/>
+         <Button Content="Buscar letra por título" Click="SearchLyrics_Click" MinHeight="26" FontSize="10" Padding="9,3" Margin="0,0,5,0"/>
+         <Button Content="Outras fontes" Click="LyricSource_Click" MinHeight="26" FontSize="10" Padding="9,3"/>
+        </WrapPanel>
+        <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Disabled" FontSize="14" Padding="10" VerticalContentAlignment="Top"
+                 ToolTip="Cole a letra completa. Linhas em branco ou marcadores de seção ajudam a identificar estrofes e refrões."/>
        </Grid>
-      </Border>
-      <Border Grid.Column="2" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="14" Padding="10">
-       <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="4,3,4,8"/>
-        <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="12" Padding="12" ClipToBounds="True">
-         <Grid>
-          <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.07" Stretch="Uniform" IsHitTestVisible="False"/>
-          <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8"/>
-         </Grid>
-        </Border>
-        <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="4,9,4,2"/>
-       </Grid>
+      </Expander>
+      <Grid Grid.Row="1" Margin="2,0,2,7">
+       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <StackPanel>
+        <TextBlock Text="CARTÕES DA SEQUÊNCIA" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="12"/>
+        <TextBlock x:Name="LyricsEditorStatus" Text="Cole uma letra e clique em Criar cartões para organizar a sequência." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,2,0,0"/>
+       </StackPanel>
+       <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+        <Button Content="↶ Desfazer" Click="UndoLyricsMark_Click" MinHeight="27" FontSize="10" Padding="8,3" Margin="2"/>
+        <Button Content="＋ Repetir bloco" Click="RepeatLyricsBlock_Click" MinHeight="27" FontSize="10" Padding="8,3" Margin="2"/>
+        <Button Content="↑" Click="MoveLyricsCardUp_Click" MinHeight="27" Width="31" FontSize="12" Padding="3" Margin="2" ToolTip="Mover cartão para cima"/>
+        <Button Content="↓" Click="MoveLyricsCardDown_Click" MinHeight="27" Width="31" FontSize="12" Padding="3" Margin="2" ToolTip="Mover cartão para baixo"/>
+       </WrapPanel>
+      </Grid>
+      <Border Grid.Row="2" Background="{DynamicResource Brush_07172C}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="13" Padding="8">
+       <ListBox x:Name="LyricsLineCardsList" Background="Transparent" BorderThickness="0" SelectionMode="Single"
+                SelectionChanged="LyricsLineCardsList_SelectionChanged" KeyDown="LyricsLineCardsList_KeyDown"
+                ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox.ItemsPanel>
+         <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemContainerStyle>
+         <Style TargetType="{x:Type ListBoxItem}">
+          <Setter Property="Padding" Value="0"/>
+          <Setter Property="Margin" Value="4"/>
+          <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+          <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+          <Setter Property="BorderThickness" Value="1"/>
+          <Setter Property="BorderBrush" Value="{DynamicResource Brush_245B88}"/>
+          <Setter Property="Background" Value="{DynamicResource Brush_0B2450}"/>
+          <Setter Property="Template">
+           <Setter.Value>
+            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+             <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                     BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="11" Padding="9" Width="220" MinHeight="132">
+              <ContentPresenter/>
+             </Border>
+             <ControlTemplate.Triggers>
+              <Trigger Property="IsSelected" Value="True">
+               <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+               <Setter TargetName="CardBorder" Property="BorderThickness" Value="2"/>
+               <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource Brush_12385A}"/>
+              </Trigger>
+             </ControlTemplate.Triggers>
+            </ControlTemplate>
+           </Setter.Value>
+          </Setter>
+         </Style>
+        </ListBox.ItemContainerStyle>
+        <ListBox.ItemTemplate>
+         <DataTemplate>
+          <StackPanel>
+           <TextBlock Text="{Binding SectionLabel}" Foreground="{DynamicResource Accent}" FontSize="9" FontWeight="Bold" TextWrapping="Wrap"/>
+           <TextBlock Text="{Binding Text}" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="13" FontWeight="SemiBold"
+                      TextWrapping="Wrap" Margin="0,7,0,5" MinHeight="35"/>
+           <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel>
+             <TextBlock Text="{Binding TimeLabel}" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="10" FontWeight="Bold"/>
+             <TextBlock Text="{Binding StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="8" TextWrapping="Wrap"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="{Binding MarkButtonText}" Click="MarkLyricsLine_Click" MinHeight="29" FontSize="9"
+                    Padding="7,3" Background="{DynamicResource Brush_087F9E}" VerticalAlignment="Center"/>
+           </Grid>
+          </StackPanel>
+         </DataTemplate>
+        </ListBox.ItemTemplate>
+       </ListBox>
       </Border>
      </Grid>
+     <Grid Grid.Column="1">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Border Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_00AFCB}" BorderThickness="1" CornerRadius="13" Padding="10">
+       <StackPanel>
+        <TextBlock Text="CONTROLE DA SINCRONIZAÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold"/>
+        <TextBlock Text="Marque no instante em que a frase começa. O cartão selecionado avança automaticamente." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,4,0,7"/>
+        <Button Content="● MARCAR CARTÃO SELECIONADO" Click="MarkSelectedLyricsLine_Click" MinHeight="42" FontSize="12" FontWeight="Bold" Background="{DynamicResource Brush_087F9E}"/>
+        <Button x:Name="AutoRecognitionButton" Content="⚡ Reconhecer cantado (gratuito/offline)" Click="ToggleAutoRecognition_Click"
+                MinHeight="35" FontSize="11" Margin="0,6,0,0"/>
+        <TextBlock x:Name="ManualSyncProgressText" Text="O modo automático reconhece a letra durante a reprodução. Revise os cartões sem confiança." Foreground="{DynamicResource TextMuted}"
+                   TextWrapping="Wrap" FontSize="10" Margin="2,7,2,0"/>
+        <TextBlock x:Name="ManualCurrentLineText" Text="Selecione um cartão para visualizar a frase." Foreground="{DynamicResource Brush_F2F6F8}"
+                   TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Margin="2,6,2,0"/>
+       </StackPanel>
+      </Border>
+      <Border Grid.Row="1" Background="{DynamicResource Brush_0B2450}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="13" Padding="10" Margin="0,8,0,8">
+       <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Text="PRÉVIA DA PROJEÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold" Margin="3,2,3,8"/>
+        <Border Grid.Row="1" Background="{DynamicResource Brush_020A18}" BorderBrush="{DynamicResource Brush_245B88}" BorderThickness="1" CornerRadius="11" Padding="10" ClipToBounds="True">
+         <Grid>
+          <Image Source="pack://siteoforigin:,,,/Assets/Lyravoxen_Icone_App_1024.png" Opacity="0.07" Stretch="Uniform" IsHitTestVisible="False"/>
+          <TextBlock Text="{Binding Text, ElementName=ProjectionPreviewText}" Foreground="{DynamicResource Brush_F2F6F8}" FontSize="21"
+                     FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="7"/>
+         </Grid>
+        </Border>
+        <TextBlock Grid.Row="2" Text="{Binding Text, ElementName=NextProjectionPreviewText}" Foreground="{DynamicResource TextMuted}"
+                   FontSize="10" TextWrapping="Wrap" TextAlignment="Center" Margin="3,8,3,2"/>
+       </Grid>
+      </Border>
+      <WrapPanel Grid.Row="2" HorizontalAlignment="Center">
+       <Button Content="Limpar marcação" Click="UndoLyricsMark_Click" MinHeight="27" FontSize="10" Padding="8,3" Margin="2"/>
+       <Button Content="Concluir e salvar" Click="SaveLyricsEditor_Click" MinHeight="27" FontSize="10" Padding="9,3" Margin="2" Background="{DynamicResource Brush_087F9E}"/>
+      </WrapPanel>
+     </Grid>
     </Grid>
-   </TabItem>
+   </Grid>
+  </TabItem>
   <TabItem x:Name="NextMusicTab"><TabItem.Header>
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
      <Border Width="29" Height="29" CornerRadius="15" Background="{DynamicResource Brush_397CE8}" BorderBrush="{DynamicResource Brush_FFFFFF}" BorderThickness="1.5" Margin="0,0,8,0">
