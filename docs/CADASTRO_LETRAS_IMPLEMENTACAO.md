@@ -268,3 +268,46 @@ Executar `docs/ROTEIRO_TESTES_CADASTRO_LETRAS.md`, principalmente o teste da lin
 - A linha do tempo altera os tempos de sincronização das letras, não a velocidade de reprodução do áudio.
 - A prévia é feita sobre a frase selecionada e as frases sincronizadas posteriores; o conteúdo textual da música não muda.
 - O failover exige arquivo offline válido do mesmo ID de vídeo.
+
+
+## 28/11/2026 — Correção do failover, retomada offline e diagnóstico
+
+### Relato e evidência recebida
+O usuário relatou que, ao cair a internet durante uma música do YouTube, o áudio e a projeção sincronizada paravam; ao selecionar a cópia na Biblioteca Offline, ela começava do zero. Foi enviado print da reprodução “Trio R3 — Te ver” e relatório técnico do aplicativo. O relatório informa Windows 10 x64, quatro núcleos, AVX2 indisponível, modelo de voz já baixado e catálogo LRCLIB acessível. Também registra falhas de conexão do serviço de Pedidos e uma falha de carregamento da biblioteca nativa Whisper. A verificação antiga do catálogo LRCLIB não comprovava acesso ao YouTube.
+
+### Causas encontradas no código anterior
+1. A sonda `IsYoutubeReachableAsync` podia lançar exceções em uma queda real de conexão. O `catch` externo do temporizador apenas ignorava a exceção, então a contagem de falhas não aumentava e a troca automática não era acionada.
+2. A busca da cópia offline exigia igualdade exata do ID do YouTube. MP3/WAV importados diretamente costumam não possuir esse ID, mesmo quando são a música correta.
+3. `PlayLocalAudio` chamava `Play()` antes de o evento `MediaOpened` aplicar a posição. O MediaElement podia iniciar do zero e a busca de posição não ser efetivada no momento correto.
+4. O ponto da reprodução não era persistido na ficha da Biblioteca Offline, e a lista de cues em memória podia não ser copiada para a cópia local quando a ficha ainda estava incompleta.
+
+### Correções implementadas
+- **Sonda de rede efetiva:** o monitor agora reutiliza `CanReachYoutubeAsync`, que transforma timeout/falhas HTTP em resultado indisponível. Duas falhas consecutivas são contadas e registradas no log; erros internos do monitor também deixam de ser silenciosos.
+- **Correspondência segura da cópia local:** primeiro procura o ID exato do YouTube. Se o MP3/WAV não tiver ID, usa o parser e o limpador de títulos existentes no Lyravoxen para reconhecer nomes como `Trio R3 - Te ver (Play Back)`, retirar sufixos comuns e separar intérprete/título. Só aceita uma correspondência única por título e intérprete. Arquivo vencido, inexistente ou correspondência ambígua não é escolhido.
+- **Retomada após abertura do arquivo:** o MediaElement é parado e reaberto; o Lyravoxen aguarda `MediaOpened`, posiciona no segundo solicitado e somente então chama `Play()`. O evento seleciona e projeta imediatamente a frase correspondente à posição quando há cues disponíveis.
+- **Letra preservada na troca:** se a ficha ainda não tinha cues, o failover aproveita as frases que já estavam carregadas em memória e vincula os dados à cópia offline. A troca automática preserva a projeção atual em vez de limpá-la antes da retomada.
+- **Posição persistente:** foi criado `LastPlaybackPositionSeconds` em `LibraryVideo`. A posição é gravada na biblioteca periodicamente, no pause e no fechamento do aplicativo. Abrir novamente a cópia offline retoma o último ponto salvo; abrir manualmente a cópia da música que já está tocando usa o ponto atual e não reinicia o YouTube. Ao terminar/parar explicitamente a música, o ponto é zerado para que uma futura reprodução intencional comece do início.
+- **Retorno à internet:** quando a cópia local está tocando e o YouTube volta, o player online é preparado no segundo atual. O áudio local continua até o YouTube confirmar reprodução; se a tentativa não confirmar, a cópia local continua e o aplicativo tenta novamente.
+- **Diagnóstico e Relatório ampliados:** Diagnóstico agora testa separadamente LRCLIB e o endereço do YouTube usado pelo failover, verifica se há cópia offline correspondente, informa fonte, posição, número de frases e validação da reserva. Quando o modelo Whisper existe, também testa o carregamento real da biblioteca nativa. Relatório mantém os logs recentes e acrescenta o retrato atual da reprodução e do backup correspondente.
+
+### Utilidade dos botões
+- **🩺 Diagnóstico — manter:** útil para verificar Holyrics, microfone, existência do modelo, carregamento real do Whisper, monitores, LRCLIB, YouTube e associação da cópia offline.
+- **📋 Relatório — manter:** útil para copiar os logs recentes e o estado da reprodução no momento do problema. Deve ser usado logo após a falha para capturar faixa, segundo, estado do player, cues, última sonda do YouTube e arquivo offline correspondente.
+- A falha Whisper do relatório enviado é separada da reprodução offline e da projeção por cues já sincronizados. Ela afeta o recurso “Reconhecer cantado”/transcrição local; não é a causa do áudio local iniciar no segundo zero.
+
+### CI e artefatos
+- **#988 — run 46177349449:** testes auxiliares passaram; compilação falhou porque o novo `OfflineLibraryMatcher` usava `File.Exists` sem `using System.IO`. Corrigido.
+- **#989 — run 46177689879, commit 79b9c74:** ambos os jobs passaram; compilação WPF, timeline, engine nativa, ZIP portátil e instalador concluídos. Artefatos: Windows x64 `15275724729`, portátil `15276283376`, instalador `15276781242`.
+- **#990 — run 46178219401:** a checagem estática detectou que, após migrar a normalização para o parser oficial, ainda havia um método antigo de normalização redundante. Removido no commit seguinte.
+- **#991 — run 46178265200:** cancelado automaticamente por uma atualização subsequente; não é uma validação final.
+- **#992 — run 46178529269, commit `0287a44d05da0f8d76f7a4ae71b6f1bf3af99161`:** jobs `cloud-worker-tests` e `build` concluídos com sucesso. Cobriu serviço offline, Ajuda, C# estático, Worker, formulário público, página mobile, compilação WPF, parser de nomes de arquivo, teste Whisper no Diagnóstico e `Test cue timeline`. Artefatos não expirados: Windows x64 `15275724729` (gerado originalmente pelo #989, código failover principal), ZIP portátil `15276283376`, instalador `15276926788` (build #992).
+
+### Teste manual ainda obrigatório
+CI comprova compilação e testes automatizados, mas não simula a queda real da internet dentro do WebView2 com o áudio do usuário. O usuário precisa executar `docs/ROTEIRO_TESTES_FAILOVER_OFFLINE.md`: verificar se o Diagnóstico reconhece a reserva, tocar online, cortar internet, confirmar troca no mesmo ponto e letra, restaurar internet e confirmar retorno ao YouTube. Também testar abrir a mesma faixa na Biblioteca Offline, pause/fechamento/reabertura e confirmar o último ponto salvo.
+
+### Limites
+- Sem arquivo local válido correspondente, não há áudio para assumir; o aplicativo explica que a reserva não foi encontrada.
+- A associação por nome exige correspondência única e segura. Em caso de duplicidade sem intérprete identificável, não escolhe aleatoriamente.
+- Não declarar failover em uso real como testado até o teste manual no Windows.
+- AVX2 ausente, por si só, não prova a causa do erro Whisper; o novo Diagnóstico testa a carga real da biblioteca e apresenta a exceção retornada.
+- Branch `feature/lyrics-structure-fast-sync`; `main` continua intocada.

@@ -1,10 +1,56 @@
-# RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, linha do tempo visual aprovada)
+# RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, failover offline corrigido e build #992 aprovado)
 
 **Repositório:** jabesguitar/Lyravoxen  
 **Branch ativa:** feature/lyrics-structure-fast-sync  
-**Último commit de código validado:** 899ed86f1a56f7962b5b89279374b5974f35f74e  
-**Último build:** [Windows build #986](https://github.com/jabesguitar/Lyravoxen/actions/runs/46169606748) — jobs auxiliares e Windows concluídos com sucesso.  
+**Commit de código aprovado:** 0287a44d05da0f8d76f7a4ae71b6f1bf3af99161  
+**Build:** [Windows build #992](https://github.com/jabesguitar/Lyravoxen/actions/runs/46178529269) — ambos os jobs aprovados.  
+**Artefatos:** Windows x64 15275724729; ZIP portátil 15276283376; instalador 15276926788.  
 **Main:** intocada; não fazer merge sem autorização.
+
+## O que foi corrigido após o teste do usuário
+- A sonda do YouTube agora converte timeout/exceção em falha contável; duas falhas consecutivas acionam o fallback em vez de serem ignoradas silenciosamente.
+- O fallback aceita cópia offline com ID exato ou correspondência única usando título e intérprete. O parser também limpa sufixos como “Play Back”, “Ao Vivo” e “Legendado” e separa nomes `Intérprete - Música`.
+- Arquivos vencidos/inexistentes são excluídos. Duas cópias igualmente ambíguas sem intérprete não são escolhidas aleatoriamente.
+- O áudio local espera `MediaOpened`, aplica `Position` e somente depois chama `Play()`.
+- A cópia offline recebe os cues atuais em memória, preserva a projeção e retoma a frase correspondente ao segundo salvo.
+- `LastPlaybackPositionSeconds` é persistido na biblioteca durante a reprodução, no pause e ao fechar. Reabrir offline usa esse ponto; selecionar a mesma música em execução não reinicia o player.
+- No retorno da internet, a cópia local continua até o YouTube confirmar que começou no segundo atual; falha de retomada mantém o áudio local e tenta novamente.
+- Diagnóstico testa YouTube, LRCLIB, reserva offline e carga real do Whisper; Relatório inclui logs e estado de reprodução/failover.
+
+## Botões: manter os dois
+- **Diagnóstico:** teste ativo de Holyrics, microfone, modelo, biblioteca Whisper nativa, monitores, LRCLIB, YouTube, reprodução atual e reserva offline.
+- **Relatório:** copia logs recentes e retrato técnico da faixa, segundo, cues, sonda do YouTube e arquivo local correspondente. Use depois de uma falha.
+
+## CI
+- #988 falhou por falta de `using System.IO` no matcher; corrigido.
+- #989 passou compilação e testes principais do failover.
+- #990 falhou na checagem estática por método legado de normalização redundante; removido.
+- #991 cancelado por atualização subsequente; não é resultado final.
+- **#992 aprovado integralmente:** jobs auxiliares e Windows concluídos; compilação WPF, testes de timeline/offline, nome de arquivo com sufixo de playback e diagnóstico Whisper aprovados.
+
+## Próxima ação obrigatória
+1. Baixar e instalar o artefato #992.
+2. Abrir Diagnóstico; confirmar se aparece “Cópia offline correspondente: SIM” para a faixa e se informa o método (ID ou título/intérprete).
+3. Executar `docs/ROTEIRO_TESTES_FAILOVER_OFFLINE.md`: iniciar online, cortar internet, verificar troca no mesmo segundo e letra, restaurar internet e verificar retorno ao YouTube.
+4. Testar seleção manual da mesma faixa na Biblioteca Offline, pause/fechamento/reabertura e retomada do último ponto.
+5. Colar o Relatório se algo falhar. Só após teste manual registrar failover em uso real como concluído.
+
+## Limitações conhecidas
+- Sem uma cópia offline válida e identificável, não há áudio local para assumir.
+- Se houver mais de uma cópia do mesmo título e nenhum intérprete identificável, o app não escolhe arbitrariamente.
+- O CI não substitui o teste real de perda/retorno da internet no WebView2.
+- O erro nativo Whisper do relatório enviado é separado da projeção por cues; o novo Diagnóstico verifica a carga da biblioteca.
+- O relatório indicava AVX2 não disponível, mas isso isoladamente não prova a causa do erro Whisper.
+
+## Arquivos de continuidade
+- [MEMORIA_CONTINUA.md](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/MEMORIA_CONTINUA.md)
+- [Roteiro failover offline](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/ROTEIRO_TESTES_FAILOVER_OFFLINE.md)
+- [Implementação](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/CADASTRO_LETRAS_IMPLEMENTACAO.md)
+- [Histórico](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/HISTORICO_CADASTRO_LETRAS.md)
+
+---
+
+## Registro anterior preservado
 
 ## Implementações atuais do Cadastro de Letras
 

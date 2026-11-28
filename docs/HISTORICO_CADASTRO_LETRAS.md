@@ -152,3 +152,25 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - Build #986 aprovado: ambos os jobs, compilação WPF, teste de timeline e demais testes auxiliares concluídos com sucesso.
 - Artefatos #986: Windows x64 15273631141; portátil 15273516795; instalador 15273197863.
 - Teste manual no computador do usuário ainda pendente; roteiro criado em docs/ROTEIRO_TESTES_CADASTRO_LETRAS.md. CI não comprova arraste real do mouse nem queda/retorno de rede no WebView2.
+
+
+## 28/11/2026 — Failover online/offline e retomada pelo ponto salvo
+
+- Usuário relatou parada de áudio e letra quando a internet caiu, e reprodução offline começando do zero. Screenshot da música “Trio R3 — Te ver” e relatório técnico foram analisados.
+- Causa identificada: a sonda YouTube podia lançar exceção em queda de rede; o timer a ignorava sem incrementar o contador de falhas.
+- Causa identificada: a reserva offline era procurada apenas por VideoId, mas MP3/WAV importados diretamente não têm necessariamente esse ID.
+- Causa identificada: o MediaElement recebia Play antes de MediaOpened/seek, o que permitia iniciar em zero; a posição também não era persistida na ficha offline.
+- Correções: probe do YouTube usa método que converte timeout/HTTP exceptions em indisponibilidade; duas falhas consecutivas disparam failover.
+- Matcher tenta ID exato e, sem ID, utiliza TrackTitleParser/LyricsPreviewService para limpar nomes completos, separar intérprete/título, retirar sufixos e aceitar apenas correspondência única e válida.
+- Arquivos expirados, inexistentes ou correspondências ambíguas não são usados.
+- MediaElement espera MediaOpened, posiciona, só então inicia. Os cues em memória são transferidos à cópia offline e a projeção não é limpa durante a troca.
+- Posição persistida em LastPlaybackPositionSeconds na biblioteca; salva durante playback, pause e fechamento. Reabrir offline usa o último ponto; selecionar a mesma faixa em execução não reinicia.
+- Retorno online mantém áudio local até o YouTube confirmar a reprodução no segundo corrente.
+- Diagnóstico/Relatório ampliados para testar YouTube e Whisper nativo e mostrar associação/estado da reserva offline.
+- Build #988 falhou por falta de System.IO; corrigido.
+- Build #989 aprovado com failover principal.
+- Build #990 falhou na análise estática por método legado de normalização redundante; removido.
+- Build #991 cancelado por atualização subsequente.
+- **Build #992 aprovado**: ambos os jobs, WPF, Test cue timeline, parser de nome de arquivo e diagnóstico Whisper.
+- Artefatos #992: Windows x64 15275724729, ZIP portátil 15276283376, instalador 15276926788.
+- Teste manual de queda/retorno de internet e retomada no Windows ainda pendente. Roteiro em docs/ROTEIRO_TESTES_FAILOVER_OFFLINE.md.
