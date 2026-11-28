@@ -6,7 +6,17 @@ public static class CueTimeline
         (cues ?? Enumerable.Empty<LyricCue>())
             .Where(cue => cue is not null && double.IsFinite(cue.Seconds) && cue.Seconds >= 0)
             .OrderBy(cue => cue.Seconds)
-            .Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text ?? "" })
+            .Select(cue => new LyricCue
+            {
+                Seconds = cue.Seconds,
+                Text = cue.Text ?? "",
+                SectionId = cue.SectionId ?? "",
+                OccurrenceIndex = cue.OccurrenceIndex,
+                SourceLineIndex = cue.SourceLineIndex,
+                Confidence = cue.Confidence,
+                NeedsReview = cue.NeedsReview,
+                IsManual = cue.IsManual
+            })
             .ToList();
 
     // Stateless upper-bound search: seeking backward immediately selects the earlier phrase.

@@ -1413,8 +1413,8 @@ public partial class MainWindow : Window
         }
 
         _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
-        _currentVideo.Sections = CloneLyricsSections(_lyricsStructureDraft?.Sections);
         _currentVideo.ExecutionOrder = BuildExecutionOrderFromCards();
+        _currentVideo.Sections = CloneLyricsSections(_lyricsStructureDraft?.Sections);
         SaveCurrentFullLyrics();
 
         // Reconhecimento segue a sequência de execução (inclui retornos do coro),
@@ -1568,7 +1568,8 @@ public partial class MainWindow : Window
                 ManualCurrentLineText.Text = matchedLine.Card.Text;
                 var nextSlide = _automaticCardLines.Skip(_manualDraftIndex).FirstOrDefault(item => !item.Card.Seconds.HasValue);
                 NextProjectionPreviewText.Text = nextSlide.Card is null ? "Próxima: —" : "Próxima: " + nextSlide.Card.Text;
-                ManualSyncProgressText.Text = $"Reconhecidas {_manualDraftIndex} de {_manualDraftLines.Count} frases. Última: {confidence:P0} de confiança.";
+                var completedCards = _lyricsEditorCards.Count(card => card.Seconds.HasValue);
+                ManualSyncProgressText.Text = $"Cartões sincronizados: {completedCards} de {_lyricsEditorCards.Count}. Última detecção: {confidence:P0} de confiança.";
                 StatusText.Text = "Cartão reconhecido e enviado ao Holyrics: " + matchedLine.Card.Text;
             }
             else

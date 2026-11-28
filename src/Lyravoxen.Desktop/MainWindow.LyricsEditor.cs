@@ -282,6 +282,7 @@ public partial class MainWindow
                 SectionLabel = source.SectionLabel.Split('·')[0].Trim() + $" · ocorrência {nextOccurrence}",
                 Text = source.Text,
                 SourceLineIndex = source.SourceLineIndex,
+                SourceLineCount = source.SourceLineCount,
                 SourceBlockIndex = source.SourceBlockIndex,
                 OccurrenceIndex = nextOccurrence,
                 IsRepeat = true
@@ -341,9 +342,9 @@ public partial class MainWindow
 
         _lyricsStructureDraft ??= LyricsStructureAnalyzer.Analyze(ManualLyricsBox.Text);
         _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
-        _currentVideo.Sections = CloneLyricsSections(_lyricsStructureDraft.Sections);
-
         _currentVideo.ExecutionOrder = BuildExecutionOrderFromCards();
+        // The builder updates OccurrenceCount for explicit and manually added repeats.
+        _currentVideo.Sections = CloneLyricsSections(_lyricsStructureDraft.Sections);
 
         var marked = _lyricsEditorCards
             .Where(card => card.Seconds.HasValue)

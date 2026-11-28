@@ -338,7 +338,14 @@ try
         Artist = "Intérprete de teste",
         FullLyrics = "[Estrofe 1]\nPrimeira parte\n\n[Coro]\nCanta ao Senhor\n\n[Estrofe 2]\nSegunda parte\n\n[Coro]\nCanta ao Senhor",
         Sections = archiveAnalysis.Sections,
-        ExecutionOrder = archiveAnalysis.ExecutionOrder
+        ExecutionOrder = archiveAnalysis.ExecutionOrder.Select(item => new LyricsExecutionOccurrence
+        {
+            SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
+            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex,
+            LineOrder = item.Kind == LyricsSectionKind.Chorus && item.OccurrenceIndex == 1
+                ? new List<int> { 0, 4 }
+                : new List<int>()
+        }).ToList()
     };
     new PermanentLyricsArchive(archivePath).Save(archiveVideo);
     var restored = new PermanentLyricsArchive(archivePath).Find("structure-test-video", archiveVideo.Url);
@@ -346,6 +353,9 @@ try
         "arquivo permanente: recupera seções e ocorrências");
     Check(restored!.ExecutionOrder.Count(item => item.Kind == LyricsSectionKind.Chorus) == 2,
         "arquivo permanente: preserva duas entradas do coro");
+    Check(restored.ExecutionOrder.First(item => item.Kind == LyricsSectionKind.Chorus && item.OccurrenceIndex == 1)
+        .LineOrder.SequenceEqual(new[] { 0, 4 }),
+        "arquivo permanente: preserva ordem personalizada dos slides");
 }
 finally
 {
