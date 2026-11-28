@@ -1114,8 +1114,7 @@ public partial class MainWindow : Window
                     TrackName = offlineBackupVideo.TrackName, Artist = offlineBackupVideo.Artist,
                     Composer = offlineBackupVideo.Composer, Url = url, IsOffline = false,
                     FullLyrics = offlineBackupVideo.FullLyrics,
-                    Cues = offlineBackupVideo.Cues.Select(cue => new LyricCue
-                        { Seconds = cue.Seconds, Text = cue.Text }).ToList(),
+                    Cues = offlineBackupVideo.Cues.Select(CloneLyricCue).ToList(),
                     Sections = CloneLyricsSections(offlineBackupVideo.Sections),
                     ExecutionOrder = CloneLyricsExecutionOrder(offlineBackupVideo.ExecutionOrder)
                 }
@@ -1133,8 +1132,7 @@ public partial class MainWindow : Window
             {
                 if (string.IsNullOrWhiteSpace(_currentVideo.FullLyrics)) _currentVideo.FullLyrics = offlineBackupVideo.FullLyrics;
                 if (_currentVideo.Cues.Count == 0)
-                    _currentVideo.Cues = offlineBackupVideo.Cues.Select(cue => new LyricCue
-                        { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                    _currentVideo.Cues = offlineBackupVideo.Cues.Select(CloneLyricCue).ToList();
                 if (_currentVideo.Sections.Count == 0)
                     _currentVideo.Sections = CloneLyricsSections(offlineBackupVideo.Sections);
                 if (_currentVideo.ExecutionOrder.Count == 0)
@@ -1406,20 +1404,23 @@ public partial class MainWindow : Window
             return;
         }
 
-        var lines = ManualLyricsBox.Text
-            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(line => line.Trim())
-            .Where(line => line.Length > 0)
-            .ToList();
-        if (lines.Count == 0)
+        if (_lyricsEditorCards.Count == 0)
+            BuildLyricsCards_Click(this, new RoutedEventArgs());
+        if (_lyricsEditorCards.Count == 0)
         {
-            StatusText.Text = "Cole a letra completa, separando cada frase por linha, antes de iniciar o reconhecimento automático.";
+            StatusText.Text = "Cole ou pesquise a letra e crie os cartões antes de iniciar o reconhecimento.";
             return;
         }
 
         _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+        _currentVideo.Sections = CloneLyricsSections(_lyricsStructureDraft?.Sections);
+        _currentVideo.ExecutionOrder = BuildExecutionOrderFromCards();
         SaveCurrentFullLyrics();
-        _manualDraftLines = lines;
+
+        // Reconhecimento segue a sequência de execução (inclui retornos do coro),
+        // não apenas o texto-fonte que pode conter o refrão uma única vez.
+        _automaticCardSequence = _lyricsEditorCards.ToList();
+        _manualDraftLines = _automaticCardSequence.Select(card => card.Text).ToList();
         _manualDraftCues.Clear();
         _liveTranscriptBuffer.Clear();
         _unmatchedTranscriptBlocks = 0;
@@ -1430,7 +1431,7 @@ public partial class MainWindow : Window
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
         ManualCurrentLineText.Text = _manualDraftLines[0];
-        ManualSyncProgressText.Text = "Letra salva. Reconhecimento preparado: aguardando o áudio cantar a primeira frase.";
+        ManualSyncProgressText.Text = "Letra salva. Reconhecimento preparado para percorrer a sequência completa, incluindo repetições.";
         ProjectionPreviewText.Text = "Aguardando reconhecimento da primeira frase...";
         NextProjectionPreviewText.Text = "Próxima: " + _manualDraftLines[0];
         _ = ClearHolyricsForLiveDraftAsync();
@@ -1444,7 +1445,7 @@ public partial class MainWindow : Window
         {
             await service.StartAsync();
             AutoRecognitionButton.Content = "Parar reconhecimento automático";
-            StatusText.Text = "Reconhecimento ativo. O Lyravoxen está reconhecendo a música localmente, sem enviar áudio pela internet.";
+            StatusText.Text = "Reconhecimento ativo. O áudio permanece neste computador; as repetições cadastradas estão incluídas na sequência.";
         }
         catch (Exception ex)
         {
@@ -1505,6 +1506,30 @@ public partial class MainWindow : Window
             var plannedCues = AutoSyncPlanner.CreateCuesForMatch(
                 _manualDraftLines, _manualDraftIndex, matchedIndex, lastCueSeconds, estimatedSeconds);
             if (plannedCues.Count == 0) return;
+
+            var previousDraftIndex = _manualDraftIndex;
+            var allSkippedCouldBePlaced = plannedCues.Count == matchedIndex - previousDraftIndex + 1;
+            var firstPlannedSourceIndex = allSkippedCouldBePlaced ? previousDraftIndex : matchedIndex;
+            for (var cueOffset = 0; cueOffset < plannedCues.Count; cueOffset++)
+            {
+                var sourceIndex = firstPlannedSourceIndex + cueOffset;
+                if (sourceIndex < 0 || sourceIndex >= _automaticCardSequence.Count) continue;
+                var sourceCard = _automaticCardSequence[sourceIndex];
+                var generatedCue = plannedCues[cueOffset];
+                var wasActuallyRecognized = sourceIndex == matchedIndex;
+                generatedCue.SectionId = sourceCard.SectionId;
+                generatedCue.OccurrenceIndex = sourceCard.OccurrenceIndex;
+                generatedCue.SourceLineIndex = sourceCard.SourceLineIndex;
+                generatedCue.Confidence = wasActuallyRecognized ? confidence : null;
+                generatedCue.NeedsReview = !wasActuallyRecognized || confidence < 0.90;
+                generatedCue.IsManual = false;
+
+                sourceCard.Seconds = generatedCue.Seconds;
+                sourceCard.Confidence = generatedCue.Confidence;
+                sourceCard.NeedsReview = generatedCue.NeedsReview;
+                sourceCard.IsManual = false;
+            }
+
             _manualDraftCues.AddRange(plannedCues);
             var cue = plannedCues[^1];
             estimatedSeconds = cue.Seconds;
@@ -1547,14 +1572,21 @@ public partial class MainWindow : Window
 
         if (savePartial && _manualDraftCues.Count > 0)
         {
-            _cues.Clear();
-            _cues.AddRange(CueTimeline.Normalize(_manualDraftCues));
-            RefreshCueList();
-            PersistCurrentCues();
-            if (_currentVideo is not null)
+            if (_automaticCardSequence.Count > 0 && _lyricsEditorCards.Count > 0)
             {
-                _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
-                SaveCurrentFullLyrics();
+                SaveLyricsEditor_Click(this, new RoutedEventArgs());
+            }
+            else
+            {
+                _cues.Clear();
+                _cues.AddRange(CueTimeline.Normalize(_manualDraftCues));
+                RefreshCueList();
+                PersistCurrentCues();
+                if (_currentVideo is not null)
+                {
+                    _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
+                    SaveCurrentFullLyrics();
+                }
             }
             _lastAutomaticCue = -1;
         }
@@ -2856,7 +2888,7 @@ public partial class MainWindow : Window
         _currentVideo.TrackName = MusicTrackBox.Text.Trim();
         _currentVideo.Artist = MusicArtistBox.Text.Trim();
         UpdateCurrentHistoryMetadata();
-        _currentVideo.Cues = _cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+        _currentVideo.Cues = _cues.Select(cue => CloneLyricCue(cue)).ToList();
 
         var savedItems = _library.SelectMany(folder => folder.Videos)
             .Where(item => item.IsOffline == _currentVideo.IsOffline &&
@@ -2888,7 +2920,7 @@ public partial class MainWindow : Window
                 Format = _currentVideo.Format,
                 FullLyrics = _currentVideo.FullLyrics,
                 SavedAt = DateTime.Now,
-                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList(),
+                Cues = _currentVideo.Cues.Select(cue => CloneLyricCue(cue)).ToList(),
                 Sections = CloneLyricsSections(_currentVideo.Sections),
                 ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder)
             });
@@ -2904,7 +2936,7 @@ public partial class MainWindow : Window
                 saved.Artist = _currentVideo.Artist;
                 saved.Url = _currentVideo.Url;
                 saved.FullLyrics = _currentVideo.FullLyrics;
-                saved.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+                saved.Cues = _currentVideo.Cues.Select(cue => CloneLyricCue(cue)).ToList();
                 saved.Sections = CloneLyricsSections(_currentVideo.Sections);
                 saved.ExecutionOrder = CloneLyricsExecutionOrder(_currentVideo.ExecutionOrder);
             }
@@ -3223,7 +3255,7 @@ public partial class MainWindow : Window
                 IsOffline = _currentVideo.IsOffline, LocalPath = _currentVideo.LocalPath, Format = _currentVideo.Format,
                 OfflineExpiresAt = _currentVideo.OfflineExpiresAt, SavedAt = DateTime.Now,
                 FullLyrics = _currentVideo.FullLyrics,
-                Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList()
+                Cues = _currentVideo.Cues.Select(cue => CloneLyricCue(cue)).ToList()
             };
             folder.Videos.Add(video);
         }
@@ -3238,7 +3270,7 @@ public partial class MainWindow : Window
             video.Format = _currentVideo.Format;
             video.OfflineExpiresAt = _currentVideo.OfflineExpiresAt;
             video.FullLyrics = _currentVideo.FullLyrics;
-            video.Cues = _currentVideo.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList();
+            video.Cues = _currentVideo.Cues.Select(cue => CloneLyricCue(cue)).ToList();
         }
         if (!SaveLibrary()) return;
         RefreshLibrarySongs();
@@ -3432,7 +3464,7 @@ public partial class MainWindow : Window
             Url = existing?.Url ?? "",
             IsOffline = true, LocalPath = result.FilePath,
             Format = result.Format, FullLyrics = existing?.FullLyrics ?? "",
-            Cues = existing?.Cues.Select(cue => new LyricCue { Seconds = cue.Seconds, Text = cue.Text }).ToList() ?? new(),
+            Cues = existing?.Cues.Select(cue => CloneLyricCue(cue)).ToList() ?? new(),
             SavedAt = DateTime.Now, OfflineExpiresAt = expires
         });
     }
