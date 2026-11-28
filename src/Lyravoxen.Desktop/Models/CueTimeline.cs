@@ -37,6 +37,27 @@ public static class CueTimeline
             .Where(line => line.Length > 0)
             .ToArray();
 
+        // Cues created by the new registration editor carry a section/occurrence key.
+        // Never let a projection page bleed into the previous or next stanza/chorus.
+        var active = cues[activeCueIndex];
+        if (!string.IsNullOrWhiteSpace(active.SectionId))
+        {
+            var first = activeCueIndex;
+            while (first > 0 &&
+                   cues[first - 1].SectionId == active.SectionId &&
+                   cues[first - 1].OccurrenceIndex == active.OccurrenceIndex)
+                first--;
+            var last = activeCueIndex + 1;
+            while (last < cues.Count &&
+                   cues[last].SectionId == active.SectionId &&
+                   cues[last].OccurrenceIndex == active.OccurrenceIndex)
+                last++;
+            var sectionLines = cues.Skip(first).Take(last - first).SelectMany(cue => Lines(cue.Text)).ToArray();
+            var linesBeforeActive = cues.Skip(first).Take(activeCueIndex - first).Sum(cue => Lines(cue.Text).Length);
+            var sectionBlockStart = (linesBeforeActive / maxLines) * maxLines;
+            return string.Join(Environment.NewLine, sectionLines.Skip(sectionBlockStart).Take(maxLines));
+        }
+
         var allLines = cues.SelectMany(cue => Lines(cue.Text)).ToArray();
         var linesBeforeActiveCue = 0;
         for (var i = 0; i < activeCueIndex; i++)
