@@ -126,3 +126,16 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - A sincronização automática ainda é reconhecimento Whisper incremental durante a reprodução, não forced alignment completo anterior ao playback.
 - A terceira aba remota dedicada ao cadastro de letras ainda não foi construída; compatibilidade dos comandos de marcação existentes foi mantida.
 - Ainda não há teste manual real em música cantada. Próxima ação é a rodada manual controlada do usuário com vídeo online/offline, backup expirado e marcação por cartões, registrando resultados sem assumir sucesso antes da verificação.
+
+
+## 28/11/2026 — Correções solicitadas após captura do Estúdio de Letras
+
+- Implementado ajuste manual persistente de tempo por cartão e propagação para os cartões posteriores, com passos de 0,1 s e 0,5 s e ação de desfazer.
+- Implementado “Continuar daqui”, para quando a música já está em andamento ou a letra é adicionada depois do início.
+- Priorização heurística de PT-BR no catálogo, com rótulo explícito de probabilidade.
+- Corrigidos os botões desabilitados na primeira seleção do catálogo; a pesquisa permanece independente do player.
+- Criado mecanismo inicial de failover YouTube/arquivo local e retorno ao YouTube preservando posição. O monitor é executado em intervalos de 2 s, exige duas falhas consecutivas para evitar falsos positivos e continua ativo durante buffering.
+- CI #980 falhou por cobertura da Ajuda; #981 falhou por namespaces ausentes na classe parcial; ambas as causas foram corrigidas.
+- CI #982 aprovado integralmente, com artefatos Windows, portátil e instalador.
+- CI #983 estava em andamento para validar o último ajuste de detecção em buffering.
+- Teste manual de perda/retorno real de internet ainda pendente; CI não substitui esse teste.

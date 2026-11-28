@@ -190,3 +190,50 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - **Modelo de ocorrência:** `LyricsExecutionOccurrence` guarda ID da seção, rótulo/tipo, índice e origem; campos temporais e confiança ainda precisam ser adicionados no desenho do alinhador.
 - **Controle remoto:** `RemoteControlServer.HandleAsync` aceita apenas GET; buffer de requisição de 65.536 bytes; `/api` verifica PIN e encaminha `c` (comando) e `a` (argumento). A página atual tem apenas Bíblia/Ao Vivo. Para texto extenso, a proposta é adicionar rota POST autenticada separada, sem mudar os comandos GET existentes.
 - **Preservação de compatibilidade:** nenhuma rota existente foi alterada nesta etapa. A nova rota POST é uma extensão aditiva planejada para o editor remoto, mantendo Ao Vivo/Bíblia sob o mesmo contrato atual.
+
+
+## Marco de implementação — correções de sincronização e continuidade (28/11/2026)
+
+### Solicitações do usuário nesta etapa
+- Ajustar manualmente o tempo da frase selecionada em décimos ou meio segundo e propagar a correção a todas as frases seguintes.
+- Inserir/pesquisar a letra com a música já em andamento e marcar o cartão correspondente ao trecho atual, continuando dali sem reiniciar.
+- Trocar automaticamente YouTube → arquivo local quando a internet cair e voltar local → YouTube quando a conexão retornar, preservando segundo atual e dados da letra.
+- Priorizar versões brasileiras na pesquisa.
+- Corrigir os botões de uso do primeiro resultado que apareciam desabilitados.
+- Manter a pesquisa disponível durante a reprodução.
+
+### Código implementado na branch
+- **Ajuste fino da linha do tempo:** controles −0,5 s, −0,1 s, +0,1 s, +0,5 s; o deslocamento inicia no cartão selecionado, atinge os tempos já marcados posteriores e fica pendente para cartões futuros ainda sem tempo. A correção respeita uma distância mínima de 0,05 s em relação à frase anterior, é gravada por música e pode ser desfeita.
+- **Retomar do cartão atual:** botão “↪ Continuar daqui”; o cartão selecionado recebe o segundo corrente de reprodução e a seleção avança para a frase seguinte. “Iniciar sequência” também respeita o cartão selecionado quando ele ainda não tem tempo.
+- **Pesquisa sem reiniciar:** o diálogo de catálogo mantém o player separado; importar o texto não chama carregamento de vídeo. A busca está habilitada no fluxo enquanto a música continua tocando.
+- **Catálogo Brasil primeiro:** resultados são ordenados por sinais linguísticos de PT-BR, depois correspondência de título/intérprete e disponibilidade de tempos. O rótulo é “PT-BR provável”/“Português provável”; LRCLIB não fornece filtro ou metadado confiável de país, portanto não se afirma que a origem brasileira foi verificada.
+- **Correção do diálogo:** o estado dos botões é atualizado imediatamente após ligar o handler de seleção, resolvendo a seleção inicial que não disparava o refresh. A importação de tempos fica habilitada se houver ao menos um cue.
+- **Failover inicial:** monitor de rede a cada 2 s; depois de duas falhas consecutivas tenta usar a cópia offline válida do mesmo vídeo no playhead atual. No retorno da rede, prepara o YouTube no segundo atual enquanto o áudio local continua; só troca quando o player online confirma reprodução. Se a tentativa não confirmar dentro de 12 s, a cópia local continua tocando e uma nova tentativa ocorre mais tarde.
+- **Proteção de buffering:** commit 075d774 remove a exigência de o estado do player continuar exatamente em “playing” para o monitor observar a conexão. Assim, o monitor também continua ativo quando o YouTube entra em buffering, desde que a reprodução tenha sido iniciada e não esteja pausada pelo usuário.
+
+### Registro de CI desta etapa
+- **#980 — run 46166477303:** falhou em Check Help coverage porque os novos botões ainda não estavam descritos na Ajuda. Nenhuma compilação Windows foi executada.
+- **#981 — run 46166686551:** a Ajuda e os testes auxiliares passaram; o build revelou namespaces ausentes no arquivo parcial de failover (File, Directory, Path, HttpRequestMessage, HttpMethod, HttpCompletionOption). Corrigido adicionando explicitamente System, System.IO, System.Net.Http, System.Threading, System.Threading.Tasks, System.Collections.Generic e System.Linq.
+- **#982 — run 46167026801, commit e0b25b3:** ambos os jobs concluídos com sucesso. dotnet publish, engine Rust, integração da extensão, Test cue timeline, pacote portátil e instalador aprovados.
+- Artefatos #982: Windows x64 15272102711; ZIP portátil 15272262281; instalador 15271444107. Todos constavam como não expirados na consulta.
+- **#983 — run 46167514287, commit 075d774:** valida a proteção de buffering adicionada depois do #982; resultado estava em andamento no momento deste registro. Não declarar essa última alteração aprovada até o workflow terminar.
+
+### Limites e validação ainda necessária
+- CI comprova compilação e testes automatizados, mas ainda não simula perda/retorno real da internet no WebView2 em reprodução contínua. A troca online/offline ainda precisa de teste manual em Windows com cópia local válida do mesmo vídeo.
+- O monitor só consegue manter a música quando existe arquivo offline local utilizável correspondente ao mesmo ID do YouTube; sem essa cópia, não há áudio local para assumir.
+- O ajuste implementado é um deslocamento em segundos a partir de um cartão (aplicado à sequência seguinte), não uma alteração da velocidade física da faixa nem uma reamostragem do áudio.
+- PT-BR é classificação provável por texto; pode errar em letras curtas, instrumentais ou com palavras compartilhadas entre idiomas.
+- A terceira aba remota completa de Cadastro de Letras e o forced alignment prévio integral em português continuam pendentes, conforme o plano anterior.
+
+### Commits desta etapa
+- fc547433406e31df1ab910e376ce5629c96022e4: núcleo inicial de failover e retenção de posição.
+- c0820a3c385e3ee77552d17012d7f2c0412b27f0: controles de ajuste, retomada de cartão, ranking PT-BR e testes.
+- c096a98f152f65206adcf9b2d6388cb16e70f04d: textos da Ajuda e namespace WebView2.
+- e0b25b393e043bd4f2898ce9a09e9bb670c2b1e2: namespaces explícitos do failover; base do build #982 aprovado.
+- 075d77490459de68f57901716ec88f41f8c28fae: correção de monitor durante buffering; CI #983 pendente nesta atualização documental.
+
+### Regras de continuidade preservadas
+- Branch feature/lyrics-structure-fast-sync; main intocada.
+- Manter o histórico anterior abaixo, sem apagar snapshots e decisões antigas.
+- Não declarar failover real testado antes da simulação manual de rede.
+- Após o teste consolidado, atualizar os resultados e então avançar para a aba remota completa e o benchmark de alinhamento em português.

@@ -1,3 +1,54 @@
+# RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, após ajuste de sincronização e failover)
+
+**Repositório:** jabesguitar/Lyravoxen  
+**Branch ativa:** feature/lyrics-structure-fast-sync  
+**Último commit de código:** 075d77490459de68f57901716ec88f41f8c28fae  
+**Último build completo aprovado:** [Windows build #982](https://github.com/jabesguitar/Lyravoxen/actions/runs/46167026801), commit e0b25b3; os dois jobs passaram.  
+**Validação da proteção de buffering:** [build #983](https://github.com/jabesguitar/Lyravoxen/actions/runs/46167514287), commit 075d774, em execução na última consulta.  
+**Main:** intocada; não fazer merge sem autorização.
+
+## Mudanças já implementadas
+
+- Ajuste fino de sincronização em −0,5 s, −0,1 s, +0,1 s, +0,5 s. A alteração começa no cartão selecionado e alcança as frases seguintes. Tempos já marcados são deslocados; cartões futuros recebem um offset pendente. O ajuste é salvo por música e pode ser desfeito.
+- Botão “↪ Continuar daqui”: selecione a frase que está sendo cantada; o app grava o tempo de reprodução nesse cartão e prepara a continuação dali.
+- A pesquisa/importação de letras é independente do player. A música pode continuar tocando enquanto o catálogo está aberto; importar a letra não deve recarregar o YouTube nem levar ao começo.
+- Catálogo prioriza resultados com sinais linguísticos de PT-BR; “PT-BR provável” é estimativa, pois LRCLIB não oferece filtro oficial de país/locale.
+- Corrigido o refresh dos botões no primeiro resultado; a importação temporizada está habilitada com pelo menos um cue.
+- Failover online/offline implementado: duas falhas consecutivas de rede tentam trocar YouTube pela cópia offline válida do mesmo vídeo no tempo atual; quando a rede volta, o áudio local continua até o YouTube confirmar que retomou no mesmo segundo.
+- O monitor foi ajustado para continuar detectando a rede quando o player entra em buffering, não somente quando o estado é exatamente “playing”.
+
+## CI e artefatos
+
+- #980 falhou na cobertura da Ajuda porque os novos botões ainda não estavam documentados; correção realizada.
+- #981 falhou no dotnet publish por namespaces ausentes no novo arquivo partial; namespaces corrigidos.
+- **#982 aprovado integralmente:** jobs cloud-worker-tests e build concluídos com sucesso; teste de timeline, pacote portátil e instalador gerados.
+- Artefatos #982: Windows x64 15272102711; ZIP portátil 15272262281; instalador 15271444107.
+- #983 valida a proteção de buffering (resultado pendente no último registro). Não substituir os artefatos #982 por um pacote não compilado.
+
+## Próxima ação obrigatória
+
+1. Confirmar o resultado do #983. Se falhar, ler os logs e corrigir antes de fechar o marco.
+2. Fazer uma rodada manual única no Windows: iniciar YouTube com cópia offline válida; interromper internet durante a música; verificar troca mantendo segundo e letra; restaurar internet; verificar retorno ao YouTube sem salto. Testar também busca de letra durante reprodução, selecionar cartão atual, Continuar daqui, os quatro ajustes e persistência após fechar/reabrir.
+3. Registrar resultados reais antes de declarar failover/sincronização plenamente validados.
+4. Depois, avançar para a terceira aba remota completa de Cadastro de Letras e avaliação de forced alignment completo em português.
+
+## Limitações conhecidas
+
+- Sem cópia offline válida do mesmo vídeo, não há arquivo local para continuar a reprodução.
+- O ajuste atual desloca tempos em segundos na sequência posterior; não muda a velocidade de reprodução do áudio.
+- PT-BR é uma heurística e pode classificar incorretamente letras curtas ou multilíngues.
+- CI não comprova, sozinho, o comportamento real do WebView2 quando a internet cai e retorna.
+- A terceira aba remota completa e o alinhamento prévio integral da música ainda não estão implementados.
+
+## Links permanentes de continuidade
+
+- [Memória cronológica](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/MEMORIA_CONTINUA.md)
+- [Implementação do Cadastro de Letras](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/CADASTRO_LETRAS_IMPLEMENTACAO.md)
+- [Histórico do Cadastro de Letras](https://github.com/jabesguitar/Lyravoxen/blob/feature/lyrics-structure-fast-sync/docs/HISTORICO_CADASTRO_LETRAS.md)
+
+---
+
+# Snapshot anterior preservado
 # RETOMADA PRIORITÁRIA — LYRAVOXEN (28/11/2026, após build #977)
 
 **Ponto de retomada confirmado diretamente no GitHub.**
