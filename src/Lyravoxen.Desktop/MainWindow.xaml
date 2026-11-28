@@ -411,7 +411,7 @@
               <Trigger Property="IsSelected" Value="True">
                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                <Setter TargetName="CardBorder" Property="BorderThickness" Value="2"/>
-               <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource Brush_12385A}"/>
+               <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource Brush_0B2450}"/>
               </Trigger>
              </ControlTemplate.Triggers>
             </ControlTemplate>
