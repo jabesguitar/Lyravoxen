@@ -9,6 +9,7 @@ using Microsoft.Web.WebView2.Core;
 using System.Windows;
 using System.Windows.Threading;
 using Lyravoxen.Models;
+using Lyravoxen.Services;
 
 namespace Lyravoxen;
 
@@ -27,6 +28,10 @@ public partial class MainWindow
     private CancellationTokenSource? _onlineResumeTimeout;
     private bool _pendingLocalSeek;
     private double _pendingLocalPlaybackStartSeconds;
+    private DateTime _lastPlaybackPositionSaveUtc = DateTime.MinValue;
+    private double _lastPersistedPlaybackPositionSeconds = double.NaN;
+    private bool? _lastYoutubeProbeSucceeded;
+    private DateTime _lastYoutubeProbeUtc = DateTime.MinValue;
 
     private void InitializeMediaConnectivityMonitor()
     {
@@ -53,8 +58,9 @@ public partial class MainWindow
 
     private void SetPendingLocalPlaybackStart(double seconds)
     {
-        _pendingLocalPlaybackStartSeconds = Math.Max(0, double.IsFinite(seconds) ? seconds : 0);
-        _pendingLocalSeek = _pendingLocalPlaybackStartSeconds > 0.05;
+        _pendingLocalPlaybackStartSeconds = OfflineLibraryMatcher.ResolveResumePosition(seconds, 0);
+        // Sempre aguarda MediaOpened; inclusive quando o ponto solicitado é 00:00.
+        _pendingLocalSeek = true;
     }
 
     private void LocalAudioPlayer_MediaOpened(object sender, RoutedEventArgs e)
@@ -68,42 +74,188 @@ public partial class MainWindow
                 var duration = LocalAudioPlayer.NaturalDuration.TimeSpan.TotalSeconds;
                 if (duration > 0) target = Math.Clamp(target, 0, Math.Max(0, duration - 0.1));
             }
+
+            LocalAudioPlayer.Pause();
             LocalAudioPlayer.Position = TimeSpan.FromSeconds(target);
             _lastKnownPlaybackSeconds = target;
             _pendingLocalSeek = false;
+            _isLocalAudioPlaying = true;
+            _playbackEnded = false;
+            LocalAudioPlayer.Play();
+            _audioTimer.Start();
             _lastAutomaticCue = -1;
-            StatusText.Text = $"Cópia offline retomada em {TimeSpan.FromSeconds(target).ToString(@"mm\:ss")}.";
+            UpdateOfflinePlaybackPosition();
+
+            if (_cues.Count > 0 && !_manualProjectionMode && !_automaticLyricsActive)
+            {
+                var cueIndex = FindActiveCue(target);
+                _lastAutomaticCue = cueIndex;
+                if (cueIndex >= 0) PublishCueBlock(cueIndex);
+            }
+
+            PersistCurrentPlaybackPosition(target, force: true);
+            AppLog.Info($"Áudio local aberto e posicionado em {TimeSpan.FromSeconds(target):mm\\:ss}; cues={_cues.Count}; posição confirmada após MediaOpened.");
+            StatusText.Text = target > 0.05
+                ? $"Cópia offline retomada em {TimeSpan.FromSeconds(target):mm\\:ss}. Música e letra alinhadas."
+                : "Reprodução offline iniciada do começo.";
         }
-        catch { _pendingLocalSeek = false; }
+        catch (Exception ex)
+        {
+            _pendingLocalSeek = false;
+            _isLocalAudioPlaying = false;
+            _audioTimer.Stop();
+            AppLog.Error("Falha ao posicionar o áudio local no segundo solicitado", ex);
+            StatusText.Text = "O áudio abriu, mas não foi possível posicioná-lo no ponto solicitado: " + ex.Message;
+        }
     }
 
-    private LibraryVideo? FindOfflineBackupForCurrentVideo()
+    private void PersistCurrentPlaybackPosition(double seconds, bool force = false)
     {
-        var videoId = _currentVideo?.VideoId;
-        if (string.IsNullOrWhiteSpace(videoId)) return null;
-        return _library.SelectMany(folder => folder.Videos)
-            .FirstOrDefault(item => item.IsOffline && item.VideoId == videoId &&
-                !string.IsNullOrWhiteSpace(item.LocalPath) && File.Exists(item.LocalPath) &&
-                (!item.OfflineExpiresAt.HasValue || item.OfflineExpiresAt.Value > DateTime.Now));
+        if (_currentVideo is null || !double.IsFinite(seconds) || seconds < 0) return;
+        _currentVideo.LastPlaybackPositionSeconds = seconds;
+
+        var now = DateTime.UtcNow;
+        if (!force &&
+            now - _lastPlaybackPositionSaveUtc < TimeSpan.FromSeconds(4) &&
+            double.IsFinite(_lastPersistedPlaybackPositionSeconds) &&
+            Math.Abs(seconds - _lastPersistedPlaybackPositionSeconds) < 2.0)
+            return;
+
+        var changed = false;
+        foreach (var item in _library.SelectMany(folder => folder.Videos))
+        {
+            var sameLocalFile = _currentVideo.IsOffline && item.IsOffline &&
+                !string.IsNullOrWhiteSpace(_currentVideo.LocalPath) &&
+                string.Equals(item.LocalPath, _currentVideo.LocalPath, StringComparison.OrdinalIgnoreCase);
+            var sameYoutubeId = !string.IsNullOrWhiteSpace(_currentVideo.VideoId) &&
+                string.Equals(item.VideoId, _currentVideo.VideoId, StringComparison.Ordinal);
+            if (!sameLocalFile && !sameYoutubeId) continue;
+            if (Math.Abs(item.LastPlaybackPositionSeconds - seconds) > 0.1)
+            {
+                item.LastPlaybackPositionSeconds = seconds;
+                changed = true;
+            }
+        }
+
+        var match = OfflineLibraryMatcher.FindMatchingBackup(
+            _library.SelectMany(folder => folder.Videos), _currentVideo, DateTime.Now);
+        if (match is not null && Math.Abs(match.Video.LastPlaybackPositionSeconds - seconds) > 0.1)
+        {
+            match.Video.LastPlaybackPositionSeconds = seconds;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            if (!SaveLibrary())
+                AppLog.Error("Não foi possível persistir o ponto de reprodução da biblioteca.");
+        }
+        _lastPlaybackPositionSaveUtc = now;
+        _lastPersistedPlaybackPositionSeconds = seconds;
     }
 
-    private static LibraryVideo CreateOfflinePlaybackCopy(LibraryVideo source, LibraryVideo backup) => new()
+    private OfflineLibraryMatch? FindOfflineBackupMatchForCurrentVideo() =>
+        OfflineLibraryMatcher.FindMatchingBackup(
+            _library.SelectMany(folder => folder.Videos), _currentVideo, DateTime.Now);
+
+    private LibraryVideo? FindOfflineBackupForCurrentVideo() =>
+        FindOfflineBackupMatchForCurrentVideo()?.Video;
+
+    private void BindOfflineBackupToCurrentRecording(LibraryVideo backup, LibraryVideo source)
     {
-        VideoId = string.IsNullOrWhiteSpace(source.VideoId) ? backup.VideoId : source.VideoId,
-        Title = string.IsNullOrWhiteSpace(source.Title) ? backup.Title : source.Title,
-        TrackName = string.IsNullOrWhiteSpace(source.TrackName) ? backup.TrackName : source.TrackName,
-        Artist = string.IsNullOrWhiteSpace(source.Artist) ? backup.Artist : source.Artist,
-        Composer = string.IsNullOrWhiteSpace(source.Composer) ? backup.Composer : source.Composer,
-        Url = string.IsNullOrWhiteSpace(source.Url) ? backup.Url : source.Url,
-        IsOffline = true, LocalPath = backup.LocalPath, Format = backup.Format,
-        FullLyrics = string.IsNullOrWhiteSpace(source.FullLyrics) ? backup.FullLyrics : source.FullLyrics,
-        Cues = (source.Cues.Count > 0 ? source.Cues : backup.Cues).Select(CloneLyricCue).ToList(),
-        Sections = CloneLyricsSections(source.Sections.Count > 0 ? source.Sections : backup.Sections),
-        ExecutionOrder = CloneLyricsExecutionOrder(source.ExecutionOrder.Count > 0 ? source.ExecutionOrder : backup.ExecutionOrder),
-        TimelineAdjustments = CloneLyricsTimelineAdjustments(source.TimelineAdjustments.Count > 0 ? source.TimelineAdjustments : backup.TimelineAdjustments),
-        SavedAt = source.SavedAt != default ? source.SavedAt : backup.SavedAt,
-        OfflineExpiresAt = backup.OfflineExpiresAt
-    };
+        var changed = false;
+        if (string.IsNullOrWhiteSpace(backup.VideoId) && !string.IsNullOrWhiteSpace(source.VideoId))
+        {
+            backup.VideoId = source.VideoId;
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(backup.Url) && !string.IsNullOrWhiteSpace(source.Url))
+        {
+            backup.Url = source.Url;
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(backup.Title) && !string.IsNullOrWhiteSpace(source.Title))
+        {
+            backup.Title = source.Title;
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(backup.TrackName) && !string.IsNullOrWhiteSpace(source.TrackName))
+        {
+            backup.TrackName = source.TrackName;
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(backup.Artist) && !string.IsNullOrWhiteSpace(source.Artist))
+        {
+            backup.Artist = source.Artist;
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(backup.Composer) && !string.IsNullOrWhiteSpace(source.Composer))
+        {
+            backup.Composer = source.Composer;
+            changed = true;
+        }
+
+        var sourceCues = source.Cues.Count > 0 ? source.Cues :
+            (ReferenceEquals(source, _currentVideo) && _cues.Count > 0 ? _cues : new List<LyricCue>());
+        if (backup.Cues.Count == 0 && sourceCues.Count > 0)
+        {
+            backup.Cues = sourceCues.Select(CloneLyricCue).ToList();
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(backup.FullLyrics) && !string.IsNullOrWhiteSpace(source.FullLyrics))
+        {
+            backup.FullLyrics = source.FullLyrics;
+            changed = true;
+        }
+        if (backup.Sections.Count == 0 && source.Sections.Count > 0)
+        {
+            backup.Sections = CloneLyricsSections(source.Sections);
+            changed = true;
+        }
+        if (backup.ExecutionOrder.Count == 0 && source.ExecutionOrder.Count > 0)
+        {
+            backup.ExecutionOrder = CloneLyricsExecutionOrder(source.ExecutionOrder);
+            changed = true;
+        }
+        if (backup.TimelineAdjustments.Count == 0 && source.TimelineAdjustments.Count > 0)
+        {
+            backup.TimelineAdjustments = CloneLyricsTimelineAdjustments(source.TimelineAdjustments);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            SaveLibrary();
+            RefreshLibrarySongs();
+            AppLog.Info($"Cópia offline vinculada à faixa {backup.TrackName} — {backup.Artist}; vídeo={backup.VideoId}; frases={backup.Cues.Count}.");
+        }
+    }
+
+    private LibraryVideo CreateOfflinePlaybackCopy(LibraryVideo source, LibraryVideo backup)
+    {
+        var sourceCues = source.Cues.Count > 0
+            ? source.Cues
+            : (ReferenceEquals(source, _currentVideo) && _cues.Count > 0 ? _cues : backup.Cues);
+        return new LibraryVideo
+        {
+            VideoId = string.IsNullOrWhiteSpace(source.VideoId) ? backup.VideoId : source.VideoId,
+            Title = string.IsNullOrWhiteSpace(source.Title) ? backup.Title : source.Title,
+            TrackName = string.IsNullOrWhiteSpace(source.TrackName) ? backup.TrackName : source.TrackName,
+            Artist = string.IsNullOrWhiteSpace(source.Artist) ? backup.Artist : source.Artist,
+            Composer = string.IsNullOrWhiteSpace(source.Composer) ? backup.Composer : source.Composer,
+            Url = string.IsNullOrWhiteSpace(source.Url) ? backup.Url : source.Url,
+            IsOffline = true, LocalPath = backup.LocalPath, Format = backup.Format,
+            FullLyrics = string.IsNullOrWhiteSpace(source.FullLyrics) ? backup.FullLyrics : source.FullLyrics,
+            Cues = sourceCues.Select(CloneLyricCue).ToList(),
+            Sections = CloneLyricsSections(source.Sections.Count > 0 ? source.Sections : backup.Sections),
+            ExecutionOrder = CloneLyricsExecutionOrder(source.ExecutionOrder.Count > 0 ? source.ExecutionOrder : backup.ExecutionOrder),
+            TimelineAdjustments = CloneLyricsTimelineAdjustments(source.TimelineAdjustments.Count > 0 ? source.TimelineAdjustments : backup.TimelineAdjustments),
+            SavedAt = source.SavedAt != default ? source.SavedAt : backup.SavedAt,
+            OfflineExpiresAt = backup.OfflineExpiresAt,
+            LastPlaybackPositionSeconds = source.LastPlaybackPositionSeconds > 0
+                ? source.LastPlaybackPositionSeconds : backup.LastPlaybackPositionSeconds
+        };
+    }
 
     private static LibraryVideo CreateOnlinePlaybackCopy(LibraryVideo source) => new()
     {
@@ -111,7 +263,8 @@ public partial class MainWindow
         Composer = source.Composer, Url = source.Url, IsOffline = false, LocalPath = null, Format = null,
         FullLyrics = source.FullLyrics, Cues = source.Cues.Select(CloneLyricCue).ToList(),
         Sections = CloneLyricsSections(source.Sections), ExecutionOrder = CloneLyricsExecutionOrder(source.ExecutionOrder),
-        TimelineAdjustments = CloneLyricsTimelineAdjustments(source.TimelineAdjustments), SavedAt = source.SavedAt
+        TimelineAdjustments = CloneLyricsTimelineAdjustments(source.TimelineAdjustments), SavedAt = source.SavedAt,
+        LastPlaybackPositionSeconds = source.LastPlaybackPositionSeconds
     };
 
     private async void MediaConnectivityTimer_Tick(object? sender, EventArgs e)
@@ -119,15 +272,24 @@ public partial class MainWindow
         if (Interlocked.Exchange(ref _connectivityProbeInFlight, 1) != 0) return;
         try
         {
-            // Mantém o monitor durante buffering (estado 3), desde que a reprodução tenha sido iniciada e não esteja pausada pelo usuário.
             var checkOnline = _youtubePlaybackIntended && !_isLocalAudioPlaying && !_pendingOnlineResume;
             var checkReturn = _wasAutomaticallySwitchedToOffline && _isLocalAudioPlaying;
             if (!checkOnline && !checkReturn) { _consecutiveNetworkFailures = 0; return; }
+            if (checkOnline && DateTime.UtcNow < _retryOnlineAfterUtc) return;
+
+            // A sonda converte timeout/HTTP exceptions em false; perda de rede conta como falha,
+            // em vez de cair silenciosamente no catch externo.
             var online = await IsYoutubeReachableAsync();
             if (checkOnline)
             {
-                if (online) { _consecutiveNetworkFailures = 0; return; }
+                if (online)
+                {
+                    _consecutiveNetworkFailures = 0;
+                    return;
+                }
+
                 _consecutiveNetworkFailures++;
+                AppLog.Info($"Sonda do YouTube falhou ({_consecutiveNetworkFailures}/2) durante reprodução em {TimeSpan.FromSeconds(GetPlaybackSeconds()):mm\\:ss}.");
                 if (_consecutiveNetworkFailures >= 2)
                 {
                     _consecutiveNetworkFailures = 0;
@@ -135,31 +297,56 @@ public partial class MainWindow
                 }
             }
             else if (checkReturn && online && DateTime.UtcNow >= _retryOnlineAfterUtc)
+            {
                 await BeginOnlineResumeAsync();
+            }
         }
-        catch { /* Falhas transitórias de rede são reavaliadas no próximo ciclo. */ }
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha interna no monitor de conexão da reprodução", ex);
+        }
         finally { Volatile.Write(ref _connectivityProbeInFlight, 0); }
     }
 
-    private static async Task<bool> IsYoutubeReachableAsync()
+    private async Task<bool> IsYoutubeReachableAsync()
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1800));
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.youtube.com/generate_204");
-        using var response = await MetadataHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
-        return response.IsSuccessStatusCode;
+        try
+        {
+            var reachable = await CanReachYoutubeAsync();
+            _lastYoutubeProbeSucceeded = reachable;
+            _lastYoutubeProbeUtc = DateTime.UtcNow;
+            return reachable;
+        }
+        catch (Exception ex)
+        {
+            _lastYoutubeProbeSucceeded = false;
+            _lastYoutubeProbeUtc = DateTime.UtcNow;
+            AppLog.Info("Sonda do YouTube terminou com erro de rede: " + ex.Message);
+            return false;
+        }
     }
 
     private async Task SwitchToOfflineAtCurrentPositionAsync()
     {
         if (!_youtubePlaybackIntended || _isLocalAudioPlaying || _currentVideo is null) return;
-        var backup = FindOfflineBackupForCurrentVideo();
-        if (backup is null)
+
+        var position = Math.Max(0, GetPlaybackSeconds());
+        PersistCurrentPlaybackPosition(position, force: true);
+        var match = FindOfflineBackupMatchForCurrentVideo();
+        if (match is null)
         {
             _retryOnlineAfterUtc = DateTime.UtcNow.AddSeconds(8);
-            StatusText.Text = "A internet caiu, mas esta música não tem uma cópia offline válida para continuar.";
+            var title = string.IsNullOrWhiteSpace(_currentVideo.TrackName) ? _currentVideo.Title : _currentVideo.TrackName;
+            var validFiles = _library.SelectMany(folder => folder.Videos).Count(item =>
+                item.IsOffline && !string.IsNullOrWhiteSpace(item.LocalPath) && File.Exists(item.LocalPath) &&
+                (!item.OfflineExpiresAt.HasValue || item.OfflineExpiresAt.Value > DateTime.Now));
+            AppLog.Error($"Failover não iniciado: sem cópia offline válida/única para '{title}' — {_currentVideo.Artist}; posição={TimeSpan.FromSeconds(position):mm\\:ss}; arquivos locais válidos={validFiles}.");
+            StatusText.Text = $"A internet caiu, mas não encontrei uma cópia offline válida e identificável para '{title}'. Confira se o título e o intérprete do arquivo na Biblioteca Offline correspondem à faixa atual.";
             return;
         }
-        var position = Math.Max(0, _lastKnownPlaybackSeconds);
+
+        var backup = match.Video;
+        BindOfflineBackupToCurrentRecording(backup, _currentVideo);
         var localVersion = CreateOfflinePlaybackCopy(_currentVideo, backup);
         _wasAutomaticallySwitchedToOffline = true;
         try
@@ -167,9 +354,11 @@ public partial class MainWindow
             if (YoutubePlayer.CoreWebView2 is not null)
                 await YoutubePlayer.CoreWebView2.ExecuteScriptAsync("if(typeof player !== 'undefined' && player && typeof player.pauseVideo === 'function') player.pauseVideo();");
         }
-        catch { }
-        PlayLocalAudio(localVersion, position);
-        StatusText.Text = $"Conexão interrompida. Música e letra continuaram offline em {TimeSpan.FromSeconds(position).ToString(@"mm\:ss")}.";
+        catch (Exception ex) { AppLog.Info("Player online já estava sem resposta ao pausar para failover: " + ex.Message); }
+
+        AppLog.Info($"Failover YouTube -> offline: correspondência={(match.MatchedByVideoId ? "ID" : "título/intérprete único")}; faixa={localVersion.TrackName} — {localVersion.Artist}; ponto={TimeSpan.FromSeconds(position):mm\\:ss}; frases={localVersion.Cues.Count}; arquivo={localVersion.LocalPath}.");
+        PlayLocalAudio(localVersion, position, preserveProjection: true);
+        StatusText.Text = $"Conexão interrompida. Retomando música e letra em {TimeSpan.FromSeconds(position):mm\\:ss}.";
     }
 
     private async Task BeginOnlineResumeAsync()

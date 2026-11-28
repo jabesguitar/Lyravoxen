@@ -110,6 +110,7 @@ public partial class MainWindow : Window
         InitializeMediaConnectivityMonitor();
         Closing += async (_, _) =>
         {
+            PersistCurrentPlaybackPosition(GetPlaybackSeconds(), force: true);
             _offlineCleanupTimer.Stop();
             StopMediaConnectivityMonitor();
             _offlineMedia.Dispose();
@@ -2161,24 +2162,25 @@ public partial class MainWindow : Window
                         HandleOnlineResumeFailure(explanation, code is 100 or 101 or 150 or 153);
                         return;
                     }
-                    var fallback = _pendingOfflineFallbackVideo ?? FindOfflineBackupForCurrentVideo();
-                    var fallbackVideoId = fallback is null
-                        ? null
-                        : YouTubeLink.TryGetVideoId(fallback.Url) ?? fallback.VideoId;
+                    var pendingFallback = _pendingOfflineFallbackVideo;
+                    var fallbackMatch = pendingFallback is not null && _currentVideo is not null
+                        ? OfflineLibraryMatcher.FindMatchingBackup(new[] { pendingFallback }, _currentVideo, DateTime.Now)
+                        : FindOfflineBackupMatchForCurrentVideo();
+                    var fallback = fallbackMatch?.Video;
                     var canUseFallback = fallback is not null &&
-                        string.Equals(fallbackVideoId, _currentVideo?.VideoId, StringComparison.Ordinal) &&
                         !string.IsNullOrWhiteSpace(fallback.LocalPath) &&
                         File.Exists(fallback.LocalPath) &&
                         (!fallback.OfflineExpiresAt.HasValue || fallback.OfflineExpiresAt.Value > DateTime.Now);
 
-                    if (canUseFallback)
+                    if (canUseFallback && _currentVideo is not null)
                     {
-                        var fallbackPosition = _youtubePlaybackIntended ? _lastKnownPlaybackSeconds : 0;
-                        var offlinePlayback = CreateOfflinePlaybackCopy(_currentVideo ?? fallback!, fallback!);
+                        var fallbackPosition = _youtubePlaybackIntended ? GetPlaybackSeconds() : (double?)null;
+                        BindOfflineBackupToCurrentRecording(fallback!, _currentVideo);
+                        var offlinePlayback = CreateOfflinePlaybackCopy(_currentVideo, fallback!);
                         _pendingOfflineFallbackVideo = null;
                         _wasAutomaticallySwitchedToOffline = _youtubePlaybackIntended && (code is -1 or 5);
                         _retryOnlineAfterUtc = DateTime.UtcNow.AddSeconds(_wasAutomaticallySwitchedToOffline ? 0 : 30);
-                        PlayLocalAudio(offlinePlayback, fallbackPosition);
+                        PlayLocalAudio(offlinePlayback, fallbackPosition, preserveProjection: true);
                         StatusText.Text = "O YouTube não conseguiu reproduzir este vídeo (" + explanation +
                             "). A cópia local retomou do ponto em que a música estava.";
                         return;
@@ -2257,6 +2259,7 @@ public partial class MainWindow : Window
             var seconds = secondsElement.GetDouble();
             if (!double.IsFinite(seconds) || seconds < 0) return;
             _lastKnownPlaybackSeconds = seconds;
+            PersistCurrentPlaybackPosition(seconds);
             var state = root.TryGetProperty("state", out var stateElement) ? stateElement.GetInt32() : -1;
             if (state == 1) _youtubePlaybackIntended = true;
             else if (state == 2 && !(_isLocalAudioPlaying && _wasAutomaticallySwitchedToOffline)) _youtubePlaybackIntended = false;
@@ -3411,8 +3414,36 @@ public partial class MainWindow : Window
         {
             var localBackupAvailable = IsOfflineBackupUsable(video);
             var originalVideoId = YouTubeLink.TryGetVideoId(video.Url) ?? video.VideoId;
+            var sameAsCurrent = _currentVideo is not null &&
+                OfflineLibraryMatcher.AreSameRecording(_currentVideo, video);
+            var resumeAtSeconds = sameAsCurrent
+                ? Math.Max(0, GetPlaybackSeconds())
+                : OfflineLibraryMatcher.ResolveResumePosition(null, video.LastPlaybackPositionSeconds);
 
-            // Mesmo sem uma cópia local válida, ainda tentamos o vídeo online.
+            if (sameAsCurrent)
+            {
+                // Selecionar a cópia da música que já está tocando não deve reiniciar o YouTube.
+                if (_isLocalAudioPlaying || (_youtubePlaybackIntended && _lastPlayerState != 2))
+                {
+                    BindOfflineBackupToCurrentRecording(video, _currentVideo!);
+                    StatusText.Text = "Esta música já está em reprodução. A cópia offline foi vinculada como reserva, sem reiniciar a faixa.";
+                    return;
+                }
+
+                if (!localBackupAvailable)
+                {
+                    StatusText.Text = "A cópia offline selecionada não existe mais ou venceu.";
+                    return;
+                }
+
+                BindOfflineBackupToCurrentRecording(video, _currentVideo!);
+                var localVersion = CreateOfflinePlaybackCopy(_currentVideo!, video);
+                WorkspaceTabs.SelectedIndex = 0;
+                PlayLocalAudio(localVersion, resumeAtSeconds, preserveProjection: true);
+                return;
+            }
+
+            // Para outra música, mantém a preferência online; quando sem internet, abre a cópia local.
             if (!string.IsNullOrWhiteSpace(originalVideoId) && await CanReachYoutubeAsync())
             {
                 _pendingOfflineFallbackVideo = localBackupAvailable ? video : null;
@@ -3433,19 +3464,21 @@ public partial class MainWindow : Window
                 }
                 StatusText.Text = "Não foi possível abrir o vídeo online. Usando a cópia offline salva.";
             }
+            else if (!localBackupAvailable)
+            {
+                _pendingOfflineFallbackVideo = null;
+                System.Windows.MessageBox.Show(this,
+                    "O YouTube está sem conexão e a cópia offline venceu ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.",
+                    "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
             else
             {
                 _pendingOfflineFallbackVideo = null;
-                if (!localBackupAvailable)
-                {
-                    System.Windows.MessageBox.Show(this,
-                        "O YouTube está sem conexão e a cópia offline venceu ou não está disponível. Os dados e a letra continuam salvos na biblioteca; importe novamente um arquivo autorizado para ouvir sem internet.",
-                        "Cópia offline indisponível", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-                StatusText.Text = "YouTube sem conexão ou sem vídeo original vinculado. Usando a cópia offline salva.";
+                StatusText.Text = "YouTube sem conexão ou cópia offline sem vídeo original. Retomando o último ponto salvo.";
             }
 
+            WorkspaceTabs.SelectedIndex = 0;
             PlayLocalAudio(video);
             return;
         }
@@ -3729,32 +3762,38 @@ public partial class MainWindow : Window
         dialog.ShowDialog();
     }
 
-    private void PlayLocalAudio(LibraryVideo video, double startSeconds = 0)
+    private void PlayLocalAudio(LibraryVideo video, double? startSeconds = null, bool preserveProjection = false)
     {
         try
         {
-            if (!File.Exists(video.LocalPath)) throw new FileNotFoundException("O arquivo de áudio não foi encontrado.", video.LocalPath);
+            if (string.IsNullOrWhiteSpace(video.LocalPath) || !File.Exists(video.LocalPath))
+                throw new FileNotFoundException("O arquivo de áudio offline não foi encontrado.", video.LocalPath);
+
+            var targetSeconds = OfflineLibraryMatcher.ResolveResumePosition(startSeconds, video.LastPlaybackPositionSeconds);
             _audioTimer.Stop();
+            _isLocalAudioPlaying = false;
             _playbackEnded = false;
             _manualDraftActive = false;
             _manualDraftLines.Clear();
             _manualDraftIndex = 0;
             ManualLyricsBox.Clear();
-            PublishProjectionOnly("");
+            if (!preserveProjection) PublishProjectionOnly("");
+
             YoutubePlayer.Visibility = Visibility.Collapsed;
             LocalAudioPlayer.Visibility = Visibility.Visible;
-            SetPendingLocalPlaybackStart(startSeconds);
-            LocalAudioPlayer.Source = new Uri(video.LocalPath);
-            LocalAudioPlayer.Volume = OfflineVolumeSlider.Value;
-            LocalAudioPlayer.Play();
-            _isLocalAudioPlaying = true;
-            OfflinePlaybackTitle.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
             OfflinePlaybackBar.Visibility = Visibility.Visible;
-            OfflinePositionSlider.Value = 0;
-            _lastAutomaticCue = -1;
-            _manualProjectionMode = false; _manualCueIndex = -1; _lastKnownPlaybackSeconds = Math.Max(0, startSeconds);
-            _audioTimer.Start();
+            OfflinePlaybackTitle.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
+
             _currentVideo = video;
+            SetPendingLocalPlaybackStart(targetSeconds);
+            LocalAudioPlayer.Stop();
+            LocalAudioPlayer.Source = null;
+            LocalAudioPlayer.Volume = OfflineVolumeSlider.Value;
+
+            _lastAutomaticCue = -1;
+            _manualProjectionMode = false;
+            _manualCueIndex = -1;
+            _lastKnownPlaybackSeconds = targetSeconds;
             MusicTrackBox.Text = string.IsNullOrWhiteSpace(video.TrackName) ? video.Title : video.TrackName;
             MusicArtistBox.Text = video.Artist;
             ManualLyricsBox.Text = video.FullLyrics ?? "";
@@ -3763,11 +3802,25 @@ public partial class MainWindow : Window
                 : "Letra completa carregada da biblioteca.";
             _cues.Clear();
             _cues.AddRange(CueTimeline.Normalize(video.Cues));
-            CueList.ItemsSource = null; CueList.ItemsSource = _cues;
+            CueList.ItemsSource = null;
+            CueList.ItemsSource = _cues;
             ReloadLyricsCardsFromCurrentVideo();
-            StatusText.Text = $"Reproduzindo offline: {video.Title} ({video.Format?.ToUpperInvariant()})";
+
+            // A posição só é aplicada depois de MediaOpened; Play() acontece no evento, após o seek.
+            LocalAudioPlayer.Source = new Uri(video.LocalPath);
+            StatusText.Text = targetSeconds > 0.05
+                ? $"Carregando a cópia offline para retomar em {TimeSpan.FromSeconds(targetSeconds):mm\\:ss}..."
+                : $"Carregando áudio offline: {video.Title}...";
+            AppLog.Info($"Solicitada reprodução offline: {video.TrackName} — {video.Artist}; ponto={TimeSpan.FromSeconds(targetSeconds):mm\\:ss}; frases={_cues.Count}; preservar projeção={preserveProjection}.");
         }
-        catch (Exception ex) { StatusText.Text = "Não foi possível reproduzir o áudio: " + ex.Message; }
+        catch (Exception ex)
+        {
+            _pendingLocalSeek = false;
+            _isLocalAudioPlaying = false;
+            _audioTimer.Stop();
+            AppLog.Error("Não foi possível abrir o áudio local", ex);
+            StatusText.Text = "Não foi possível reproduzir o áudio offline: " + ex.Message;
+        }
     }
 
     private bool _offlinePositionSeeking;
@@ -3777,6 +3830,7 @@ public partial class MainWindow : Window
         if (_currentVideo is null || !_currentVideo.IsOffline) return;
         if (_isLocalAudioPlaying)
         {
+            PersistCurrentPlaybackPosition(LocalAudioPlayer.Position.TotalSeconds, force: true);
             LocalAudioPlayer.Pause();
             _isLocalAudioPlaying = false;
             _audioTimer.Stop();
@@ -3826,10 +3880,12 @@ public partial class MainWindow : Window
 
     private void ProcessAudioCue()
     {
-        if (!_isLocalAudioPlaying || _cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
+        if (!_isLocalAudioPlaying) return;
         UpdateOfflinePlaybackPosition();
         var seconds = LocalAudioPlayer.Position.TotalSeconds;
         _lastKnownPlaybackSeconds = seconds;
+        PersistCurrentPlaybackPosition(seconds);
+        if (_cues.Count == 0 || _manualProjectionMode || _automaticLyricsActive) return;
         var cueIndex = FindActiveCue(seconds);
         if (cueIndex == _lastAutomaticCue) return;
         _lastAutomaticCue = cueIndex;
@@ -3839,6 +3895,7 @@ public partial class MainWindow : Window
     private void LocalAudioPlayer_MediaEnded(object sender, RoutedEventArgs e)
     {
         var firstEnd = !_playbackEnded;
+        PersistCurrentPlaybackPosition(0, force: true);
         _lastPlayerState = 0; // não deixar estado antigo do YouTube impedir o avanço automático do áudio local
         EndPlayback("Áudio offline finalizado. Projeção encerrada automaticamente.");
         if (firstEnd) MaybeAutoAdvance();
@@ -3847,6 +3904,7 @@ public partial class MainWindow : Window
     private void EndPlayback(string status)
     {
         if (_playbackEnded) return;
+        PersistCurrentPlaybackPosition(0, force: true);
         _playbackEnded = true;
         ResetMediaFailoverState();
         _audioTimer.Stop();
@@ -3887,6 +3945,7 @@ public partial class MainWindow : Window
     {
         _audioTimer.Stop();
         _isLocalAudioPlaying = false;
+        _pendingLocalSeek = false;
         PublishProjectionOnly("");
         _lastAutomaticCue = -1;
         var detail = e.ErrorException?.Message ?? "Falha desconhecida ao abrir o arquivo.";
