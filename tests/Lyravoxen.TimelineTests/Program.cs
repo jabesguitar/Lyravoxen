@@ -41,6 +41,37 @@ var multiLine = new[]
 };
 Check(CueTimeline.BuildProjectionBlock(multiLine, 1, 3) == string.Join(Environment.NewLine, new[] { "primeira", "segunda", "terceira" }), "bloco conta linhas visuais em frases multilinha");
 
+var sectionBoundaries = new[]
+{
+    new LyricCue { Seconds = 1, Text = "verso anterior 1", SectionId = "verse-a", OccurrenceIndex = 1 },
+    new LyricCue { Seconds = 2, Text = "verso anterior 2", SectionId = "verse-a", OccurrenceIndex = 1 },
+    new LyricCue { Seconds = 3, Text = "coro linha 1", SectionId = "chorus", OccurrenceIndex = 1 },
+    new LyricCue { Seconds = 4, Text = "coro linha 2", SectionId = "chorus", OccurrenceIndex = 1 },
+    new LyricCue { Seconds = 5, Text = "verso seguinte 1", SectionId = "verse-b", OccurrenceIndex = 1 }
+};
+Check(CueTimeline.BuildProjectionBlock(sectionBoundaries, 2, 4) ==
+    string.Join(Environment.NewLine, new[] { "coro linha 1", "coro linha 2" }),
+    "projeção não mistura linhas da seção anterior ou seguinte");
+var repeatedChorus = new[]
+{
+    new LyricCue { Seconds = 10, Text = "coro A", SectionId = "chorus", OccurrenceIndex = 1 },
+    new LyricCue { Seconds = 11, Text = "coro B", SectionId = "chorus", OccurrenceIndex = 1 },
+    new LyricCue { Seconds = 40, Text = "coro A", SectionId = "chorus", OccurrenceIndex = 2 },
+    new LyricCue { Seconds = 41, Text = "coro B", SectionId = "chorus", OccurrenceIndex = 2 }
+};
+Check(CueTimeline.BuildProjectionBlock(repeatedChorus, 2, 4) ==
+    string.Join(Environment.NewLine, new[] { "coro A", "coro B" }),
+    "cada repetição do mesmo coro forma uma ocorrência isolada");
+var cueMetadata = CueTimeline.Normalize(new[]
+{
+    new LyricCue { Seconds = 8, Text = "linha marcada", SectionId = "sec-1", OccurrenceIndex = 3,
+        SourceLineIndex = 7, Confidence = 0.92, NeedsReview = false, IsManual = true }
+}).Single();
+Check(cueMetadata.SectionId == "sec-1" && cueMetadata.OccurrenceIndex == 3 &&
+      cueMetadata.SourceLineIndex == 7 && cueMetadata.Confidence == 0.92 && cueMetadata.IsManual,
+    "normalização preserva origem, repetição, confiança e marcação manual");
+
+
 var expectedLiveLyrics = new[]
 {
     "No vigésimo ano do mês de Quisleu",
