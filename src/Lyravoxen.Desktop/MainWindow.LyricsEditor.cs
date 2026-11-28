@@ -71,6 +71,7 @@ public partial class MainWindow
     private readonly ObservableCollection<LyricsEditorCard> _lyricsEditorCards = new();
     private LyricsStructureAnalysis? _lyricsStructureDraft;
     private readonly Stack<(LyricsEditorCard Card, double? Seconds, double? Confidence, bool NeedsReview, bool IsManual)> _lyricsMarkUndo = new();
+    private List<LyricsEditorCard> _automaticCardSequence = new();
 
     private void InitializeLyricsEditor()
     {
@@ -92,7 +93,14 @@ public partial class MainWindow
         _lyricsMarkUndo.Clear();
 
         var sections = _lyricsStructureDraft.Sections.ToDictionary(section => section.SectionId);
-        foreach (var occurrence in _lyricsStructureDraft.ExecutionOrder)
+        var savedOrder = _currentVideo?.ExecutionOrder
+            .Where(item => sections.ContainsKey(item.SectionId))
+            .ToList() ?? new List<LyricsExecutionOccurrence>();
+        var execution = savedOrder.Count > 0 &&
+            savedOrder.Count == _currentVideo?.ExecutionOrder.Count
+                ? savedOrder
+                : _lyricsStructureDraft.ExecutionOrder;
+        foreach (var occurrence in execution)
         {
             if (!sections.TryGetValue(occurrence.SectionId, out var section)) continue;
             for (var lineIndex = 0; lineIndex < section.Lines.Count; lineIndex++)
@@ -115,7 +123,56 @@ public partial class MainWindow
         ManualSyncProgressText.Text = "Cartões prontos. Toque em MARCAR AGORA no início de cada frase ou use o assistente automático.";
         ManualCurrentLineText.Text = _lyricsEditorCards.FirstOrDefault()?.Text ?? "Nenhuma linha disponível.";
         LyricsLineCardsList.SelectedIndex = _lyricsEditorCards.Count > 0 ? 0 : -1;
+        ApplySavedCueTimesToCards();
         StatusText.Text = "Letra organizada em cartões individuais. Repetições identificadas permanecem ligadas ao mesmo texto-fonte.";
+    }
+
+    private void ReloadLyricsCardsFromCurrentVideo()
+    {
+        if (_currentVideo is null)
+        {
+            _lyricsEditorCards.Clear();
+            _lyricsStructureDraft = null;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ManualLyricsBox.Text))
+            ManualLyricsBox.Text = _currentVideo.FullLyrics ?? "";
+
+        if (string.IsNullOrWhiteSpace(ManualLyricsBox.Text))
+        {
+            _lyricsEditorCards.Clear();
+            _lyricsStructureDraft = null;
+            LyricsEditorStatus.Text = "Esta música ainda não tem letra. Pesquise ou cole a letra para criar os cartões.";
+            return;
+        }
+
+        BuildLyricsCards_Click(this, new RoutedEventArgs());
+    }
+
+    private void ApplySavedCueTimesToCards()
+    {
+        if (_currentVideo is null || _currentVideo.Cues.Count == 0 || _lyricsEditorCards.Count == 0) return;
+        var used = new HashSet<LyricCue>();
+        foreach (var card in _lyricsEditorCards)
+        {
+            var cue = _currentVideo.Cues.FirstOrDefault(item =>
+                !used.Contains(item) &&
+                !string.IsNullOrWhiteSpace(item.SectionId) &&
+                item.SectionId == card.SectionId &&
+                item.OccurrenceIndex == card.OccurrenceIndex &&
+                item.SourceLineIndex == card.SourceLineIndex);
+            cue ??= _currentVideo.Cues.FirstOrDefault(item =>
+                !used.Contains(item) &&
+                string.Equals(item.Text.Trim(), card.Text.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (cue is null) continue;
+
+            used.Add(cue);
+            card.Seconds = cue.Seconds;
+            card.Confidence = cue.Confidence;
+            card.NeedsReview = cue.NeedsReview;
+            card.IsManual = cue.IsManual;
+        }
     }
 
     private void LyricsLineCardsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -325,4 +382,234 @@ public partial class MainWindow
             : $"Sincronização parcial salva. {unmarked} cartões ainda não têm tempo; marque-os depois.";
         StatusText.Text = $"Cadastro salvo para {MusicTrackBox.Text}: {marked.Count} frases com tempo. A letra original foi preservada.";
     }
+
+    private sealed record LyricsCatalogResult(
+        string Track, string Artist, string Album, double Duration,
+        string PlainLyrics, List<LyricCue> TimedCues)
+    {
+        public string Display => string.IsNullOrWhiteSpace(Artist) ? Track : Track + " — " + Artist;
+        public string Preview => !string.IsNullOrWhiteSpace(PlainLyrics)
+            ? PlainLyrics
+            : string.Join(Environment.NewLine, TimedCues.Select(cue => cue.Text));
+    }
+
+    private async void SearchLyricsCatalog_Click(object sender, RoutedEventArgs e)
+    {
+        var query = LyricsCatalogSearchBox.Text.Trim();
+        if (query.Length == 0)
+        {
+            query = (MusicTrackBox.Text + " " + MusicArtistBox.Text).Trim();
+            LyricsCatalogSearchBox.Text = query;
+        }
+        if (query.Length == 0)
+        {
+            StatusText.Text = "Digite o título, intérprete ou um trecho da letra para pesquisar.";
+            LyricsCatalogSearchBox.Focus();
+            return;
+        }
+
+        try
+        {
+            StatusText.Text = "Pesquisando no catálogo gratuito de letras e sincronizações...";
+            var url = "https://lrclib.net/api/search?q=" + Uri.EscapeDataString(query);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.UserAgent.ParseAdd("Lyravoxen/1.0 (https://github.com/jabesguitar/Lyravoxen)");
+            using var response = await MetadataHttp.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                throw new InvalidOperationException("O catálogo respondeu em um formato inesperado.");
+
+            var results = new List<LyricsCatalogResult>();
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                var track = item.TryGetProperty("trackName", out var trackNode) ? trackNode.GetString() ?? "" : "";
+                var artist = item.TryGetProperty("artistName", out var artistNode) ? artistNode.GetString() ?? "" : "";
+                var album = item.TryGetProperty("albumName", out var albumNode) ? albumNode.GetString() ?? "" : "";
+                var duration = item.TryGetProperty("duration", out var durationNode) && durationNode.ValueKind == JsonValueKind.Number
+                    ? durationNode.GetDouble() : 0;
+                var plain = item.TryGetProperty("plainLyrics", out var plainNode) && plainNode.ValueKind == JsonValueKind.String
+                    ? plainNode.GetString() ?? "" : "";
+                var synced = item.TryGetProperty("syncedLyrics", out var syncedNode) && syncedNode.ValueKind == JsonValueKind.String
+                    ? syncedNode.GetString() ?? "" : "";
+                var timed = string.IsNullOrWhiteSpace(synced)
+                    ? new List<LyricCue>()
+                    : ParseTimedLyrics(synced, ".lrc").OrderBy(cue => cue.Seconds).ToList();
+                if (string.IsNullOrWhiteSpace(plain) && timed.Count == 0) continue;
+                results.Add(new LyricsCatalogResult(track, artist, album, duration, plain.Trim(), timed));
+            }
+
+            if (results.Count == 0)
+            {
+                StatusText.Text = "O catálogo gratuito não encontrou resultados. Vou abrir as fontes alternativas de pesquisa.";
+                await OpenLyricsSourceSearchesAsync(query, "");
+                return;
+            }
+
+            var window = new Window
+            {
+                Title = "Pesquisa de letras — Lyravoxen",
+                Owner = this,
+                Width = 920,
+                Height = 650,
+                MinWidth = 720,
+                MinHeight = 500,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = Hex("#07172C"),
+                Foreground = Hex("#F2F6F8")
+            };
+            var root = new Grid { Margin = new Thickness(16) };
+            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.9, GridUnitType.Star) });
+            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.35, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var heading = new TextBlock
+            {
+                Text = $"RESULTADOS PARA “{query}” · {results.Count} encontradas",
+                FontSize = 16, FontWeight = FontWeights.Bold,
+                Foreground = Hex("#00D9F5"), Margin = new Thickness(0, 0, 0, 12)
+            };
+            Grid.SetColumnSpan(heading, 2);
+            root.Children.Add(heading);
+
+            var list = new ListBox
+            {
+                ItemsSource = results,
+                DisplayMemberPath = nameof(LyricsCatalogResult.Display),
+                Background = Hex("#0B2450"),
+                Foreground = Hex("#F2F6F8"),
+                BorderBrush = Hex("#245B88"),
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 9, 0)
+            };
+            Grid.SetRow(list, 1);
+            root.Children.Add(list);
+
+            var previewPanel = new DockPanel();
+            var previewInfo = new TextBlock
+            {
+                Text = "Selecione uma versão para conferir a letra e os tempos.",
+                Foreground = Hex("#B8CAD5"), FontSize = 11, TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(4, 0, 4, 8)
+            };
+            DockPanel.SetDock(previewInfo, Dock.Top);
+            previewPanel.Children.Add(previewInfo);
+            var preview = new TextBox
+            {
+                IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                FontSize = 13, Padding = new Thickness(10),
+                Background = Hex("#020A18"), Foreground = Hex("#F2F6F8"),
+                BorderBrush = Hex("#245B88")
+            };
+            previewPanel.Children.Add(preview);
+            Grid.SetRow(previewPanel, 1);
+            Grid.SetColumn(previewPanel, 1);
+            root.Children.Add(previewPanel);
+
+            LyricsCatalogResult? selected = null;
+            list.SelectionChanged += (_, _) =>
+            {
+                selected = list.SelectedItem as LyricsCatalogResult;
+                preview.Text = selected?.Preview ?? "";
+                previewInfo.Text = selected is null
+                    ? "Selecione uma versão."
+                    : selected.Display +
+                      (string.IsNullOrWhiteSpace(selected.Album) ? "" : " · " + selected.Album) +
+                      (selected.Duration > 0 ? " · " + TimeSpan.FromSeconds(selected.Duration).ToString(@"mm\:ss") : "") +
+                      (selected.TimedCues.Count > 0 ? $" · {selected.TimedCues.Count} tempos encontrados" : " · letra sem tempos");
+            };
+            if (results.Count > 0) list.SelectedIndex = 0;
+
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            var useTimed = new Button
+            {
+                Content = "Usar letra + tempos",
+                MinWidth = 150, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(5, 12, 0, 0),
+                Background = Hex("#087F9E"), Foreground = Hex("#FFFFFF"), FontWeight = FontWeights.Bold,
+                IsEnabled = false
+            };
+            var useText = new Button
+            {
+                Content = "Usar texto para revisar",
+                MinWidth = 150, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(5, 12, 0, 0),
+                Background = Hex("#153B69"), Foreground = Hex("#FFFFFF"), IsEnabled = false
+            };
+            var cancel = new Button
+            {
+                Content = "Cancelar", MinWidth = 95, Padding = new Thickness(14, 8, 14, 8),
+                Margin = new Thickness(5, 12, 0, 0), Background = Hex("#153B69"), Foreground = Hex("#FFFFFF"), IsCancel = true
+            };
+            void RefreshButtons()
+            {
+                useText.IsEnabled = selected is not null && !string.IsNullOrWhiteSpace(selected.Preview);
+                useTimed.IsEnabled = selected is not null && selected.TimedCues.Count > 1;
+            }
+            list.SelectionChanged += (_, _) => RefreshButtons();
+            var importTimed = false;
+            useTimed.Click += (_, _) => { importTimed = true; window.DialogResult = true; };
+            useText.Click += (_, _) => { importTimed = false; window.DialogResult = true; };
+            buttons.Children.Add(cancel);
+            buttons.Children.Add(useText);
+            buttons.Children.Add(useTimed);
+            Grid.SetRow(buttons, 2);
+            Grid.SetColumnSpan(buttons, 2);
+            root.Children.Add(buttons);
+            window.Content = root;
+
+            if (window.ShowDialog() != true || selected is null) return;
+            if (_currentVideo is null)
+            {
+                StatusText.Text = "Letra selecionada. Carregue primeiro o vídeo da música na aba Ao vivo para vincular e salvar.";
+                return;
+            }
+
+            MusicTrackBox.Text = selected.Track;
+            MusicArtistBox.Text = selected.Artist;
+            _currentVideo.TrackName = selected.Track;
+            _currentVideo.Artist = selected.Artist;
+            var importedCues = importTimed ? selected.TimedCues : new List<LyricCue>();
+            var sourceText = !string.IsNullOrWhiteSpace(selected.PlainLyrics)
+                ? selected.PlainLyrics
+                : string.Join(Environment.NewLine, importedCues.Select(cue => cue.Text));
+            ManualLyricsBox.Text = sourceText;
+            _currentVideo.FullLyrics = sourceText;
+            _currentVideo.Cues = importedCues.Select(cue => new LyricCue
+            {
+                Seconds = cue.Seconds, Text = cue.Text, Confidence = 1.0,
+                NeedsReview = false, IsManual = false
+            }).ToList();
+            _cues.Clear();
+            _cues.AddRange(CueTimeline.Normalize(_currentVideo.Cues));
+            CueList.ItemsSource = null;
+            CueList.ItemsSource = _cues;
+            ReloadLyricsCardsFromCurrentVideo();
+            SaveLyricsEditor_Click(this, new RoutedEventArgs());
+            LyricsEditorStatus.Text = importTimed
+                ? $"Letra importada com {selected.TimedCues.Count} marcações do catálogo. Confira e ajuste os cartões."
+                : "Texto importado sem tempos. Marque as frases manualmente ou use o reconhecimento durante a reprodução.";
+            StatusText.Text = "Letra encontrada no catálogo gratuito. Confira título, intérprete, autoria e permissões antes de projetar.";
+            WorkspaceTabs.SelectedItem = ManualSyncTab;
+        }
+        catch (TaskCanceledException)
+        {
+            StatusText.Text = "A pesquisa de letras foi cancelada por tempo limite.";
+        }
+        catch (HttpRequestException ex)
+        {
+            StatusText.Text = "Não foi possível acessar o catálogo gratuito de letras: " + ex.Message;
+        }
+        catch (JsonException)
+        {
+            StatusText.Text = "O catálogo respondeu com dados inválidos.";
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Pesquisa integrada de letras falhou", ex);
+            StatusText.Text = "Falha ao pesquisar letras: " + ex.Message;
+        }
+    }
+
 }
