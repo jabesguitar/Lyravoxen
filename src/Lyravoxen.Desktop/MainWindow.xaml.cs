@@ -2879,7 +2879,8 @@ public partial class MainWindow : Window
         (occurrences ?? Enumerable.Empty<LyricsExecutionOccurrence>()).Select(item => new LyricsExecutionOccurrence
         {
             SectionId = item.SectionId, Label = item.Label, Kind = item.Kind,
-            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex
+            OccurrenceIndex = item.OccurrenceIndex, SourceIndex = item.SourceIndex,
+            LineOrder = new List<int>(item.LineOrder)
         }).ToList();
 
     private void PersistCurrentCues()
