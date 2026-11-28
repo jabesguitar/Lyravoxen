@@ -402,4 +402,67 @@ finally
     if (File.Exists(archivePath + ".tmp")) File.Delete(archivePath + ".tmp");
 }
 
-Console.WriteLine("Todos os testes da linha do tempo, projeção, referências bíblicas, voz e marcação por toque passaram.");
+
+ // Biblioteca offline: associação segura por ID ou por nome único e retomada do último ponto.
+var offlineTestPath = Path.Combine(Path.GetTempPath(), "lyravoxen-offline-match-" + Guid.NewGuid().ToString("N") + ".mp3");
+File.WriteAllBytes(offlineTestPath, new byte[] { 1, 2, 3, 4 });
+try
+{
+    var offlineByName = new LibraryVideo
+    {
+        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Te Ver", Artist = "",
+        SavedAt = DateTime.Now, OfflineExpiresAt = DateTime.Now.AddDays(7), LastPlaybackPositionSeconds = 51
+    };
+    var onlineCurrent = new LibraryVideo
+    {
+        VideoId = "video-te-ver", TrackName = "Té Vêr", Title = "Trio R3 - Te ver (Play Back)", Artist = "Trio R3"
+    };
+    var nameMatch = OfflineLibraryMatcher.FindMatchingBackup(new[] { offlineByName }, onlineCurrent, DateTime.Now);
+    Check(nameMatch is not null && !nameMatch.MatchedByVideoId && ReferenceEquals(nameMatch.Video, offlineByName),
+        "failover: encontra cópia importada por título exato único mesmo sem ID do YouTube");
+    Check(OfflineLibraryMatcher.AreSameRecording(onlineCurrent, offlineByName),
+        "biblioteca: reconhece mesma gravação por título normalizado quando intérprete do arquivo não foi preenchido");
+    Check(Math.Abs(OfflineLibraryMatcher.ResolveResumePosition(null, 51) - 51) < 0.001 &&
+          Math.Abs(OfflineLibraryMatcher.ResolveResumePosition(23, 51) - 23) < 0.001,
+        "retomada: posição explícita do failover prevalece e seleção manual usa a posição salva");
+
+    var wrongArtist = new LibraryVideo
+    {
+        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Te Ver", Artist = "Outro Trio",
+        SavedAt = DateTime.Now
+    };
+    Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { wrongArtist }, onlineCurrent, DateTime.Now) is null,
+        "failover: não associa arquivo com mesmo título e intérprete diferente");
+
+    var secondCopyPath = offlineTestPath + ".second.mp3";
+    File.WriteAllBytes(secondCopyPath, new byte[] { 5, 6, 7 });
+    try
+    {
+        var duplicate = new LibraryVideo
+        {
+            IsOffline = true, LocalPath = secondCopyPath, TrackName = "Te Ver", Artist = "",
+            SavedAt = DateTime.Now.AddMinutes(-1)
+        };
+        Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { offlineByName, duplicate }, onlineCurrent, DateTime.Now) is null,
+            "failover: não escolhe arbitrariamente entre duas cópias do mesmo título sem intérprete");
+    }
+    finally { if (File.Exists(secondCopyPath)) File.Delete(secondCopyPath); }
+
+    var expired = new LibraryVideo
+    {
+        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Te Ver", Artist = "Trio R3",
+        OfflineExpiresAt = DateTime.Now.AddMinutes(-1)
+    };
+    Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { expired }, onlineCurrent, DateTime.Now) is null,
+        "failover: ignora cópia offline expirada");
+    var exactId = new LibraryVideo
+    {
+        VideoId = "video-te-ver", IsOffline = true, LocalPath = offlineTestPath,
+        TrackName = "Título diferente", Artist = "Artista diferente", SavedAt = DateTime.Now.AddDays(-1)
+    };
+    Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { offlineByName, exactId }, onlineCurrent, DateTime.Now)?.MatchedByVideoId == true,
+        "failover: ID exato tem prioridade sobre correspondência de título");
+}
+finally { if (File.Exists(offlineTestPath)) File.Delete(offlineTestPath); }
+
+Console.WriteLine("Todos os testes de timeline, projeção, referências bíblicas, voz, toque e biblioteca offline passaram.");

@@ -31,4 +31,6 @@ public sealed class LibraryVideo
     public DateTime SavedAt { get; set; }
     /// <summary>Data limite da cópia local importada; metadados e letra permanecem após expirar.</summary>
     public DateTime? OfflineExpiresAt { get; set; }
+    /// <summary>Última posição conhecida para retomar a mesma gravação offline.</summary>
+    public double LastPlaybackPositionSeconds { get; set; }
 }

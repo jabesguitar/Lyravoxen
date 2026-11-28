@@ -16,6 +16,7 @@
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LyricsStructureAnalyzer.cs" Link="LyricsStructureAnalyzer.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LyricsCatalogRanking.cs" Link="LyricsCatalogRanking.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Models/LibraryFolder.cs" Link="LibraryFolder.cs" />
+    <Compile Include="../../src/Lyravoxen.Desktop/Models/OfflineLibraryMatcher.cs" Link="OfflineLibraryMatcher.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsPreviewService.cs" Link="LyricsPreviewService.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/TrackTitleParser.cs" Link="TrackTitleParser.cs" />
     <Compile Include="../../src/Lyravoxen.Desktop/Services/LyricsTextCleaner.cs" Link="LyricsTextCleaner.cs" />
