@@ -94,19 +94,5 @@ public static class OfflineLibraryMatcher
         return double.IsFinite(value) && value > 0 ? value : 0;
     }
 
-    private static string NormalizeVideoId(string? value) => (value ?? "").Trim();
 
-    private static string Normalize(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return "";
-        var decomposed = value.Normalize(NormalizationForm.FormD);
-        var builder = new StringBuilder(decomposed.Length);
-        foreach (var character in decomposed)
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
-                continue;
-            builder.Append(char.IsLetterOrDigit(character) ? char.ToLowerInvariant(character) : ' ');
-        }
-        return Regex.Replace(builder.ToString(), @"\s+", " ").Trim();
-    }
 }
