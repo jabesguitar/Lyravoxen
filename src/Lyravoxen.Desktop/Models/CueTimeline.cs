@@ -34,6 +34,17 @@ public static class CueTimeline
         }
         return low - 1;
     }
+    public static double ClampForwardOffset(IReadOnlyList<double?> executionTimes, int anchorIndex, double requestedDelta, double minimumGapSeconds = 0.05)
+    {
+        if (anchorIndex < 0 || anchorIndex >= executionTimes.Count || !double.IsFinite(requestedDelta)) return 0;
+        if (!executionTimes[anchorIndex].HasValue) return requestedDelta;
+        double? previous = null;
+        for (var i = anchorIndex - 1; i >= 0; i--)
+            if (executionTimes[i].HasValue) { previous = executionTimes[i]; break; }
+        var minimum = previous.HasValue ? previous.Value + Math.Max(0, minimumGapSeconds) : 0;
+        return Math.Max(requestedDelta, minimum - executionTimes[anchorIndex]!.Value);
+    }
+
     // Build a rolling page from consecutive visual lyric lines.
     public static string BuildProjectionBlock(IReadOnlyList<LyricCue> cues, int activeCueIndex, int lineCount)
     {

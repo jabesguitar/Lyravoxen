@@ -11,27 +11,42 @@ public partial class MainWindow
 
     private async void TapStart_Click(object sender, RoutedEventArgs e)
     {
+        var selected = LyricsLineCardsList.SelectedItem as LyricsEditorCard;
+        if (selected?.Seconds.HasValue == true) selected = null;
+        await StartTapSequenceAsync(selected, markImmediately: false);
+    }
+
+    private async void TapContinueFromHere_Click(object sender, RoutedEventArgs e)
+    {
+        if (LyricsLineCardsList.SelectedItem is not LyricsEditorCard selected)
+        {
+            StatusText.Text = "Selecione o cartão da frase que está sendo cantada e clique em Continuar daqui.";
+            return;
+        }
+        await StartTapSequenceAsync(selected, markImmediately: true);
+    }
+
+    private async Task<bool> StartTapSequenceAsync(LyricsEditorCard? preferredCard, bool markImmediately)
+    {
         if (_currentVideo is null)
         {
             StatusText.Text = "Carregue primeiro a música na aba Ao vivo e dê play.";
             WorkspaceTabs.SelectedIndex = 0;
-            return;
+            return false;
         }
         if (!_isLocalAudioPlaying && _lastPlayerState != 1)
         {
-            StatusText.Text = "Dê play na música antes de iniciar a marcação sequencial.";
+            StatusText.Text = "A música precisa estar tocando para registrar a posição atual.";
             WorkspaceTabs.SelectedIndex = 0;
-            return;
+            return false;
         }
-
         if (_lyricsEditorCards.Count == 0)
             BuildLyricsCards_Click(this, new RoutedEventArgs());
         if (_lyricsEditorCards.Count == 0)
         {
             StatusText.Text = "Cole ou pesquise a letra e crie os cartões antes de iniciar a marcação.";
-            return;
+            return false;
         }
-
         if (_liveRecognition is not null)
             await StopAutoRecognitionAsync(savePartial: false);
 
@@ -43,17 +58,32 @@ public partial class MainWindow
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
 
-        var nextIndex = _lyricsEditorCards
-            .Select((card, index) => (card, index))
-            .Where(item => !item.card.Seconds.HasValue)
-            .Select(item => item.index)
-            .DefaultIfEmpty(-1)
-            .First();
-        if (nextIndex >= 0) LyricsLineCardsList.SelectedIndex = nextIndex;
+        var start = preferredCard is not null && _lyricsEditorCards.Contains(preferredCard)
+            ? preferredCard
+            : _lyricsEditorCards.FirstOrDefault(item => !item.Seconds.HasValue);
+        if (start is null)
+        {
+            _tapActive = false;
+            UpdateTapUi();
+            StatusText.Text = "Todos os cartões já têm tempo. Selecione um cartão específico para remarcar.";
+            return false;
+        }
+        LyricsLineCardsList.SelectedItem = start;
         LyricsLineCardsList.Focus();
-
         UpdateTapUi();
-        StatusText.Text = "Marcação sequencial iniciada. Pressione Espaço ou clique em Marcar próxima no começo de cada slide.";
+        if (markImmediately)
+        {
+            MarkLyricsCard(start);
+            if (start.Seconds.HasValue) _tapMarkedCards.Add(start);
+            var next = _lyricsEditorCards.Skip(_lyricsEditorCards.IndexOf(start) + 1)
+                .FirstOrDefault(item => !item.Seconds.HasValue);
+            if (next is not null) LyricsLineCardsList.SelectedItem = next;
+            UpdateTapUi();
+            StatusText.Text = $"Posição atual registrada em {start.TimeLabel}. A marcação continuará a partir das próximas frases.";
+        }
+        else
+            StatusText.Text = "Marcação sequencial iniciada deste cartão. Pressione Espaço ou Marcar próxima no começo das frases.";
+        return true;
     }
 
     private void TapMark_Click(object sender, RoutedEventArgs e) => TapMarkStanza();

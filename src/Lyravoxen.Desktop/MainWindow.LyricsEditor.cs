@@ -26,6 +26,7 @@ public sealed class LyricsEditorCard : INotifyPropertyChanged
     public int SourceBlockIndex { get; init; }
     public int OccurrenceIndex { get; init; }
     public bool IsRepeat { get; init; }
+    public double PendingOffsetSeconds { get; set; }
 
     public double? Seconds
     {
@@ -74,7 +75,7 @@ public partial class MainWindow
 {
     private readonly ObservableCollection<LyricsEditorCard> _lyricsEditorCards = new();
     private LyricsStructureAnalysis? _lyricsStructureDraft;
-    private readonly Stack<(LyricsEditorCard Card, double? Seconds, double? Confidence, bool NeedsReview, bool IsManual)> _lyricsMarkUndo = new();
+    private readonly Stack<Action> _lyricsEditorUndo = new();
     private List<LyricsEditorCard> _automaticCardSequence = new();
     private List<(LyricsEditorCard Card, string Line, int CardIndex, int LineIndex)> _automaticCardLines = new();
 
@@ -95,7 +96,7 @@ public partial class MainWindow
 
         _lyricsStructureDraft = LyricsStructureAnalyzer.Analyze(source);
         _lyricsEditorCards.Clear();
-        _lyricsMarkUndo.Clear();
+        _lyricsEditorUndo.Clear();
 
         var sections = _lyricsStructureDraft.Sections.ToDictionary(section => section.SectionId);
         var savedOrder = _currentVideo?.ExecutionOrder
@@ -137,6 +138,7 @@ public partial class MainWindow
         ManualCurrentLineText.Text = _lyricsEditorCards.FirstOrDefault()?.Text ?? "Nenhuma linha disponível.";
         LyricsLineCardsList.SelectedIndex = _lyricsEditorCards.Count > 0 ? 0 : -1;
         ApplySavedCueTimesToCards();
+        ApplyStoredTimelineAdjustmentsToCards();
         StatusText.Text = "Letra organizada em cartões individuais. Repetições identificadas permanecem ligadas ao mesmo texto-fonte.";
     }
 
@@ -237,37 +239,115 @@ public partial class MainWindow
             StatusText.Text = "Dê play na música e marque o cartão exatamente quando a frase começar.";
             return;
         }
-
-        _lyricsMarkUndo.Push((card, card.Seconds, card.Confidence, card.NeedsReview, card.IsManual));
-        card.Seconds = GetPlaybackSeconds();
+        var index = _lyricsEditorCards.IndexOf(card);
+        if (index < 0) return;
+        var oldSeconds = card.Seconds;
+        var oldConfidence = card.Confidence;
+        var oldNeedsReview = card.NeedsReview;
+        var oldManual = card.IsManual;
+        var oldPending = card.PendingOffsetSeconds;
+        _lyricsEditorUndo.Push(() =>
+        {
+            card.Seconds = oldSeconds;
+            card.Confidence = oldConfidence;
+            card.NeedsReview = oldNeedsReview;
+            card.IsManual = oldManual;
+            card.PendingOffsetSeconds = oldPending;
+            if (_tapActive && _tapMarkedCards.Count > 0 && ReferenceEquals(_tapMarkedCards[^1], card))
+                _tapMarkedCards.RemoveAt(_tapMarkedCards.Count - 1);
+            LyricsLineCardsList.SelectedItem = card;
+        });
+        var seconds = Math.Max(0, GetPlaybackSeconds() + card.PendingOffsetSeconds);
+        var previous = _lyricsEditorCards.Take(index).LastOrDefault(item => item.Seconds.HasValue);
+        if (previous is not null) seconds = Math.Max(seconds, previous.Seconds!.Value + 0.05);
+        card.Seconds = seconds;
+        card.PendingOffsetSeconds = 0;
         card.Confidence = 1.0;
         card.NeedsReview = false;
         card.IsManual = true;
         LyricsEditorStatus.Text = $"Marcado em {card.TimeLabel} · {card.SectionLabel}";
         StatusText.Text = $"Frase marcada em {card.TimeLabel}: {card.Text}";
-        var index = _lyricsEditorCards.IndexOf(card);
-        if (index >= 0 && index + 1 < _lyricsEditorCards.Count)
-            LyricsLineCardsList.SelectedIndex = index + 1;
+        if (index + 1 < _lyricsEditorCards.Count) LyricsLineCardsList.SelectedIndex = index + 1;
     }
 
     private void UndoLyricsMark_Click(object sender, RoutedEventArgs e)
     {
-        if (_lyricsMarkUndo.Count == 0)
+        if (_lyricsEditorUndo.Count == 0)
         {
-            StatusText.Text = "Ainda não há marcação para desfazer.";
+            StatusText.Text = "Ainda não há alteração para desfazer.";
             return;
         }
-        var previous = _lyricsMarkUndo.Pop();
-        previous.Card.Seconds = previous.Seconds;
-        previous.Card.Confidence = previous.Confidence;
-        previous.Card.NeedsReview = previous.NeedsReview;
-        previous.Card.IsManual = previous.IsManual;
-        if (_tapActive && _tapMarkedCards.Count > 0 &&
-            ReferenceEquals(_tapMarkedCards[^1], previous.Card))
-            _tapMarkedCards.RemoveAt(_tapMarkedCards.Count - 1);
-        LyricsLineCardsList.SelectedItem = previous.Card;
-        StatusText.Text = "Última marcação desfeita.";
+        _lyricsEditorUndo.Pop().Invoke();
+        StatusText.Text = "Última marcação ou correção de tempo desfeita.";
         if (_tapActive) UpdateTapUi();
+    }
+
+    private void NudgeLyricsEarlier05_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(-0.5);
+    private void NudgeLyricsEarlier01_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(-0.1);
+    private void NudgeLyricsLater01_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(0.1);
+    private void NudgeLyricsLater05_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(0.5);
+
+    private void ApplyStoredTimelineAdjustmentsToCards()
+    {
+        if (_currentVideo is null || _lyricsEditorCards.Count == 0) return;
+        _currentVideo.TimelineAdjustments ??= new List<LyricsTimelineAdjustment>();
+        foreach (var adjustment in _currentVideo.TimelineAdjustments)
+        {
+            var anchor = _lyricsEditorCards.Select((card, index) => (card, index))
+                .Where(item => item.card.SectionId == adjustment.SectionId &&
+                    item.card.OccurrenceIndex == adjustment.OccurrenceIndex &&
+                    item.card.SourceLineIndex == adjustment.SourceLineIndex)
+                .Select(item => item.index).DefaultIfEmpty(-1).First();
+            if (anchor < 0) anchor = Math.Clamp(adjustment.AnchorOrderIndex, 0, _lyricsEditorCards.Count - 1);
+            for (var i = anchor; i < _lyricsEditorCards.Count; i++)
+                if (!_lyricsEditorCards[i].Seconds.HasValue)
+                    _lyricsEditorCards[i].PendingOffsetSeconds += adjustment.DeltaSeconds;
+        }
+    }
+
+    private void AdjustSelectedLyricsTiming(double requestedDelta)
+    {
+        if (_currentVideo is null || LyricsLineCardsList.SelectedItem is not LyricsEditorCard selected)
+        {
+            StatusText.Text = "Selecione o cartão a partir do qual deseja corrigir a sincronização.";
+            return;
+        }
+        var anchorIndex = _lyricsEditorCards.IndexOf(selected);
+        if (anchorIndex < 0) return;
+        _currentVideo.TimelineAdjustments ??= new List<LyricsTimelineAdjustment>();
+        var delta = CueTimeline.ClampForwardOffset(_lyricsEditorCards.Select(card => card.Seconds).ToList(), anchorIndex, requestedDelta);
+        if (Math.Abs(delta) < 0.001)
+        {
+            StatusText.Text = "O ajuste solicitado ultrapassaria a frase anterior.";
+            return;
+        }
+
+        var adjustment = new LyricsTimelineAdjustment
+        {
+            SectionId = selected.SectionId, OccurrenceIndex = selected.OccurrenceIndex,
+            SourceLineIndex = selected.SourceLineIndex, AnchorOrderIndex = anchorIndex, DeltaSeconds = delta
+        };
+        var before = _lyricsEditorCards.Skip(anchorIndex)
+            .Select(card => (Card: card, Seconds: card.Seconds, Pending: card.PendingOffsetSeconds)).ToList();
+        _currentVideo.TimelineAdjustments.Add(adjustment);
+        foreach (var state in before)
+        {
+            if (state.Card.Seconds.HasValue) state.Card.Seconds = Math.Max(0, state.Card.Seconds.Value + delta);
+            else state.Card.PendingOffsetSeconds += delta;
+        }
+        _lyricsEditorUndo.Push(() =>
+        {
+            foreach (var state in before)
+            {
+                state.Card.Seconds = state.Seconds;
+                state.Card.PendingOffsetSeconds = state.Pending;
+            }
+            _currentVideo?.TimelineAdjustments.Remove(adjustment);
+            SaveLyricsEditor_Click(this, new RoutedEventArgs());
+        });
+        SaveLyricsEditor_Click(this, new RoutedEventArgs());
+        LyricsEditorStatus.Text = $"Ajuste de {delta:+0.00;-0.00;0.00}s aplicado ao cartão selecionado e às frases seguintes.";
+        StatusText.Text = $"Sincronização corrigida em {Math.Abs(delta):0.00}s a partir deste cartão. Alteração salva e disponível para desfazer.";
     }
 
     private void RepeatLyricsBlock_Click(object sender, RoutedEventArgs e)
@@ -444,9 +524,10 @@ public partial class MainWindow
 
     private sealed record LyricsCatalogResult(
         string Track, string Artist, string Album, double Duration,
-        string PlainLyrics, List<LyricCue> TimedCues)
+        string PlainLyrics, List<LyricCue> TimedCues, int BrazilianPortugueseScore)
     {
-        public string Display => string.IsNullOrWhiteSpace(Artist) ? Track : Track + " — " + Artist;
+        public string LocaleLabel => LyricsCatalogRanking.GetLocaleLabel(BrazilianPortugueseScore);
+        public string Display => (string.IsNullOrWhiteSpace(Artist) ? Track : Track + " — " + Artist) + " · " + LocaleLabel;
         public string Preview => !string.IsNullOrWhiteSpace(PlainLyrics)
             ? PlainLyrics
             : string.Join(Environment.NewLine, TimedCues.Select(cue => cue.Text));
@@ -509,8 +590,16 @@ public partial class MainWindow
                     ? new List<LyricCue>()
                     : ParseTimedLyrics(synced, ".lrc").OrderBy(cue => cue.Seconds).ToList();
                 if (string.IsNullOrWhiteSpace(plain) && timed.Count == 0) continue;
-                results.Add(new LyricsCatalogResult(track, artist, album, duration, plain.Trim(), timed));
+                var localeScore = LyricsCatalogRanking.ScoreBrazilianPortuguese(plain + Environment.NewLine + synced);
+                results.Add(new LyricsCatalogResult(track, artist, album, duration, plain.Trim(), timed, localeScore));
             }
+
+            results = results
+                .OrderByDescending(item => item.BrazilianPortugueseScore)
+                .ThenByDescending(item => LyricsCatalogRanking.GetNameMatchScore(query, item.Track))
+                .ThenByDescending(item => LyricsCatalogRanking.GetNameMatchScore(MusicArtistBox.Text, item.Artist))
+                .ThenByDescending(item => item.TimedCues.Count)
+                .ToList();
 
             if (results.Count == 0)
             {
@@ -618,9 +707,10 @@ public partial class MainWindow
             void RefreshButtons()
             {
                 useText.IsEnabled = selected is not null && !string.IsNullOrWhiteSpace(selected.Preview);
-                useTimed.IsEnabled = selected is not null && selected.TimedCues.Count > 1;
+                useTimed.IsEnabled = selected is not null && selected.TimedCues.Count > 0;
             }
             list.SelectionChanged += (_, _) => RefreshButtons();
+            RefreshButtons(); // Atualiza o primeiro resultado sem exigir trocar de linha.
             var importTimed = false;
             useTimed.Click += (_, _) => { importTimed = true; window.DialogResult = true; };
             useText.Click += (_, _) => { importTimed = false; window.DialogResult = true; };
@@ -653,6 +743,8 @@ public partial class MainWindow
             _currentVideo.FullLyrics = sourceText;
             _currentVideo.Sections.Clear();
             _currentVideo.ExecutionOrder.Clear();
+            _currentVideo.TimelineAdjustments ??= new List<LyricsTimelineAdjustment>();
+            _currentVideo.TimelineAdjustments.Clear();
             _currentVideo.Cues = importedCues.Select(cue => new LyricCue
             {
                 Seconds = cue.Seconds, Text = cue.Text, Confidence = 1.0,
@@ -667,7 +759,9 @@ public partial class MainWindow
             LyricsEditorStatus.Text = importTimed
                 ? $"Letra importada com {selected.TimedCues.Count} marcações do catálogo. Confira e ajuste os cartões."
                 : "Texto importado sem tempos. Marque as frases manualmente ou use o reconhecimento durante a reprodução.";
-            StatusText.Text = "Letra encontrada no catálogo gratuito. Confira título, intérprete, autoria e permissões antes de projetar.";
+            StatusText.Text = (_isLocalAudioPlaying || _lastPlayerState == 1)
+                ? "Letra carregada durante a reprodução. A música não foi interrompida; selecione a frase atual e use Continuar daqui."
+                : "Letra encontrada no catálogo gratuito. Confira título, intérprete, autoria e permissões antes de projetar.";
             WorkspaceTabs.SelectedItem = ManualSyncTab;
         }
         catch (TaskCanceledException)

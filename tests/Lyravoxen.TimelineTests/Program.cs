@@ -20,6 +20,18 @@ Check(CueTimeline.FindActiveIndex(normalized, 5.5, 1.5) == 1, "troca para frase 
 Check(CueTimeline.FindActiveIndex(normalized, 20, 1.5) == 2, "depois da última frase");
 Check(CueTimeline.FindActiveIndex(normalized, 5.5, 1.5) == 1, "seek para trás recalcula frase sem estado residual");
 Check(CueTimeline.FindActiveIndex(normalized, double.NaN, 1.5) == -1, "tempo inválido não projeta frase");
+Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, 20, 30 }, 1, -0.5) + 0.5) < 0.001,
+    "ajuste fino desloca a frase e as posteriores pela mesma diferença");
+Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, 10.2, 30 }, 1, -1) + 0.15) < 0.001,
+    "ajuste fino não deixa uma frase ultrapassar a anterior");
+Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, null, 30 }, 1, -0.3) + 0.3) < 0.001,
+    "ajuste pendente funciona em cartão ainda sem tempo");
+Check(LyricsCatalogRanking.ScoreBrazilianPortuguese("Você chegou pra mudar a minha vida, tá tudo bem") >= 70,
+    "catálogo prioriza letra provavelmente brasileira");
+Check(LyricsCatalogRanking.ScoreBrazilianPortuguese("Es un martirio, verte una y otra vez, los latidos de mi piel") < 0,
+    "catálogo não confunde espanhol com PT-BR");
+Check(LyricsCatalogRanking.GetNameMatchScore("Martirio Carmen Lillo", "Martirio") > 0,
+    "catálogo mantém relevância do nome da música na classificação");
 
 var tenLines = Enumerable.Range(1, 10)
     .Select(index => new LyricCue { Seconds = index * 2, Text = "linha " + index })

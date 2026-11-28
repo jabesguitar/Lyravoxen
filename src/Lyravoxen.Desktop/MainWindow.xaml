@@ -229,7 +229,7 @@
       <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
        <TextBlock Text="REPRODUÇÃO — YOUTUBE" Foreground="{DynamicResource TextMuted}" Margin="8" FontWeight="Bold" FontSize="11"/>
        <wv2:WebView2 x:Name="YoutubePlayer" Grid.Row="1" MinHeight="220"/>
-       <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Manual" Visibility="Collapsed" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
+       <MediaElement x:Name="LocalAudioPlayer" Grid.Row="1" LoadedBehavior="Manual" UnloadedBehavior="Manual" Visibility="Collapsed" MediaOpened="LocalAudioPlayer_MediaOpened" MediaEnded="LocalAudioPlayer_MediaEnded" MediaFailed="LocalAudioPlayer_MediaFailed"/>
       </Grid>
      </Border>
      <Border Grid.Column="1" Background="{DynamicResource Panel}" CornerRadius="14" Padding="8" Margin="0" MinHeight="390">
@@ -450,8 +450,16 @@
         <WrapPanel HorizontalAlignment="Center" Margin="0,6,0,0">
          <Button Content="▶ Iniciar sequência" Click="TapStart_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2"/>
          <Button Content="Marcar próxima · Espaço" Click="TapMark_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2" Background="{DynamicResource Brush_087F9E}"/>
+         <Button Content="↪ Continuar daqui" Click="TapContinueFromHere_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2" Background="{DynamicResource Brush_087F9E}" ToolTip="Marca o cartão selecionado no instante atual e segue para as próximas frases"/>
          <Button Content="Concluir sequência" Click="TapFinish_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2"/>
          <Button Content="Cancelar sequência" Click="TapCancel_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2"/>
+        </WrapPanel>
+        <TextBlock Text="AJUSTE FINO · CORRIGE ESTE CARTÃO E TODAS AS FRASES SEGUINTES" Foreground="{DynamicResource TextMuted}" FontSize="9" FontWeight="Bold" Margin="2,7,2,2"/>
+        <WrapPanel HorizontalAlignment="Center">
+         <Button Content="−0,5 s" Click="NudgeLyricsEarlier05_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2"/>
+         <Button Content="−0,1 s" Click="NudgeLyricsEarlier01_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2"/>
+         <Button Content="+0,1 s" Click="NudgeLyricsLater01_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2"/>
+         <Button Content="+0,5 s" Click="NudgeLyricsLater05_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2"/>
         </WrapPanel>
         <Button x:Name="AutoRecognitionButton" Content="⚡ Reconhecer cantado (gratuito/offline)" Click="ToggleAutoRecognition_Click"
                 MinHeight="35" FontSize="11" Margin="0,6,0,0"/>
