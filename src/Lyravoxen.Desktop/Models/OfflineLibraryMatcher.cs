@@ -1,7 +1,5 @@
 using System.IO;
-using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
+using Lyravoxen.Services;
 
 namespace Lyravoxen.Models;
 
@@ -33,26 +31,26 @@ public static class OfflineLibraryMatcher
                 return new OfflineLibraryMatch(exactId, MatchedByVideoId: true);
         }
 
-        var sourceTitle = Normalize(source.TrackName.Length > 0 ? source.TrackName : source.Title);
-        if (sourceTitle.Length == 0) return null;
-        var sourceArtist = Normalize(source.Artist);
+        var sourceIdentity = GetIdentity(source);
+        if (sourceIdentity.Track.Length == 0) return null;
+
         var sameTitle = available
-            .Where(item => Normalize(item.TrackName.Length > 0 ? item.TrackName : item.Title) == sourceTitle)
+            .Where(item => GetIdentity(item).Track == sourceIdentity.Track)
             .ToList();
         if (sameTitle.Count == 0) return null;
 
-        if (sourceArtist.Length > 0)
+        if (sourceIdentity.Artist.Length > 0)
         {
             var exactArtist = sameTitle
-                .Where(item => Normalize(item.Artist) == sourceArtist)
+                .Where(item => GetIdentity(item).Artist == sourceIdentity.Artist)
                 .OrderByDescending(item => item.SavedAt)
                 .ToList();
             if (exactArtist.Count == 1)
                 return new OfflineLibraryMatch(exactArtist[0], MatchedByVideoId: false);
             if (exactArtist.Count > 1) return null;
 
-            // Arquivo importado pelo nome, sem intérprete preenchido, só é aceito quando único.
-            var noArtist = sameTitle.Where(item => Normalize(item.Artist).Length == 0).ToList();
+            // Arquivo importado pelo nome, sem intérprete reconhecido, só é aceito quando único.
+            var noArtist = sameTitle.Where(item => GetIdentity(item).Artist.Length == 0).ToList();
             return sameTitle.Count == 1 && noArtist.Count == 1
                 ? new OfflineLibraryMatch(noArtist[0], MatchedByVideoId: false)
                 : null;
@@ -70,14 +68,25 @@ public static class OfflineLibraryMatcher
         var rightId = NormalizeVideoId(right.VideoId);
         if (leftId.Length > 0 && rightId.Length > 0 && leftId == rightId) return true;
 
-        var leftTitle = Normalize(left.TrackName.Length > 0 ? left.TrackName : left.Title);
-        var rightTitle = Normalize(right.TrackName.Length > 0 ? right.TrackName : right.Title);
-        if (leftTitle.Length == 0 || leftTitle != rightTitle) return false;
-
-        var leftArtist = Normalize(left.Artist);
-        var rightArtist = Normalize(right.Artist);
-        return leftArtist.Length == 0 || rightArtist.Length == 0 || leftArtist == rightArtist;
+        var leftIdentity = GetIdentity(left);
+        var rightIdentity = GetIdentity(right);
+        if (leftIdentity.Track.Length == 0 || leftIdentity.Track != rightIdentity.Track) return false;
+        return leftIdentity.Artist.Length == 0 || rightIdentity.Artist.Length == 0 ||
+            leftIdentity.Artist == rightIdentity.Artist;
     }
+
+    private static (string Track, string Artist) GetIdentity(LibraryVideo video)
+    {
+        var rawTrack = !string.IsNullOrWhiteSpace(video.TrackName) ? video.TrackName : video.Title;
+        var parsed = TrackTitleParser.Parse(rawTrack, video.Artist);
+        var track = string.IsNullOrWhiteSpace(parsed.Track)
+            ? LyricsPreviewService.CleanTitle(rawTrack)
+            : parsed.Track;
+        var artist = !string.IsNullOrWhiteSpace(video.Artist) ? video.Artist : parsed.Artist;
+        return (LyricsPreviewService.Normalize(track), LyricsPreviewService.Normalize(artist));
+    }
+
+    private static string NormalizeVideoId(string? value) => (value ?? "").Trim();
 
     public static double ResolveResumePosition(double? requestedSeconds, double savedSeconds)
     {

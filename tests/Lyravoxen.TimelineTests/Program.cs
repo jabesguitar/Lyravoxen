@@ -410,7 +410,7 @@ try
 {
     var offlineByName = new LibraryVideo
     {
-        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Te Ver", Artist = "",
+        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Trio R3 - Te ver (Play Back)", Title = "Trio R3 - Te ver (Play Back)", Artist = "",
         SavedAt = DateTime.Now, OfflineExpiresAt = DateTime.Now.AddDays(7), LastPlaybackPositionSeconds = 51
     };
     var onlineCurrent = new LibraryVideo
@@ -419,20 +419,20 @@ try
     };
     var nameMatch = OfflineLibraryMatcher.FindMatchingBackup(new[] { offlineByName }, onlineCurrent, DateTime.Now);
     Check(nameMatch is not null && !nameMatch.MatchedByVideoId && ReferenceEquals(nameMatch.Video, offlineByName),
-        "failover: encontra cópia importada por título exato único mesmo sem ID do YouTube");
+        "failover: encontra arquivo importado pelo nome completo 'Intérprete - Música (Play Back)'");
     Check(OfflineLibraryMatcher.AreSameRecording(onlineCurrent, offlineByName),
-        "biblioteca: reconhece mesma gravação por título normalizado quando intérprete do arquivo não foi preenchido");
+        "biblioteca: reconhece gravação mesmo quando o arquivo guardou intérprete, título e sufixo Play Back juntos");
     Check(Math.Abs(OfflineLibraryMatcher.ResolveResumePosition(null, 51) - 51) < 0.001 &&
           Math.Abs(OfflineLibraryMatcher.ResolveResumePosition(23, 51) - 23) < 0.001,
         "retomada: posição explícita do failover prevalece e seleção manual usa a posição salva");
 
     var wrongArtist = new LibraryVideo
     {
-        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Te Ver", Artist = "Outro Trio",
+        IsOffline = true, LocalPath = offlineTestPath, TrackName = "Outro Trio - Te Ver (Ao Vivo)", Artist = "",
         SavedAt = DateTime.Now
     };
     Check(OfflineLibraryMatcher.FindMatchingBackup(new[] { wrongArtist }, onlineCurrent, DateTime.Now) is null,
-        "failover: não associa arquivo com mesmo título e intérprete diferente");
+        "failover: não associa arquivo cujo nome completo indica intérprete diferente");
 
     var secondCopyPath = offlineTestPath + ".second.mp3";
     File.WriteAllBytes(secondCopyPath, new byte[] { 5, 6, 7 });

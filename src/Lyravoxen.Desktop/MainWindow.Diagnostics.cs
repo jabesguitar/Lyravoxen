@@ -40,8 +40,21 @@ public partial class MainWindow
             catch (Exception ex) { text.AppendLine("Microfones: erro — " + ex.Message); }
 
             var model = LiveAudioTranscriptionService.ModelPath;
-            text.AppendLine("Modelo de voz: " + (File.Exists(model) && new FileInfo(model).Length > 10_000_000
-                ? "já baixado" : "ainda não baixado (baixa na 1ª voz, ~150 MB)"));
+            var modelReady = File.Exists(model) && new FileInfo(model).Length > 10_000_000;
+            text.AppendLine("Modelo de voz: " + (modelReady ? "já baixado" : "ainda não baixado (baixa na 1ª voz, ~150 MB)"));
+            if (modelReady)
+            {
+                try
+                {
+                    using var whisper = WhisperDiagnostics.CreateFactory(model);
+                    text.AppendLine("Motor Whisper nativo: OK (biblioteca carregada)");
+                }
+                catch (Exception ex)
+                {
+                    text.AppendLine("Motor Whisper nativo: FALHOU — " + ex.Message);
+                }
+            }
+            else text.AppendLine("Motor Whisper nativo: não testado (modelo ainda não existe)");
             text.AppendLine("Monitores: " + System.Windows.Forms.Screen.AllScreens.Length);
             text.AppendLine("AVX2 disponível: " + (Avx2.IsSupported ? "sim" : "não — a compatibilidade do reconhecimento Whisper deve ser verificada separadamente"));
 
