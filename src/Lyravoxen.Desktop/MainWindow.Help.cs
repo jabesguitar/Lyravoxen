@@ -210,10 +210,19 @@ public partial class MainWindow
 
     private static readonly HelpPage RegisterHelp = new(
         "Cadastrar letra",
-        "Aqui você cadastra a letra de uma música e acerta os tempos. Cole a letra na caixa, deixando uma linha em branco entre as estrofes. " +
-        "Depois escolha como sincronizar.",
+        "Aqui você cadastra a letra de uma música e acerta os tempos. Pesquise pelo título, intérprete ou trecho da letra. Confira a versão antes de importar. " +
+        "Depois marque cada cartão no instante em que a frase começa ou use o reconhecimento automático para ajudar.",
         new[]
         {
+            new HelpItem("⌕ Pesquisar letras / Buscar letra por título", "⌕ Pesquisar letras consulta o catálogo gratuito LRCLIB por título, intérprete ou trecho conhecido da letra. A janela mostra os resultados, prévia, álbum e duração. Quando houver LRC, use Usar letra + tempos para importar os tempos encontrados; para letras sem sincronização, escolha Usar texto para revisar e marque os cartões. Buscar letra por título abre o caminho de busca baseado no título e intérprete. O catálogo não é o banco privado do Holyrics; confira sempre a versão, autoria e permissões de uso antes de projetar."),
+            new HelpItem("＋ Criar cartões", "Analisa a letra-fonte e transforma cada frase em um cartão individual. Títulos como [Coro], [Estrofe] e marcadores 2x ajudam a separar blocos e repetições. A letra-fonte permanece separada da sequência de execução."),
+            new HelpItem("Salvar cadastro / Concluir e salvar", "Salva o texto-fonte, a ordem dos blocos, as ocorrências repetidas e os tempos marcados, vinculados à música atual. Os cartões sem tempo continuam identificados como pendentes, sem receber tempos inventados."),
+            new HelpItem("● MARCAR CARTÃO SELECIONADO / {Binding MarkButtonText}", "Dê play na música. Selecione o cartão e clique em MARCAR CARTÃO SELECIONADO ou MARCAR AGORA no próprio cartão exatamente quando a frase começar. O cartão avança automaticamente. Você também pode usar Espaço para marcar o selecionado."),
+            new HelpItem("↶ Desfazer / Limpar marcação", "Desfaz a última marcação e restaura o tempo e a situação anteriores daquele cartão."),
+            new HelpItem("＋ Repetir bloco", "Cria outra ocorrência do bloco selecionado na sequência sem duplicar o texto-fonte. Marque essa nova ocorrência quando o refrão ou trecho voltar a ser cantado."),
+            new HelpItem("↑ / ↓", "Move o cartão selecionado para cima ou para baixo na sequência. Salve o cadastro para gravar a nova ordem."),
+            new HelpItem("⚡ Reconhecer cantado (gratuito/offline)", "Usa o Whisper local para ouvir o áudio que está saindo do computador e comparar a transcrição com a sequência dos cartões. A música precisa estar tocando. Frases que o reconhecimento não conseguir localizar com segurança ficam sinalizadas para revisão; o reconhecimento atual é incremental durante a reprodução, não uma análise completa prévia de toda a gravação."),
+            new HelpItem("Outras fontes", "Abre fontes alternativas de pesquisa na internet quando o catálogo principal não encontra a música. Confira o site, a versão e a autoria antes de copiar uma letra."),
             new HelpItem("📋 Colar e limpar letra", "Cola o que você copiou de um site (Letras.mus.br, Cifra Club...) e limpa: tira cifras, [Refrão], créditos, links e \"(2x)\", e separa as estrofes por uma linha em branco."),
             new HelpItem("⚡ Cadastro rápido", "O caminho mais curto para uma música sem letra: pega a letra do catálogo (se só tiver o texto) ou da área de transferência, salva, reinicia a música do começo e já liga a marcação por toque. Sem letra copiada, ele abre as fontes de pesquisa; copie a letra (Ctrl+C) e clique de novo."),
             new HelpItem("🔎 Buscar texto da letra / ⚙ Fonte de letras", "Busca o TEXTO da letra (sem tempos) pelo intérprete e título, na API gratuita do Vagalume. Para usar, clique em ⚙ Fonte de letras e cole sua chave (crie uma conta em vagalume.com.br e peça a chave da API). Com a chave, o texto também é buscado sozinho quando o catálogo de letras sincronizadas não tem a música, no ⚡ Cadastro rápido e no celular (📝 Buscar o texto automaticamente). 🧪 Testar chave confere se a chave funciona. Depois do texto, use ⏱ Estimar tempos ou marque por toque."),
