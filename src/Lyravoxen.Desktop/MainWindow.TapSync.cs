@@ -3,14 +3,12 @@ using Lyravoxen.Models;
 
 namespace Lyravoxen;
 
-// Marcação manual por toque: um toque por estrofe, para músicas playback (sem voz).
+// Marcação manual sequencial por cartão/slide, no estilo de marcação visual do Holyrics.
+// Cada cartão representa exatamente o bloco que será projetado, não uma linha solta.
 public partial class MainWindow
 {
     private bool _tapActive;
-    private List<List<string>> _tapStanzas = new();
-    private readonly List<double> _tapStarts = new();
-
-    private const double TapSecondsPerLineForLast = 3.0;
+    private readonly List<LyricsEditorCard> _tapMarkedCards = new();
 
     private async void TapStart_Click(object sender, RoutedEventArgs e)
     {
@@ -22,38 +20,41 @@ public partial class MainWindow
         }
         if (!_isLocalAudioPlaying && _lastPlayerState != 1)
         {
-            StatusText.Text = "Dê play na música antes de iniciar a marcação por toque.";
+            StatusText.Text = "Dê play na música antes de iniciar a marcação sequencial.";
+            WorkspaceTabs.SelectedIndex = 0;
             return;
         }
 
-        var stanzas = TapSyncPlanner.SplitStanzas(ManualLyricsBox.Text);
-        if (stanzas.Count == 0)
+        if (_lyricsEditorCards.Count == 0)
+            BuildLyricsCards_Click(this, new RoutedEventArgs());
+        if (_lyricsEditorCards.Count == 0)
         {
-            StatusText.Text = "Cole a letra completa (estrofes separadas por linha em branco) antes de marcar.";
+            StatusText.Text = "Cole ou pesquise a letra e crie os cartões antes de iniciar a marcação.";
             return;
         }
 
-        if (_liveRecognition is not null) await StopAutoRecognitionAsync(savePartial: false);
+        if (_liveRecognition is not null)
+            await StopAutoRecognitionAsync(savePartial: false);
+
         _autoSyncPending = false;
         _manualDraftActive = false;
-
-        _currentVideo.FullLyrics = ManualLyricsBox.Text.Trim();
-        SaveCurrentFullLyrics();
-
-        _tapStanzas = stanzas;
-        _tapStarts.Clear();
+        _tapMarkedCards.Clear();
         _tapActive = true;
-        // Congela a projeção automática de marcações antigas enquanto você marca.
         _manualProjectionMode = true;
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
-        _ = ClearHolyricsForLiveDraftAsync();
-        PublishProjectionOnly("");
+
+        var nextIndex = _lyricsEditorCards
+            .Select((card, index) => (card, index))
+            .Where(item => !item.card.Seconds.HasValue)
+            .Select(item => item.index)
+            .DefaultIfEmpty(-1)
+            .First();
+        if (nextIndex >= 0) LyricsLineCardsList.SelectedIndex = nextIndex;
+        LyricsLineCardsList.Focus();
 
         UpdateTapUi();
-        TapMarkButton.Focus();
-        NextProjectionPreviewText.Text = "Próxima estrofe: " + _tapStanzas[0][0];
-        StatusText.Text = "Marcação por toque iniciada. Toque (ou aperte Espaço) quando a 1ª estrofe começar.";
+        StatusText.Text = "Marcação sequencial iniciada. Pressione Espaço ou clique em Marcar próxima para marcar o cartão no início do bloco.";
     }
 
     private void TapMark_Click(object sender, RoutedEventArgs e) => TapMarkStanza();
@@ -63,136 +64,89 @@ public partial class MainWindow
         if (!_tapActive) return;
         if (!_isLocalAudioPlaying && _lastPlayerState != 1)
         {
-            StatusText.Text = "A música está pausada. Retome a reprodução para marcar.";
-            return;
-        }
-        if (_tapStarts.Count >= _tapStanzas.Count)
-        {
-            // Todas marcadas: um toque a mais conclui.
-            TapFinish(save: true);
+            StatusText.Text = "A música está pausada. Retome a reprodução para marcar o próximo cartão.";
             return;
         }
 
-        var now = GetPlaybackSeconds();
-        if (_tapStarts.Count > 0 && now <= _tapStarts[^1] + 0.2)
+        var card = LyricsLineCardsList.SelectedItem as LyricsEditorCard;
+        if (card is null || card.Seconds.HasValue)
+            card = _lyricsEditorCards.FirstOrDefault(item => !item.Seconds.HasValue);
+
+        if (card is null)
         {
-            StatusText.Text = "Toque muito rápido ou música voltou no tempo. Aguarde a próxima estrofe (Backspace desfaz a última marca).";
+            StatusText.Text = "Todos os cartões já têm marcação. Conclua e salve a sequência.";
+            UpdateTapUi();
             return;
         }
 
-        _tapStarts.Add(now);
-        var index = _tapStarts.Count - 1;
-        ShowTapStanza(index);
+        LyricsLineCardsList.SelectedItem = card;
+        MarkLyricsCard(card);
+        if (!card.Seconds.HasValue) return;
+
+        _tapMarkedCards.Add(card);
+        ProjectionPreviewText.Text = card.Text;
+        var next = _lyricsEditorCards.FirstOrDefault(item => !item.Seconds.HasValue);
+        NextProjectionPreviewText.Text = next is null ? "Fim da sequência." : "Próximo cartão: " + next.Text;
         UpdateTapUi();
-
-        if (_tapStarts.Count >= _tapStanzas.Count)
-            StatusText.Text = $"Estrofe {_tapStarts.Count} de {_tapStanzas.Count} marcada em {now:0.0}s. Última! Toque de novo ao fim da música (ou clique em Concluir e salvar).";
-        else
-            StatusText.Text = $"Estrofe {_tapStarts.Count} de {_tapStanzas.Count} marcada em {now:0.0}s.";
+        StatusText.Text = $"Cartão {_tapMarkedCards.Count} marcado em {card.TimeLabel}. Continue com Espaço ou clique em Marcar próxima.";
     }
 
-    private void ShowTapStanza(int index)
+    private void TapUndo_Click(object sender, RoutedEventArgs e)
     {
-        var marked = _tapStanzas.Take(index + 1).ToList();
-        var provisional = TapSyncPlanner.BuildCues(marked, _tapStarts, TapSecondsPerLineForLast);
-        var firstLine = TapSyncPlanner.LinesBefore(_tapStanzas, index);
-        var block = CueTimeline.BuildProjectionBlock(provisional, firstLine, _maxProjectionLines);
-        PublishLyric(block);
-        NextProjectionPreviewText.Text = index + 1 < _tapStanzas.Count
-            ? "Próxima estrofe: " + _tapStanzas[index + 1][0]
-            : "Próxima: —";
-    }
-
-    private void TapUndo_Click(object sender, RoutedEventArgs e) => TapUndo();
-
-    private void TapUndo()
-    {
-        if (!_tapActive) return;
-        if (_tapStarts.Count == 0)
+        if (!_tapActive || _tapMarkedCards.Count == 0)
         {
-            StatusText.Text = "Ainda não há marcas para desfazer.";
+            StatusText.Text = "Não há marcação desta sequência para desfazer.";
             return;
         }
 
-        _tapStarts.RemoveAt(_tapStarts.Count - 1);
-        if (_tapStarts.Count > 0)
-        {
-            ShowTapStanza(_tapStarts.Count - 1);
-        }
-        else
-        {
-            PublishProjectionOnly("");
-            _ = ClearHolyricsForLiveDraftAsync();
-            NextProjectionPreviewText.Text = "Próxima estrofe: " + _tapStanzas[0][0];
-        }
+        UndoLyricsMark_Click(this, new RoutedEventArgs());
+        _tapMarkedCards.RemoveAt(_tapMarkedCards.Count - 1);
         UpdateTapUi();
-        StatusText.Text = $"Última marca desfeita. Estrofes marcadas: {_tapStarts.Count} de {_tapStanzas.Count}.";
+        StatusText.Text = $"Último cartão desfeito. {_tapMarkedCards.Count} marcações nesta sequência.";
     }
 
     private void TapFinish_Click(object sender, RoutedEventArgs e) => TapFinish(save: true);
-
     private void TapCancel_Click(object sender, RoutedEventArgs e) => TapFinish(save: false);
 
     private void TapFinish(bool save)
     {
         if (!_tapActive) return;
-        var markedCount = _tapStarts.Count;
-        var total = _tapStanzas.Count;
-        var cues = save && markedCount > 0
-            ? TapSyncPlanner.BuildCues(_tapStanzas, _tapStarts, TapSecondsPerLineForLast)
-            : new List<LyricCue>();
 
+        var markedCount = _tapMarkedCards.Count;
+        if (!save)
+        {
+            for (var i = 0; i < markedCount; i++)
+                UndoLyricsMark_Click(this, new RoutedEventArgs());
+            StatusText.Text = "Marcação sequencial cancelada. Os tempos feitos nesta sessão foram desfeitos.";
+        }
+        else
+        {
+            SaveLyricsEditor_Click(this, new RoutedEventArgs());
+            StatusText.Text = $"Marcação sequencial concluída: {markedCount} cartões marcados nesta sessão.";
+        }
+
+        _tapMarkedCards.Clear();
         _tapActive = false;
         _manualProjectionMode = false;
         _manualCueIndex = -1;
         _lastAutomaticCue = -1;
-
-        if (save && cues.Count > 0)
-        {
-            _cues.Clear();
-            _cues.AddRange(CueTimeline.Normalize(cues));
-            RefreshCueList();
-            PersistCurrentCues();
-            var partial = markedCount < total ? $" (marcadas {markedCount} de {total} estrofes; as demais ficaram sem tempo)" : "";
-            ManualSyncProgressText.Text = $"Marcação por toque concluída: {_cues.Count} frases salvas para {MusicTrackBox.Text}.{partial}";
-            ManualCurrentLineText.Text = "Sincronização por toque salva na biblioteca local.";
-            StatusText.Text = $"Marcação por toque salva: {_cues.Count} frases em {markedCount} estrofes{partial}.";
-        }
-        else
-        {
-            StatusText.Text = save
-                ? "Nenhuma estrofe foi marcada; nada foi salvo."
-                : "Marcação por toque cancelada. A sincronização anterior foi mantida.";
-        }
-
-        NextProjectionPreviewText.Text = "Próxima: —";
         UpdateTapUi();
     }
 
     private void UpdateTapUi()
     {
-        TapStartButton.IsEnabled = !_tapActive;
-        TapMarkButton.IsEnabled = _tapActive;
-        TapUndoButton.IsEnabled = _tapActive && _tapStarts.Count > 0;
-        TapFinishButton.IsEnabled = _tapActive && _tapStarts.Count > 0;
-        TapCancelButton.IsEnabled = _tapActive;
-
         if (!_tapActive)
         {
-            TapMarkButton.Content = "TOQUE · próxima estrofe (Espaço)";
-            TapProgressText.Text = "Pronto para marcar.";
+            LyricsEditorStatus.Text = "Editor pronto. Selecione os cartões e marque cada bloco quando começar.";
             return;
         }
 
-        if (_tapStarts.Count < _tapStanzas.Count)
-        {
-            TapMarkButton.Content = $"TOQUE · estrofe {_tapStarts.Count + 1} de {_tapStanzas.Count} (Espaço)";
-            TapProgressText.Text = "Próxima: " + string.Join(" / ", _tapStanzas[_tapStarts.Count].Take(2));
-        }
-        else
-        {
-            TapMarkButton.Content = "Concluir (Espaço)";
-            TapProgressText.Text = "Todas as estrofes marcadas.";
-        }
+        var completed = _lyricsEditorCards.Count(card => card.Seconds.HasValue);
+        var total = _lyricsEditorCards.Count;
+        var next = _lyricsEditorCards.FirstOrDefault(card => !card.Seconds.HasValue);
+        LyricsEditorStatus.Text = $"MARCAÇÃO SEQUENCIAL · {completed} de {total} cartões com tempo.";
+        ManualSyncProgressText.Text = next is null
+            ? "Todos os cartões estão marcados. Clique em Concluir sequência e salvar."
+            : "Próximo: " + next.Text + " · Espaço marca o cartão selecionado.";
     }
 }

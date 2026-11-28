@@ -447,6 +447,12 @@
         <TextBlock Text="CONTROLE DA SINCRONIZAÇÃO" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="Bold"/>
         <TextBlock Text="Marque no instante em que a frase começa. O cartão selecionado avança automaticamente." Foreground="{DynamicResource TextMuted}" FontSize="10" TextWrapping="Wrap" Margin="0,4,0,7"/>
         <Button Content="● MARCAR CARTÃO SELECIONADO" Click="MarkSelectedLyricsLine_Click" MinHeight="42" FontSize="12" FontWeight="Bold" Background="{DynamicResource Brush_087F9E}"/>
+        <WrapPanel HorizontalAlignment="Center" Margin="0,6,0,0">
+         <Button Content="▶ Iniciar sequência" Click="TapStart_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2"/>
+         <Button Content="Marcar próxima · Espaço" Click="TapMark_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2" Background="{DynamicResource Brush_087F9E}"/>
+         <Button Content="Concluir sequência" Click="TapFinish_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2"/>
+         <Button Content="Cancelar sequência" Click="TapCancel_Click" MinHeight="29" FontSize="10" Padding="8,3" Margin="2"/>
+        </WrapPanel>
         <Button x:Name="AutoRecognitionButton" Content="⚡ Reconhecer cantado (gratuito/offline)" Click="ToggleAutoRecognition_Click"
                 MinHeight="35" FontSize="11" Margin="0,6,0,0"/>
         <TextBlock x:Name="ManualSyncProgressText" Text="O modo automático reconhece a letra durante a reprodução. Revise os cartões sem confiança." Foreground="{DynamicResource TextMuted}"

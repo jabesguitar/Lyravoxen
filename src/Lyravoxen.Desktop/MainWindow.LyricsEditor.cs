@@ -311,7 +311,8 @@ public partial class MainWindow
     {
         if (e.Key == Key.Space && LyricsLineCardsList.SelectedItem is LyricsEditorCard card)
         {
-            MarkLyricsCard(card);
+            if (_tapActive) TapMarkStanza();
+            else MarkLyricsCard(card);
             e.Handled = true;
         }
         else if (e.Key == Key.Up && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -532,7 +533,7 @@ public partial class MainWindow
             Grid.SetColumnSpan(heading, 2);
             root.Children.Add(heading);
 
-            var list = new ListBox
+            var list = new System.Windows.Controls.ListBox
             {
                 ItemsSource = results,
                 DisplayMemberPath = nameof(LyricsCatalogResult.Display),
@@ -554,7 +555,7 @@ public partial class MainWindow
             };
             DockPanel.SetDock(previewInfo, Dock.Top);
             previewPanel.Children.Add(previewInfo);
-            var preview = new TextBox
+            var preview = new System.Windows.Controls.TextBox
             {
                 IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -581,21 +582,21 @@ public partial class MainWindow
             };
             if (results.Count > 0) list.SelectedIndex = 0;
 
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var useTimed = new Button
+            var buttons = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+            var useTimed = new System.Windows.Controls.Button
             {
                 Content = "Usar letra + tempos",
                 MinWidth = 150, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(5, 12, 0, 0),
                 Background = Hex("#087F9E"), Foreground = Hex("#FFFFFF"), FontWeight = FontWeights.Bold,
                 IsEnabled = false
             };
-            var useText = new Button
+            var useText = new System.Windows.Controls.Button
             {
                 Content = "Usar texto para revisar",
                 MinWidth = 150, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(5, 12, 0, 0),
                 Background = Hex("#153B69"), Foreground = Hex("#FFFFFF"), IsEnabled = false
             };
-            var cancel = new Button
+            var cancel = new System.Windows.Controls.Button
             {
                 Content = "Cancelar", MinWidth = 95, Padding = new Thickness(14, 8, 14, 8),
                 Margin = new Thickness(5, 12, 0, 0), Background = Hex("#153B69"), Foreground = Hex("#FFFFFF"), IsCancel = true
