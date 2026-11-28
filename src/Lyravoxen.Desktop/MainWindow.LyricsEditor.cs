@@ -286,6 +286,55 @@ public partial class MainWindow
     private void NudgeLyricsEarlier01_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(-0.1);
     private void NudgeLyricsLater01_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(0.1);
     private void NudgeLyricsLater05_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsTiming(0.5);
+    private void AccelerateLyricsRate_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsRate(0.99);
+    private void DecelerateLyricsRate_Click(object sender, RoutedEventArgs e) => AdjustSelectedLyricsRate(1.01);
+
+    private void AdjustSelectedLyricsRate(double rateMultiplier)
+    {
+        if (_currentVideo is null || LyricsLineCardsList.SelectedItem is not LyricsEditorCard selected)
+        {
+            StatusText.Text = "Selecione o cartão de referência para ajustar o ritmo das próximas frases.";
+            return;
+        }
+        if (!selected.Seconds.HasValue)
+        {
+            StatusText.Text = "Marque primeiro o tempo do cartão selecionado. Ele será a âncora do ajuste de ritmo.";
+            return;
+        }
+
+        var anchorIndex = _lyricsEditorCards.IndexOf(selected);
+        if (anchorIndex < 0) return;
+        var originalTimes = _lyricsEditorCards.Select(card => card.Seconds).ToList();
+        var adjustedTimes = CueTimeline.ScaleAfterAnchor(originalTimes, anchorIndex, rateMultiplier);
+        var changed = _lyricsEditorCards.Skip(anchorIndex + 1)
+            .Select((card, offset) => (Card: card, NewSeconds: adjustedTimes[anchorIndex + 1 + offset]))
+            .Where(item => item.Card.Seconds.HasValue && item.NewSeconds.HasValue &&
+                Math.Abs(item.Card.Seconds.Value - item.NewSeconds.Value) > 0.001)
+            .ToList();
+
+        if (changed.Count == 0)
+        {
+            StatusText.Text = "Não há tempos posteriores já marcados para ajustar. Marque mais frases ou importe uma letra sincronizada.";
+            return;
+        }
+
+        var previous = changed.Select(item => (item.Card, Seconds: item.Card.Seconds)).ToList();
+        foreach (var item in changed)
+            item.Card.Seconds = item.NewSeconds;
+
+        _lyricsEditorUndo.Push(() =>
+        {
+            foreach (var item in previous)
+                item.Card.Seconds = item.Seconds;
+            SaveLyricsEditor_Click(this, new RoutedEventArgs());
+        });
+        SaveLyricsEditor_Click(this, new RoutedEventArgs());
+
+        var accelerated = rateMultiplier < 1;
+        var action = accelerated ? "acelerado" : "desacelerado";
+        LyricsEditorStatus.Text = $"Ritmo {action} em 1% a partir do cartão selecionado.";
+        StatusText.Text = $"Os intervalos das próximas {changed.Count} frases foram {action}s em 1%. A frase de referência e as anteriores não mudaram. Ajuste salvo; use Desfazer para reverter.";
+    }
 
     private void ApplyStoredTimelineAdjustmentsToCards()
     {

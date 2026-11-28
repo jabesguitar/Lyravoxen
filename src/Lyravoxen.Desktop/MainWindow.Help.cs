@@ -226,6 +226,8 @@ public partial class MainWindow
             new HelpItem("−0,1 s", "Adianta em um décimo de segundo o cartão selecionado e todas as frases seguintes. Use para correção fina."),
             new HelpItem("+0,1 s", "Atrasa em um décimo de segundo o cartão selecionado e todas as frases seguintes. Use para correção fina."),
             new HelpItem("+0,5 s", "Atrasa em meio segundo o cartão selecionado e todas as frases seguintes. Use quando a letra estiver adiantada. O ajuste fica salvo na música."),
+            new HelpItem("Acelerar 1%", "Reduz em 1% os intervalos entre os tempos a partir do cartão selecionado. Use quando o atraso da letra aumenta progressivamente ao longo da música. O cartão de referência e as frases anteriores permanecem no mesmo tempo; o ajuste afeta frases posteriores já sincronizadas e pode ser desfeito."),
+            new HelpItem("Desacelerar 1%", "Aumenta em 1% os intervalos entre os tempos a partir do cartão selecionado. Use quando a letra vai ficando adiantada progressivamente. O cartão de referência e as frases anteriores permanecem no mesmo tempo; o ajuste afeta frases posteriores já sincronizadas e pode ser desfeito."),
             new HelpItem("Concluir sequência", "Salva a letra-fonte, a ordem dos cartões e os tempos marcados nesta sessão."),
             new HelpItem("Cancelar sequência", "Desfaz somente as marcações feitas na sessão sequencial atual, sem alterar as marcações anteriores."),
             new HelpItem("↶ Desfazer / Desfazer última marcação", "Desfaz a última marcação e restaura o tempo e a situação anteriores daquele cartão. Durante a sequência, também atualiza a contagem da sessão."),

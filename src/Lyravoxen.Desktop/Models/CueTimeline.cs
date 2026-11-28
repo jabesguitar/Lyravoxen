@@ -45,6 +45,38 @@ public static class CueTimeline
         return Math.Max(requestedDelta, minimum - executionTimes[anchorIndex]!.Value);
     }
 
+    /// <summary>
+    /// Ajusta o intervalo entre os tempos a partir de uma frase âncora.
+    /// Fator abaixo de 1 acelera a sequência; acima de 1 desacelera.
+    /// </summary>
+    public static double?[] ScaleAfterAnchor(
+        IReadOnlyList<double?> executionTimes,
+        int anchorIndex,
+        double rateMultiplier,
+        double minimumGapSeconds = 0.05)
+    {
+        var result = executionTimes.ToArray();
+        if (anchorIndex < 0 || anchorIndex >= result.Length ||
+            !result[anchorIndex].HasValue ||
+            !double.IsFinite(rateMultiplier) || rateMultiplier <= 0)
+            return result;
+
+        var anchorSeconds = result[anchorIndex]!.Value;
+        var previousSeconds = anchorSeconds;
+        var minimumGap = Math.Max(0, minimumGapSeconds);
+        for (var i = anchorIndex + 1; i < result.Length; i++)
+        {
+            if (!result[i].HasValue || !double.IsFinite(result[i]!.Value))
+                continue;
+
+            var scaledSeconds = anchorSeconds +
+                (result[i]!.Value - anchorSeconds) * rateMultiplier;
+            result[i] = Math.Max(scaledSeconds, previousSeconds + minimumGap);
+            previousSeconds = result[i]!.Value;
+        }
+        return result;
+    }
+
     // Build a rolling page from consecutive visual lyric lines.
     public static string BuildProjectionBlock(IReadOnlyList<LyricCue> cues, int activeCueIndex, int lineCount)
     {

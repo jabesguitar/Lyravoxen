@@ -461,6 +461,11 @@
          <Button Content="+0,1 s" Click="NudgeLyricsLater01_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2"/>
          <Button Content="+0,5 s" Click="NudgeLyricsLater05_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2"/>
         </WrapPanel>
+        <TextBlock Text="RITMO DAS PRÓXIMAS FRASES · AJUSTA O INTERVALO ENTRE OS TEMPOS" Foreground="{DynamicResource TextMuted}" FontSize="9" FontWeight="Bold" Margin="2,6,2,2"/>
+        <WrapPanel HorizontalAlignment="Center">
+         <Button Content="Acelerar 1%" Click="AccelerateLyricsRate_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2" ToolTip="Aproxima progressivamente os tempos a partir do cartão selecionado"/>
+         <Button Content="Desacelerar 1%" Click="DecelerateLyricsRate_Click" MinHeight="25" FontSize="9" Padding="7,2" Margin="2" ToolTip="Afasta progressivamente os tempos a partir do cartão selecionado"/>
+        </WrapPanel>
         <Button x:Name="AutoRecognitionButton" Content="⚡ Reconhecer cantado (gratuito/offline)" Click="ToggleAutoRecognition_Click"
                 MinHeight="35" FontSize="11" Margin="0,6,0,0"/>
         <TextBlock x:Name="ManualSyncProgressText" Text="O modo automático reconhece a letra durante a reprodução. Revise os cartões sem confiança." Foreground="{DynamicResource TextMuted}"

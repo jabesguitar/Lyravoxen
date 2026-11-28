@@ -26,6 +26,20 @@ Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, 10.2, 30 }, 1,
     "ajuste fino não deixa uma frase ultrapassar a anterior");
 Check(Math.Abs(CueTimeline.ClampForwardOffset(new double?[] { 10, null, 30 }, 1, -0.3) + 0.3) < 0.001,
     "ajuste pendente funciona em cartão ainda sem tempo");
+var acceleratedTimeline = CueTimeline.ScaleAfterAnchor(new double?[] { 10, 20, 30 }, 0, 0.99);
+Check(Math.Abs(acceleratedTimeline[0]!.Value - 10) < 0.001 &&
+      Math.Abs(acceleratedTimeline[1]!.Value - 19.9) < 0.001 &&
+      Math.Abs(acceleratedTimeline[2]!.Value - 29.8) < 0.001,
+    "acelerar 1% preserva a âncora e aproxima os tempos posteriores");
+var deceleratedTimeline = CueTimeline.ScaleAfterAnchor(new double?[] { 10, 20, 30 }, 0, 1.01);
+Check(Math.Abs(deceleratedTimeline[0]!.Value - 10) < 0.001 &&
+      Math.Abs(deceleratedTimeline[1]!.Value - 20.1) < 0.001 &&
+      Math.Abs(deceleratedTimeline[2]!.Value - 30.2) < 0.001,
+    "desacelerar 1% preserva a âncora e amplia os tempos posteriores");
+var clampedRateTimeline = CueTimeline.ScaleAfterAnchor(new double?[] { 10, 10.01, 20 }, 0, 0.5);
+Check(clampedRateTimeline[1]!.Value >= 10.05 &&
+      clampedRateTimeline[2]!.Value >= clampedRateTimeline[1]!.Value + 0.05,
+    "ajuste de ritmo mantém intervalo mínimo entre frases");
 Check(LyricsCatalogRanking.ScoreBrazilianPortuguese("Você chegou pra mudar a minha vida, tá tudo bem") >= 70,
     "catálogo prioriza letra provavelmente brasileira");
 Check(LyricsCatalogRanking.ScoreBrazilianPortuguese("Es un martirio, verte una y otra vez, los latidos de mi piel") < 0,
