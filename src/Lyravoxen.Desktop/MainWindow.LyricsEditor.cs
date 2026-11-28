@@ -203,13 +203,23 @@ public partial class MainWindow
     private void MarkLyricsLine_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement element && element.DataContext is LyricsEditorCard card)
-            MarkLyricsCard(card);
+        {
+            if (_tapActive)
+            {
+                LyricsLineCardsList.SelectedItem = card;
+                TapMarkStanza();
+            }
+            else MarkLyricsCard(card);
+        }
     }
 
     private void MarkSelectedLyricsLine_Click(object sender, RoutedEventArgs e)
     {
         if (LyricsLineCardsList.SelectedItem is LyricsEditorCard card)
-            MarkLyricsCard(card);
+        {
+            if (_tapActive) TapMarkStanza();
+            else MarkLyricsCard(card);
+        }
         else
             StatusText.Text = "Selecione o cartão da frase que deseja marcar.";
     }
@@ -252,8 +262,12 @@ public partial class MainWindow
         previous.Card.Confidence = previous.Confidence;
         previous.Card.NeedsReview = previous.NeedsReview;
         previous.Card.IsManual = previous.IsManual;
+        if (_tapActive && _tapMarkedCards.Count > 0 &&
+            ReferenceEquals(_tapMarkedCards[^1], previous.Card))
+            _tapMarkedCards.RemoveAt(_tapMarkedCards.Count - 1);
         LyricsLineCardsList.SelectedItem = previous.Card;
         StatusText.Text = "Última marcação desfeita.";
+        if (_tapActive) UpdateTapUi();
     }
 
     private void RepeatLyricsBlock_Click(object sender, RoutedEventArgs e)

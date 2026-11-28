@@ -477,7 +477,7 @@
        </Grid>
       </Border>
       <WrapPanel Grid.Row="2" HorizontalAlignment="Center">
-       <Button Content="Desfazer última marcação" Click="UndoLyricsMark_Click" MinHeight="27" FontSize="10" Padding="8,3" Margin="2"/>
+       <Button Content="Desfazer última marcação" Click="TapUndo_Click" MinHeight="27" FontSize="10" Padding="8,3" Margin="2"/>
        <Button Content="Concluir e salvar" Click="SaveLyricsEditor_Click" MinHeight="27" FontSize="10" Padding="9,3" Margin="2" Background="{DynamicResource Brush_087F9E}"/>
       </WrapPanel>
      </Grid>

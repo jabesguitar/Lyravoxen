@@ -1,10 +1,9 @@
 using System.Windows;
-using Lyravoxen.Models;
 
 namespace Lyravoxen;
 
-// Marcação manual sequencial por cartão/slide, no estilo de marcação visual do Holyrics.
-// Cada cartão representa exatamente o bloco que será projetado, não uma linha solta.
+// Marcação manual sequencial por cartão/slide.
+// Cada cartão representa o bloco de projeção que o usuário visualiza e marca no áudio.
 public partial class MainWindow
 {
     private bool _tapActive;
@@ -54,7 +53,7 @@ public partial class MainWindow
         LyricsLineCardsList.Focus();
 
         UpdateTapUi();
-        StatusText.Text = "Marcação sequencial iniciada. Pressione Espaço ou clique em Marcar próxima para marcar o cartão no início do bloco.";
+        StatusText.Text = "Marcação sequencial iniciada. Pressione Espaço ou clique em Marcar próxima no começo de cada slide.";
     }
 
     private void TapMark_Click(object sender, RoutedEventArgs e) => TapMarkStanza();
@@ -88,21 +87,22 @@ public partial class MainWindow
         var next = _lyricsEditorCards.FirstOrDefault(item => !item.Seconds.HasValue);
         NextProjectionPreviewText.Text = next is null ? "Fim da sequência." : "Próximo cartão: " + next.Text;
         UpdateTapUi();
-        StatusText.Text = $"Cartão {_tapMarkedCards.Count} marcado em {card.TimeLabel}. Continue com Espaço ou clique em Marcar próxima.";
+        StatusText.Text = $"Cartão {card.SectionLabel} marcado em {card.TimeLabel}. Continue com Espaço ou clique em Marcar próxima.";
     }
 
     private void TapUndo_Click(object sender, RoutedEventArgs e)
     {
-        if (!_tapActive || _tapMarkedCards.Count == 0)
+        if (!_tapActive)
+        {
+            UndoLyricsMark_Click(this, new RoutedEventArgs());
+            return;
+        }
+        if (_tapMarkedCards.Count == 0)
         {
             StatusText.Text = "Não há marcação desta sequência para desfazer.";
             return;
         }
-
         UndoLyricsMark_Click(this, new RoutedEventArgs());
-        _tapMarkedCards.RemoveAt(_tapMarkedCards.Count - 1);
-        UpdateTapUi();
-        StatusText.Text = $"Último cartão desfeito. {_tapMarkedCards.Count} marcações nesta sequência.";
     }
 
     private void TapFinish_Click(object sender, RoutedEventArgs e) => TapFinish(save: true);
@@ -115,7 +115,7 @@ public partial class MainWindow
         var markedCount = _tapMarkedCards.Count;
         if (!save)
         {
-            for (var i = 0; i < markedCount; i++)
+            while (_tapMarkedCards.Count > 0)
                 UndoLyricsMark_Click(this, new RoutedEventArgs());
             StatusText.Text = "Marcação sequencial cancelada. Os tempos feitos nesta sessão foram desfeitos.";
         }
@@ -141,12 +141,12 @@ public partial class MainWindow
             return;
         }
 
-        var completed = _lyricsEditorCards.Count(card => card.Seconds.HasValue);
         var total = _lyricsEditorCards.Count;
+        var completed = _lyricsEditorCards.Count(card => card.Seconds.HasValue);
         var next = _lyricsEditorCards.FirstOrDefault(card => !card.Seconds.HasValue);
         LyricsEditorStatus.Text = $"MARCAÇÃO SEQUENCIAL · {completed} de {total} cartões com tempo.";
         ManualSyncProgressText.Text = next is null
             ? "Todos os cartões estão marcados. Clique em Concluir sequência e salvar."
-            : "Próximo: " + next.Text + " · Espaço marca o cartão selecionado.";
+            : "Próximo cartão: " + next.SectionLabel + " — " + next.Text + " · Espaço marca o selecionado.";
     }
 }
