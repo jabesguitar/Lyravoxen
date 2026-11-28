@@ -75,6 +75,7 @@ public partial class MainWindow
     private LyricsStructureAnalysis? _lyricsStructureDraft;
     private readonly Stack<(LyricsEditorCard Card, double? Seconds, double? Confidence, bool NeedsReview, bool IsManual)> _lyricsMarkUndo = new();
     private List<LyricsEditorCard> _automaticCardSequence = new();
+    private List<(LyricsEditorCard Card, string Line, int CardIndex, int LineIndex)> _automaticCardLines = new();
 
     private void InitializeLyricsEditor()
     {
