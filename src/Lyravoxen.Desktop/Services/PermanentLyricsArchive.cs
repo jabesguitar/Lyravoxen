@@ -77,7 +77,12 @@ public sealed class PermanentLyricsArchive
         VideoId = v.VideoId, Title = v.Title, TrackName = v.TrackName, Artist = v.Artist,
         Composer = v.Composer, Url = v.Url, IsOffline = false, LocalPath = null, Format = null,
         FullLyrics = v.FullLyrics, SavedAt = v.SavedAt,
-        Cues = v.Cues.Select(c => new LyricCue { Seconds = c.Seconds, Text = c.Text }).ToList(),
+        Cues = v.Cues.Select(c => new LyricCue
+        {
+            Seconds = c.Seconds, Text = c.Text, SectionId = c.SectionId,
+            OccurrenceIndex = c.OccurrenceIndex, SourceLineIndex = c.SourceLineIndex,
+            Confidence = c.Confidence, NeedsReview = c.NeedsReview, IsManual = c.IsManual
+        }).ToList(),
         Sections = v.Sections.Select(section => new LyricsSectionBlock
         {
             SectionId = section.SectionId, Label = section.Label, Kind = section.Kind,
