@@ -363,8 +363,8 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="116"/></Grid.RowDefinitions>
         <WrapPanel Grid.Row="0" Margin="0,0,0,5">
          <Button Content="Colar e limpar" Click="PasteCleanLyrics_Click" MinHeight="26" FontSize="10" Padding="9,3" Margin="0,0,5,0"/>
-         <Button Content="Buscar letra por título" Click="SearchLyrics_Click" MinHeight="26" FontSize="10" Padding="9,3" Margin="0,0,5,0"/>
-         <Button Content="Outras fontes" Click="LyricSource_Click" MinHeight="26" FontSize="10" Padding="9,3"/>
+         <Button Content="Buscar no catálogo" Click="SearchLyricsCatalog_Click" MinHeight="26" FontSize="10" Padding="9,3" Margin="0,0,5,0"/>
+         <Button Content="Pesquisar na web" Click="OpenLyricsWebSearches_Click" MinHeight="26" FontSize="10" Padding="9,3"/>
         </WrapPanel>
         <TextBox x:Name="ManualLyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                  HorizontalScrollBarVisibility="Disabled" FontSize="14" Padding="10" VerticalContentAlignment="Top"
