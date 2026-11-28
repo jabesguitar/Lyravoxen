@@ -28,6 +28,15 @@
 - #991 cancelado por atualização subsequente; não é resultado final.
 - **#992 aprovado integralmente:** jobs auxiliares e Windows concluídos; compilação WPF, testes de timeline/offline, nome de arquivo com sufixo de playback e diagnóstico Whisper aprovados.
 
+## Nova prioridade recebida — áudio de WhatsApp (28/11/2026)
+
+- Anexo: `WhatsApp Ptt 2026-11-28 at 15.38.00.ogg`, 1m57.493s, OGG/Opus, mono, 48 kHz.
+- Usuário pediu identificar o que o áudio diz sobre o Lyravoxen e salvar cada etapa.
+- Arquivo aberto e dividido em trechos para inspeção; ainda não há transcrição textual confiável. Não inferir requisitos nem alterar o código com base em conteúdo não confirmado.
+- Descript foi localizado como opção de transcrição, mas não está conectado. A conexão depende de ação/autorização do usuário; alternativa: fornecer a transcrição exportada.
+- Próxima etapa: obter transcrição integral, extrair ideias/solicitações/decisões e só depois propor ou implementar mudanças. Preservar distinção entre sugestão e decisão aprovada.
+- Checkpoint desta etapa salvo em MEMORIA_CONTINUA.md e HISTORICO_CADASTRO_LETRAS.md.
+
 ## Próxima ação obrigatória
 1. Baixar e instalar o artefato #992.
 2. Abrir Diagnóstico; confirmar se aparece “Cópia offline correspondente: SIM” para a faixa e se informa o método (ID ou título/intérprete).

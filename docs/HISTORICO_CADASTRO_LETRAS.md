@@ -174,3 +174,29 @@ Corrigir e testar a sincronização entre modelo estrutural, biblioteca e arquiv
 - **Build #992 aprovado**: ambos os jobs, WPF, Test cue timeline, parser de nome de arquivo e diagnóstico Whisper.
 - Artefatos #992: Windows x64 15275724729, ZIP portátil 15276283376, instalador 15276926788.
 - Teste manual de queda/retorno de internet e retomada no Windows ainda pendente. Roteiro em docs/ROTEIRO_TESTES_FAILOVER_OFFLINE.md.
+
+
+## 28/11/2026 — Novo áudio de WhatsApp recebido; conteúdo ainda não transcrito
+
+### Solicitação do usuário
+O usuário anexou o áudio `WhatsApp Ptt 2026-11-28 at 15.38.00.ogg` e pediu para ouvi-lo, identificar se contém informações sobre o projeto Lyravoxen e, como regra de trabalho, salvar cada etapa antes de avançar. Também pediu eficiência, criatividade e continuidade de desenvolvimento.
+
+### Verificação efetivamente realizada
+- Arquivo acessível no ambiente da conversa.
+- Duração confirmada: **01:57.493**.
+- Formato: **OGG / Opus**, mono, 48 kHz.
+- Áudio foi aberto e dividido em trechos sequenciais para inspeção.
+- **Não existe transcrição textual confiável disponível neste ambiente neste momento.** Não atribuir ao áudio funcionalidades, requisitos, decisões ou aprovações sem recuperar as palavras com segurança.
+- Foi pesquisada uma integração que pode exportar transcrições: **Descript**. O estado consultado informa que ainda não está conectado/instalado; nenhuma conexão foi feita e nenhum dado foi enviado ao serviço.
+- Nenhuma ideia ou decisão do conteúdo do áudio foi inferida ou aprovada.
+
+### Estado da etapa
+- **Concluído:** recebimento, abertura e identificação técnica do arquivo.
+- **Pendente:** transcrever integralmente os 1m57s e separar trechos que mencionam o Lyravoxen de conversas paralelas.
+- **Pendente após transcrição:** extrair requisitos, ideias, decisões explícitas, dúvidas e ações; classificar em solicitação do usuário, proposta, aprovada, rejeitada ou pendente; só então planejar implementação.
+
+### Próxima ação
+Obter uma transcrição fiel do áudio. O Descript foi sugerido como opção de transcrição, mas depende de conexão/autorização do usuário; alternativamente, o usuário pode fornecer uma transcrição exportada. Depois, revisar o texto completo e registrar cada decisão antes de implementar qualquer mudança.
+
+### Regra de continuidade solicitada
+A partir desta etapa, em trabalhos do Lyravoxen: salvar um checkpoint cronológico nos arquivos de memória/histórico antes de avançar para a próxima etapa, registrar alterações e resultados reais, não tratar sugestões como decisões aprovadas e atualizar o registro compacto de retomada. Não afirmar que uma etapa foi salva sem confirmar a atualização do GitHub.
