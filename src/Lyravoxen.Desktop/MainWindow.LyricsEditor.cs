@@ -228,6 +228,9 @@ public partial class MainWindow
                 ? Math.Clamp(card.Seconds.Value, 0, maximum)
                 : 0;
             TimelineAdjustmentSlider.IsEnabled = card?.Seconds.HasValue == true;
+            TimelineAdjustmentCurrentLabel.Text = card?.Seconds.HasValue == true
+                ? FormatLyricsTimelineTime(card.Seconds.Value)
+                : "--:--";
             TimelineAdjustmentStartLabel.Text = "00:00";
             TimelineAdjustmentEndLabel.Text = FormatLyricsTimelineTime(maximum);
             TimelineAdjustmentApplyButton.IsEnabled = false;
@@ -245,7 +248,7 @@ public partial class MainWindow
     }
 
     private static string FormatLyricsTimelineTime(double seconds) =>
-        TimeSpan.FromSeconds(Math.Max(0, seconds)).ToString(@"mm\\:ss\\.f");
+        TimeSpan.FromSeconds(Math.Max(0, seconds)).ToString(@"mm\:ss\.f");
 
     private void TimelineAdjustmentSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
@@ -253,7 +256,7 @@ public partial class MainWindow
         UpdateLyricsTimelinePreview();
     }
 
-    private void TimelineAdjustmentSlider_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void TimelineAdjustmentSlider_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (sender is not Slider slider || !slider.IsEnabled) return;
 
@@ -286,6 +289,7 @@ public partial class MainWindow
         {
             TimelineAdjustmentApplyButton.IsEnabled = false;
             TimelineAdjustmentCancelButton.IsEnabled = false;
+            TimelineAdjustmentCurrentLabel.Text = "--:--";
             TimelinePreviewReadout.Text = "Selecione uma frase já marcada para pré-visualizar o novo ponto.";
             return;
         }
@@ -297,6 +301,7 @@ public partial class MainWindow
         var current = selected.Seconds.Value;
         var preview = previewTimes[anchorIndex] ?? current;
         var delta = preview - current;
+        TimelineAdjustmentCurrentLabel.Text = FormatLyricsTimelineTime(preview);
         var nextMarked = Enumerable.Range(anchorIndex + 1, Math.Max(0, _lyricsEditorCards.Count - anchorIndex - 1))
             .FirstOrDefault(index => _lyricsEditorCards[index].Seconds.HasValue, -1);
 
